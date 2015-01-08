@@ -7,6 +7,3 @@
 #
 # http://opensource.org/licenses/mit-license.php
 #
-from storage import Storage
-from auth import Auth
-
