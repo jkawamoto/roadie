@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+#
+# storage.py
+#
+# Copyright (c) 2015 Junpei Kawamoto
+#
+# This software is released under the MIT License.
+#
+# http://opensource.org/licenses/mit-license.php
+#
 import argparse
 import json
 import sys
