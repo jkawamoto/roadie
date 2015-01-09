@@ -141,7 +141,7 @@ class LocalStorage(Storage):
         shutil.copyfile(src, dst)
 
 
-def run(cmd, observe, storage, cwd, **kwargs):
+def run(cmd, observe, storage, cwd, shutdown, **kwargs):
 
     p = subprocess.Popen(cmd, cwd=cwd, shell=True,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -159,6 +159,10 @@ def run(cmd, observe, storage, cwd, **kwargs):
     for src in glob.glob(observe) if observe else []:
         s.copy_file(src)
 
+    if shutdown:
+        from common.gce import shutdown
+        shutdown.shutdown()
+
 
 def main():
 
@@ -166,10 +170,12 @@ def main():
     parser.add_argument("--observe", help="File pattern to be stored.")
     parser.add_argument("cmd", nargs="?", default="main.py", help="Command to be run.")
     parser.add_argument("--cwd", default="/data", help="Change working directory (default: /data).")
+    parser.add_argument("--shutdown", default=False, action="store_true",
+                        help="Shutdown after the program ends (working only in Google Compute Engine)")
 
     subparsers = parser.add_subparsers()
-    
-    gcs_cmd = subparsers.add_parser("gce", help="Storing outputs into GCS.")
+
+    gcs_cmd = subparsers.add_parser("gcs", help="Storing outputs into GCS.")
     gcs_cmd.add_argument("--mimetype", default="text/plain", help="MIME type of outputs.")
     gcs_cmd.add_argument("bucket", help="Bucket name.")
     gcs_cmd.add_argument("--prefix", help="Prefix of stored files.")

@@ -20,7 +20,7 @@ FROM jkawamoto/roadie
 ADD main.py /data
 
 # Set configurations.
-CMD ["main.py", "gce", "sample-bucket"]
+CMD ["main.py", "gcs", "sample-bucket"]
 ```
 
 Then, you can build the container named `yourname/main`.
@@ -58,8 +58,8 @@ usage: [-h] [--observe OBSERVE] [cmd] {gce,mongo} ...
 
 positional arguments:
 cmd                Command to be run.
-{gce,mongo,local}
-gce              Storing outputs into GCS.
+{gcs,mongo,local}
+gcs              Storing outputs into GCS.
 mongo            Storing outputs into MongoDB.
 local            Storing outputs into local filesystem.
 
@@ -74,10 +74,10 @@ You can use UNIX based patterns such as `result-*.out`, etc.
 `cmd` should be quoted if it has spaces.
 
 ### Store to Google Cloud Storage
-To store outputs to GCS, use `gce` option.
+To store outputs to GCS, use `gcs` option.
 
 ```
-usage: [cmd] gce [-h] [--mimetype MIMETYPE] [--prefix PREFIX] bucket
+usage: [cmd] gcs [-h] [--mimetype MIMETYPE] [--prefix PREFIX] bucket
 
 positional arguments:
 bucket               Bucket name.
