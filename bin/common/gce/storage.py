@@ -50,11 +50,7 @@ class Storage(object):
         try:
             return req.execute()
         except HttpError as e:
-            json.dump({
-                "path": path,
-                "media_body": media_body
-            }, sys.stderr)
-            sys.stderr.write("\n")
+            sys.stderr.write("Error: " + path + "\n")
             raise e
 
 
