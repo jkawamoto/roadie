@@ -22,8 +22,10 @@ class Storage(object):
     def __init__(self, bucket):
 
         self._bucket = bucket
-        self._auth = Auth()
         self._sp = discovery.build("storage", "v1")
+
+        self._auth = None
+        self._update_auth()
         
     def get(self, path, metadata=False):
         
@@ -43,6 +45,10 @@ class Storage(object):
         media_body = MediaFileUpload(fname, mimetype, resumable=True)
         return self._do_upload(path, media_body)
 
+    def __update_auth(self):
+        print "Auth"
+        self._auth = Auth()
+
     def _do_upload(self, path, media_body):
         req = self._sp.objects().insert(bucket=self._bucket, body=dict(name=path), media_body=media_body)
 
@@ -57,9 +63,15 @@ class Storage(object):
             print "Upload Complete!"
 
             return res
+            
         except HttpError as e:
-            sys.stderr.write("Error: " + path + "\n")
-            raise e
+            if e.resp.status == 401:
+                self._update_auth()
+                return self._do_upload(path, media_body)
+
+            else:
+                sys.stderr.write("Error: " + path + "\n")
+                raise e
 
 
 def get(bucket, path, output, metadata, **kwargs):
