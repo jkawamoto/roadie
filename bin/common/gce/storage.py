@@ -35,7 +35,17 @@ class Storage(object):
             req = self._sp.objects().get_media(bucket=self._bucket, object=path)
 
         req.headers["Authorization"] = self._auth.header_str()
-        return req.execute()
+        try:
+            return req.execute()
+
+        except HttpError as e:
+            if e.resp.status == 401:
+                self._update_auth()
+                return self.get(path, metadata)
+
+            else:
+                sys.stderr.write("Error: " + path + "\n")
+                raise e
 
     def upload(self, path, data, mimetype):
         media_body = MediaIoBaseUpload(data, mimetype, resumable=True)
@@ -45,7 +55,7 @@ class Storage(object):
         media_body = MediaFileUpload(fname, mimetype, resumable=True)
         return self._do_upload(path, media_body)
 
-    def __update_auth(self):
+    def _update_auth(self):
         print "Auth"
         self._auth = Auth()
 
