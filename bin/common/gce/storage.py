@@ -48,7 +48,15 @@ class Storage(object):
 
         req.headers["Authorization"] = self._auth.header_str()
         try:
-            return req.execute()
+            res = None
+            print "Start uploading " + path
+            while res is None:
+                status, res = req.next_chunk()
+                if status:
+                    print "Uploaded %d%%." % int(status.progress() * 100)
+            print "Upload Complete!"
+
+            return res
         except HttpError as e:
             sys.stderr.write("Error: " + path + "\n")
             raise e
