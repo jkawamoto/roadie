@@ -13,8 +13,10 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 from common.docker.environment import MONGO
 from os import path
+
 
 class Storage(object):
     """ Interface of Storage.
@@ -26,7 +28,15 @@ class Storage(object):
           src: An input stream.
           name: A name of this stream.
         """
-        raise NotImplementedError()
+        fname = path.join("/tmp", name)
+        with open(fname, "w") as dst:
+            for line in src:
+                dst.write(line)
+                dst.write("\n")
+
+        if os.path.getsize(fname):
+            self.copy_file(fname)
+        os.remove(fname)
 
     def copy_file(self, src):
         """ Copy a file into the storage.
@@ -34,8 +44,7 @@ class Storage(object):
         Args:
           src: A file name.
         """
-        with open(src, "r") as fp:
-            self.store_stream(fp, path.basename(src))
+        raise NotImplementedError()
 
 
 class GCEStorage(Storage):
@@ -54,21 +63,6 @@ class GCEStorage(Storage):
         self.__prefix = prefix
         self.__mimetype = mimetype
 
-    def store_stream(self, src, name):
-        """ Store data from a stream into the storage.
-        
-        Args:
-          src: An input stream.
-          name: A name of this stream.
-        """
-        fname = path.join("/tmp", name)
-        with open(fname, "w") as dst:
-            shutil.copyfileobj(src, dst)
-
-        if os.path.getsize(fname):
-            self.copy_file(fname)
-        os.remove(fname)
-
     def copy_file(self, src):
         """ Copy a file into the storage.
 
@@ -85,7 +79,6 @@ class GCEStorage(Storage):
 class MongoStorage(Storage):
     """ Store data into MongoDB.
     """
-    
     def __init__(self, db, collection, host=MONGO.hostname, port=MONGO.port):
         """
         db: a database name.
@@ -98,15 +91,16 @@ class MongoStorage(Storage):
         self.__collection = collection
         self.__host = host
         self.__port = port
-        
-    def store_stream(self, src, name):
-        """ Store data from a stream into the storage.
-        
+ 
+    def copy_file(self, src):
+        """ Copy a file into the storage.
+
         Args:
-          src: An input stream.
-          name: A name of this stream.
+          src: A file name.
         """
-        mongo.push(self.__db, self.__collection, name, src, host=self.__host, port=self.__port, squash=True)
+        dst = path.basename(src)
+        with open(src, "r") as fp:
+            mongo.push(self.__db, self.__collection, dst, fp, host=self.__host, port=self.__port, squash=True)
 
 
 class LocalStorage(Storage):
@@ -120,17 +114,6 @@ class LocalStorage(Storage):
         """
         self.__cwd = dir
 
-    def store_stream(self, src, name):
-        """ Store data from a stream into the storage.
-        
-        Args:
-          src: An input stream.
-          name: A name of this stream.
-        """
-        fname = path.join(self.__cwd, name)
-        with open(fname, "w") as dst:
-            shutil.copyfileobj(src, dst)
-
     def copy_file(self, src):
         """ Copy a file into the storage.
 
@@ -141,27 +124,43 @@ class LocalStorage(Storage):
         shutil.copyfile(src, dst)
 
 
+def logging(iterable, output):
+    while True:
+        try:
+            line = iterable.readline()
+            if not line:
+                break
+
+            output.write(line)
+            yield line
+
+        except StopIteration:
+            break
+
+
 def run(cmd, observe, storage, cwd, shutdown, **kwargs):
 
-    p = subprocess.Popen(cmd, cwd=cwd, shell=True,
+    p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Constructing a storage object.
     s = storage(**kwargs)
     
     # Storing stdout and stderr
-    s.store_stream(p.stdout, "stdout")
-    s.store_stream(p.stderr, "stderr")
+    s.store_stream(logging(p.stdout, sys.stdout), "stdout")
+    s.store_stream(logging(p.stderr, sys.stderr), "stderr")
 
-    p.wait()
+    try:
+        p.wait()
 
-    # Copy other files.
-    for src in glob.glob(observe) if observe else []:
-        s.copy_file(src)
+    finally:
+        # Copy other files.
+        for src in glob.glob(observe) if observe else []:
+            s.copy_file(src)
 
-    if shutdown:
-        from common.gce import shutdown
-        shutdown.shutdown()
+        if shutdown:
+            from common.gce import shutdown
+            shutdown.shutdown()
 
 
 def main():
