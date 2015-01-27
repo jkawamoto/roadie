@@ -32,7 +32,6 @@ class Storage(object):
         with open(fname, "w") as dst:
             for line in src:
                 dst.write(line)
-                dst.write("\n")
 
         if os.path.getsize(fname):
             self.copy_file(fname)
@@ -91,7 +90,7 @@ class MongoStorage(Storage):
         self.__collection = collection
         self.__host = host
         self.__port = port
- 
+       
     def copy_file(self, src):
         """ Copy a file into the storage.
 

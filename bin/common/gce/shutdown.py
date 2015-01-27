@@ -33,8 +33,8 @@ def shutdown():
     req = sp.instances().delete(project=project, zone=zone, instance=instance)
     req.headers["Authorization"] = auth.header_str()
     req.execute()
-
     
+
 if __name__ == "__main__":
     shutdown()
 
