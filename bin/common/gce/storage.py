@@ -11,7 +11,7 @@
 import argparse
 import json
 import sys
-from apiclient import discovery 
+from apiclient import discovery
 from apiclient.http import MediaIoBaseUpload
 from apiclient.http import MediaFileUpload
 from auth import Auth
@@ -26,9 +26,9 @@ class Storage(object):
 
         self._auth = None
         self._update_auth()
-        
+
     def get(self, path, metadata=False):
-        
+
         if metadata:
             req = self._sp.objects().get(bucket=self._bucket, object=path)
         else:
@@ -73,7 +73,7 @@ class Storage(object):
             print "Upload Complete!"
 
             return res
-            
+
         except HttpError as e:
             if e.resp.status == 401:
                 self._update_auth()
@@ -97,7 +97,7 @@ def get(bucket, path, output, metadata, **kwargs):
 def upload(bucket, path, input, mimetype, **kwargs):
     s = Storage(bucket)
     s.upload(path, input, mimetype)
-    
+
 
 def main(**kwargs):
     kwargs["func"](**kwargs)

@@ -56,17 +56,17 @@ def _make_item(name, key, value, properties):
         "name": name,
         key: value
     }
-    
+
     if properties:
         item["properties"] = properties
-        
+
     return item
-    
+
 
 def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key="data", squash=False, properties=[], json=False, quiet=False):
 
     with MongoClient(host, port) as client:
-        
+
         db = client[db]
         col = db[collection]
 
@@ -75,11 +75,11 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
             props = _make_object(properties)
 
         if squash:
-            
+
             data = map(translater(json), input)
             if data:
                 col.insert(_make_item(name, key, data, props))
-                
+
                 if not quiet:
                     for s in data:
                         print s
@@ -97,7 +97,7 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
 def pull(db, collection, name, output=sys.stdout, host=MONGO.hostname, port=MONGO.port, key="data", query=""):
 
     with MongoClient(host, port) as client:
-        
+
         db = client[db]
         col = db[collection]
 
@@ -130,7 +130,7 @@ def main():
     parser.add_argument("name", help="Document name.")
 
     subparsers = parser.add_subparsers()
-    
+
     push_cmd = subparsers.add_parser("push")
     push_cmd.add_argument("--input", default=sys.stdin, type=argparse.FileType("r"), help="Source of pushing data.")
     push_cmd.add_argument("-p", "--properties", nargs="*")

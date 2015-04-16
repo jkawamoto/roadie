@@ -9,7 +9,7 @@
 # http://opensource.org/licenses/mit-license.php
 #
 import urllib2
-from apiclient import discovery 
+from apiclient import discovery
 from auth import Auth
 
 _INSTANCE = "http://169.254.169.254/computeMetadata/v1/instance/"
@@ -29,12 +29,11 @@ def shutdown():
     project = _get(_PROJECT + "project-id")
 
     sp = discovery.build("compute", "v1")
-    
+
     req = sp.instances().delete(project=project, zone=zone, instance=instance)
     req.headers["Authorization"] = auth.header_str()
     req.execute()
-    
+
 
 if __name__ == "__main__":
     shutdown()
-

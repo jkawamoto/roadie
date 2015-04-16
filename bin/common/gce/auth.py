@@ -1,4 +1,4 @@
-#
+
 # auth.py
 #
 # Copyright (c) 2015 Junpei Kawamoto
@@ -17,7 +17,7 @@ _SERVICE_ACCOUNT = "default"
 class Auth(object):
 
     def __init__(self):
-        
+
         self.execute()
 
     def execute(self):
@@ -40,6 +40,3 @@ class Auth(object):
     @property
     def type(self):
         return self._type
-
-    
-    

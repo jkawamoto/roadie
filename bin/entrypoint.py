@@ -15,28 +15,29 @@ import shutil
 import subprocess
 import sys
 from common.docker.environment import MONGO
+from contextlib import contextmanager
 from os import path
+
+
+@contextmanager
+def closing_fd(fd):
+    """ A context manager closing a file descriptor.
+
+    Args:
+      fd: a file descriptor opened by os.open.
+
+    Yield:
+      the file descriptor.
+    """
+    try:
+        yield fd
+    finally:
+        os.close(fd)
 
 
 class Storage(object):
     """ Interface of Storage.
     """
-    def store_stream(self, src, name):
-        """ Store data from a stream into the storage.
-        
-        Args:
-          src: An input stream.
-          name: A name of this stream.
-        """
-        fname = path.join("/tmp", name)
-        with open(fname, "w") as dst:
-            for line in src:
-                dst.write(line)
-
-        if os.path.getsize(fname):
-            self.copy_file(fname)
-        os.remove(fname)
-
     def copy_file(self, src):
         """ Copy a file into the storage.
 
@@ -83,14 +84,15 @@ class MongoStorage(Storage):
         db: a database name.
         collection: a collection name.
         host: a hostname of a MongoDB server.
-        port: a port number of a MongoDB server.        
+        port: a port number of a MongoDB server.
         """
         from common import mongo
         self.__db = db
         self.__collection = collection
         self.__host = host
         self.__port = port
-       
+
+
     def copy_file(self, src):
         """ Copy a file into the storage.
 
@@ -123,39 +125,40 @@ class LocalStorage(Storage):
         shutil.copyfile(src, dst)
 
 
-def logging(iterable, output):
-    while True:
-        try:
-            line = iterable.readline()
-            if not line:
-                break
-
-            output.write(line)
-            yield line
-
-        except StopIteration:
-            break
-
-
 def run(cmd, observe, storage, cwd, shutdown, **kwargs):
 
-    p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # Temporary file names.
+    STDOUT = path.join("/tmp", "stdout")
+    STDERR = path.join("/tmp", "stderr")
 
     # Constructing a storage object.
     s = storage(**kwargs)
-    
-    # Storing stdout and stderr
-    s.store_stream(logging(p.stdout, sys.stdout), "stdout")
-    s.store_stream(logging(p.stderr, sys.stderr), "stderr")
 
     try:
-        p.wait()
 
-    finally:
+        # Creating temporary files.
+        with closing_fd(os.open(STDOUT, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stdout:
+
+            with closing_fd(os.open(STDERR, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stderr:
+
+                # Create a subprocess.
+                p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=stderr)
+
+                # Wait the process will end.
+                p.wait()
+
+        # Storing stdout and stderr
+        s.copy_file(STDOUT)
+        s.copy_file(STDERR)
+
+        os.remove(STDOUT)
+        os.remove(STDERR)
+
         # Copy other files.
         for src in glob.glob(observe) if observe else []:
             s.copy_file(src)
+
+    finally:
 
         if shutdown:
             from common.gce import shutdown
@@ -178,7 +181,7 @@ def main():
     gcs_cmd.add_argument("bucket", help="Bucket name.")
     gcs_cmd.add_argument("--prefix", help="Prefix of stored files.")
     gcs_cmd.set_defaults(storage=GCEStorage)
-        
+
     mongo_cmd = subparsers.add_parser("mongo", help="Storing outputs into MongoDB.")
     mongo_cmd.add_argument("--host", default=MONGO.hostname, help="Host name of MongoDB server.")
     mongo_cmd.add_argument("--port", default=MONGO.port, type=int, help="Port number of MongoDB server.")
