@@ -18,6 +18,11 @@ from common.docker.environment import MONGO
 from contextlib import contextmanager
 from os import path
 
+TMP_DIR = "/tmp"
+SYS_ERR = path.join(TMP_DIR, "__error__")
+STDOUT = path.join(TMP_DIR, "stdout")
+STDERR = path.join(TMP_DIR, "stderr")
+
 
 @contextmanager
 def closing_fd(fd):
@@ -127,36 +132,48 @@ class LocalStorage(Storage):
 
 def run(cmd, observe, storage, cwd, shutdown, **kwargs):
 
-    # Temporary file names.
-    STDOUT = path.join("/tmp", "stdout")
-    STDERR = path.join("/tmp", "stderr")
-
     # Constructing a storage object.
     s = storage(**kwargs)
-
     try:
 
-        # Creating temporary files.
-        with closing_fd(os.open(STDOUT, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stdout:
+        with open(SYS_ERR, "w") as err:
 
-            with closing_fd(os.open(STDERR, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stderr:
+            # Creating temporary files.
+            with closing_fd(os.open(STDOUT, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stdout:
 
-                # Create a subprocess.
-                p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=stderr)
+                with closing_fd(os.open(STDERR, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stderr:
 
-                # Wait the process will end.
-                p.wait()
+                    # Create a subprocess.
+                    p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=stderr)
 
-        # Storing stdout and stderr
-        s.copy_file(STDOUT)
-        s.copy_file(STDERR)
+                    # Wait the process will end.
+                    p.wait()
 
-        os.remove(STDOUT)
-        os.remove(STDERR)
+            # Storing stdout and stderr
+            if path.exists(STDOUT):
+                s.copy_file(STDOUT)
+                try:
+                    os.remove(STDOUT)
+                except Exception as e:
+                    err.write("{0}\n".format(e))
 
-        # Copy other files.
-        for src in glob.glob(observe) if observe else []:
-            s.copy_file(src)
+            if path.exists(STDERR):
+                s.copy_file(STDERR)
+                try:
+                    os.remove(STDERR)
+                except Exception as e:
+                    err.write("{0}\n".format(e))
+
+            # Copy other files.
+            if observe:
+                for src in glob.glob(observe):
+                    try:
+                        s.copy_file(src)
+                    except Exception as e:
+                        err.write("{0}\n".format(e))
+
+        # Storing system errors.
+        s.copy_file(SYS_ERR)
 
     finally:
 
@@ -197,4 +214,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(1)

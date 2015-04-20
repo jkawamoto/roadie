@@ -23,17 +23,18 @@ def _get(url):
 
 
 def shutdown():
+
     auth = Auth()
     instance = _get(_INSTANCE + "hostname").split(".")[0]
     zone = _get(_INSTANCE + "zone").split("/")[-1]
     project = _get(_PROJECT + "project-id")
 
     sp = discovery.build("compute", "v1")
-
     req = sp.instances().delete(project=project, zone=zone, instance=instance)
     req.headers["Authorization"] = auth.header_str()
     req.execute()
 
 
 if __name__ == "__main__":
+
     shutdown()
