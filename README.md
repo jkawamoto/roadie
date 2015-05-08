@@ -38,6 +38,7 @@ $ docker run -d yourname/main
 
 Then, the executed result will be stored in a place specified in the Dockerfile.
 In the above example, a file `stdout` consisting of outputs written in stdout will be stored in sample-bucket.
+On the other hand, stderr will be connected to stdout of the container so that you can watch it via such as `docker logs`.
 If your program produces other output files, see detailed information below.
 
 
@@ -57,20 +58,24 @@ The format of the script is as follows.
 usage: [-h] [--observe OBSERVE] [cmd] {gce,mongo} ...
 
 positional arguments:
-cmd                Command to be run.
-{gcs,mongo,local}
-gcs              Storing outputs into GCS.
-mongo            Storing outputs into MongoDB.
-local            Storing outputs into local filesystem.
+  cmd                Command to be run.
+  {gcs,mongo,local}
+    gcs              Storing outputs into GCS.
+    mongo            Storing outputs into MongoDB.
+    local            Storing outputs into local filesystem.
 
 optional arguments:
--h, --help         show this help message and exit
---observe OBSERVE  File pattern to be stored.
---cwd CWD          Change working directory (default: /data).
+  -h, --help         show this help message and exit
+  --observe OBSERVE  File pattern to be stored.
+  --cwd CWD          Change working directory (default: /data).
+  --output OUTPUT    Store output into a file.
+  --shutdown         Shutdown after the program ends (working only in Google
+                     Compute Engine)
+  --zip              Zip observed file.
 ```
 
-If your program will produce files, you can specify file-name patterns to be stored.
-You can use UNIX based patterns such as `result-*.out`, etc.
+If your program will produce some files, specify file-name patterns at `--observe` argument to be stored.
+UNIX based patterns such as `result-*.out`, etc. are supported.
 `cmd` should be quoted if it has spaces.
 
 ### Store to Google Cloud Storage

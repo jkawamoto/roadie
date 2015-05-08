@@ -10,34 +10,19 @@
 #
 import argparse
 import glob
+import itertools
 import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from common.docker.environment import MONGO
-from contextlib import contextmanager
 from os import path
 
+
 TMP_DIR = "/tmp"
-SYS_ERR = path.join(TMP_DIR, "__error__")
 STDOUT = path.join(TMP_DIR, "stdout")
-STDERR = path.join(TMP_DIR, "stderr")
-
-
-@contextmanager
-def closing_fd(fd):
-    """ A context manager closing a file descriptor.
-
-    Args:
-      fd: a file descriptor opened by os.open.
-
-    Yield:
-      the file descriptor.
-    """
-    try:
-        yield fd
-    finally:
-        os.close(fd)
+ZIPFILE = path.join(TMP_DIR, "archive.zip")
 
 
 class Storage(object):
@@ -130,50 +115,58 @@ class LocalStorage(Storage):
         shutil.copyfile(src, dst)
 
 
-def run(cmd, observe, storage, cwd, shutdown, **kwargs):
+def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, zip=False, **kwargs):
+    """ Run a command.
 
-    # Constructing a storage object.
-    s = storage(**kwargs)
+    Args:
+      cmd: a command line to be run.
+      observe: a UNIX like file pattern to be stored.
+      storage: a storage type and must be an instance of Storage.
+      cwd: specify a directory where the given command run.
+      output: specify a file object to write outputs.
+      shutdown: if true, vm will be shutdowned when the command end.
+      zip: if true, observed files will be zipped.
+    """
     try:
 
-        with open(SYS_ERR, "w") as err:
+        # Constructing a storage object.
+        s = storage(**kwargs)
 
-            # Creating temporary files.
-            with closing_fd(os.open(STDOUT, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stdout:
+        # Creating temporary files.
+        with open(STDOUT, "w") as stdout:
 
-                with closing_fd(os.open(STDERR, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0644)) as stderr:
+            # Create a subprocess.
+            p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=output)
 
-                    # Create a subprocess.
-                    p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=stderr)
+            # Wait the process will end.
+            p.wait()
 
-                    # Wait the process will end.
-                    p.wait()
-
-            # Storing stdout and stderr
-            if path.exists(STDOUT):
+        # Storing stdout
+        if path.exists(STDOUT):
+            try:
                 s.copy_file(STDOUT)
-                try:
-                    os.remove(STDOUT)
-                except Exception as e:
-                    err.write("{0}\n".format(e))
+                os.remove(STDOUT)
 
-            if path.exists(STDERR):
-                s.copy_file(STDERR)
-                try:
-                    os.remove(STDERR)
-                except Exception as e:
-                    err.write("{0}\n".format(e))
+            except Exception as e:
+                output.write("{0}\n".format(e))
 
-            # Copy other files.
-            if observe:
-                for src in glob.glob(observe):
-                    try:
+        # Copy other files.
+        if observe:
+            try:
+
+                if zip:
+                    # Create a zip file and store observed files.
+                    with zipfile.ZipFile(ZIPFILE, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as arc:
+                        for src in itertools.ifilterfalse(path.isdir, glob.glob(observe)):
+                            arc.write(src, arcname=path.basename(src))
+                    s.copy_file(ZIPFILE)
+
+                else:
+                    for src in itertools.ifilterfalse(path.isdir, glob.glob(observe)):
                         s.copy_file(src)
-                    except Exception as e:
-                        err.write("{0}\n".format(e))
 
-        # Storing system errors.
-        s.copy_file(SYS_ERR)
+            except Exception as e:
+                output.write("{0}\n".format(e))
 
     finally:
 
@@ -188,8 +181,11 @@ def main():
     parser.add_argument("--observe", help="File pattern to be stored.")
     parser.add_argument("cmd", nargs="?", default="main.py", help="Command to be run.")
     parser.add_argument("--cwd", default="/data", help="Change working directory (default: /data).")
+    parser.add_argument("--output", default=sys.stdout, help="Store output into a file.")
     parser.add_argument("--shutdown", default=False, action="store_true",
                         help="Shutdown after the program ends (working only in Google Compute Engine)")
+    parser.add_argument("--zip", default=False, action="store_true", help="Zip observed file.")
+
 
     subparsers = parser.add_subparsers()
 
