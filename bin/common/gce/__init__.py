@@ -1,4 +1,3 @@
-
 # __init__.py
 #
 # Copyright (c) 2015 Junpei Kawamoto

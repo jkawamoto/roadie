@@ -82,7 +82,6 @@ class MongoStorage(Storage):
         self.__host = host
         self.__port = port
 
-
     def copy_file(self, src):
         """ Copy a file into the storage.
 
@@ -152,18 +151,23 @@ def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, z
 
         # Copy other files.
         if observe:
+
             try:
 
                 if zip:
                     # Create a zip file and store observed files.
                     with zipfile.ZipFile(ZIPFILE, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as arc:
-                        for src in itertools.ifilterfalse(path.isdir, glob.glob(observe)):
-                            arc.write(src, arcname=path.basename(src))
+
+                        for pat in observe:
+                            for src in itertools.ifilterfalse(path.isdir, glob.glob(pat)):
+                                arc.write(src, arcname=path.basename(src))
                     s.copy_file(ZIPFILE)
 
                 else:
-                    for src in itertools.ifilterfalse(path.isdir, glob.glob(observe)):
-                        s.copy_file(src)
+
+                    for pat in observe:
+                        for src in itertools.ifilterfalse(path.isdir, glob.glob(pat)):
+                            s.copy_file(src)
 
             except Exception as e:
                 output.write("{0}\n".format(e))
@@ -178,7 +182,7 @@ def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, z
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--observe", help="File pattern to be stored.")
+    parser.add_argument("--observe", nargs="*", help="File pattern to be stored.")
     parser.add_argument("cmd", nargs="?", default="main.py", help="Command to be run.")
     parser.add_argument("--cwd", default="/data", help="Change working directory (default: /data).")
     parser.add_argument("--output", default=sys.stdout, help="Store output into a file.")

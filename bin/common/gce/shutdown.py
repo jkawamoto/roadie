@@ -15,7 +15,6 @@ from auth import Auth
 _INSTANCE = "http://169.254.169.254/computeMetadata/v1/instance/"
 _PROJECT = "http://169.254.169.254/computeMetadata/v1/project/"
 
-
 def _get(url):
     req = urllib2.Request(url)
     req.add_header("Metadata-Flavor", "Google")
@@ -30,6 +29,7 @@ def shutdown():
     project = _get(_PROJECT + "project-id")
 
     sp = discovery.build("compute", "v1")
+
     req = sp.instances().delete(project=project, zone=zone, instance=instance)
     req.headers["Authorization"] = auth.header_str()
     req.execute()

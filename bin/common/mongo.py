@@ -97,7 +97,6 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
 def pull(db, collection, name, output=sys.stdout, host=MONGO.hostname, port=MONGO.port, key="data", query=""):
 
     with MongoClient(host, port) as client:
-
         db = client[db]
         col = db[collection]
 

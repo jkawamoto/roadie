@@ -28,6 +28,7 @@ class Storage(object):
         self._update_auth()
 
     def get(self, path, metadata=False):
+
         if metadata:
             req = self._sp.objects().get(bucket=self._bucket, object=path)
         else:
