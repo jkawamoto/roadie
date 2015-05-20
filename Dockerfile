@@ -22,4 +22,3 @@ VOLUME /data
 WORKDIR /data
 
 ENTRYPOINT ["/root/entrypoint.py"]
-CMD []

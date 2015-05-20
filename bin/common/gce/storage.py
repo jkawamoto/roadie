@@ -16,6 +16,8 @@ from apiclient.http import MediaIoBaseUpload
 from apiclient.http import MediaFileUpload
 from auth import Auth
 from googleapiclient.errors import HttpError
+from mimetypes import guess_type
+
 
 class Storage(object):
 
@@ -51,7 +53,12 @@ class Storage(object):
         media_body = MediaIoBaseUpload(data, mimetype, resumable=True)
         return self._do_upload(path, media_body)
 
-    def upload_file(self, path, fname, mimetype):
+    def upload_file(self, path, fname, mimetype=None):
+        if not mimetype:
+            mimetype, _ = guess_type(path)
+            if not mimetype:
+                mimetype = "application/octet-stream"
+
         media_body = MediaFileUpload(fname, mimetype, resumable=True)
         return self._do_upload(path, media_body)
 
