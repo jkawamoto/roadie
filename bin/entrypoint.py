@@ -11,10 +11,7 @@
 import argparse
 import glob
 import itertools
-<<<<<<< HEAD
-=======
 import mimetypes
->>>>>>> pre-merge
 import os
 import shutil
 import subprocess
@@ -44,28 +41,16 @@ class Storage(object):
 class GCEStorage(Storage):
     """ Store data into Google Could Storage.
     """
-<<<<<<< HEAD
-    def __init__(self, bucket, prefix=None, mimetype="text/plain"):
-=======
     def __init__(self, bucket, prefix=None):
->>>>>>> pre-merge
         """ Construct GCEStorage.
 
         Args:
           bucket: a bucket name.
           prefix: Prefix of file names (default: None)
-<<<<<<< HEAD
-          mimetype: MIME type (default: text/plain)
-=======
->>>>>>> pre-merge
         """
         from common import gce
         self.__storage = gce.Storage(bucket)
         self.__prefix = prefix
-<<<<<<< HEAD
-        self.__mimetype = mimetype
-=======
->>>>>>> pre-merge
 
     def copy_file(self, src):
         """ Copy a file into the storage.
@@ -77,15 +62,11 @@ class GCEStorage(Storage):
             dst = self.__prefix + "/" + path.basename(src)
         else:
             dst = path.basename(src)
-<<<<<<< HEAD
-        self.__storage.upload_file(dst, src, self.__mimetype)
-=======
 
         mtype, _ = mimetypes.guess_type(src)
         if not mtype:
             mtype = "application/octet-stream"
         self.__storage.upload_file(dst, src, mtype)
->>>>>>> pre-merge
 
 
 class MongoStorage(Storage):
