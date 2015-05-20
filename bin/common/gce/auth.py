@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # auth.py
 #
 # Copyright (c) 2015 Junpei Kawamoto
@@ -6,6 +7,8 @@
 #
 # http://opensource.org/licenses/mit-license.php
 #
+=======
+>>>>>>> pre-merge
 import json
 import urllib2
 
@@ -16,6 +19,10 @@ _SERVICE_ACCOUNT = "default"
 class Auth(object):
 
     def __init__(self):
+<<<<<<< HEAD
+=======
+        
+>>>>>>> pre-merge
         self.execute()
 
     def execute(self):
@@ -38,3 +45,9 @@ class Auth(object):
     @property
     def type(self):
         return self._type
+<<<<<<< HEAD
+=======
+
+    
+    
+>>>>>>> pre-merge
