@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-<<<<<<< HEAD
 #
 # storage.py
 #
@@ -9,8 +8,6 @@
 #
 # http://opensource.org/licenses/mit-license.php
 #
-=======
->>>>>>> pre-merge
 import argparse
 import json
 import sys
@@ -21,10 +18,7 @@ from auth import Auth
 from googleapiclient.errors import HttpError
 from mimetypes import guess_type
 
-<<<<<<< HEAD
 
-=======
->>>>>>> pre-merge
 class Storage(object):
 
     def __init__(self, bucket):
@@ -64,10 +58,7 @@ class Storage(object):
             mimetype, _ = guess_type(path)
             if not mimetype:
                 mimetype = "application/octet-stream"
-<<<<<<< HEAD
 
-=======
->>>>>>> pre-merge
         media_body = MediaFileUpload(fname, mimetype, resumable=True)
         return self._do_upload(path, media_body)
 
@@ -99,10 +90,7 @@ class Storage(object):
                 sys.stderr.write("Error: " + path + "\n")
                 raise e
 
-<<<<<<< HEAD
 
-=======
->>>>>>> pre-merge
 def get(bucket, path, output, metadata, **kwargs):
     s = Storage(bucket)
     if metadata:
