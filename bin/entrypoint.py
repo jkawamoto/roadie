@@ -197,7 +197,6 @@ def main():
     subparsers = parser.add_subparsers()
 
     gcs_cmd = subparsers.add_parser("gcs", help="Storing outputs into GCS.")
-    gcs_cmd.add_argument("--mimetype", default="text/plain", help="MIME type of outputs.")
     gcs_cmd.add_argument("bucket", help="Bucket name.")
     gcs_cmd.add_argument("--prefix", help="Prefix of stored files.")
     gcs_cmd.set_defaults(storage=GCEStorage)

@@ -66,6 +66,7 @@ def _make_item(name, key, value, properties):
 def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key="data", squash=False, properties=[], json=False, quiet=False):
 
     with MongoClient(host, port) as client:
+
         db = client[db]
         col = db[collection]
 
@@ -74,6 +75,7 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
             props = _make_object(properties)
 
         if squash:
+
             data = map(translater(json), input)
             if data:
                 col.insert(_make_item(name, key, data, props))
@@ -83,6 +85,7 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
                         print s
 
         else:
+
             for s in itertools.imap(translater(json), input):
 
                 col.insert(_make_item(name, key, s, props))
@@ -94,6 +97,7 @@ def push(db, collection, name, input, host=MONGO.hostname, port=MONGO.port, key=
 def pull(db, collection, name, output=sys.stdout, host=MONGO.hostname, port=MONGO.port, key="data", query=""):
 
     with MongoClient(host, port) as client:
+
         db = client[db]
         col = db[collection]
 

@@ -16,6 +16,7 @@ _SERVICE_ACCOUNT = "default"
 class Auth(object):
 
     def __init__(self):
+
         self.execute()
 
     def execute(self):

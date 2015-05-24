@@ -15,6 +15,7 @@ from auth import Auth
 _INSTANCE = "http://169.254.169.254/computeMetadata/v1/instance/"
 _PROJECT = "http://169.254.169.254/computeMetadata/v1/project/"
 
+
 def _get(url):
     req = urllib2.Request(url)
     req.add_header("Metadata-Flavor", "Google")
