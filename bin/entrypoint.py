@@ -12,6 +12,8 @@ import argparse
 import glob
 import itertools
 import mimetypes
+import logging
+import logging.config
 import os
 import shutil
 import subprocess
@@ -22,9 +24,10 @@ from os import path
 
 
 TMP_DIR = "/tmp"
-STDOUT = path.join(TMP_DIR, "stdout")
+STDOUT = path.join(TMP_DIR, "stdout.txt")
 ZIPFILE = path.join(TMP_DIR, "archive.zip")
 
+logger = logging.getLogger(__name__)
 
 class Storage(object):
     """ Interface of Storage.
@@ -117,7 +120,7 @@ class LocalStorage(Storage):
         shutil.copyfile(src, dst)
 
 
-def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, zip=False, **kwargs):
+def run(cmd, observe, storage, log=None, stderr=sys.stdout, cwd="/data", shutdown=False, zip=False, **kwargs):
     """ Run a command.
 
     Args:
@@ -125,10 +128,12 @@ def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, z
       observe: a UNIX like file pattern to be stored.
       storage: a storage type and must be an instance of Storage.
       cwd: specify a directory where the given command run.
-      output: specify a file object to write outputs.
       shutdown: if true, vm will be shutdowned when the command end.
       zip: if true, observed files will be zipped.
     """
+    if log:
+        logging.config.fileConfig(log)
+
     try:
 
         # Constructing a storage object.
@@ -137,20 +142,25 @@ def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, z
         # Creating temporary files.
         with open(STDOUT, "w") as stdout:
 
+            logger.info("Start a sub process.")
             # Create a subprocess.
-            p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=output)
+            p = subprocess.Popen(cmd, cwd=cwd, shell=True, bufsize=1, stdout=stdout, stderr=stderr)
 
             # Wait the process will end.
             p.wait()
 
+            logger.info("The sub process has ended.")
+
         # Storing stdout
         if path.exists(STDOUT):
+            logger.info("Upload %s.", STDOUT)
+
             try:
                 s.copy_file(STDOUT)
                 os.remove(STDOUT)
 
-            except Exception as e:
-                output.write("{0}\n".format(e))
+            except Exception:
+                logger.exception("An error occurred when storing stdout.")
 
         # Copy other files.
         if observe:
@@ -164,39 +174,42 @@ def run(cmd, observe, storage, cwd="/data", output=sys.stdout, shutdown=False, z
                         for pat in observe:
                             for src in itertools.ifilterfalse(path.isdir, glob.glob(pat)):
                                 arc.write(src, arcname=path.basename(src))
+
+                    logger.info("Upload %s.", ZIPFILE)
                     s.copy_file(ZIPFILE)
 
                 else:
 
                     for pat in observe:
                         for src in itertools.ifilterfalse(path.isdir, glob.glob(pat)):
+                            logger.info("Upload %s.", src)
                             s.copy_file(src)
 
-            except Exception as e:
-                output.write("{0}\n".format(e))
+            except Exception:
+                logger.exception("An error occurred when storing observed files.")
 
     finally:
 
         if shutdown:
             from common.gce import shutdown
+            logger.info("Now shuddown.")
             shutdown.shutdown()
 
 
 def main():
-
     parser = argparse.ArgumentParser()
-    parser.add_argument("--observe", nargs="*", help="File pattern to be stored.")
-    parser.add_argument("cmd", nargs="?", default="main.py", help="Command to be run.")
+    parser.add_argument("--observe", nargs="*", help="glob patterns of files to be stored.")
     parser.add_argument("--cwd", default="/data", help="Change working directory (default: /data).")
-    parser.add_argument("--output", default=sys.stdout, help="Store output into a file.")
     parser.add_argument("--shutdown", default=False, action="store_true",
                         help="Shutdown after the program ends (working only in Google Compute Engine)")
-    parser.add_argument("--zip", default=False, action="store_true", help="Zip observed file.")
-
+    parser.add_argument("--zip", default=False, action="store_true", help="Files specified in overve option will be zipped.")
+    parser.add_argument("--log", help="Config file of loggers.")
+    parser.add_argument("--stderr", default=sys.stdout, help="Specify where stderr should be stored (default: stdout).")
+    parser.add_argument("cmd", help="Command line to be run.")
 
     subparsers = parser.add_subparsers()
 
-    gcs_cmd = subparsers.add_parser("gcs", help="Storing outputs into GCS.")
+    gcs_cmd = subparsers.add_parser("gcs", help="Storing outputs into Google Cloud Storage.")
     gcs_cmd.add_argument("bucket", help="Bucket name.")
     gcs_cmd.add_argument("--prefix", help="Prefix of stored files.")
     gcs_cmd.set_defaults(storage=GCEStorage)
@@ -216,7 +229,10 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     try:
         main()
     except KeyboardInterrupt:
         sys.exit(1)
+    finally:
+        logging.shutdown()

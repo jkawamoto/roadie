@@ -55,23 +55,28 @@ $ docker run -d junpei/roadie "echo 'Hello world!'" gce "sample-bucket"
 The format of the script is as follows.
 
 ```
-usage: [-h] [--observe OBSERVE] [cmd] {gce,mongo} ...
+usage: entrypoint.py [-h] [--observe [OBSERVE [OBSERVE ...]]] [--cwd CWD]
+                     [--shutdown] [--zip] [--log LOG] [--stderr STDERR]
+                     cmd {gcs,mongo,local} ...
 
 positional arguments:
-  cmd                Command to be run.
+  cmd                   Command line to be run.
   {gcs,mongo,local}
-    gcs              Storing outputs into GCS.
-    mongo            Storing outputs into MongoDB.
-    local            Storing outputs into local filesystem.
+    gcs                 Storing outputs into Google Cloud Storage.
+    mongo               Storing outputs into MongoDB.
+    local               Storing outputs into local filesystem.
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --observe OBSERVE  File pattern to be stored.
-  --cwd CWD          Change working directory (default: /data).
-  --output OUTPUT    Store output into a file.
-  --shutdown         Shutdown after the program ends (working only in Google
-                     Compute Engine)
-  --zip              Zip observed file.
+  -h, --help            show this help message and exit
+  --observe [OBSERVE [OBSERVE ...]]
+                        glob patterns of files to be stored.
+  --cwd CWD             Change working directory (default: /data).
+  --shutdown            Shutdown after the program ends (working only in
+                        Google Compute Engine)
+  --zip                 Files specified in overve option will be zipped.
+  --log LOG             Config file of loggers.
+  --stderr STDERR       Specify where stderr should be stored (default:
+                        stdout).
 ```
 
 If your program will produce some files, specify file-name patterns at `--observe` argument to be stored.
@@ -82,39 +87,43 @@ UNIX based patterns such as `result-*.out`, etc. are supported.
 To store outputs to GCS, use `gcs` option.
 
 ```
-usage: [cmd] gcs [-h] [--mimetype MIMETYPE] [--prefix PREFIX] bucket
+usage: cmd gcs [-h] [--prefix PREFIX] bucket
 
 positional arguments:
-bucket               Bucket name.
+  bucket           Bucket name.
 
 optional arguments:
---mimetype MIMETYPE  MIME type of outputs.
---prefix PREFIX      Prefix of stored files.
+  -h, --help       show this help message and exit
+  --prefix PREFIX  Prefix of stored files.
 ```
 
 ### Store to MongoDB
 To store outputs to MongoDB, use `mongo` option.
 
 ```
-usage: [cmd] mongo [-h] [--host HOST] [--port PORT] db collection
+usage: cmd mongo [-h] [--host HOST] [--port PORT] db collection
 
 positional arguments:
-db           Database name.
-collection   Collection name.
+  db           Database name.
+  collection   Collection name.
 
 optional arguments:
---host HOST  Host name of MongoDB server.
---port PORT  Port number of MongoDB server.
+  -h, --help   show this help message and exit
+  --host HOST  Host name of MongoDB server.
+  --port PORT  Port number of MongoDB server.
 ```
 
 ### Store to local filesystem
 To store outputs to local, use `local` option.
 
 ```
-usage: [cmd] local [-h] dir
+usage: cmd local [-h] dir
 
 positional arguments:
-dir         Directory for storing output.
+  dir         Directory for storing output.
+
+optional arguments:
+  -h, --help  show this help message and exit
 ```
 
 License

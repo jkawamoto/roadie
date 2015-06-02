@@ -10,6 +10,7 @@
 #
 import argparse
 import json
+import logging
 import sys
 from apiclient import discovery
 from apiclient.http import MediaIoBaseUpload
@@ -22,7 +23,6 @@ from mimetypes import guess_type
 class Storage(object):
 
     def __init__(self, bucket):
-
         self._bucket = bucket
         self._sp = discovery.build("storage", "v1")
 
@@ -30,7 +30,6 @@ class Storage(object):
         self._update_auth()
 
     def get(self, path, metadata=False):
-
         if metadata:
             req = self._sp.objects().get(bucket=self._bucket, object=path)
         else:
@@ -46,7 +45,7 @@ class Storage(object):
                 return self.get(path, metadata)
 
             else:
-                sys.stderr.write("Error: " + path + "\n")
+                logging.exception("Error: %s", path)
                 raise e
 
     def upload(self, path, data, mimetype):
@@ -63,7 +62,7 @@ class Storage(object):
         return self._do_upload(path, media_body)
 
     def _update_auth(self):
-        print "Auth"
+        logging.info("Auth")
         self._auth = Auth()
 
     def _do_upload(self, path, media_body):
@@ -72,12 +71,12 @@ class Storage(object):
         req.headers["Authorization"] = self._auth.header_str()
         try:
             res = None
-            print "Start uploading " + path
+            logging.info("Start uploading %s", path)
             while res is None:
                 status, res = req.next_chunk()
                 if status:
-                    print "Uploaded %d%%." % int(status.progress() * 100)
-            print "Upload Complete!"
+                    logging.info("Uploaded %d%%.", int(status.progress() * 100))
+            logging.info("Upload Complete!")
 
             return res
 
