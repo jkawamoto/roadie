@@ -11,7 +11,8 @@ FROM ubuntu:latest
 MAINTAINER Junpei Kawamoto <kawamoto.junpei@gmail.com>
 
 # Install packages
-RUN apt-get update && apt-get install -y python-pip python-pymongo
+RUN apt-get update && apt-get install -y curl python-pymongo
+RUN curl https://bootstrap.pypa.io/get-pip.py | python
 RUN pip install --upgrade google-api-python-client
 
 # Copy entrypoint
