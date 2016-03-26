@@ -1,5 +1,8 @@
 Roadie
 ========
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+[![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
+
 A helper container to execute a program and store results.
 
 How to use
