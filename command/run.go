@@ -72,27 +72,6 @@ func CmdRun(c *cli.Context) error {
 	return nil
 }
 
-// Get the basename of a given filename.
-func basename(filename string) string {
-
-	ext := filepath.Ext(filename)
-	bodySize := len(filename) - len(ext)
-
-	return filepath.Base(filename[:bodySize])
-
-}
-
-// Create a valid URL for uploaing object.
-func createURL(bucket, group, name string) *url.URL {
-
-	return &url.URL{
-		Scheme: "gs",
-		Host:   bucket,
-		Path:   filepath.Join("/.roadie", group, name),
-	}
-
-}
-
 // Load a given script file and apply arguments.
 func loadScript(filename string, args []string) (*script, error) {
 
@@ -174,18 +153,18 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 	var location *url.URL
 	if info.IsDir() {
 
-		filename := basename(s.filename) + time.Now().Format("20060102150405") + ".tar.gz"
+		filename := util.Basename(s.filename) + time.Now().Format("20060102150405") + ".tar.gz"
 		arcPath = filepath.Join(os.TempDir(), filename)
 		log.Printf("Create an archived file %s", arcPath)
 		if err := util.Archive(path, arcPath, nil); err != nil {
 			return err
 		}
-		location = createURL(bucket, "source", filename)
+		location = util.CreateURL(bucket, "source", filename)
 
 	} else {
 
 		arcPath = path
-		location = createURL(bucket, "source", basename(path))
+		location = util.CreateURL(bucket, "source", util.Basename(path))
 
 	}
 
@@ -205,8 +184,8 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 
 func (s *script) setResult(bucket string) {
 
-	dir := basename(s.filename) + time.Now().Format("20060102150405")
-	location := createURL(bucket, "result", dir)
+	dir := util.Basename(s.filename) + time.Now().Format("20060102150405")
+	location := util.CreateURL(bucket, "result", dir)
 	s.body["result"] = location
 
 }
