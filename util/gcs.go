@@ -11,7 +11,7 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
-const scope = storage.DevstorageFullControlScope
+const gcsScope = storage.DevstorageFullControlScope
 
 // Storage object.
 type Storage struct {
@@ -20,12 +20,12 @@ type Storage struct {
 	service    *storage.Service
 }
 
-// New creates a new Storage object named a given bucket name.
+// NewStorage creates a new Storage object named a given bucket name.
 // If the given bucket does not exsits, it will be created.
-func New(project, bucket string) (*Storage, error) {
+func NewStorage(project, bucket string) (*Storage, error) {
 
 	// Create a client.
-	client, err := google.DefaultClient(context.Background(), scope)
+	client, err := google.DefaultClient(context.Background(), gcsScope)
 	if err != nil {
 		return nil, err
 	}

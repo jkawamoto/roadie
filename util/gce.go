@@ -6,8 +6,9 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
-const scope = compute.ComputeScope
+const gceScope = compute.CloudPlatformScope
 
+// InstanceBuilder maintains configurations to create new instances.
 type InstanceBuilder struct {
 	Project     string
 	Zone        string
@@ -15,11 +16,12 @@ type InstanceBuilder struct {
 	service     *compute.Service
 }
 
-// NewInstanceManager creates a new instance manager.
+// NewInstanceBuilder creates a new instance builder associated with
+// a given project.
 func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
 
 	// Create a client.
-	client, err := google.DefaultClient(context.Background(), scope)
+	client, err := google.DefaultClient(context.Background(), gceScope)
 	if err != nil {
 		return nil, err
 	}
@@ -74,61 +76,10 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 
 }
 
-func (b *InstanceBuilder) CreateInstance(name string) (error, error) {
+// CreateInstance creates a new instance based on the bilder's configuration.
+func (b *InstanceBuilder) CreateInstance(name string) error {
 
-	// POST https://www.googleapis.com/compute/v1/projects/jkawamoto-ppls/zones/us-central1-b/instances
-	// {
-	//   "name": "instance-1",
-	//   "zone": "projects/jkawamoto-ppls/zones/us-central1-b",
-	//   "machineType": "projects/jkawamoto-ppls/zones/us-central1-b/machineTypes/n1-standard-2",
-	//   "metadata": {
-	//     "items": []
-	//   },
-	//   "tags": {
-	//     "items": []
-	//   },
-	//   "disks": [
-	//     {
-	//       "type": "PERSISTENT",
-	//       "boot": true,
-	//       "mode": "READ_WRITE",
-	//       "autoDelete": true,
-	//       "deviceName": "instance-1",
-	//       "initializeParams": {
-	//         "sourceImage": "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-	//         "diskType": "projects/jkawamoto-ppls/zones/us-central1-b/diskTypes/pd-standard",
-	//         "diskSizeGb": "9"
-	//       }
-	//     }
-	//   ],
-	//   "canIpForward": false,
-	//   "networkInterfaces": [
-	//     {
-	//       "network": "projects/jkawamoto-ppls/global/networks/default",
-	//       "accessConfigs": [
-	//         {
-	//           "name": "External NAT",
-	//           "type": "ONE_TO_ONE_NAT"
-	//         }
-	//       ]
-	//     }
-	//   ],
-	//   "description": "",
-	//   "scheduling": {
-	//     "preemptible": false,
-	//     "onHostMaintenance": "MIGRATE",
-	//     "automaticRestart": true
-	//   },
-	//   "serviceAccounts": [
-	//     {
-	//       "email": "default",
-	//       "scopes": [
-	//         "https://www.googleapis.com/auth/cloud-platform"
-	//       ]
-	//     }
-	//   ]
-	// }
-
+	// TODO: Add meta data.
 	bluepring := compute.Instance{
 		Name:        name,
 		Zone:        b.normalizedZone(),
@@ -149,7 +100,7 @@ func (b *InstanceBuilder) CreateInstance(name string) (error, error) {
 		CanIpForward: false,
 		NetworkInterfaces: []*compute.NetworkInterface{
 			&compute.NetworkInterface{
-				Network: "projects/jkawamoto-ppls/global/networks/default",
+				Network: "projects/" + b.Project + "/global/networks/default",
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
 						Name: "External NAT",
@@ -173,29 +124,8 @@ func (b *InstanceBuilder) CreateInstance(name string) (error, error) {
 		},
 	}
 
-	// gcloud compute --project "{project}" instances create "{instance_name}" \
-	//     --zone us-central1-b --image coreos --metadata exec="{exe}" \
-	//     --metadata-from-file startup-script={startup} \
-	//     --machine-type "n1-standard-2" \
-	//
-
-	b.service.Instances.Insert(b.Project, b.Zone, &bluepring)
-	// if _, err := service.Buckets.Get(bucket).Do(); err != nil {
-	//
-	// 	if res, err := service.Buckets.Insert(project, &storage.Bucket{Name: bucket}).Do(); err == nil {
-	// 		log.Printf("Bucket %s was created at %s", res.Name, res.SelfLink)
-	// 	} else {
-	// 		return nil, err
-	// 	}
-	//
-	// }
-	//
-	// return &Storage{
-	// 	BucketName: bucket,
-	// 	client:     client,
-	// 	service:    service,
-	// }, nil
-	return nil, nil
+	_, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
+	return err
 
 }
 

@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-func TestNew(t *testing.T) {
+func TestNewStorage(t *testing.T) {
 
-	_, err := New("jkawamoto-ppls", "jkawamoto-ppls")
+	_, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 
 func TestUpload(t *testing.T) {
 
-	s, err := New("jkawamoto-ppls", "jkawamoto-ppls")
+	s, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
 	if err != nil {
 		t.Error(err.Error())
 	}
