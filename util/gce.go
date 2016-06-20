@@ -1,8 +1,6 @@
 package util
 
 import (
-	"strings"
-
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
@@ -11,9 +9,10 @@ import (
 const scope = compute.ComputeScope
 
 type InstanceBuilder struct {
-	Project string
-	Zone    string
-	service *compute.Service
+	Project     string
+	Zone        string
+	MachineType string
+	service     *compute.Service
 }
 
 // NewInstanceManager creates a new instance manager.
@@ -32,22 +31,12 @@ func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
 	}
 
 	res := &InstanceBuilder{
-		Project: project,
-		service: service,
+		Project:     project,
+		Zone:        "us-central1-b",
+		MachineType: "n1-standard-1",
+		service:     service,
 	}
-	res.SetZone("us-central1-b")
 	return res, nil
-
-}
-
-// SetZone sets a given zone to the builder object.
-func (b *InstanceBuilder) SetZone(zone string) {
-
-	if strings.HasPrefix(zone, "projects") {
-		b.Zone = zone
-	} else {
-		b.Zone = "projects/" + b.Project + "/zones/" + zone
-	}
 
 }
 
@@ -68,19 +57,24 @@ func (b *InstanceBuilder) AvailableZones() ([]string, error) {
 
 }
 
-func NewInstance(project, zone string) (error, error) {
+// AvailableMachineTypes returns a slice of machie type names.
+func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 
-	// Create a client.
-	client, err := google.DefaultClient(context.Background(), scope)
+	res, err := b.service.MachineTypes.List(b.Project, "us-central1-b").Do()
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a servicer.
-	service, err := compute.New(client)
-	if err != nil {
-		return nil, err
+	types := make([]string, len(res.Items))
+	for i, v := range res.Items {
+		types[i] = v.Name
 	}
+
+	return types, nil
+
+}
+
+func (b *InstanceBuilder) CreateInstance(name string) (error, error) {
 
 	// POST https://www.googleapis.com/compute/v1/projects/jkawamoto-ppls/zones/us-central1-b/instances
 	// {
@@ -136,9 +130,9 @@ func NewInstance(project, zone string) (error, error) {
 	// }
 
 	bluepring := compute.Instance{
-		Name:        "one-1",
-		Zone:        "projects/jkawamoto-ppls/zones/us-central1-b",
-		MachineType: "projects/jkawamoto-ppls/zones/us-central1-b/machineTypes/n1-standard-2",
+		Name:        name,
+		Zone:        b.normalizedZone(),
+		MachineType: b.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Type:       "PERSISTENT",
@@ -147,7 +141,7 @@ func NewInstance(project, zone string) (error, error) {
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-					DiskType:    "projects/jkawamoto-ppls/zones/us-central1-b/diskTypes/pd-standard",
+					DiskType:    b.normalizedZone() + "/diskTypes/pd-standard",
 					DiskSizeGb:  9,
 				},
 			},
@@ -185,7 +179,7 @@ func NewInstance(project, zone string) (error, error) {
 	//     --machine-type "n1-standard-2" \
 	//
 
-	service.Instances.Insert(project, zone, &bluepring)
+	b.service.Instances.Insert(b.Project, b.Zone, &bluepring)
 	// if _, err := service.Buckets.Get(bucket).Do(); err != nil {
 	//
 	// 	if res, err := service.Buckets.Insert(project, &storage.Bucket{Name: bucket}).Do(); err == nil {
@@ -203,4 +197,14 @@ func NewInstance(project, zone string) (error, error) {
 	// }, nil
 	return nil, nil
 
+}
+
+// normalizedZone returns the normalized zone string of Zone property.
+func (b *InstanceBuilder) normalizedZone() string {
+	return "projects/" + b.Project + "/zones/" + b.Zone
+}
+
+// normalizedMachineType returns the normalized instance type of MachineType property.
+func (b *InstanceBuilder) normalizedMachineType() string {
+	return b.normalizedZone() + "/machineTypes/" + b.MachineType
 }

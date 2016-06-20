@@ -20,18 +20,48 @@ func TestAvailableZones(t *testing.T) {
 
 }
 
-func TestSetZone(t *testing.T) {
+func TestAvailableMachineTypes(t *testing.T) {
 
 	b, err := NewInstanceBuilder("jkawamoto-ppls")
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	for _, v := range []string{"us-central1-c", "projects/jkawamoto-ppls/zones/us-central1-c"} {
-		b.SetZone(v)
-		if b.Zone != "projects/jkawamoto-ppls/zones/us-central1-c" {
-			t.Errorf("Zone is not correct: %s", b.Zone)
-		}
+	types, err := b.AvailableMachineTypes()
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	for _, v := range types {
+		t.Logf("Available machine type: %s", v)
+	}
+
+}
+
+func TestNormalizedZone(t *testing.T) {
+
+	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	b.Zone = "us-central1-c"
+	if b.normalizedZone() != "projects/jkawamoto-ppls/zones/us-central1-c" {
+		t.Errorf("Zone is not correct: %s", b.Zone)
+	}
+
+}
+
+func TestNormalizedMachineType(t *testing.T) {
+
+	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	b.MachineType = "n1-standard-2"
+	if b.normalizedMachineType() != "projects/jkawamoto-ppls/zones/us-central1-b/machineTypes/n1-standard-2" {
+		t.Errorf("Zone is not correct: %s", b.Zone)
 	}
 
 }
