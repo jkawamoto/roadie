@@ -1,6 +1,10 @@
 package util
 
 import (
+	"log"
+
+	"github.com/ttacon/chalk"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
@@ -77,7 +81,7 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string) error {
+func (b *InstanceBuilder) CreateInstance(name string) (err error) {
 
 	// TODO: Add meta data.
 	bluepring := compute.Instance{
@@ -124,9 +128,31 @@ func (b *InstanceBuilder) CreateInstance(name string) error {
 		},
 	}
 
-	_, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
-	return err
+	res, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
+	if err == nil {
+		if res.StatusMessage != "" {
+			log.Println(res.StatusMessage)
+		}
+		for _, v := range res.Warnings {
+			log.Println(chalk.Red.Color(v.Message))
+		}
+	}
+	return
 
+}
+
+// StopInstance stops a given named instance.
+func (b *InstanceBuilder) StopInstance(name string) (err error) {
+	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
+	if err == nil {
+		if res.StatusMessage != "" {
+			log.Println(res.StatusMessage)
+		}
+		for _, v := range res.Warnings {
+			log.Println(chalk.Red.Color(v.Message))
+		}
+	}
+	return
 }
 
 // normalizedZone returns the normalized zone string of Zone property.

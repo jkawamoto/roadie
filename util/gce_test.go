@@ -2,6 +2,23 @@ package util
 
 import "testing"
 
+// func TestCreateInstance(t *testing.T) {
+//
+// 	b, err := NewInstanceBuilder("jkawamoto-ppls")
+// 	if err != nil {
+// 		t.Error(err.Error())
+// 	}
+//
+// 	if err := b.CreateInstance("test-instance"); err != nil {
+// 		t.Error(err.Error())
+// 	}
+//
+// 	if err := b.StopInstance("test-instance"); err != nil {
+// 		t.Error(err.Error())
+// 	}
+//
+// }
+
 func TestAvailableZones(t *testing.T) {
 
 	b, err := NewInstanceBuilder("jkawamoto-ppls")
