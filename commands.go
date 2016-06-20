@@ -34,6 +34,10 @@ var Commands = []cli.Command{
 				Usage: "Local path to be run.",
 			},
 			cli.StringFlag{
+				Name:  "project",
+				Usage: "Specify a project name.",
+			},
+			cli.StringFlag{
 				Name:  "bucket",
 				Usage: "Specify a bucket name.",
 			},
