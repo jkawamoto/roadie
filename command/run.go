@@ -18,8 +18,9 @@ import (
 )
 
 type script struct {
-	filename string
-	body     map[interface{}]interface{}
+	filename     string
+	instanceName string
+	body         map[interface{}]interface{}
 }
 
 const (
@@ -36,6 +37,11 @@ func CmdRun(c *cli.Context) error {
 
 	yamlFile := c.Args()[0]
 
+	conf := GetConfig(c)
+	if conf.GCP.Project == "" {
+		return cli.NewExitError("Project must be given", 2)
+	}
+
 	s, err := loadScript(yamlFile, c.StringSlice("e"))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -48,28 +54,34 @@ func CmdRun(c *cli.Context) error {
 		s.setURLSource(v)
 	} else if path := c.String("local"); path != "" {
 
-		project := c.String("project")
-		bucket := c.String("bucket")
-		if project == "" || bucket == "" {
-			return cli.NewExitError("project and bucket flags are required when you use --local", 2)
+		if conf.GCP.Bucket == "" {
+			return cli.NewExitError("Bucket name is required when you use --local", 2)
 		}
-		s.setLocalSource(path, project, bucket)
-
+		if err := s.setLocalSource(path, conf.GCP.Project, conf.GCP.Bucket); err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
 	}
 
 	// Check result section.
 	if _, ok := s.body["result"]; !ok {
-		bucket := c.String("bucket")
-		if bucket == "" {
-			return cli.NewExitError("bucket flags is required or you need to add result section to "+yamlFile, 2)
+		if conf.GCP.Bucket == "" {
+			return cli.NewExitError("Bucket name is required or you need to add result section to "+yamlFile, 2)
 		}
-		s.setResult(bucket)
+		s.setResult(conf.GCP.Bucket)
 	}
 
 	// debug:
 	fmt.Println(s.String())
 
+	// Run
+	// builder := util.NewInstanceBuilder(project)
+	// builder.CreateInstance(name, metadata)
+
 	return nil
+}
+
+func getConfig(c *cli.Context) {
+
 }
 
 // Load a given script file and apply arguments.
@@ -110,8 +122,9 @@ func loadScript(filename string, args []string) (*script, error) {
 	}
 
 	return &script{
-		filename: filename,
-		body:     body,
+		filename:     filename,
+		instanceName: util.Basename(filename) + time.Now().Format("20060102150405"),
+		body:         body,
 	}, nil
 
 }
@@ -153,7 +166,7 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 	var location *url.URL
 	if info.IsDir() {
 
-		filename := util.Basename(s.filename) + time.Now().Format("20060102150405") + ".tar.gz"
+		filename := s.instanceName + ".tar.gz"
 		arcPath = filepath.Join(os.TempDir(), filename)
 		log.Printf("Create an archived file %s", arcPath)
 		if err := util.Archive(path, arcPath, nil); err != nil {
@@ -182,10 +195,10 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 
 }
 
+// Set result section with a given bucket name.
 func (s *script) setResult(bucket string) {
 
-	dir := util.Basename(s.filename) + time.Now().Format("20060102150405")
-	location := util.CreateURL(bucket, "result", dir)
+	location := util.CreateURL(bucket, "result", s.instanceName)
 	s.body["result"] = location
 
 }
