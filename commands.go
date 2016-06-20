@@ -33,6 +33,10 @@ var Commands = []cli.Command{
 				Name:  "local",
 				Usage: "Local path to be run.",
 			},
+			cli.StringFlag{
+				Name:  "bucket",
+				Usage: "Specify a bucket name.",
+			},
 			cli.StringSliceFlag{
 				Name:  "e",
 				Usage: "key=value to be set in place holders of the script.",
