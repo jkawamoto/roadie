@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,9 +21,6 @@ type config map[interface{}]interface{}
 
 const (
 	source = "source"
-	git    = "git"
-	url    = "url"
-	local  = "local"
 	result = "result"
 )
 
@@ -42,7 +40,7 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	// Prepare source section.
-	if v := c.String(git); v != "" {
+	if v := c.String("git"); v != "" {
 
 		if _, ok := conf[source]; ok {
 			log.Printf(
@@ -53,7 +51,7 @@ func CmdRun(c *cli.Context) error {
 		}
 		conf[source] = v
 
-	} else if v := c.String(url); v != "" {
+	} else if v := c.String("url"); v != "" {
 
 		if _, ok := conf[source]; ok {
 			log.Printf(
@@ -65,7 +63,7 @@ func CmdRun(c *cli.Context) error {
 		}
 		conf[source] = v
 
-	} else if path := c.String(local); path != "" {
+	} else if path := c.String("local"); path != "" {
 
 		if _, ok := conf[source]; ok {
 			log.Printf(
@@ -74,34 +72,47 @@ func CmdRun(c *cli.Context) error {
 			)
 		}
 
-		if info, notExists := os.Stat(path); notExists != nil {
+		info, notExists := os.Stat(path)
+		if notExists != nil {
 			// Target path does not exits.
 			return cli.NewExitError(notExists.Error(), 2)
 
-		} else if info.IsDir() {
+		}
+
+		// TODO: Check bucker is specified.
+		bucket := c.String("bucket")
+		if bucket == "" {
+			return cli.NewExitError("bucket flag is required to use local files as the source code.", 2)
+		}
+
+		var arcPath string
+		var location *url.URL
+		if info.IsDir() {
 
 			filename := basename(yamlFile) + time.Now().Format("20060102150405") + ".tar.gz"
-			arcPath := filepath.Join(os.TempDir(), filename)
+			arcPath = filepath.Join(os.TempDir(), filename)
 			log.Printf("Create an archived file %s", arcPath)
 			util.Archive(path, arcPath, nil)
 
-			url := "gs://" + c.String("bucket") + "/.roadie/source/" + filename
-			log.Printf("Uploading to %s", url)
-
-			// TODO: Upload the archive file to url.
-
-			conf[source] = url
+			location = createURL(bucket, filename)
 
 		} else {
 
-			url := "gs://" + c.String("bucket") + "/.roadie/source/" + basename(path)
-			log.Printf("Uploading to %s", url)
-
-			// TODO: Upload the file to url.
-
-			conf[source] = url
+			arcPath = path
+			location = createURL(bucket, basename(path))
 
 		}
+
+		// TODO: Upload the archive file to url.
+		log.Printf("Uploading to %s", location)
+		storage, gcsErr := util.NewStorage(c.String("project"), c.String("bucket"))
+		if gcsErr != nil {
+			return cli.NewExitError(gcsErr.Error(), 2)
+		}
+
+		storage.Upload(arcPath, location)
+
+		conf[source] = location.String()
 
 	} else {
 		// TODO: if no source flag given, what shoud it do?
@@ -182,5 +193,16 @@ func basename(filename string) string {
 	bodySize := len(filename) - len(ext)
 
 	return filepath.Base(filename[:bodySize])
+
+}
+
+// Create a valid URL for uploaing object.
+func createURL(bucket, name string) *url.URL {
+
+	return &url.URL{
+		Scheme: "gs",
+		Host:   bucket,
+		Path:   filepath.Join("/.roadie/source/", name),
+	}
 
 }
