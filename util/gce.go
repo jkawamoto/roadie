@@ -20,6 +20,12 @@ type InstanceBuilder struct {
 	service     *compute.Service
 }
 
+// MetadataItem has Key and Value properties.
+type MetadataItem struct {
+	Key   string
+	Value *string
+}
+
 // NewInstanceBuilder creates a new instance builder associated with
 // a given project.
 func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
@@ -81,9 +87,16 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string) (err error) {
+func (b *InstanceBuilder) CreateInstance(name string, metadata []MetadataItem) (err error) {
 
-	// TODO: Add meta data.
+	matadataItems := make([]*compute.MetadataItems, len(metadata))
+	for i, v := range metadata {
+		matadataItems[i] = &compute.MetadataItems{
+			Key:   v.Key,
+			Value: v.Value,
+		}
+	}
+
 	bluepring := compute.Instance{
 		Name:        name,
 		Zone:        b.normalizedZone(),
@@ -125,6 +138,9 @@ func (b *InstanceBuilder) CreateInstance(name string) (err error) {
 					"https://www.googleapis.com/auth/cloud-platform",
 				},
 			},
+		},
+		Metadata: &compute.Metadata{
+			Items: matadataItems,
 		},
 	}
 
