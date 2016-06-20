@@ -106,7 +106,7 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 
 		filename := s.instanceName + ".tar.gz"
 		arcPath = filepath.Join(os.TempDir(), filename)
-		log.Printf("Create an archived file %s", arcPath)
+		log.Printf("Creating an archived file %s", arcPath)
 		if err := util.Archive(path, arcPath, nil); err != nil {
 			return err
 		}
