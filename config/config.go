@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/naoina/toml"
@@ -18,24 +19,29 @@ type Config struct {
 }
 
 // LoadConfig loads config from a given file.
-func LoadConfig(filename string) (*Config, error) {
+func LoadConfig(filename string) *Config {
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
+	if f, err := os.Open(filename); err == nil {
+		defer f.Close()
+
+		if buf, err := ioutil.ReadAll(f); err == nil {
+
+			var config Config
+			if err := toml.Unmarshal(buf, &config); err == nil {
+				return &config
+			}
+
+			log.Println(err.Error())
+
+		} else {
+			log.Println(err.Error())
+		}
+
+	} else {
+		log.Println(err.Error())
 	}
-	defer f.Close()
 
-	buf, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Config
-	if err := toml.Unmarshal(buf, &config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+	log.Println("Cannot read default configuration: .roadie")
+	return &Config{}
 
 }
