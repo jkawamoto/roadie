@@ -27,6 +27,9 @@ func TestArchive(t *testing.T) {
 	}
 
 	os.Chdir(temp)
+	defer func() {
+		os.Chdir(root)
+	}()
 	exec.Command("tar", "-zxvf", archiveFile)
 
 	if err := filepath.Walk(path.Join(root, ".."), checkExistence(temp)); err != nil {
