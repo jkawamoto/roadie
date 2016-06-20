@@ -23,7 +23,7 @@ type InstanceBuilder struct {
 // MetadataItem has Key and Value properties.
 type MetadataItem struct {
 	Key   string
-	Value *string
+	Value string
 }
 
 // NewInstanceBuilder creates a new instance builder associated with
@@ -87,13 +87,13 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string, metadata []MetadataItem) (err error) {
+func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem) (err error) {
 
 	matadataItems := make([]*compute.MetadataItems, len(metadata))
 	for i, v := range metadata {
 		matadataItems[i] = &compute.MetadataItems{
 			Key:   v.Key,
-			Value: v.Value,
+			Value: &v.Value,
 		}
 	}
 
