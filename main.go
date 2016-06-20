@@ -21,7 +21,7 @@ func main() {
 	app.CommandNotFound = CommandNotFound
 
 	app.Metadata = map[string]interface{}{
-		"config": config.LoadConfig("./roadie"),
+		"config": config.LoadConfig("./.roadie"),
 	}
 
 	app.Run(os.Args)
