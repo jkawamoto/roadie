@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
+	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -30,8 +33,10 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError("No configuration file is given", 1)
 	}
 
+	yamlFile := c.Args()[0]
+
 	conf := make(config)
-	err := loadScript(c.Args()[0], c.StringSlice("e"), &conf)
+	err := loadScript(yamlFile, c.StringSlice("e"), &conf)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -42,7 +47,7 @@ func CmdRun(c *cli.Context) error {
 		if _, ok := conf[source]; ok {
 			log.Printf(
 				chalk.Red.Color("%s has source section but a Git repository is given. The source section will be overwritten to '%s'."),
-				c.Args()[0],
+				yamlFile,
 				v,
 			)
 		}
@@ -53,7 +58,7 @@ func CmdRun(c *cli.Context) error {
 		if _, ok := conf[source]; ok {
 			log.Printf(
 				chalk.Red.Color("%s has source section but a repository URL is given. The source section will be overwritten to '%s'."),
-				c.Args()[0],
+				yamlFile,
 				v,
 			)
 
@@ -65,24 +70,38 @@ func CmdRun(c *cli.Context) error {
 		if _, ok := conf[source]; ok {
 			log.Printf(
 				chalk.Red.Color("%s has source section but a path for source codes is given. The source section will be overwritten."),
-				c.Args()[0],
+				yamlFile,
 			)
 		}
 
 		if info, notExists := os.Stat(path); notExists != nil {
-			// TODO: File doesn't exist.
+			// Target path does not exits.
+			return cli.NewExitError(notExists.Error(), 2)
+
 		} else if info.IsDir() {
-			// TODO: Make a tar ball and upload it to a bucket.
+
+			filename := basename(yamlFile) + time.Now().Format("20060102150405") + ".tar.gz"
+			arcPath := filepath.Join(os.TempDir(), filename)
+			log.Printf("Create an archived file %s", arcPath)
+			util.Archive(path, arcPath, nil)
+
+			url := "gs://" + c.String("bucket") + "/.roadie/source/" + filename
+			log.Printf("Uploading to %s", url)
+
+			// TODO: Upload the archive file to url.
+
+			conf[source] = url
+
 		} else {
-			// TODO: If v is a already archived file, just upload it.
-			if !strings.HasSuffix(path, ".zip") && !strings.HasSuffix(path, ".tar") && !strings.HasSuffix(path, ".tar.gz") {
-				// TODO: Warning.
-			}
+
+			url := "gs://" + c.String("bucket") + "/.roadie/source/" + basename(path)
+			log.Printf("Uploading to %s", url)
+
+			// TODO: Upload the file to url.
+
+			conf[source] = url
 
 		}
-
-		// TODO: path must be updated to a valid gs url.
-		conf[source] = path
 
 	} else {
 		// TODO: if no source flag given, what shoud it do?
@@ -156,16 +175,12 @@ func checkResultSection(c *cli.Context, conf *config) error {
 
 }
 
-// Return a unique file name to be used for uploading file.
-func getUniqueFilename() string {
+// Get the basename of a given filename.
+func basename(filename string) string {
 
-	if dir, err := os.Getwd(); err != nil {
-		return "hoge"
+	ext := filepath.Ext(filename)
+	bodySize := len(filename) - len(ext)
 
-	} else {
-
-		return dir
-
-	}
+	return filepath.Base(filename[:bodySize])
 
 }
