@@ -26,7 +26,7 @@ func TestBasename(t *testing.T) {
 
 func TestCreateURL(t *testing.T) {
 
-	u := createURL("bucket_name", "/path/to/file")
+	u := createURL("bucket_name", "source", "/path/to/file")
 	if u.Scheme != "gs" {
 		t.Errorf("Scheme is not correct: %s", u.Scheme)
 	}

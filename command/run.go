@@ -59,13 +59,11 @@ func CmdRun(c *cli.Context) error {
 
 	// Check result section.
 	if _, ok := s.body["result"]; !ok {
-
-		project := c.String("project")
 		bucket := c.String("bucket")
-		if project == "" || bucket == "" {
-			// return cli.NewExitError("project and bucket flags are required when you use --local", 2)
+		if bucket == "" {
+			return cli.NewExitError("bucket flags is required or you need to add result section to "+yamlFile, 2)
 		}
-
+		s.setResult(bucket)
 	}
 
 	// debug:
@@ -73,24 +71,6 @@ func CmdRun(c *cli.Context) error {
 
 	return nil
 }
-
-// checkResultSection validates config has result section.
-// func checkResultSection(c *cli.Context, conf *config) error {
-//
-// 	// if _, ok := conf[result]; !ok {
-// 	//
-// 	// 	// if c.Bool("quiet") {
-// 	// 	// 	return cli.NewExitError("Configuration doesn't have result section.", 3)
-// 	// 	// } else {
-// 	// 	//
-// 	// 	// }
-// 	// 	return cli.NewExitError("Configuration doesn't have result section.", 3)
-// 	//
-// 	// }
-//
-// 	return nil
-//
-// }
 
 // Get the basename of a given filename.
 func basename(filename string) string {
@@ -103,12 +83,12 @@ func basename(filename string) string {
 }
 
 // Create a valid URL for uploaing object.
-func createURL(bucket, name string) *url.URL {
+func createURL(bucket, group, name string) *url.URL {
 
 	return &url.URL{
 		Scheme: "gs",
 		Host:   bucket,
-		Path:   filepath.Join("/.roadie/source/", name),
+		Path:   filepath.Join("/.roadie", group, name),
 	}
 
 }
@@ -200,12 +180,12 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 		if err := util.Archive(path, arcPath, nil); err != nil {
 			return err
 		}
-		location = createURL(bucket, filename)
+		location = createURL(bucket, "source", filename)
 
 	} else {
 
 		arcPath = path
-		location = createURL(bucket, basename(path))
+		location = createURL(bucket, "source", basename(path))
 
 	}
 
@@ -220,6 +200,14 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 
 	s.body[source] = location.String()
 	return nil
+
+}
+
+func (s *script) setResult(bucket string) {
+
+	dir := basename(s.filename) + time.Now().Format("20060102150405")
+	location := createURL(bucket, "result", dir)
+	s.body["result"] = location
 
 }
 
