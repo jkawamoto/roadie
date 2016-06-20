@@ -35,16 +35,21 @@ var Commands = []cli.Command{
 			},
 			cli.StringFlag{
 				Name:  "project",
-				Usage: "Specify a project name.",
+				Usage: "Project name.",
 			},
 			cli.StringFlag{
 				Name:  "bucket",
-				Usage: "Specify a bucket name.",
+				Usage: "Bucket name.",
+			},
+			cli.StringFlag{
+				Name:  "name",
+				Usage: "Instance name.",
 			},
 			cli.StringSliceFlag{
 				Name:  "e",
 				Usage: "key=value to be set in place holders of the script.",
 			},
+			// TODO: Add disk size option
 		},
 	},
 	{

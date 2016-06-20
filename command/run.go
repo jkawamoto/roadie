@@ -1,7 +1,7 @@
 package command
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/urfave/cli"
@@ -30,6 +30,9 @@ func CmdRun(c *cli.Context) error {
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
+	if v := c.String("name"); v != "" {
+		s.instanceName = v
+	}
 
 	// Prepare source section.
 	if v := c.String("git"); v != "" {
@@ -37,7 +40,6 @@ func CmdRun(c *cli.Context) error {
 	} else if v := c.String("url"); v != "" {
 		s.setURLSource(v)
 	} else if path := c.String("local"); path != "" {
-
 		if conf.GCP.Bucket == "" {
 			return cli.NewExitError("Bucket name is required when you use --local", 2)
 		}
@@ -55,18 +57,21 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	// debug:
-	fmt.Println(s.String())
+	log.Printf("Script to be run is\n%s", s.String())
 
 	// Run
 	startup, err := util.Asset("assets/startup.sh")
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		log.Fatal("Startup script was not found.")
+		return cli.NewExitError(err.Error(), 1)
 	}
 
 	builder, err := util.NewInstanceBuilder(conf.GCP.Project)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
+
+	log.Printf("Creating an instance named %s.", s.instanceName)
 	builder.CreateInstance(s.instanceName, []*util.MetadataItem{
 		&util.MetadataItem{
 			Key:   "startup-script",
