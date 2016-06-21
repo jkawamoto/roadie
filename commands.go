@@ -8,17 +8,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-var GlobalFlags = []cli.Flag{
-	cli.BoolFlag{
-		Name:  "quiet, q",
-		Usage: "If set, no ask to user.",
-	},
-}
+// GlobalFlags manages golabal flags.
+var GlobalFlags = []cli.Flag{}
 
+// Commands manage sub commands.
 var Commands = []cli.Command{
 	{
 		Name:   "run",
-		Usage:  "",
+		Usage:  "Run a script on Google Cloud Platform.",
 		Action: command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -65,10 +62,64 @@ var Commands = []cli.Command{
 		Flags:  []cli.Flag{},
 	},
 	{
-		Name:   "config",
-		Usage:  "",
-		Action: command.CmdConfig,
+		Name:  "config",
+		Usage: "Show and upate configuration.",
+		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
+			"You can also update configurations without this command by editing that file.",
+		Action: cli.ShowSubcommandHelp,
 		Flags:  []cli.Flag{},
+		Subcommands: cli.Commands{
+			cli.Command{
+				Name:        "project",
+				Usage:       "show and update project name of Google Cloud Platform.",
+				Description: "Set the given name as the project name when <project name> is given. Otherwise show the current project name.",
+				ArgsUsage:   "[<project name>]",
+				Action:      command.CmdConfigProject,
+			},
+			cli.Command{
+				Name:   "type",
+				Usage:  "show and update machine type used to run scripts.",
+				Action: command.CmdConfigType,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					cli.Command{
+						Name:        "set",
+						Usage:       "set machine type.",
+						Description: "Set a new machine type. Available machine types are shown in 'list' command.",
+						ArgsUsage:   "<machine type>",
+						Action:      command.CmdConfigTypeSet,
+					},
+					cli.Command{
+						Name:  "list",
+						Usage: "show available machine types.",
+						Description: "Show a list of available machine types for the current project. " +
+							"To receive available machine types, project name must be set. See 'roadie config project'. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigTypeList,
+					},
+					cli.Command{
+						Name:  "show",
+						Usage: "show current machine type.",
+						Description: "Show current machine type. If it is not set, show default machine type. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigTypeShow,
+					},
+				},
+			},
+			cli.Command{
+				Name: "zone",
+			},
+			cli.Command{
+				Name: "bucket",
+			},
+		},
 	},
 }
 

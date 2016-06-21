@@ -17,7 +17,7 @@ func CmdRun(c *cli.Context) error {
 	yamlFile := c.Args()[0]
 
 	conf := GetConfig(c)
-	if conf.GCP.Project == "" {
+	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
 
@@ -35,20 +35,20 @@ func CmdRun(c *cli.Context) error {
 	} else if v := c.String("url"); v != "" {
 		s.setURLSource(v)
 	} else if path := c.String("local"); path != "" {
-		if conf.GCP.Bucket == "" {
+		if conf.Gcp.Bucket == "" {
 			return cli.NewExitError("Bucket name is required when you use --local", 2)
 		}
-		if err := s.setLocalSource(path, conf.GCP.Project, conf.GCP.Bucket); err != nil {
+		if err := s.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 	}
 
 	// Check result section.
 	if s.body.Result == "" {
-		if conf.GCP.Bucket == "" {
+		if conf.Gcp.Bucket == "" {
 			return cli.NewExitError("Bucket name is required or you need to add result section to "+yamlFile, 2)
 		}
-		s.setResult(conf.GCP.Bucket)
+		s.setResult(conf.Gcp.Bucket)
 	}
 
 	// debug:
@@ -61,7 +61,7 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	builder, err := util.NewInstanceBuilder(conf.GCP.Project)
+	builder, err := util.NewInstanceBuilder(conf.Gcp.Project)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}

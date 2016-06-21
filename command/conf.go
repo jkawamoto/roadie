@@ -10,10 +10,10 @@ func GetConfig(c *cli.Context) *config.Config {
 
 	conf, _ := c.App.Metadata["config"].(*config.Config)
 	if v := c.String("project"); v != "" {
-		conf.GCP.Project = v
+		conf.Gcp.Project = v
 	}
 	if v := c.String("bucket"); v != "" {
-		conf.GCP.Bucket = v
+		conf.Gcp.Bucket = v
 	}
 
 	return conf
