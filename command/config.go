@@ -11,39 +11,45 @@ import (
 
 // CmdConfigProject shows or sets project name to config file.
 func CmdConfigProject(c *cli.Context) error {
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	return CmdConfigProjectShow(c)
+}
 
-	conf := GetConfig(c)
+// CmdConfigProjectSet sets a given name to the current project name.
+func CmdConfigProjectSet(c *cli.Context) error {
 
-	switch c.NArg() {
-	case 0:
-		if conf.Gcp.Project != "" {
-			fmt.Println(conf.Gcp.Project)
-		} else {
-			fmt.Println(chalk.Red.Color("Not set"))
-		}
-	case 1:
-		var name string
-		name = c.Args()[0]
-		if strings.Contains(name, " ") {
-			fmt.Println(chalk.Red.Color("The given project name has spaces. They are replaced to '_'."))
-			name = strings.Replace(name, " ", "_", -1)
-		}
-		if conf.Gcp.Project == "" {
-			fmt.Printf("Set project name:\n  %s\n", chalk.Green.Color(name))
-		} else {
-			fmt.Printf("Update project name:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
-		}
-		conf.Gcp.Project = name
-	default:
-		fmt.Printf(
-			chalk.Red.Color("'config project' expected at most 1 argument. (%d given)\n"), c.NArg())
-		// fmt.Println("  roadie config project: shows project name of Goole Cloud Platform.")
-		// fmt.Println("  roadie config project <new name>: sets the given name to the project name.")
-		cli.ShowSubcommandHelp(c)
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
 	}
 
+	conf := GetConfig(c)
+	var name string
+	name = c.Args()[0]
+	if strings.Contains(name, " ") {
+		fmt.Println(chalk.Red.Color("The given project name has spaces. They are replaced to '_'."))
+		name = strings.Replace(name, " ", "_", -1)
+	}
+	if conf.Gcp.Project == "" {
+		fmt.Printf("Set project name:\n  %s\n", chalk.Green.Color(name))
+	} else {
+		fmt.Printf("Update project name:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
+	}
+	conf.Gcp.Project = name
 	return nil
+}
 
+// CmdConfigProjectShow prints current project name.
+func CmdConfigProjectShow(c *cli.Context) error {
+	conf := GetConfig(c)
+	if conf.Gcp.Project != "" {
+		fmt.Println(conf.Gcp.Project)
+	} else {
+		fmt.Println(chalk.Red.Color("Not set"))
+	}
+	return nil
 }
 
 // CmdConfigType shows current configuration of machine type,

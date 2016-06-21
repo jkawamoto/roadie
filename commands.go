@@ -70,11 +70,32 @@ var Commands = []cli.Command{
 		Flags:  []cli.Flag{},
 		Subcommands: cli.Commands{
 			cli.Command{
-				Name:        "project",
-				Usage:       "show and update project name of Google Cloud Platform.",
-				Description: "Set the given name as the project name when <project name> is given. Otherwise show the current project name.",
-				ArgsUsage:   "[<project name>]",
-				Action:      command.CmdConfigProject,
+				Name:      "project",
+				Usage:     "show and update project name of Google Cloud Platform.",
+				ArgsUsage: "[<project name>]",
+				Action:    command.CmdConfigProject,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					cli.Command{
+						Name:        "set",
+						Usage:       "set project name",
+						Description: "Set a new name to the current project. Project name should start with alphabet and not have spaces.",
+						ArgsUsage:   "<project name>",
+						Action:      command.CmdConfigProjectSet,
+					},
+					cli.Command{
+						Name:        "show",
+						Usage:       "show the current project name.",
+						Description: "Show the current project name.",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigProjectShow,
+					},
+				},
 			},
 			cli.Command{
 				Name:   "type",
