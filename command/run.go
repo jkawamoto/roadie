@@ -7,11 +7,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	source = "source"
-	result = "result"
-)
-
 // CmdRun specifies the behavior of `run` command.
 func CmdRun(c *cli.Context) error {
 
@@ -49,7 +44,7 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	// Check result section.
-	if _, ok := s.body["result"]; !ok {
+	if s.body.Result == "" {
 		if conf.GCP.Bucket == "" {
 			return cli.NewExitError("Bucket name is required or you need to add result section to "+yamlFile, 2)
 		}
