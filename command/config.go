@@ -244,3 +244,49 @@ func getAvailableZoneList(project string) (res []string, err error) {
 	return
 
 }
+
+// CmdConfigBucket shows current configuration of bucket name,
+// or show help message when either -h or --help flag is set.
+func CmdConfigBucket(c *cli.Context) error {
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	return CmdConfigBucketShow(c)
+}
+
+// CmdConfigBucketSet sets bucket name.
+func CmdConfigBucketSet(c *cli.Context) error {
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	name := c.Args()[0]
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf("Set bucket name:\n  %s\n", chalk.Green.Color(name))
+	} else {
+		fmt.Printf("Update bucket name:\n  %s -> %s\n", conf.Gcp.Bucket, chalk.Green.Color(name))
+	}
+	conf.Gcp.Bucket = name
+	return nil
+}
+
+// func CmdConfigBucketList(c *cli.Context) error {
+// 	return nil
+// }
+
+// CmdConfigBucketShow shows current bucket name.
+func CmdConfigBucketShow(c *cli.Context) error {
+	conf := GetConfig(c)
+	if conf.Gcp.Bucket != "" {
+		fmt.Println(conf.Gcp.Bucket)
+	} else {
+		fmt.Println(chalk.Red.Color("Not set"))
+	}
+	return nil
+}
+
+// func CmdConfigBucketShow(c *cli.Context) error {
+// 	return nil
+// }

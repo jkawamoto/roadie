@@ -172,7 +172,50 @@ var Commands = []cli.Command{
 				},
 			},
 			cli.Command{
-				Name: "bucket",
+				Name:   "bucket",
+				Usage:  "show and update bucket name.",
+				Action: command.CmdConfigBucket,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					cli.Command{
+						Name:        "set",
+						Usage:       "set bucket used to store source codes and results.",
+						Description: "Set bucket. If the bucket does not exist, it will be created, automatically.",
+						// Description: "Set bucket. The given bucket must exist. Use create command to prepare new bucket." +
+						// 	"list command shows buckets names associated with the current project.",
+						ArgsUsage: "<bucket name>",
+						Action:    command.CmdConfigBucketSet,
+					},
+					// cli.Command{
+					// 	Name:  "list",
+					// 	Usage: "show available buckets.",
+					// 	Description: "Show a list of buckets the current project can access. " +
+					// 		"To receive the bucket names, project name must be set. " +
+					// 		"This command takes no arguments.",
+					// 	ArgsUsage: " ",
+					// 	Action:    command.CmdConfigBucketList,
+					// },
+					cli.Command{
+						Name:        "show",
+						Usage:       "show current bucket name.",
+						Description: "Show current bucket name. This command takes no arguments.",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigBucketShow,
+					},
+					// cli.Command{
+					// 	Name:  "create",
+					// 	Usage: "create a new bucket.",
+					// 	Description: "Create a new bucket with a given name. " +
+					// 		"To create a new bucket, project name must be set.",
+					// 	ArgsUsage: "<bucket name>",
+					// 	Action:    command.CmdConfigBucketShow,
+					// },
+				},
 			},
 		},
 	},
