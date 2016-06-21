@@ -50,7 +50,7 @@ func LoadConfig(filename string) *Config {
 // Save config stores configurations to a given file.
 func (c *Config) Save(filename string) (err error) {
 
-	writeFile, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0644)
+	writeFile, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return
 	}

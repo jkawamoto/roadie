@@ -71,6 +71,22 @@ func CmdConfigTypeSet(c *cli.Context) error {
 	} else {
 		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.Gcp.MachineType, chalk.Green.Color(v))
 	}
+
+	list, err := getAvailableTypeList(conf.Gcp.Project)
+	if err == nil {
+		available := false
+		for _, item := range list {
+			if v == item {
+				available = true
+			}
+		}
+		if !available {
+			fmt.Printf(chalk.Red.Color("Updated but the given machine type '%s' is not available.\n"), v)
+		}
+	} else {
+		fmt.Printf(chalk.Red.Color("Since project name is not given, cannot check the given machine type '%s' is available.\n"), v)
+	}
+
 	conf.Gcp.MachineType = v
 	return nil
 }
@@ -83,12 +99,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 		return cli.NewExitError("Project name is required to receive available machine types.", 2)
 	}
 
-	b, err := util.NewInstanceBuilder(conf.Gcp.Project)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-
-	list, err := b.AvailableMachineTypes()
+	list, err := getAvailableTypeList(conf.Gcp.Project)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -114,4 +125,19 @@ func CmdConfigTypeShow(c *cli.Context) error {
 		fmt.Println(chalk.Red.Color("Not set") + " - 'n1-standard-1' will be used by default.")
 	}
 	return nil
+}
+
+// getAvailableTypeList retunrs a list of machine types for a given project.
+func getAvailableTypeList(project string) (res []string, err error) {
+
+	var b *util.InstanceBuilder
+	res = nil
+
+	b, err = util.NewInstanceBuilder(project)
+	if err != nil {
+		return
+	}
+	res, err = b.AvailableMachineTypes()
+	return
+
 }
