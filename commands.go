@@ -135,7 +135,41 @@ var Commands = []cli.Command{
 				},
 			},
 			cli.Command{
-				Name: "zone",
+				Name:   "zone",
+				Usage:  "show and update zone used to run scripts.",
+				Action: command.CmdConfigZone,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					cli.Command{
+						Name:        "set",
+						Usage:       "set zone where scripts run.",
+						Description: "Set zone. Available zones are shown in 'list' command.",
+						ArgsUsage:   "<zone>",
+						Action:      command.CmdConfigZoneSet,
+					},
+					cli.Command{
+						Name:  "list",
+						Usage: "show available zones.",
+						Description: "Show a list of zones for the current project. " +
+							"To receive available zones, project name must be set. See 'roadie config project'. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigZoneList,
+					},
+					cli.Command{
+						Name:  "show",
+						Usage: "show current zone.",
+						Description: "Show current zone. If it is not set, show default zone. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigZoneShow,
+					},
+				},
 			},
 			cli.Command{
 				Name: "bucket",
@@ -144,6 +178,7 @@ var Commands = []cli.Command{
 	},
 }
 
+// CommandNotFound shows error message and exit when a given command is not found.
 func CommandNotFound(c *cli.Context, command string) {
 	fmt.Fprintf(os.Stderr, "%s: '%s' is not a %s command. See '%s --help'.", c.App.Name, command, c.App.Name, c.App.Name)
 	os.Exit(2)

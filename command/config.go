@@ -147,3 +147,100 @@ func getAvailableTypeList(project string) (res []string, err error) {
 	return
 
 }
+
+// CmdConfigZone shows current configuration of zone,
+// or show help message when either -h or --help flag is set.
+func CmdConfigZone(c *cli.Context) error {
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	return CmdConfigZoneShow(c)
+}
+
+// CmdConfigZoneSet sets a zone.
+func CmdConfigZoneSet(c *cli.Context) error {
+
+	if c.NArg() != 1 {
+		fmt.Printf(
+			chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	v := c.Args()[0]
+	if conf.Gcp.Zone == "" {
+		fmt.Printf("Set zone:\n  %s\n", chalk.Green.Color(v))
+	} else {
+		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Gcp.Zone, chalk.Green.Color(v))
+	}
+
+	list, err := getAvailableZoneList(conf.Gcp.Project)
+	if err == nil {
+		available := false
+		for _, item := range list {
+			if v == item {
+				available = true
+			}
+		}
+		if !available {
+			fmt.Printf(chalk.Red.Color("Updated but the given zone '%s' is not available.\n"), v)
+		}
+	} else {
+		fmt.Printf(chalk.Red.Color("Since project name is not given, cannot check the given zone '%s' is available.\n"), v)
+	}
+
+	conf.Gcp.Zone = v
+	return nil
+
+}
+
+// CmdConfigZoneList lists up available zones for the current project.
+func CmdConfigZoneList(c *cli.Context) error {
+
+	conf := GetConfig(c)
+	if conf.Gcp.Project == "" {
+		return cli.NewExitError("Project name is required to receive available zones.", 2)
+	}
+
+	list, err := getAvailableZoneList(conf.Gcp.Project)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 1)
+	}
+
+	fmt.Println("Available zones:")
+	for _, v := range list {
+		if v == conf.Gcp.Zone {
+			fmt.Println("* " + chalk.Green.Color(v))
+		} else {
+			fmt.Println("  " + v)
+		}
+	}
+	return nil
+
+}
+
+// CmdConfigZoneShow shows current configuration of zone.
+func CmdConfigZoneShow(c *cli.Context) error {
+	conf := GetConfig(c)
+	if conf.Gcp.Zone != "" {
+		fmt.Println(conf.Gcp.Zone)
+	} else {
+		fmt.Println(chalk.Red.Color("Not set") + " - 'us-central1-b' will be used by default.")
+	}
+	return nil
+}
+
+// getAvailableZoneList retunrs a list of zones for a given project.
+func getAvailableZoneList(project string) (res []string, err error) {
+
+	var b *util.InstanceBuilder
+	res = nil
+
+	b, err = util.NewInstanceBuilder(project)
+	if err != nil {
+		return
+	}
+	res, err = b.AvailableZones()
+	return
+
+}
