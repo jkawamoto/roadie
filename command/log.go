@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// RoadiePayload defines the payload structure of insance logs.
 type RoadiePayload struct {
 	Username     string
 	Stream       string
@@ -28,6 +29,7 @@ func CmdLog(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	name := c.Args()[0]
+	timestamp := !c.Bool("no-timestamp")
 
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
@@ -53,7 +55,11 @@ loop:
 			}
 
 			if payload, err := getRoadiePayload(entry); err == nil {
-				fmt.Printf("%v: %s\n", entry.Timestamp.Format("2006/01/02 15:04:05"), payload.Log)
+				if timestamp {
+					fmt.Printf("%v: %s\n", entry.Timestamp.Format("2006/01/02 15:04:05"), payload.Log)
+				} else {
+					fmt.Printf("%s\n", payload.Log)
+				}
 			} else {
 				log.Println(chalk.Red.Color(err.Error()))
 			}

@@ -50,16 +50,26 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:   "status",
-		Usage:  "",
-		Action: command.CmdStatus,
-		Flags:  []cli.Flag{},
+		Name:        "status",
+		Usage:       "show instance status.",
+		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time.",
+		ArgsUsage:   " ",
+		Action:      command.CmdStatus,
 	},
 	{
-		Name:   "log",
-		Usage:  "show logs.",
-		Action: command.CmdLog,
-		Flags:  []cli.Flag{},
+		Name:  "log",
+		Usage: "show logs.",
+		Description: "Show logs for a given instance name. Logs consists of messages from the framework and messages written to stderr. " +
+			"To see messages written stdout from script, use 'result' command. This command required project name is required. " +
+			"To set project name, use 'config project set' command. To find instance names, use 'status' command.",
+		ArgsUsage: "<instance name>",
+		Action:    command.CmdLog,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "no-timestamp",
+				Usage: "Not print timestamps.",
+			},
+		},
 	},
 	{
 		Name:   "result",
