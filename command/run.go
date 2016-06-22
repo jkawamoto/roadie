@@ -46,6 +46,8 @@ func CmdRun(c *cli.Context) error {
 		if err := s.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
+	} else if s.body.Source == "" {
+		return cli.NewExitError("No source section and source flages are given.", 2)
 	}
 
 	// Check result section.
@@ -61,7 +63,7 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	// debug:
-	log.Printf("Script to be run is\n%s", s.String())
+	log.Printf("Script to be run:\n%s\n", s.String())
 
 	// Prepare startup script.
 	startup, err := util.Asset("assets/startup.sh")
@@ -91,18 +93,22 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
-	disksize := c.Int("disk-size")
+	disksize := c.Int64("disk-size")
 	if disksize < 9 {
 		disksize = 9
 	}
 
-	log.Printf("Creating an instance named %s.", chalk.Bold.TextStyle(s.instanceName))
-	builder.CreateInstance(s.instanceName, []*util.MetadataItem{
-		&util.MetadataItem{
-			Key:   "startup-script",
-			Value: buf.String(),
-		},
-	}, disksize)
+	if c.Bool("dry") {
+		log.Printf("Startup script:\n%s\n", buf.String())
+	} else {
+		log.Printf("Creating an instance named %s.", chalk.Bold.TextStyle(s.instanceName))
+		builder.CreateInstance(s.instanceName, []*util.MetadataItem{
+			&util.MetadataItem{
+				Key:   "startup-script",
+				Value: buf.String(),
+			},
+		}, disksize)
+	}
 
 	return nil
 }

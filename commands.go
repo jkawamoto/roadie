@@ -59,9 +59,13 @@ var Commands = []cli.Command{
 				Name:  "overwrite-result-section",
 				Usage: "if set this flag, result section in a given script will be overwritten to default value.",
 			},
-			cli.IntFlag{
+			cli.Int64Flag{
 				Name:  "disk-size",
 				Usage: "set disk size in GB. (Minimum: 9)",
+			},
+			cli.BoolFlag{
+				Name:  "dry",
+				Usage: "not create any actual instances but pring the startup script to be run instead.",
 			},
 		},
 	},

@@ -87,7 +87,7 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, disksize int) (err error) {
+func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, disksize int64) (err error) {
 
 	matadataItems := make([]*compute.MetadataItems, len(metadata))
 	for i, v := range metadata {
