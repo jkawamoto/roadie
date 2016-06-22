@@ -10,7 +10,7 @@ NAME=$(curl http://metadata/computeMetadata/v1/instance/hostname -H "Metadata-Fl
 NAME=${NAME%%.*}
 
 # Start logging.
-docker run -d --name fluentd -e "INSTANCE=${NAME}" -e "USERNAME=roadie" \
+docker run -d --name fluentd -e "INSTANCE=${NAME}" -e "USERNAME=roadie" -e "TAG=${NAME}" \
   -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
 
 # Run the script
