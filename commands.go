@@ -32,7 +32,7 @@ var GlobalFlags = []cli.Flag{
 var Commands = []cli.Command{
 	{
 		Name:   "run",
-		Usage:  "Run a script on Google Cloud Platform.",
+		Usage:  "run a script on Google Cloud Platform.",
 		Action: command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -76,6 +76,7 @@ var Commands = []cli.Command{
 		ArgsUsage:   " ",
 		Action:      command.CmdStatus,
 		// TODO: Add kill command to delete instance by hand.
+		// TODO: After above command, add no-shutdown option in run command.
 	},
 	{
 		Name:  "log",
@@ -100,7 +101,7 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:  "config",
-		Usage: "Show and upate configuration.",
+		Usage: "show and upate configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
 		Action: cli.ShowSubcommandHelp,
@@ -118,14 +119,14 @@ var Commands = []cli.Command{
 					},
 				},
 				Subcommands: cli.Commands{
-					cli.Command{
+					{
 						Name:        "set",
 						Usage:       "set project name",
 						Description: "Set a new name to the current project. Project name should start with alphabet and not have spaces.",
 						ArgsUsage:   "<project name>",
 						Action:      command.CmdConfigProjectSet,
 					},
-					cli.Command{
+					{
 						Name:        "show",
 						Usage:       "show the current project name.",
 						Description: "Show the current project name.",
@@ -134,7 +135,7 @@ var Commands = []cli.Command{
 					},
 				},
 			},
-			cli.Command{
+			{
 				Name:   "type",
 				Usage:  "show and update machine type used to run scripts.",
 				Action: command.CmdConfigType,
@@ -145,14 +146,14 @@ var Commands = []cli.Command{
 					},
 				},
 				Subcommands: cli.Commands{
-					cli.Command{
+					{
 						Name:        "set",
 						Usage:       "set machine type.",
 						Description: "Set a new machine type. Available machine types are shown in 'list' command.",
 						ArgsUsage:   "<machine type>",
 						Action:      command.CmdConfigTypeSet,
 					},
-					cli.Command{
+					{
 						Name:  "list",
 						Usage: "show available machine types.",
 						Description: "Show a list of available machine types for the current project. " +
@@ -161,7 +162,7 @@ var Commands = []cli.Command{
 						ArgsUsage: " ",
 						Action:    command.CmdConfigTypeList,
 					},
-					cli.Command{
+					{
 						Name:  "show",
 						Usage: "show current machine type.",
 						Description: "Show current machine type. If it is not set, show default machine type. " +
@@ -171,7 +172,7 @@ var Commands = []cli.Command{
 					},
 				},
 			},
-			cli.Command{
+			{
 				Name:   "zone",
 				Usage:  "show and update zone used to run scripts.",
 				Action: command.CmdConfigZone,
@@ -182,14 +183,14 @@ var Commands = []cli.Command{
 					},
 				},
 				Subcommands: cli.Commands{
-					cli.Command{
+					{
 						Name:        "set",
 						Usage:       "set zone where scripts run.",
 						Description: "Set zone. Available zones are shown in 'list' command.",
 						ArgsUsage:   "<zone>",
 						Action:      command.CmdConfigZoneSet,
 					},
-					cli.Command{
+					{
 						Name:  "list",
 						Usage: "show available zones.",
 						Description: "Show a list of zones for the current project. " +
@@ -198,7 +199,7 @@ var Commands = []cli.Command{
 						ArgsUsage: " ",
 						Action:    command.CmdConfigZoneList,
 					},
-					cli.Command{
+					{
 						Name:  "show",
 						Usage: "show current zone.",
 						Description: "Show current zone. If it is not set, show default zone. " +
@@ -208,7 +209,7 @@ var Commands = []cli.Command{
 					},
 				},
 			},
-			cli.Command{
+			{
 				Name:   "bucket",
 				Usage:  "show and update bucket name.",
 				Action: command.CmdConfigBucket,
@@ -219,7 +220,7 @@ var Commands = []cli.Command{
 					},
 				},
 				Subcommands: cli.Commands{
-					cli.Command{
+					{
 						Name:        "set",
 						Usage:       "set bucket used to store source codes and results.",
 						Description: "Set bucket. If the bucket does not exist, it will be created, automatically.",
@@ -228,7 +229,7 @@ var Commands = []cli.Command{
 						ArgsUsage: "<bucket name>",
 						Action:    command.CmdConfigBucketSet,
 					},
-					// cli.Command{
+					// {
 					// 	Name:  "list",
 					// 	Usage: "show available buckets.",
 					// 	Description: "Show a list of buckets the current project can access. " +
@@ -237,14 +238,14 @@ var Commands = []cli.Command{
 					// 	ArgsUsage: " ",
 					// 	Action:    command.CmdConfigBucketList,
 					// },
-					cli.Command{
+					{
 						Name:        "show",
 						Usage:       "show current bucket name.",
 						Description: "Show current bucket name. This command takes no arguments.",
 						ArgsUsage:   " ",
 						Action:      command.CmdConfigBucketShow,
 					},
-					// cli.Command{
+					// {
 					// 	Name:  "create",
 					// 	Usage: "create a new bucket.",
 					// 	Description: "Create a new bucket with a given name. " +
@@ -253,6 +254,33 @@ var Commands = []cli.Command{
 					// 	Action:    command.CmdConfigBucketShow,
 					// },
 				},
+			},
+		},
+	},
+	{
+		Name:  "source",
+		Usage: "manage source files uploaded by this command.",
+		Subcommands: cli.Commands{
+			{
+				Name: "list",
+			},
+			{
+				Name: "delete",
+			},
+		},
+	},
+	{
+		Name:  "data",
+		Usage: "manage data files.",
+		Subcommands: cli.Commands{
+			{
+				Name: "list",
+			},
+			{
+				Name: "put",
+			},
+			{
+				Name: "get",
 			},
 		},
 	},
