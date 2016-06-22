@@ -61,9 +61,17 @@ func loadScript(filename string, args []string) (*script, error) {
 	}
 
 	// Construct a script object.
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "localhost"
+	} else if strings.Contains(hostname, ".") {
+		hostname = strings.Split(hostname, ".")[0]
+	}
+
 	res := script{
-		filename:     filename,
-		instanceName: util.Basename(filename) + time.Now().Format("20060102150405"),
+		filename: filename,
+		instanceName: fmt.Sprintf(
+			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")),
 	}
 
 	// Unmarshal YAML file.
@@ -71,7 +79,6 @@ func loadScript(filename string, args []string) (*script, error) {
 		return nil, err
 	}
 
-	// return &script{
 	return &res, nil
 
 }
