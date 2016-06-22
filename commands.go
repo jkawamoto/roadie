@@ -55,7 +55,14 @@ var Commands = []cli.Command{
 				Name:  "e",
 				Usage: "key=value to be set in place holders of the script.",
 			},
-			// TODO: Add disk size option
+			cli.BoolFlag{
+				Name:  "overwrite-result-section",
+				Usage: "if set this flag, result section in a given script will be overwritten to default value.",
+			},
+			cli.IntFlag{
+				Name:  "disk-size",
+				Usage: "set disk size in GB. (Minimum: 9)",
+			},
 		},
 	},
 	{

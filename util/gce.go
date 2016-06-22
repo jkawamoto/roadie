@@ -87,7 +87,7 @@ func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem) (err error) {
+func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, disksize int) (err error) {
 
 	matadataItems := make([]*compute.MetadataItems, len(metadata))
 	for i, v := range metadata {
@@ -110,7 +110,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem) 
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
 					DiskType:    b.normalizedZone() + "/diskTypes/pd-standard",
-					DiskSizeGb:  9,
+					DiskSizeGb:  disksize,
 				},
 			},
 		},

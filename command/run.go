@@ -2,6 +2,7 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"text/template"
 
@@ -23,6 +24,10 @@ func CmdRun(c *cli.Context) error {
 	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
+		conf.Gcp.Bucket = conf.Gcp.Project
+	}
 
 	s, err := loadScript(yamlFile, c.StringSlice("e"))
 	if err != nil {
@@ -38,20 +43,21 @@ func CmdRun(c *cli.Context) error {
 	} else if v := c.String("url"); v != "" {
 		s.setURLSource(v)
 	} else if path := c.String("local"); path != "" {
-		if conf.Gcp.Bucket == "" {
-			return cli.NewExitError("Bucket name is required when you use --local", 2)
-		}
 		if err := s.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 	}
 
 	// Check result section.
-	if s.body.Result == "" {
-		if conf.Gcp.Bucket == "" {
-			return cli.NewExitError("Bucket name is required or you need to add result section to "+yamlFile, 2)
-		}
+	if s.body.Result == "" || c.Bool("overwrite-result-section") {
 		s.setResult(conf.Gcp.Bucket)
+	} else {
+		fmt.Printf(
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), yamlFile, s.body.Result)
+		fmt.Println(
+			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
+		fmt.Println(
+			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
 	}
 
 	// debug:
@@ -85,13 +91,18 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
+	disksize := c.Int("disk-size")
+	if disksize < 9 {
+		disksize = 9
+	}
+
 	log.Printf("Creating an instance named %s.", chalk.Bold.TextStyle(s.instanceName))
 	builder.CreateInstance(s.instanceName, []*util.MetadataItem{
 		&util.MetadataItem{
 			Key:   "startup-script",
 			Value: buf.String(),
 		},
-	})
+	}, disksize)
 
 	return nil
 }
