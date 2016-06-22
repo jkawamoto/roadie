@@ -41,7 +41,6 @@ func CmdLog(c *cli.Context) error {
 	chErr := make(chan error)
 	go getLogEntries(conf.Gcp.Project, name, ch, chErr)
 
-	fmt.Println("Current Logs:")
 loop:
 	for {
 		select {
@@ -49,7 +48,7 @@ loop:
 			if entry == nil {
 				break loop
 			}
-			fmt.Printf("  %v: %s\n", entry.Timestamp.Format("2006/01/02 15:04:05"), entry.Payload.Log)
+			fmt.Printf("%v: %s\n", entry.Timestamp.Format("2006/01/02 15:04:05"), entry.Payload.Log)
 		case err := <-chErr:
 			fmt.Println(err.Error())
 			break loop
@@ -79,15 +78,19 @@ func getLogEntries(project, name string, ch chan *RoadieLogEntry, chErr chan err
 		res, err := service.Entries.List(&logging.ListLogEntriesRequest{
 			ProjectIds: []string{project},
 			Filter: fmt.Sprintf(
-				"resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"",
-				project, name),
+				// Instead of logName, which is specified TAG env in roadie-gce,
+				// use instance name to distinguish instances. This update makes all logs
+				// will have same log name, docker, so that such log can be stored into
+				// GCS easily.
+				//
+				// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
+				"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", name),
 			PageToken: pageToken,
 		}).Do()
 		if err != nil {
 			chErr <- err
 			return
 		}
-
 		for _, v := range res.Entries {
 			if v.JsonPayload != nil {
 
