@@ -14,6 +14,10 @@ func CmdConfigProject(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
 	}
+	if c.NArg() != 0 {
+		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 	return CmdConfigProjectShow(c)
 }
 
@@ -21,7 +25,7 @@ func CmdConfigProject(c *cli.Context) error {
 func CmdConfigProjectSet(c *cli.Context) error {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -56,6 +60,10 @@ func CmdConfigProjectShow(c *cli.Context) error {
 // or show help message when either -h or --help flag is set.
 func CmdConfigType(c *cli.Context) error {
 	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	if c.NArg() != 0 {
+		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 	return CmdConfigTypeShow(c)
@@ -154,6 +162,10 @@ func CmdConfigZone(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
 	}
+	if c.NArg() != 0 {
+		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 	return CmdConfigZoneShow(c)
 }
 
@@ -249,6 +261,10 @@ func getAvailableZoneList(project string) (res []string, err error) {
 // or show help message when either -h or --help flag is set.
 func CmdConfigBucket(c *cli.Context) error {
 	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	if c.NArg() != 0 {
+		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 	return CmdConfigBucketShow(c)
