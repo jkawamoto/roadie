@@ -7,5 +7,5 @@ func TestCmdStatus(t *testing.T) {
 }
 
 func TestLogging(t *testing.T) {
-	Logging()
+	Logging("jkawamoto-ppls", "docker")
 }

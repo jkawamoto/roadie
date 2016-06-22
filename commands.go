@@ -56,6 +56,12 @@ var Commands = []cli.Command{
 		Flags:  []cli.Flag{},
 	},
 	{
+		Name:   "log",
+		Usage:  "show logs.",
+		Action: command.CmdLog,
+		Flags:  []cli.Flag{},
+	},
+	{
 		Name:   "result",
 		Usage:  "",
 		Action: command.CmdResult,
