@@ -9,7 +9,24 @@ import (
 )
 
 // GlobalFlags manages golabal flags.
-var GlobalFlags = []cli.Flag{}
+var GlobalFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:  "project, p",
+		Usage: "overwrite project name configuration.",
+	},
+	cli.StringFlag{
+		Name:  "type, t",
+		Usage: "overwrite machi type configuration.",
+	},
+	cli.StringFlag{
+		Name:  "zone, z",
+		Usage: "overwrite zone configuration.",
+	},
+	cli.StringFlag{
+		Name:  "bucket, b",
+		Usage: "overwrite bucket name configuration.",
+	},
+}
 
 // Commands manage sub commands.
 var Commands = []cli.Command{
@@ -31,14 +48,6 @@ var Commands = []cli.Command{
 				Usage: "Local path to be run.",
 			},
 			cli.StringFlag{
-				Name:  "project",
-				Usage: "Project name.",
-			},
-			cli.StringFlag{
-				Name:  "bucket",
-				Usage: "Bucket name.",
-			},
-			cli.StringFlag{
 				Name:  "name",
 				Usage: "Instance name.",
 			},
@@ -55,6 +64,7 @@ var Commands = []cli.Command{
 		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time.",
 		ArgsUsage:   " ",
 		Action:      command.CmdStatus,
+		// TODO: Add kill command to delete instance by hand.
 	},
 	{
 		Name:  "log",
