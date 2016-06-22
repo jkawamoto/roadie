@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/jkawamoto/roadie-cli/command"
 	"github.com/jkawamoto/roadie-cli/config"
 	"github.com/urfave/cli"
 )
@@ -24,15 +23,6 @@ func main() {
 	app.Metadata = map[string]interface{}{
 		"config": config.LoadConfig("./.roadie"),
 	}
-	app.After = storeConfig
 
 	app.Run(os.Args)
-}
-
-func storeConfig(c *cli.Context) error {
-	conf := command.GetConfig(c)
-	if err := conf.Save("./.roadie"); err != nil {
-		return cli.NewExitError(err.Error(), 1)
-	}
-	return nil
 }

@@ -42,6 +42,10 @@ func CmdConfigProjectSet(c *cli.Context) error {
 		fmt.Printf("Update project name:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
 	}
 	conf.Gcp.Project = name
+
+	if err := conf.Save(); err != nil {
+		return cli.NewExitError(err.Error(), 3)
+	}
 	return nil
 }
 
@@ -102,6 +106,10 @@ func CmdConfigTypeSet(c *cli.Context) error {
 	}
 
 	conf.Gcp.MachineType = v
+	if err = conf.Save(); err != nil {
+		return cli.NewExitError(err.Error(), 3)
+	}
+
 	return nil
 }
 
@@ -202,6 +210,9 @@ func CmdConfigZoneSet(c *cli.Context) error {
 	}
 
 	conf.Gcp.Zone = v
+	if err = conf.Save(); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
 	return nil
 
 }
@@ -284,8 +295,13 @@ func CmdConfigBucketSet(c *cli.Context) error {
 	} else {
 		fmt.Printf("Update bucket name:\n  %s -> %s\n", conf.Gcp.Bucket, chalk.Green.Color(name))
 	}
+
 	conf.Gcp.Bucket = name
+	if err := conf.Save(); err != nil {
+		return cli.NewExitError(err.Error(), 3)
+	}
 	return nil
+
 }
 
 // func CmdConfigBucketList(c *cli.Context) error {
