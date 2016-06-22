@@ -4,15 +4,15 @@
 #
 cd /root
 
-# Load configurations.
-SCRIPT=$(curl http://metadata/computeMetadata/v1/instance/attributes/script -H "Metadata-Flavor: Google")
-NAME=$(curl http://metadata/computeMetadata/v1/instance/hostname -H "Metadata-Flavor: Google")
-NAME=${NAME%%.*}
-
 # Start logging.
-docker run -d --name fluentd -e "INSTANCE=${NAME}" -e "USERNAME=roadie" -e "TAG=${NAME}" \
+docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
   -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
 
+sleep 30s
+
 # Run the script
-echo $SCRIPT > run.yml
-docker run -i --name "$NAME" jkawamoto/roadie-gcp < run.yml
+cat <<EOF > run.yml
+{{.Script}}
+EOF
+
+docker run -i --name {{.Name}} jkawamoto/roadie-gcp {{.Options}} < run.yml
