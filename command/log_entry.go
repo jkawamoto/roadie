@@ -18,7 +18,7 @@ type LogEntry struct {
 }
 
 // GetLogEntries downloads log entries as a goroutine.
-func GetLogEntries(project, filter string, ch chan *LogEntry, chErr chan error) {
+func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- error) {
 
 	client, err := google.DefaultClient(context.Background(), logging.CloudPlatformReadOnlyScope)
 	if err != nil {
@@ -53,6 +53,7 @@ func GetLogEntries(project, filter string, ch chan *LogEntry, chErr chan error) 
 					log.Println(chalk.Red.Color(err.Error()))
 					continue
 				}
+				timestamp = timestamp.In(time.Local)
 
 				ch <- &LogEntry{
 					Timestamp: timestamp,

@@ -19,11 +19,13 @@ type RoadiePayload struct {
 	InstanceName string `mapstructure:"instance_name"`
 }
 
+const PrintTimeFormat = "2006/01/02 15:04:05"
+
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -56,7 +58,7 @@ loop:
 
 			if payload, err := getRoadiePayload(entry); err == nil {
 				if timestamp {
-					fmt.Printf("%v: %s\n", entry.Timestamp.Format("2006/01/02 15:04:05"), payload.Log)
+					fmt.Printf("%v: %s\n", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
 				} else {
 					fmt.Printf("%s\n", payload.Log)
 				}
