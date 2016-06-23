@@ -56,6 +56,10 @@ var Commands = []cli.Command{
 				Usage: "key=value to be set in place holders of the script.",
 			},
 			cli.BoolFlag{
+				Name:  "no-shutdown",
+				Usage: "do not shoutdown instance automatically.",
+			},
+			cli.BoolFlag{
 				Name:  "overwrite-result-section",
 				Usage: "if set this flag, result section in a given script will be overwritten to default value.",
 			},
@@ -75,8 +79,15 @@ var Commands = []cli.Command{
 		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time.",
 		ArgsUsage:   " ",
 		Action:      command.CmdStatus,
-		// TODO: Add kill command to delete instance by hand.
-		// TODO: After above command, add no-shutdown option in run command.
+		Subcommands: cli.Commands{
+			{
+				Name:        "kill",
+				Usage:       "kill an instance.",
+				Description: "kill a given instance. Any outputs except messages written to stderr will not be stored.",
+				ArgsUsage:   "<instance name>",
+				Action:      command.CmdStatusKill,
+			},
+		},
 	},
 	{
 		Name:  "log",

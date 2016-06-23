@@ -7,6 +7,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
+	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -41,6 +42,15 @@ type ActivityPayload struct {
 	}
 }
 
+// getActivityPayload converts LogEntry's payload to a ActivityPayload.
+func getActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
+	var res ActivityPayload
+	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 // CmdStatus shows status of instances.
 func CmdStatus(c *cli.Context) error {
 
@@ -56,7 +66,8 @@ func CmdStatus(c *cli.Context) error {
 
 	runnings := make(map[string]bool)
 
-	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Prefix = "Loading information..."
 	s.FinalMSG = "\n"
 	s.Start()
 
@@ -66,6 +77,7 @@ loop:
 		case entry := <-ch:
 
 			if entry == nil {
+				s.Stop()
 				break loop
 			}
 
@@ -84,11 +96,10 @@ loop:
 
 		case err := <-chErr:
 			fmt.Println(err.Error())
+			s.Stop()
 			break loop
 		}
 	}
-
-	s.Stop()
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
@@ -96,7 +107,7 @@ loop:
 		if status {
 			table.AddRow(name, "running")
 		} else {
-			table.AddRow(name, "stop")
+			table.AddRow(name, "end")
 		}
 	}
 	fmt.Println(table)
@@ -104,11 +115,34 @@ loop:
 	return nil
 }
 
-// getActivityPayload converts LogEntry's payload to a ActivityPayload.
-func getActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
-	var res ActivityPayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
+// CmdStatusKill kills an instance.
+func CmdStatusKill(c *cli.Context) error {
+
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
 	}
-	return &res, nil
+
+	conf := GetConfig(c)
+	b, err := util.NewInstanceBuilder(conf.Gcp.Project)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	name := c.Args()[0]
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Prefix = fmt.Sprintf("Killing instance %s...", name)
+	s.FinalMSG = fmt.Sprintf("\nKilled Instance %s.    \n", name)
+	s.Start()
+
+	if err = b.StopInstance(name); err != nil {
+		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\nCannot kill instance %s (%s)\n"), name, err.Error())
+	}
+	s.Stop()
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+
 }

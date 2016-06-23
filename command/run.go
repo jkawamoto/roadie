@@ -72,12 +72,16 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 1)
 	}
 
+	options := " "
+	if c.Bool("no-shoutdown") {
+		options = "--no-shutdown"
+	}
+
 	buf := &bytes.Buffer{}
 	data := map[string]string{
-		"Name":   s.instanceName,
-		"Script": s.String(),
-		// "Options": "--no-shutdown",
-		"Options": " ",
+		"Name":    s.instanceName,
+		"Script":  s.String(),
+		"Options": options,
 	}
 	temp, err := template.New("startup").Parse(string(startup))
 	if err != nil {
