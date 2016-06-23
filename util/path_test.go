@@ -27,7 +27,7 @@ func TestCreateURL(t *testing.T) {
 	if u.Host != "bucket_name" {
 		t.Errorf("Host name is not correct: %s", u.Host)
 	}
-	if u.Path != "/.roadie/source/path/to/file" {
+	if u.Path != "/source/path/to/file" {
 		t.Errorf("Path is not correct: %s", u.Path)
 	}
 

@@ -21,7 +21,7 @@ func CreateURL(bucket, group, name string) *url.URL {
 	return &url.URL{
 		Scheme: "gs",
 		Host:   bucket,
-		Path:   filepath.ToSlash(filepath.Join("/.roadie", group, name)),
+		Path:   filepath.ToSlash(filepath.Join("/", group, name)),
 	}
 
 }
