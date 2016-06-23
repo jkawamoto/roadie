@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -14,8 +15,47 @@ import (
 	"github.com/urfave/cli"
 )
 
+// AddRecorder is a callback to add file information to a table.
+type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
+
 // PrintFileList prints a list of files having a given prefix.
 func PrintFileList(project, bucket, prefix string, quiet bool) (err error) {
+	return printList(
+		project, bucket, prefix, quiet, []string{"FILE NAME", "SIZE", "TIME CREATED"},
+		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+
+			if info.Name != "" {
+				if quiet {
+					table.AddRow(info.Name)
+				} else {
+					table.AddRow(info.Name, fmt.Sprintf("%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
+				}
+			}
+
+		})
+}
+
+// PrintDirList prints a list of directoris in a given prefix.
+func PrintDirList(project, bucket, prefix string, quiet bool) (err error) {
+
+	return printList(
+		project, bucket, prefix, quiet, []string{"INSTANCE NAME", "TIME CREATED"},
+		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+
+			dir, _ := filepath.Split(info.Path)
+			name := strings.Replace(dir[len(ResultPrefix):], "/", "", -1)
+			if info.Name != "" {
+				if quiet {
+					table.AddRow(name)
+				} else {
+					table.AddRow(name, info.TimeCreated.Format(PrintTimeFormat))
+				}
+			}
+
+		})
+}
+
+func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
 	storage, _ := util.NewStorage(project, bucket)
 
@@ -31,7 +71,11 @@ func PrintFileList(project, bucket, prefix string, quiet bool) (err error) {
 
 	table := uitable.New()
 	if !quiet {
-		table.AddRow("FILE NAME", "SIZE", "TIME CREATED")
+		rawHeaders := make([]interface{}, len(headers))
+		for i, v := range headers {
+			rawHeaders[i] = v
+		}
+		table.AddRow(rawHeaders...)
 	}
 
 loop:
@@ -41,13 +85,7 @@ loop:
 			if item == nil {
 				break loop
 			}
-
-			if quiet {
-				table.AddRow(item.Name)
-			} else {
-				table.AddRow(item.Name, fmt.Sprintf("%dKB", item.Size/1024), item.TimeCreated.Format(PrintTimeFormat))
-			}
-
+			addRecorder(table, item, quiet)
 		case err = <-errCh:
 			break loop
 		}

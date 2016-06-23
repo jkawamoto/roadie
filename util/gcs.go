@@ -27,6 +27,7 @@ type Storage struct {
 // FileInfo defines file information structure.
 type FileInfo struct {
 	Name        string
+	Path        string
 	TimeCreated time.Time
 	Size        uint64
 }
@@ -142,6 +143,7 @@ func NewFileInfo(f *storage.Object) *FileInfo {
 
 	return &FileInfo{
 		Name:        splitedName[len(splitedName)-1],
+		Path:        f.Name,
 		TimeCreated: t.In(time.Local),
 		Size:        f.Size,
 	}
