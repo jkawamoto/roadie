@@ -145,7 +145,7 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 // Set result section with a given bucket name.
 func (s *script) setResult(bucket string) {
 
-	location := util.CreateURL(bucket, "result", s.instanceName)
+	location := util.CreateURL(bucket, ResultPrefix, s.instanceName)
 	s.body.Result = location.String()
 
 }
