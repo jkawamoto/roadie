@@ -63,12 +63,11 @@ loop:
 }
 
 // UploadToGCS uploads a file to GCS.
-func UploadToGCS(project, bucket, prefix, name, filepath string) error {
+func UploadToGCS(project, bucket, prefix, name, filepath string) (string, error) {
 
-	// TODO: sould return the URL storing the new object.
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if name == "" {
@@ -84,9 +83,9 @@ func UploadToGCS(project, bucket, prefix, name, filepath string) error {
 
 	if err := storage.Upload(filepath, location); err != nil {
 		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("Cannot upload file %s. (%s)"), filepath, err.Error())
-		return cli.NewExitError(err.Error(), 2)
+		return "", cli.NewExitError(err.Error(), 2)
 	}
-	return nil
+	return location.String(), nil
 
 }
 

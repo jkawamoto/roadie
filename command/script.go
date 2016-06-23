@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,7 +84,7 @@ func loadScript(filename string, args []string) (*script, error) {
 // Set a git repository to source section.
 func (s *script) setGitSource(repo string) {
 	if s.body.Source != "" {
-		log.Printf(
+		fmt.Printf(
 			chalk.Red.Color("%s has source section but a Git repository is given. The source section will be overwritten to '%s'."),
 			s.filename, repo)
 	}
@@ -96,7 +94,7 @@ func (s *script) setGitSource(repo string) {
 // Set a URL to source section.
 func (s *script) setURLSource(url string) {
 	if s.body.Source != "" {
-		log.Printf(
+		fmt.Printf(
 			chalk.Red.Color("%s has source section but a repository URL is given. The source section will be overwritten to '%s'."),
 			s.filename, url)
 	}
@@ -106,7 +104,7 @@ func (s *script) setURLSource(url string) {
 // Upload source files and set that location to source section.
 func (s *script) setLocalSource(path, project, bucket string) error {
 	if s.body.Source != "" {
-		log.Printf(
+		fmt.Printf(
 			chalk.Red.Color("%s has source section but a path for source codes is given. The source section will be overwritten."),
 			s.filename)
 	}
@@ -116,35 +114,30 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 		return err
 	}
 
+	var name string
 	var arcPath string
-	var location *url.URL
 	if info.IsDir() {
 
 		filename := s.instanceName + ".tar.gz"
 		arcPath = filepath.Join(os.TempDir(), filename)
-		log.Printf("Creating an archived file %s", arcPath)
+		fmt.Printf("Creating an archived file %s", arcPath)
 		if err := util.Archive(path, arcPath, nil); err != nil {
 			return err
 		}
-		location = util.CreateURL(bucket, "source", filename)
+		name = filename
 
 	} else {
 
 		arcPath = path
-		location = util.CreateURL(bucket, "source", util.Basename(path))
+		name = util.Basename(path)
 
 	}
 
-	log.Printf("Uploading to %s", location)
-	storage, err := util.NewStorage(project, bucket)
+	location, err := UploadToGCS(project, bucket, SourcePrefix, name, arcPath)
 	if err != nil {
 		return err
 	}
-	if err := storage.Upload(arcPath, location); err != nil {
-		return err
-	}
-
-	s.body.Source = location.String()
+	s.body.Source = location
 	return nil
 
 }
