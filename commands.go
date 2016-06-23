@@ -105,21 +105,29 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:   "result",
-		Usage:  "list up and get results.",
-		Action: command.CmdResult,
-		Flags:  []cli.Flag{},
+		Name:  "result",
+		Usage: "list up and get results.",
+		Flags: []cli.Flag{},
 		Subcommands: cli.Commands{
 			{
-				Name:      "list",
-				Usage:     "list up result files for a given instance.",
-				ArgsUsage: "<instance name>",
+				Name:  "list",
+				Usage: "list up result files for a given instance.",
+				Description: "List up instance names or result file names. " +
+					"If instance name is given, show result file names belonging to the instance. " +
+					"Otherwise show instance names which have result files.",
+				ArgsUsage: "[<instance name>]",
 				Action:    command.CmdResultList,
 			},
 			{
-				Name:      "show",
-				Usage:     "show massages written in stdouts.",
-				ArgsUsage: "<instance name> <index>",
+				Name:  "show",
+				Usage: "show massages written in stdout.",
+				Description: "print messages written in stdout." +
+					"If an index is given, only messages associated with the index will be printed. " +
+					"Otherwise, all messages will be printed. " +
+					"The index is 0-origin and associated with the steps in running scripts. " +
+					"For example, suppose your script has 4 steps in run section, " +
+					"there will be messages indexed 0 to 3.",
+				ArgsUsage: "<instance name> [<index>]",
 				Action:    command.CmdResultShow,
 			},
 			{

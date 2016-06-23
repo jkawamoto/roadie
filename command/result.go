@@ -1,9 +1,118 @@
 package command
 
-import "github.com/urfave/cli"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
-func CmdResult(c *cli.Context) error {
-	// Write your code here
+	"github.com/jkawamoto/roadie-cli/util"
+	"github.com/ttacon/chalk"
+	"github.com/urfave/cli"
+)
 
+const (
+	// ResultPrefix defines a prefix to store result files.
+	ResultPrefix = ".roadie/result"
+	// StdoutFilePrefix defines a prefix for stdout result files.
+	StdoutFilePrefix = "stdout"
+)
+
+// CmdResultList shows a list of instance names or result files belonging to an instance.
+func CmdResultList(c *cli.Context) error {
+
+	conf := GetConfig(c)
+	switch c.NArg() {
+	case 0:
+		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("quiet"))
+	case 1:
+		instance := c.Args()[0]
+		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("quiet"))
+	default:
+		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+// CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
+func CmdResultShow(c *cli.Context) error {
+
+	conf := GetConfig(c)
+	switch c.NArg() {
+	case 1:
+		instance := c.Args()[0]
+		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+
+	case 2:
+		instance := c.Args()[0]
+		filePrefix := StdoutFilePrefix + c.Args()[1]
+		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+
+	default:
+		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+func CmdResultGet(c *cli.Context) error {
 	return nil
+}
+
+func CmdResultGetAll(c *cli.Context) error {
+	return nil
+}
+
+func printFileBody(project, bucket, prefix, filePrefix string, quiet bool) error {
+
+	storage, err := util.NewStorage(project, bucket)
+
+	fileCh := make(chan *util.FileInfo, 10)
+	doneCh := make(chan struct{})
+	errCh := make(chan error)
+
+	go storage.List(prefix, fileCh, errCh)
+	go printFileBodyWorker(storage, "", fileCh, doneCh, quiet)
+
+loop:
+	for {
+		select {
+		case <-doneCh:
+			// printFileBodyWorker ends.
+			break loop
+		case err = <-errCh:
+			// storage.List ends but printFileBodyWorker is still working.
+			fileCh <- nil
+			break loop
+		}
+	}
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+
+}
+
+func printFileBodyWorker(s *util.Storage, prefix string, fileCh <-chan *util.FileInfo, done chan<- struct{}, quiet bool) {
+
+	for {
+		info := <-fileCh
+		if info == nil {
+			done <- struct{}{}
+			break
+		}
+
+		if info.Name != "" && strings.HasPrefix(info.Name, prefix) {
+			if !quiet {
+				fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+			}
+			if err := s.Download(info.Path, os.Stdout); err != nil {
+				fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+			}
+		}
+
+	}
+
 }
