@@ -307,7 +307,7 @@ var Commands = []cli.Command{
 					"To reuse them, use URL like 'gs://<bucket name>/.roadie/source/<filename>'. " +
 					"Otherwise, those files are not used automatically. To reduce storage size, use delete command.",
 				ArgsUsage: " ",
-				Action:    command.CmdSourceList,
+				Action:    command.GenerateListAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -320,7 +320,7 @@ var Commands = []cli.Command{
 				Usage:       "delete source files.",
 				Description: "delete given named files. This accepts multiple names separated by spaces.",
 				ArgsUsage:   "<filename>...",
-				Action:      command.CmdSourceDelete,
+				Action:      command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
 				Name:  "get",
@@ -330,7 +330,7 @@ var Commands = []cli.Command{
 					"'-o' option changes this behavior. If a file path given, downloaded file will be stored as the name. " +
 					"If a directory name given, downloaded file will be stored in that directory.",
 				ArgsUsage: "<filename>",
-				Action:    command.CmdSourceGet,
+				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
@@ -345,13 +345,35 @@ var Commands = []cli.Command{
 		Usage: "manage data files.",
 		Subcommands: cli.Commands{
 			{
-				Name: "list",
+				Name:      "list",
+				Usage:     "show lists of data.",
+				ArgsUsage: " ",
+				Action:    command.GenerateListAction(command.DataPrefix),
 			},
 			{
-				Name: "put",
+				Name:      "put",
+				Usage:     "put a data file.",
+				ArgsUsage: "<file path> [<stored name>]",
+				Action:    command.CmdDataPut,
 			},
 			{
-				Name: "get",
+				Name:        "delete",
+				Usage:       "delete source files.",
+				Description: "delete given named files. This accepts multiple names separated by spaces.",
+				ArgsUsage:   "<filename>...",
+				Action:      command.GenerateDeleteAction(command.DataPrefix),
+			},
+			{
+				Name:      "get",
+				Usage:     "get a data file.",
+				ArgsUsage: "<filename>",
+				Action:    command.GenerateGetAction(command.DataPrefix),
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "o",
+						Usage: "output file path or directory where downloaded file is stored.",
+					},
+				},
 			},
 		},
 	},
