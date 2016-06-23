@@ -95,9 +95,35 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "result",
-		Usage:  "",
+		Usage:  "list up and get results.",
 		Action: command.CmdResult,
 		Flags:  []cli.Flag{},
+		Subcommands: cli.Commands{
+			{
+				Name:      "list",
+				Usage:     "list up result files for a given instance.",
+				ArgsUsage: "<instance name>",
+				Action:    command.CmdResultList,
+			},
+			{
+				Name:      "show",
+				Usage:     "show massages written in stdouts.",
+				ArgsUsage: "<instance name> <index>",
+				Action:    command.CmdResultShow,
+			},
+			{
+				Name:      "get",
+				Usage:     "get a cirtain file.",
+				ArgsUsage: "<instance name> <filename>",
+				Action:    command.CmdResultGet,
+			},
+			{
+				Name:      "get-all",
+				Usage:     "download all results.",
+				ArgsUsage: "<instance name>",
+				Action:    command.CmdResultGetAll,
+			},
+		},
 	},
 	{
 		Name:  "config",
@@ -260,12 +286,46 @@ var Commands = []cli.Command{
 	{
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
+		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
+			"This commange lists up those scripts and delete them if necessary.",
 		Subcommands: cli.Commands{
 			{
-				Name: "list",
+				Name:  "list",
+				Usage: "list up source files.",
+				Description: "List up source files in Google Cloud Storage. Those files can be reused for other scripts. " +
+					"To reuse them, use URL like 'gs://<bucket name>/.roadie/source/<filename>'. " +
+					"Otherwise, those files are not used automatically. To reduce storage size, use delete command.",
+				ArgsUsage: " ",
+				Action:    command.CmdSourceList,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "quiet, q",
+						Usage: "only display file names",
+					},
+				},
 			},
 			{
-				Name: "delete",
+				Name:        "delete",
+				Usage:       "delete source files.",
+				Description: "delete given named files. This accepts multiple names separated by spaces.",
+				ArgsUsage:   "<filename>...",
+				Action:      command.CmdSourceDelete,
+			},
+			{
+				Name:  "get",
+				Usage: "get one source file tarball.",
+				Description: "download a given file from Google Cloud Storage. " +
+					"Downloaded file will be stored in the current working directory. " +
+					"'-o' option changes this behavior. If a file path given, downloaded file will be stored as the name. " +
+					"If a directory name given, downloaded file will be stored in that directory.",
+				ArgsUsage: "<filename>",
+				Action:    command.CmdSourceGet,
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "o",
+						Usage: "output file path or directory where downloaded file is stored.",
+					},
+				},
 			},
 		},
 	},
