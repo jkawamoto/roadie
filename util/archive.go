@@ -1,4 +1,4 @@
-package archive
+package util
 
 import (
 	"archive/tar"
@@ -64,7 +64,14 @@ func tarballing(writer *tar.Writer, excludes []string) filepath.WalkFunc {
 			fmt.Println(err.Error())
 			return err
 		}
-		header.Name = path
+
+		if strings.HasPrefix(path, "../") {
+			header.Name = path[3:]
+			// } else if strings.HasPrefix(path, "./") {
+			// 	header.Name = path[2:]
+		} else {
+			header.Name = path
+		}
 		writer.WriteHeader(header)
 
 		// Prepare to write a file body.

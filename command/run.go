@@ -3,21 +3,12 @@ package command
 import (
 	"bytes"
 	"fmt"
-	"strings"
+	"log"
 	"text/template"
 
+	"github.com/jkawamoto/roadie-cli/util"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
-)
-
-type config map[interface{}]interface{}
-
-const (
-	source = "source"
-	git    = "git"
-	url    = "url"
-	local  = "local"
-	result = "result"
 )
 
 // CmdRun specifies the behavior of `run` command.
@@ -27,97 +18,101 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError("No configuration file is given", 1)
 	}
 
-	conf := make(config)
-	err := loadScript(c.Args()[0], c.StringSlice("e"), &conf)
+	yamlFile := c.Args()[0]
+
+	conf := GetConfig(c)
+	if conf.Gcp.Project == "" {
+		return cli.NewExitError("Project must be given", 2)
+	}
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
+		conf.Gcp.Bucket = conf.Gcp.Project
+	}
+
+	s, err := loadScript(yamlFile, c.StringSlice("e"))
 	if err != nil {
-		return err
+		return cli.NewExitError(err.Error(), 2)
+	}
+	if v := c.String("name"); v != "" {
+		s.instanceName = v
 	}
 
 	// Prepare source section.
-	if v := c.String(git); v != "" {
-		if _, ok := conf[source]; ok {
-			// fmt.Println("Although %s has source element, another repository is given.", c.Args()[0])
+	if v := c.String("git"); v != "" {
+		s.setGitSource(v)
+	} else if v := c.String("url"); v != "" {
+		s.setURLSource(v)
+	} else if path := c.String("local"); path != "" {
+		if err := s.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+			return cli.NewExitError(err.Error(), 2)
 		}
-		conf[source] = v
-	} else if v := c.String(url); v != "" {
-		if _, ok := conf[source]; ok {
-
-		}
-		conf[source] = v
-	} else if v := c.String(local); v != "" {
-		if _, ok := conf[source]; ok {
-
-		}
-		conf[source] = v
-
-		// TODO: If v is a already archived file, just upload it.
-
-		// TODO: Make a tar ball and upload it to a bucket.
-
-	} else {
-		// TODO: if no source flag given, what shoud it do?
-
+	} else if s.body.Source == "" {
+		return cli.NewExitError("No source section and source flages are given.", 2)
 	}
 
 	// Check result section.
-	// checkResultSection
+	if s.body.Result == "" || c.Bool("overwrite-result-section") {
+		s.setResult(conf.Gcp.Bucket)
+	} else {
+		fmt.Printf(
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), yamlFile, s.body.Result)
+		fmt.Println(
+			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
+		fmt.Println(
+			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
+	}
 
 	// debug:
-	res, err := yaml.Marshal(conf)
+	log.Printf("Script to be run:\n%s\n", s.String())
+
+	// Prepare startup script.
+	startup, err := util.Asset("assets/startup.sh")
 	if err != nil {
+		log.Fatal("Startup script was not found.")
 		return cli.NewExitError(err.Error(), 1)
 	}
-	fmt.Println(string(res))
 
-	return nil
-}
-
-// Load a given script file and apply arguments.
-func loadScript(filename string, args []string, out *config) error {
-
-	// Define function map to replace place holders.
-	funcs := template.FuncMap{}
-	for _, v := range args {
-		sp := strings.Split(v, "=")
-		if len(sp) >= 2 {
-			funcs[sp[0]] = func() string {
-				return sp[1]
-			}
-		}
+	options := " "
+	if c.Bool("no-shoutdown") {
+		options = "--no-shutdown"
 	}
 
-	// Load YAML config file.
-	conf, err := template.New(filename).Funcs(funcs).ParseFiles(filename)
+	buf := &bytes.Buffer{}
+	data := map[string]string{
+		"Name":    s.instanceName,
+		"Script":  s.String(),
+		"Options": options,
+	}
+	temp, err := template.New("startup").Parse(string(startup))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	if err := temp.ExecuteTemplate(buf, "startup", data); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	// Create an instance.
+	builder, err := util.NewInstanceBuilder(conf.Gcp.Project)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
-	// Replace place holders with given args.
-	buf := &bytes.Buffer{}
-	if err := conf.Execute(buf, nil); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+	disksize := c.Int64("disk-size")
+	if disksize < 9 {
+		disksize = 9
 	}
 
-	// Unmarshal YAML file.
-	fmt.Println(buf.String())
-	return yaml.Unmarshal(buf.Bytes(), out)
-
-}
-
-// checkResultSection validates config has result section.
-func checkResultSection(c *cli.Context, conf *config) error {
-
-	if _, ok := conf[result]; !ok {
-
-		// if c.Bool("quiet") {
-		// 	return cli.NewExitError("Configuration doesn't have result section.", 3)
-		// } else {
-		//
-		// }
-		return cli.NewExitError("Configuration doesn't have result section.", 3)
-
+	if c.Bool("dry") {
+		log.Printf("Startup script:\n%s\n", buf.String())
+	} else {
+		log.Printf("Creating an instance named %s.", chalk.Bold.TextStyle(s.instanceName))
+		builder.CreateInstance(s.instanceName, []*util.MetadataItem{
+			&util.MetadataItem{
+				Key:   "startup-script",
+				Value: buf.String(),
+			},
+		}, disksize)
 	}
 
 	return nil
-
 }
