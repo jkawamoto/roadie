@@ -3,11 +3,13 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/jkawamoto/pb"
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -122,6 +124,11 @@ func downloadFiles(project, bucket, prefix, query string) error {
 		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 
 			var wg sync.WaitGroup
+			fmt.Println("Downloading...")
+
+			// var pool *pb.Pool
+			pool, _ := pb.StartPool()
+
 			for {
 
 				info := <-file
@@ -129,33 +136,39 @@ func downloadFiles(project, bucket, prefix, query string) error {
 					break
 				}
 
-				fmt.Println(info.Path)
+				if info.Name == "" {
+					continue
+				}
 
 				if matched, _ := filepath.Match(query, info.Name); matched {
-					fmt.Println(matched)
+
+					bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+					pool.Add(bar)
 
 					wg.Add(1)
-					go func() {
+					go func(bar *pb.ProgressBar) {
 
 						f, err := os.OpenFile(info.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 						if err != nil {
 						}
 						defer f.Close()
 
-						buf := bufio.NewWriter(f)
+						buf := bufio.NewWriter(io.MultiWriter(f, bar))
 						defer buf.Flush()
 
 						if err := storage.Download(info.Path, buf); err != nil {
 						}
 						wg.Done()
+						bar.Finish()
 
-					}()
+					}(bar)
 
 				}
 
 			}
 
 			wg.Wait()
+			pool.Stop()
 			done <- struct{}{}
 
 		})
