@@ -110,7 +110,7 @@ loop:
 }
 
 // UploadToGCS uploads a file to GCS.
-func UploadToGCS(project, bucket, prefix, name, filepath string) (string, error) {
+func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
@@ -118,18 +118,27 @@ func UploadToGCS(project, bucket, prefix, name, filepath string) (string, error)
 	}
 
 	if name == "" {
-		name = util.Basename(filepath)
+		name = filepath.Base(input)
 	}
 	location := util.CreateURL(bucket, prefix, name)
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = fmt.Sprintf("Uploading to %s...", location)
-	s.FinalMSG = fmt.Sprintf("\n                   \rUploaded to %s.   \n", chalk.Bold.TextStyle(location.String()))
-	s.Start()
-	defer s.Stop()
+	info, err := os.Stat(input)
+	if err != nil {
+		return "", err
+	}
 
-	if err := storage.Upload(filepath, location); err != nil {
-		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("Cannot upload file %s. (%s)"), filepath, err.Error())
+	file, err := os.Open(input)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	fmt.Println("Uploading...")
+	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
+	bar.Start()
+	defer bar.Finish()
+
+	if err := storage.Upload(bar.NewProxyReader(file), location); err != nil {
 		return "", cli.NewExitError(err.Error(), 2)
 	}
 	return location.String(), nil
@@ -168,7 +177,7 @@ func DownloadFromGCS(project, bucket, prefix, name, output string) error {
 	fmt.Println("Downloading...")
 	bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(name)
 	bar.Start()
-	defer bar.FinishPrint(fmt.Sprintf("Downloaded to %s.", chalk.Bold.TextStyle(output)))
+	defer bar.Finish()
 
 	writer := io.MultiWriter(f, bar)
 	buf := bufio.NewWriter(writer)
