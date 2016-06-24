@@ -24,10 +24,10 @@ func CmdResultList(c *cli.Context) error {
 	conf := GetConfig(c)
 	switch c.NArg() {
 	case 0:
-		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("quiet"))
+		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args()[0]
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("quiet"))
+		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)

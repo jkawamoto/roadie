@@ -25,16 +25,29 @@ type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
 type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{})
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(project, bucket, prefix string, quiet bool) (err error) {
+func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) {
+
+	var headers []string
+	if url {
+		headers = []string{"FILE NAME", "SIZE", "TIME CREATED", "URL"}
+	} else {
+		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
+	}
+
 	return printList(
-		project, bucket, prefix, quiet, []string{"FILE NAME", "SIZE", "TIME CREATED"},
+		project, bucket, prefix, quiet, headers,
 		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
 
 			if info.Name != "" {
 				if quiet {
 					table.AddRow(info.Name)
+				} else if url {
+					table.AddRow(info.Name, fmt.Sprintf(
+						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
+						fmt.Sprintf("gs://%s/%s", bucket, info.Path))
 				} else {
-					table.AddRow(info.Name, fmt.Sprintf("%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
+					table.AddRow(info.Name, fmt.Sprintf(
+						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
 				}
 			}
 
@@ -42,19 +55,27 @@ func PrintFileList(project, bucket, prefix string, quiet bool) (err error) {
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(project, bucket, prefix string, quiet bool) (err error) {
+func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
+
+	var headers []string
+	if url {
+		headers = []string{"INSTANCE NAME", "TIME CREATED", "URL"}
+	} else {
+		headers = []string{"INSTANCE NAME", "TIME CREATED"}
+	}
 
 	return printList(
-		project, bucket, prefix, quiet, []string{"INSTANCE NAME", "TIME CREATED"},
+		project, bucket, prefix, quiet, headers,
 		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
 
-			dir, _ := filepath.Split(info.Path)
-			name := strings.Replace(dir[len(ResultPrefix):], "/", "", -1)
-			if info.Name != "" {
+			rel, _ := filepath.Rel(prefix, info.Path)
+			if rel != "." && !strings.Contains(rel, "/") {
 				if quiet {
-					table.AddRow(name)
+					table.AddRow(rel)
+				} else if url {
+					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat), info.Path)
 				} else {
-					table.AddRow(name, info.TimeCreated.Format(PrintTimeFormat))
+					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}
 			}
 

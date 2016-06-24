@@ -117,6 +117,16 @@ var Commands = []cli.Command{
 					"Otherwise show instance names which have result files.",
 				ArgsUsage: "[<instance name>]",
 				Action:    command.CmdResultList,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "quiet, q",
+						Usage: "only display file names",
+					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
+				},
 			},
 			{
 				Name:  "show",
@@ -333,6 +343,10 @@ var Commands = []cli.Command{
 						Name:  "quiet, q",
 						Usage: "only display file names",
 					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
 				},
 			},
 			{
@@ -367,11 +381,20 @@ var Commands = []cli.Command{
 		Usage: "manage data files.",
 		Subcommands: cli.Commands{
 			{
-				// TODO: Show URL, too.
 				Name:      "list",
 				Usage:     "show lists of data.",
 				ArgsUsage: " ",
 				Action:    command.GenerateListAction(command.DataPrefix),
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "quiet, q",
+						Usage: "only display file names",
+					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
+				},
 			},
 			{
 				// TODO: Add description.

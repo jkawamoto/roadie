@@ -35,6 +35,7 @@ func GetConfig(c *cli.Context) *config.Config {
 }
 
 // GenerateListAction generates an action which prints list of files satisfies a given prefix.
+// If url is true, show urls, too.
 func GenerateListAction(prefix string) func(*cli.Context) error {
 
 	return func(c *cli.Context) error {
@@ -45,7 +46,7 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("quiet"))
+		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
 
 	}
 
