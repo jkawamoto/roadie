@@ -1,10 +1,12 @@
 package command
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
@@ -73,7 +75,7 @@ func printFileBody(project, bucket, prefix, filePrefix string, quiet bool) error
 	errCh := make(chan error)
 
 	go storage.List(prefix, fileCh, errCh)
-	go printFileBodyWorker(storage, "", fileCh, doneCh, quiet)
+	go printFileBodyWorker(storage, prefix, fileCh, doneCh, quiet)
 
 loop:
 	for {
@@ -84,7 +86,6 @@ loop:
 		case err = <-errCh:
 			// storage.List ends but printFileBodyWorker is still working.
 			fileCh <- nil
-			break loop
 		}
 	}
 
@@ -114,5 +115,43 @@ func printFileBodyWorker(s *util.Storage, prefix string, fileCh <-chan *util.Fil
 		}
 
 	}
+
+}
+
+func downloadFileWorker(s *util.Storage, pattern string, fileCh <-chan *util.FileInfo, done chan<- struct{}, quiet bool) {
+
+	var wg sync.WaitGroup
+	for {
+
+		info := <-fileCh
+		if info == nil {
+			break
+		}
+
+		if matched, _ := filepath.Match(pattern, info.Name); matched {
+
+			wg.Add(1)
+			go func() {
+
+				f, err := os.OpenFile(info.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if err != nil {
+				}
+				defer f.Close()
+
+				buf := bufio.NewWriter(f)
+				defer buf.Flush()
+
+				if err := s.Download(info.Path, buf); err != nil {
+				}
+				wg.Done()
+
+			}()
+
+		}
+
+	}
+
+	wg.Wait()
+	done <- struct{}{}
 
 }
