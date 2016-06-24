@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jkawamoto/roadie-cli/command"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -31,9 +32,12 @@ var GlobalFlags = []cli.Flag{
 // Commands manage sub commands.
 var Commands = []cli.Command{
 	{
-		Name:   "run",
-		Usage:  "run a script on Google Cloud Platform.",
-		Action: command.CmdRun,
+		Name:  "run",
+		Usage: "run a script on Google Cloud Platform.",
+		// TODO: Add description.
+		Description: "",
+		ArgsUsage:   "<script file>",
+		Action:      command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "git",
@@ -141,19 +145,20 @@ var Commands = []cli.Command{
 				Action:    command.CmdResultShow,
 			},
 			{
-				// TODO: Add explanation about * will be expanded by shell and use "*" to supress it.
 				Name:  "get",
 				Usage: "get result files.",
 				Description: "download result files from a given instance and matching given filenames. " +
 					"Filenames accept wildcard characters. " +
 					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.",
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
 				ArgsUsage: "<instance name> <filename>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output directory. If not exists, it will be made.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
 					},
 				},
@@ -363,13 +368,15 @@ var Commands = []cli.Command{
 				Description: "download source files which match given filenames. " +
 					"Filenames accept wildcard characters. " +
 					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.",
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
 				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output directory. If not exists, it will be made.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
 					},
 				},
@@ -423,13 +430,15 @@ var Commands = []cli.Command{
 				Description: "download data files which match given filenames. " +
 					"Filenames accept wildcard characters. " +
 					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.",
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
 				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output directory. If not exists, it will be made.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
 					},
 				},
