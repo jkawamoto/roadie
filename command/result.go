@@ -70,18 +70,10 @@ func CmdResultGet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-	for _, query := range c.Args().Tail() {
+	return downloadFiles(
+		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
+		c.String("o"), c.Args().Tail())
 
-		downloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), query)
-
-	}
-
-	return nil
-
-}
-
-func CmdResultGetAll(c *cli.Context) error {
-	return nil
 }
 
 // printFileBody prints file bodies in a bucket associated with a project,
@@ -116,8 +108,20 @@ func printFileBody(project, bucket, prefix, query string, quiet bool) error {
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
-// which has a prefix and satisfies a query.
-func downloadFiles(project, bucket, prefix, query string) error {
+// which has a prefix and satisfies a query. Downloaded files will be put in
+// a given directory.
+func downloadFiles(project, bucket, prefix, dir string, queries []string) error {
+
+	if info, err := os.Stat(dir); err != nil {
+		// Given dir does not exist.
+		if err2 := os.MkdirAll(dir, 0777); err2 != nil {
+			return cli.NewExitError(err2.Error(), 2)
+		}
+	} else {
+		if !info.IsDir() {
+			return cli.NewExitError(fmt.Sprintf("Cannot create the directory tree: %s", dir), 2)
+		}
+	}
 
 	return ListupFiles(
 		project, bucket, prefix,
@@ -126,42 +130,49 @@ func downloadFiles(project, bucket, prefix, query string) error {
 			var wg sync.WaitGroup
 			fmt.Println("Downloading...")
 
-			// var pool *pb.Pool
 			pool, _ := pb.StartPool()
-
 			for {
 
 				info := <-file
 				if info == nil {
 					break
-				}
-
-				if info.Name == "" {
+				} else if info.Name == "" {
 					continue
 				}
 
-				if matched, _ := filepath.Match(query, info.Name); matched {
+				for _, q := range queries {
 
-					bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-					pool.Add(bar)
+					if matched, _ := filepath.Match(q, info.Name); matched {
 
-					wg.Add(1)
-					go func(bar *pb.ProgressBar) {
+						bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+						pool.Add(bar)
 
-						f, err := os.OpenFile(info.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-						if err != nil {
-						}
-						defer f.Close()
+						wg.Add(1)
+						go func(bar *pb.ProgressBar) {
 
-						buf := bufio.NewWriter(io.MultiWriter(f, bar))
-						defer buf.Flush()
+							defer wg.Done()
 
-						if err := storage.Download(info.Path, buf); err != nil {
-						}
-						wg.Done()
-						bar.Finish()
+							filename := filepath.Join(dir, info.Name)
+							f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+							if err != nil {
+								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+								return
+							}
+							defer f.Close()
 
-					}(bar)
+							buf := bufio.NewWriter(io.MultiWriter(f, bar))
+							defer buf.Flush()
+
+							if err := storage.Download(info.Path, buf); err != nil {
+								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+							} else {
+								bar.Finish()
+							}
+
+						}(bar)
+
+						break
+					}
 
 				}
 

@@ -131,16 +131,19 @@ var Commands = []cli.Command{
 				Action:    command.CmdResultShow,
 			},
 			{
-				Name:      "get",
-				Usage:     "get a cirtain file.",
-				ArgsUsage: "<instance name> <filename>",
+				Name:  "get",
+				Usage: "get a cirtain file.",
+				Description: "download result files from a given instance and matching given filenames. " +
+					"Filenames accept wildcard characters.",
+				ArgsUsage: "<instance name> <filename>...",
 				Action:    command.CmdResultGet,
-			},
-			{
-				Name:      "get-all",
-				Usage:     "download all results.",
-				ArgsUsage: "<instance name>",
-				Action:    command.CmdResultGetAll,
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "o",
+						Usage: "output directory. If not exists, it will be made.",
+						Value: ".",
+					},
+				},
 			},
 		},
 	},
