@@ -20,6 +20,9 @@ const (
 	StdoutFilePrefix = "stdout"
 )
 
+// ListupFilesWorker is goroutine of a woker called from listupFiles.
+type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{})
+
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
@@ -66,26 +69,32 @@ func CmdResultGetAll(c *cli.Context) error {
 	return nil
 }
 
-func printFileBody(project, bucket, prefix, filePrefix string, quiet bool) error {
+// ListupFiles lists up files in a bucket associated with a project and which
+// have a prefix. Information of found files will be sent to worker function via channgel.
+// The worker function will be started as a goroutine.
+func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error {
 
 	storage, err := util.NewStorage(project, bucket)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
 
-	fileCh := make(chan *util.FileInfo, 10)
-	doneCh := make(chan struct{})
+	file := make(chan *util.FileInfo, 10)
+	done := make(chan struct{})
 	errCh := make(chan error)
 
-	go storage.List(prefix, fileCh, errCh)
-	go printFileBodyWorker(storage, prefix, fileCh, doneCh, quiet)
+	go storage.List(prefix, file, errCh)
+	go worker(storage, file, done)
 
 loop:
 	for {
 		select {
-		case <-doneCh:
+		case <-done:
 			// printFileBodyWorker ends.
 			break loop
 		case err = <-errCh:
 			// storage.List ends but printFileBodyWorker is still working.
-			fileCh <- nil
+			file <- nil
 		}
 	}
 
@@ -96,25 +105,34 @@ loop:
 
 }
 
-func printFileBodyWorker(s *util.Storage, prefix string, fileCh <-chan *util.FileInfo, done chan<- struct{}, quiet bool) {
+// printFileBody prints file bodies in a bucket associated with a project,
+// which has a prefix ans satisfies query. If quiet is ture, additional messages
+// well be suppressed.
+func printFileBody(project, bucket, prefix, query string, quiet bool) error {
 
-	for {
-		info := <-fileCh
-		if info == nil {
-			done <- struct{}{}
-			break
-		}
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 
-		if info.Name != "" && strings.HasPrefix(info.Name, prefix) {
-			if !quiet {
-				fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+			for {
+				info := <-file
+				if info == nil {
+					done <- struct{}{}
+					return
+				}
+
+				if info.Name != "" && strings.HasPrefix(info.Name, query) {
+					if !quiet {
+						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+					}
+					if err := storage.Download(info.Path, os.Stdout); err != nil {
+						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+					}
+				}
+
 			}
-			if err := s.Download(info.Path, os.Stdout); err != nil {
-				fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-			}
-		}
 
-	}
+		})
 
 }
 
