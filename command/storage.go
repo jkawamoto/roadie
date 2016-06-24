@@ -197,6 +197,8 @@ func DeleteFromGCS(project, bucket, prefix string, names []string) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
+	// TODO: Support glob and use ListupFiles.
+
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	for _, name := range names {
 

@@ -105,9 +105,9 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:  "result",
-		Usage: "list up and get results.",
-		Flags: []cli.Flag{},
+		Name:        "result",
+		Usage:       "list up and get results.",
+		Description: "list up, show, and download computation results.",
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -145,6 +145,11 @@ var Commands = []cli.Command{
 					},
 				},
 			},
+			{
+				// TODO: Implement this command.
+				Name:  "delete",
+				Usage: "delete result of an instance.",
+			},
 		},
 	},
 	{
@@ -152,8 +157,6 @@ var Commands = []cli.Command{
 		Usage: "show and upate configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
-		Action: cli.ShowSubcommandHelp,
-		Flags:  []cli.Flag{},
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
@@ -334,6 +337,7 @@ var Commands = []cli.Command{
 				Action:      command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
+				// TODO: Support multiple downloading.
 				Name:  "get",
 				Usage: "get one source file tarball.",
 				Description: "download a given file from Google Cloud Storage. " +
@@ -356,18 +360,22 @@ var Commands = []cli.Command{
 		Usage: "manage data files.",
 		Subcommands: cli.Commands{
 			{
+				// TODO: Show URL, too.
 				Name:      "list",
 				Usage:     "show lists of data.",
 				ArgsUsage: " ",
 				Action:    command.GenerateListAction(command.DataPrefix),
 			},
 			{
+				// TODO: Add description.
+				// TODO: Print url after uploading.
 				Name:      "put",
 				Usage:     "put a data file.",
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},
 			{
+				// TODO: Support glob.
 				Name:        "delete",
 				Usage:       "delete source files.",
 				Description: "delete given named files. This accepts multiple names separated by spaces.",
@@ -375,6 +383,7 @@ var Commands = []cli.Command{
 				Action:      command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
+				// TODO: Support download multibple files and -o option only used for directory.
 				Name:      "get",
 				Usage:     "get a data file.",
 				ArgsUsage: "<filename>",
