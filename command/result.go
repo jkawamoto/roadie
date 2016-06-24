@@ -20,9 +20,6 @@ const (
 	StdoutFilePrefix = "stdout"
 )
 
-// ListupFilesWorker is goroutine of a woker called from listupFiles.
-type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{})
-
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
@@ -83,42 +80,6 @@ func CmdResultGet(c *cli.Context) error {
 
 func CmdResultGetAll(c *cli.Context) error {
 	return nil
-}
-
-// ListupFiles lists up files in a bucket associated with a project and which
-// have a prefix. Information of found files will be sent to worker function via channgel.
-// The worker function will be started as a goroutine.
-func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error {
-
-	storage, err := util.NewStorage(project, bucket)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	file := make(chan *util.FileInfo, 10)
-	done := make(chan struct{})
-	errCh := make(chan error)
-
-	go storage.List(prefix, file, errCh)
-	go worker(storage, file, done)
-
-loop:
-	for {
-		select {
-		case <-done:
-			// printFileBodyWorker ends.
-			break loop
-		case err = <-errCh:
-			// storage.List ends but printFileBodyWorker is still working.
-			file <- nil
-		}
-	}
-
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	return nil
-
 }
 
 // printFileBody prints file bodies in a bucket associated with a project,
