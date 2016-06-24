@@ -61,8 +61,24 @@ func CmdResultShow(c *cli.Context) error {
 
 }
 
+// CmdResultGet downloads results for a given instance names or result files belonging to an instance.
 func CmdResultGet(c *cli.Context) error {
+
+	if c.NArg() < 2 {
+		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	instance := c.Args().First()
+	for _, query := range c.Args().Tail() {
+
+		downloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), query)
+
+	}
+
 	return nil
+
 }
 
 func CmdResultGetAll(c *cli.Context) error {
@@ -136,40 +152,51 @@ func printFileBody(project, bucket, prefix, query string, quiet bool) error {
 
 }
 
-func downloadFileWorker(s *util.Storage, pattern string, fileCh <-chan *util.FileInfo, done chan<- struct{}, quiet bool) {
+// DownloadFiles downloads files in a bucket associated with a project,
+// which has a prefix and satisfies a query.
+func downloadFiles(project, bucket, prefix, query string) error {
 
-	var wg sync.WaitGroup
-	for {
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 
-		info := <-fileCh
-		if info == nil {
-			break
-		}
+			var wg sync.WaitGroup
+			for {
 
-		if matched, _ := filepath.Match(pattern, info.Name); matched {
-
-			wg.Add(1)
-			go func() {
-
-				f, err := os.OpenFile(info.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-				if err != nil {
+				info := <-file
+				if info == nil {
+					break
 				}
-				defer f.Close()
 
-				buf := bufio.NewWriter(f)
-				defer buf.Flush()
+				fmt.Println(info.Path)
 
-				if err := s.Download(info.Path, buf); err != nil {
+				if matched, _ := filepath.Match(query, info.Name); matched {
+					fmt.Println(matched)
+
+					wg.Add(1)
+					go func() {
+
+						f, err := os.OpenFile(info.Name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+						if err != nil {
+						}
+						defer f.Close()
+
+						buf := bufio.NewWriter(f)
+						defer buf.Flush()
+
+						if err := storage.Download(info.Path, buf); err != nil {
+						}
+						wg.Done()
+
+					}()
+
 				}
-				wg.Done()
 
-			}()
+			}
 
-		}
+			wg.Wait()
+			done <- struct{}{}
 
-	}
-
-	wg.Wait()
-	done <- struct{}{}
+		})
 
 }
