@@ -145,37 +145,6 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 }
 
-// DeleteFromGCS deletes a file from GCS.
-func DeleteFromGCS(project, bucket, prefix string, names []string) error {
-
-	storage, err := util.NewStorage(project, bucket)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	// TODO: Support glob and use ListupFiles.
-
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	for _, name := range names {
-
-		s.Prefix = fmt.Sprintf("Deleting %s...", name)
-		s.FinalMSG = fmt.Sprintf("\nDeleted %s.    \n", chalk.Bold.TextStyle(name))
-		s.Start()
-
-		if err := storage.Delete(filepath.Join(prefix, name)); err != nil {
-			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\nCannot delete %s (%s)\n"), name, err.Error())
-		}
-		s.Stop()
-
-	}
-
-	if err != nil {
-		return cli.NewExitError("Cannot delete all files.", 1)
-	}
-	return nil
-
-}
-
 // ListupFiles lists up files in a bucket associated with a project and which
 // have a prefix. Information of found files will be sent to worker function via channgel.
 // The worker function will be started as a goroutine.
@@ -253,7 +222,7 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 						pool.Add(bar)
 
 						wg.Add(1)
-						go func(bar *pb.ProgressBar) {
+						go func(info *util.FileInfo, bar *pb.ProgressBar) {
 
 							defer wg.Done()
 
@@ -274,7 +243,7 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 								bar.Finish()
 							}
 
-						}(bar)
+						}(info, bar)
 
 						break
 					}
@@ -285,6 +254,53 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 
 			wg.Wait()
 			pool.Stop()
+			done <- struct{}{}
+
+		})
+
+}
+
+// DownloadFiles deletes files in a bucket associated with a project,
+// which has a prefix and satisfies a query.
+func DeleteFiles(project, bucket, prefix string, queries []string) error {
+
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+
+			var wg sync.WaitGroup
+			fmt.Println("Deleting...")
+
+			for {
+
+				info := <-file
+				if info == nil {
+					break
+				} else if info.Name == "" {
+					continue
+				}
+
+				for _, q := range queries {
+
+					if matched, _ := filepath.Match(q, info.Name); matched {
+
+						wg.Add(1)
+						go func(info *util.FileInfo) {
+							defer wg.Done()
+							if err := storage.Delete(info.Path); err != nil {
+								fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+							}
+						}(info)
+
+						// Break from checking queries.
+						break
+					}
+
+				}
+
+			}
+
+			wg.Wait()
 			done <- struct{}{}
 
 		})

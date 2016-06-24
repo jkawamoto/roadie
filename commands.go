@@ -149,9 +149,12 @@ var Commands = []cli.Command{
 				},
 			},
 			{
-				// TODO: Implement this command.
 				Name:  "delete",
-				Usage: "delete result of an instance.",
+				Usage: "delete result files.",
+				Description: "delete result files from a given instance and match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<instance name> <filename>...",
+				Action:    command.CmdResultDelete,
 			},
 		},
 	},
@@ -333,11 +336,12 @@ var Commands = []cli.Command{
 				},
 			},
 			{
-				Name:        "delete",
-				Usage:       "delete source files.",
-				Description: "delete given named files. This accepts multiple names separated by spaces.",
-				ArgsUsage:   "<filename>...",
-				Action:      command.GenerateDeleteAction(command.SourcePrefix),
+				Name:  "delete",
+				Usage: "delete source files.",
+				Description: "delete source files which match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<filename>...",
+				Action:    command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
 				Name:  "get",
@@ -378,12 +382,12 @@ var Commands = []cli.Command{
 				Action:    command.CmdDataPut,
 			},
 			{
-				// TODO: Support glob.
-				Name:        "delete",
-				Usage:       "delete source files.",
-				Description: "delete given named files. This accepts multiple names separated by spaces.",
-				ArgsUsage:   "<filename>...",
-				Action:      command.GenerateDeleteAction(command.DataPrefix),
+				Name:  "delete",
+				Usage: "delete data files.",
+				Description: "delete data files which match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<filename>...",
+				Action:    command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
 				Name:  "get",

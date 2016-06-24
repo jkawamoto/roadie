@@ -56,7 +56,7 @@ func CmdResultShow(c *cli.Context) error {
 
 }
 
-// CmdResultGet downloads results for a given instance names or result files belonging to an instance.
+// CmdResultGet downloads results for a given instance and file names are matched to queries.
 func CmdResultGet(c *cli.Context) error {
 
 	if c.NArg() < 2 {
@@ -69,6 +69,21 @@ func CmdResultGet(c *cli.Context) error {
 	return DownloadFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
 		c.String("o"), c.Args().Tail())
+
+}
+
+// CmdResultDelete deletes results for a given instance and file names are matched to queries.
+func CmdResultDelete(c *cli.Context) error {
+
+	if c.NArg() < 2 {
+		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	instance := c.Args().First()
+	return DeleteFiles(
+		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Args().Tail())
 
 }
 

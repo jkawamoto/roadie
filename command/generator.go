@@ -49,7 +49,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return DeleteFromGCS(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args())
+		return DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args())
 
 	}
 
