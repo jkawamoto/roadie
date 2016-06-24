@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -144,51 +145,6 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 }
 
-// DownloadFromGCS downloads a file from GCS
-func DownloadFromGCS(project, bucket, prefix, name, output string) error {
-
-	storage, err := util.NewStorage(project, bucket)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	if output == "" {
-		output = name
-	} else {
-		stat, err2 := os.Stat(output)
-		if err2 == nil && stat.IsDir() {
-			output = filepath.Join(output, name)
-		}
-	}
-
-	filename := filepath.Join(prefix, name)
-	info, err := storage.Status(filename)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	f, err := os.OpenFile(output, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	defer f.Close()
-
-	fmt.Println("Downloading...")
-	bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(name)
-	bar.Start()
-	defer bar.Finish()
-
-	writer := io.MultiWriter(f, bar)
-	buf := bufio.NewWriter(writer)
-	defer buf.Flush()
-
-	if err := storage.Download(filename, buf); err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	return nil
-
-}
-
 // DeleteFromGCS deletes a file from GCS.
 func DeleteFromGCS(project, bucket, prefix string, names []string) error {
 
@@ -253,5 +209,84 @@ loop:
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
+
+}
+
+// DownloadFiles downloads files in a bucket associated with a project,
+// which has a prefix and satisfies a query. Downloaded files will be put in
+// a given directory.
+func DownloadFiles(project, bucket, prefix, dir string, queries []string) error {
+
+	if info, err := os.Stat(dir); err != nil {
+		// Given dir does not exist.
+		if err2 := os.MkdirAll(dir, 0777); err2 != nil {
+			return cli.NewExitError(err2.Error(), 2)
+		}
+	} else {
+		if !info.IsDir() {
+			return cli.NewExitError(fmt.Sprintf("Cannot create the directory tree: %s", dir), 2)
+		}
+	}
+
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+
+			var wg sync.WaitGroup
+			fmt.Println("Downloading...")
+
+			pool, _ := pb.StartPool()
+			for {
+
+				info := <-file
+				if info == nil {
+					break
+				} else if info.Name == "" {
+					continue
+				}
+
+				for _, q := range queries {
+
+					if matched, _ := filepath.Match(q, info.Name); matched {
+
+						bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+						pool.Add(bar)
+
+						wg.Add(1)
+						go func(bar *pb.ProgressBar) {
+
+							defer wg.Done()
+
+							filename := filepath.Join(dir, info.Name)
+							f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+							if err != nil {
+								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+								return
+							}
+							defer f.Close()
+
+							buf := bufio.NewWriter(io.MultiWriter(f, bar))
+							defer buf.Flush()
+
+							if err := storage.Download(info.Path, buf); err != nil {
+								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+							} else {
+								bar.Finish()
+							}
+
+						}(bar)
+
+						break
+					}
+
+				}
+
+			}
+
+			wg.Wait()
+			pool.Stop()
+			done <- struct{}{}
+
+		})
 
 }

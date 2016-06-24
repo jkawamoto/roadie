@@ -131,10 +131,13 @@ var Commands = []cli.Command{
 				Action:    command.CmdResultShow,
 			},
 			{
+				// TODO: Add explanation about * will be expanded by shell and use "*" to supress it.
 				Name:  "get",
-				Usage: "get a cirtain file.",
+				Usage: "get result files.",
 				Description: "download result files from a given instance and matching given filenames. " +
-					"Filenames accept wildcard characters.",
+					"Filenames accept wildcard characters. " +
+					"Downloaded file will be stored in the current working directory. " +
+					"If '-o' option is given, downloaded file will be stored in that directory.",
 				ArgsUsage: "<instance name> <filename>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
@@ -337,19 +340,19 @@ var Commands = []cli.Command{
 				Action:      command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
-				// TODO: Support multiple downloading.
 				Name:  "get",
-				Usage: "get one source file tarball.",
-				Description: "download a given file from Google Cloud Storage. " +
+				Usage: "get source files.",
+				Description: "download source files which match given filenames. " +
+					"Filenames accept wildcard characters. " +
 					"Downloaded file will be stored in the current working directory. " +
-					"'-o' option changes this behavior. If a file path given, downloaded file will be stored as the name. " +
-					"If a directory name given, downloaded file will be stored in that directory.",
-				ArgsUsage: "<filename>",
+					"If '-o' option is given, downloaded file will be stored in that directory.",
+				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output file path or directory where downloaded file is stored.",
+						Usage: "output directory. If not exists, it will be made.",
+						Value: ".",
 					},
 				},
 			},
@@ -383,15 +386,19 @@ var Commands = []cli.Command{
 				Action:      command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
-				// TODO: Support download multibple files and -o option only used for directory.
-				Name:      "get",
-				Usage:     "get a data file.",
-				ArgsUsage: "<filename>",
+				Name:  "get",
+				Usage: "get data files.",
+				Description: "download data files which match given filenames. " +
+					"Filenames accept wildcard characters. " +
+					"Downloaded file will be stored in the current working directory. " +
+					"If '-o' option is given, downloaded file will be stored in that directory.",
+				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output file path or directory where downloaded file is stored.",
+						Usage: "output directory. If not exists, it will be made.",
+						Value: ".",
 					},
 				},
 			},

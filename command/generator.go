@@ -27,13 +27,13 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 
 	return func(c *cli.Context) error {
 
-		if c.NArg() != 1 {
-			fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		if c.NArg() == 0 {
+			fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
 		conf := GetConfig(c)
-		return DownloadFromGCS(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()[0], c.String("o"))
+		return DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
 
 	}
 
