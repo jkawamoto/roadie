@@ -103,6 +103,17 @@ func (s *Storage) Download(filename string, out io.Writer) (err error) {
 
 }
 
+// Status returns a file status of an object.
+func (s *Storage) Status(filename string) (*FileInfo, error) {
+
+	res, err := s.service.Objects.Get(s.BucketName, filename).Do()
+	if err != nil {
+		return nil, err
+	}
+	return NewFileInfo(res), nil
+
+}
+
 // List is a goroutine to list up files in a bucket.
 func (s *Storage) List(prefix string, resCh chan<- *FileInfo, errCh chan<- error) {
 

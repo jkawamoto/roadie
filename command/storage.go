@@ -3,10 +3,13 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
@@ -150,11 +153,11 @@ func DownloadFromGCS(project, bucket, prefix, name, output string) error {
 		}
 	}
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Downloading..."
-	s.FinalMSG = fmt.Sprintf("\n              \rDownloaded to %s.\n", chalk.Bold.TextStyle(output))
-	s.Start()
-	defer s.Stop()
+	filename := filepath.Join(prefix, name)
+	info, err := storage.Status(filename)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
 
 	f, err := os.OpenFile(output, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -162,10 +165,16 @@ func DownloadFromGCS(project, bucket, prefix, name, output string) error {
 	}
 	defer f.Close()
 
-	buf := bufio.NewWriter(f)
+	fmt.Println("Downloading...")
+	bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(name)
+	bar.Start()
+	defer bar.FinishPrint(fmt.Sprintf("Downloaded to %s.", chalk.Bold.TextStyle(output)))
+
+	writer := io.MultiWriter(f, bar)
+	buf := bufio.NewWriter(writer)
 	defer buf.Flush()
 
-	if err := storage.Download(filepath.Join(prefix, name), buf); err != nil {
+	if err := storage.Download(filename, buf); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
