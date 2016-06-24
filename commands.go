@@ -379,12 +379,16 @@ var Commands = []cli.Command{
 	{
 		Name:  "data",
 		Usage: "manage data files.",
+		Description: "Manage data files. Data files can be loaded from instance using their url, " +
+			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
+			"Use data section in your script to loda data files in your instance.",
 		Subcommands: cli.Commands{
 			{
-				Name:      "list",
-				Usage:     "show lists of data.",
-				ArgsUsage: " ",
-				Action:    command.GenerateListAction(command.DataPrefix),
+				Name:        "list",
+				Usage:       "show lists of data.",
+				Description: "List up data files. This command does not take any arguments.",
+				ArgsUsage:   " ",
+				Action:      command.GenerateListAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -397,10 +401,11 @@ var Commands = []cli.Command{
 				},
 			},
 			{
-				// TODO: Add description.
-				// TODO: Print url after uploading.
-				Name:      "put",
-				Usage:     "put a data file.",
+				Name:  "put",
+				Usage: "put a data file.",
+				Description: "Upload a data file. " +
+					"If stored name is given, uploaded file will be renamed and stored as the given name. " +
+					"Otherwise, basename of original file will be used.",
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},

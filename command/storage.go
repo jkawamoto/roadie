@@ -130,7 +130,9 @@ loop:
 
 }
 
-// UploadToGCS uploads a file to GCS.
+// UploadToGCS uploads a file to a bucket associated with a project.
+// Uploaded file will have a given name. This function returns a URL
+// for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 	storage, err := util.NewStorage(project, bucket)
