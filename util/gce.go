@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/ttacon/chalk"
 
@@ -162,10 +161,10 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 	res, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
-			log.Println(res.StatusMessage)
+			fmt.Println(res.StatusMessage)
 		}
 		for _, v := range res.Warnings {
-			log.Println(chalk.Red.Color(v.Message))
+			fmt.Println(chalk.Red.Color(v.Message))
 		}
 	}
 	return
@@ -177,10 +176,10 @@ func (b *InstanceBuilder) StopInstance(name string) (err error) {
 	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
-			log.Println(res.StatusMessage)
+			fmt.Println(res.StatusMessage)
 		}
 		for _, v := range res.Warnings {
-			log.Println(chalk.Red.Color(v.Message))
+			fmt.Println(chalk.Red.Color(v.Message))
 		}
 	}
 	return

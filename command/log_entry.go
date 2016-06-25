@@ -1,7 +1,7 @@
 package command
 
 import (
-	"log"
+	"fmt"
 	"strings"
 	"time"
 
@@ -51,7 +51,7 @@ func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- err
 
 				timestamp, err := time.Parse("2006-01-02T15:04:05Z", v.Timestamp)
 				if err != nil {
-					log.Println(chalk.Red.Color(err.Error()))
+					fmt.Println(chalk.Red.Color(err.Error()))
 					continue
 				}
 				timestamp = timestamp.In(time.Local)

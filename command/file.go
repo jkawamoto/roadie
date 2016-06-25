@@ -94,7 +94,7 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
-	s.FinalMSG = "\n                        \r"
+	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
 
 	go storage.List(prefix, ch, errCh)

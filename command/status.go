@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -68,7 +69,7 @@ func CmdStatus(c *cli.Context) error {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
-	s.FinalMSG = "\n"
+	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
 
 loop:
@@ -132,11 +133,13 @@ func CmdStatusKill(c *cli.Context) error {
 	name := c.Args()[0]
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = fmt.Sprintf("Killing instance %s...", name)
-	s.FinalMSG = fmt.Sprintf("\nKilled Instance %s.    \n", name)
+	s.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.    \n", strings.Repeat(" ", len(s.Prefix)+2), name)
 	s.Start()
 
 	if err = b.StopInstance(name); err != nil {
-		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\nCannot kill instance %s (%s)\n"), name, err.Error())
+		s.FinalMSG = fmt.Sprintf(
+			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
+			strings.Repeat(" ", len(s.Prefix)+2), name, err.Error())
 	}
 	s.Stop()
 

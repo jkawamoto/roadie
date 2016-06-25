@@ -3,9 +3,11 @@ package command
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"strings"
 	"text/template"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -30,33 +32,33 @@ func CmdRun(c *cli.Context) error {
 		conf.Gcp.Bucket = conf.Gcp.Project
 	}
 
-	s, err := loadScript(yamlFile, c.StringSlice("e"))
+	script, err := loadScript(yamlFile, c.StringSlice("e"))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	if v := c.String("name"); v != "" {
-		s.instanceName = v
+		script.instanceName = v
 	}
 
 	// Prepare source section.
 	if v := c.String("git"); v != "" {
-		s.setGitSource(v)
+		script.setGitSource(v)
 	} else if v := c.String("url"); v != "" {
-		s.setURLSource(v)
+		script.setURLSource(v)
 	} else if path := c.String("local"); path != "" {
-		if err := s.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+		if err := script.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
-	} else if s.body.Source == "" {
+	} else if script.body.Source == "" {
 		return cli.NewExitError("No source section and source flages are given.", 2)
 	}
 
 	// Check result section.
-	if s.body.Result == "" || c.Bool("overwrite-result-section") {
-		s.setResult(conf.Gcp.Bucket)
+	if script.body.Result == "" || c.Bool("overwrite-result-section") {
+		script.setResult(conf.Gcp.Bucket)
 	} else {
 		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), yamlFile, s.body.Result)
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), yamlFile, script.body.Result)
 		fmt.Println(
 			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
 		fmt.Println(
@@ -64,12 +66,12 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	// debug:
-	log.Printf("Script to be run:\n%s\n", s.String())
+	fmt.Printf("Script to be run:\n%s\n", script.String())
 
 	// Prepare startup script.
 	startup, err := util.Asset("assets/startup.sh")
 	if err != nil {
-		log.Fatal("Startup script was not found.")
+		fmt.Println(chalk.Red.Color("Startup script was not found."))
 		return cli.NewExitError(err.Error(), 1)
 	}
 
@@ -80,8 +82,8 @@ func CmdRun(c *cli.Context) error {
 
 	buf := &bytes.Buffer{}
 	data := map[string]string{
-		"Name":    s.instanceName,
-		"Script":  s.String(),
+		"Name":    script.instanceName,
+		"Script":  script.String(),
 		"Options": options,
 	}
 	temp, err := template.New("startup").Parse(string(startup))
@@ -99,15 +101,22 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	if c.Bool("dry") {
-		log.Printf("Startup script:\n%s\n", buf.String())
+		fmt.Printf("Startup script:\n%s\n", buf.String())
 	} else {
-		log.Printf("Creating an instance named %s.", chalk.Bold.TextStyle(s.instanceName))
-		builder.CreateInstance(s.instanceName, []*util.MetadataItem{
+
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.instanceName))
+		s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
+		s.Start()
+		defer s.Stop()
+
+		builder.CreateInstance(script.instanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
 				Value: buf.String(),
 			},
 		}, c.Int64("disk-size"))
+
 	}
 
 	return nil
