@@ -34,42 +34,51 @@ var Commands = []cli.Command{
 	{
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
-		// TODO: Add description.
-		Description: "",
-		ArgsUsage:   "<script file>",
-		Action:      command.CmdRun,
+		Description: "Create an instance and run a given script on it. " +
+			"`git`, `url`, `local` flags help to deploy source files to the instance. " +
+			"Although source section in script file is used to specify where source files are, " +
+			"those flags overwrite such configuration, " +
+			"and `local` flag uploads local files so that the instance can access it. " +
+			"With the `local` flag, you don't need to make zip files and upload them to somewhere. " +
+			"Script file might have some variables, i.e. parameters. " +
+			"`e` option replaces placeholders by given key-value pairs. " +
+			"A placeholder named `name` looks like {{name}} in script. " +
+			"Option `-e name=abcdefg` replaces {{name}} as abcdefg.",
+		ArgsUsage: "<script file>",
+		Action:    command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "git",
-				Usage: "Git repository.",
+				Usage: "git repository `URL`. Souce files will be cloned from there.",
 			},
 			cli.StringFlag{
 				Name:  "url",
-				Usage: "URL of the source code.",
+				Usage: "source files will be downloaded from `URL`.",
 			},
 			cli.StringFlag{
 				Name:  "local",
-				Usage: "Local path to be run.",
+				Usage: "upload source files from given `PATH` and use it the new instance.",
 			},
 			cli.StringFlag{
 				Name:  "name",
-				Usage: "Instance name.",
+				Usage: "new instance uses the given `NAME`.",
 			},
 			cli.StringSliceFlag{
 				Name:  "e",
-				Usage: "key=value to be set in place holders of the script.",
+				Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
 			},
 			cli.BoolFlag{
 				Name:  "no-shutdown",
-				Usage: "do not shoutdown instance automatically.",
+				Usage: "not shoutdown instance automatically. To stop instance use 'status kill' command.",
 			},
 			cli.BoolFlag{
 				Name:  "overwrite-result-section",
-				Usage: "if set this flag, result section in a given script will be overwritten to default value.",
+				Usage: "if set, result section in a given script will be overwritten to default value.",
 			},
 			cli.Int64Flag{
 				Name:  "disk-size",
-				Usage: "set disk size in GB. (Minimum: 9)",
+				Usage: "set disk size in GB.",
+				Value: 9,
 			},
 			cli.BoolFlag{
 				Name:  "dry",

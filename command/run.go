@@ -15,7 +15,8 @@ import (
 func CmdRun(c *cli.Context) error {
 
 	if c.NArg() == 0 {
-		return cli.NewExitError("No configuration file is given", 1)
+		fmt.Println(chalk.Red.Color("Script file is not given."))
+		return cli.ShowSubcommandHelp(c)
 	}
 
 	yamlFile := c.Args()[0]
@@ -97,11 +98,6 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
-	disksize := c.Int64("disk-size")
-	if disksize < 9 {
-		disksize = 9
-	}
-
 	if c.Bool("dry") {
 		log.Printf("Startup script:\n%s\n", buf.String())
 	} else {
@@ -111,7 +107,7 @@ func CmdRun(c *cli.Context) error {
 				Key:   "startup-script",
 				Value: buf.String(),
 			},
-		}, disksize)
+		}, c.Int64("disk-size"))
 	}
 
 	return nil
