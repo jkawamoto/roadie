@@ -283,7 +283,7 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 
 }
 
-// DownloadFiles deletes files in a bucket associated with a project,
+// DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query.
 func DeleteFiles(project, bucket, prefix string, queries []string) error {
 
