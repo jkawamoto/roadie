@@ -69,14 +69,7 @@ func NewStorage(project, bucket string) (*Storage, error) {
 // Upload a file to a location.
 func (s *Storage) Upload(in io.Reader, location *url.URL) error {
 
-	// TODO: If already exists, return error.
 	object := &storage.Object{Name: location.Path[1:]}
-	// file, err := os.Open(filename)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer file.Close()
-
 	if _, err := s.service.Objects.Insert(s.BucketName, object).Media(in).Do(); err != nil {
 		return err
 	}

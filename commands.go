@@ -458,6 +458,9 @@ var Commands = []cli.Command{
 
 // CommandNotFound shows error message and exit when a given command is not found.
 func CommandNotFound(c *cli.Context, command string) {
-	fmt.Fprintf(os.Stderr, "%s: '%s' is not a %s command. See '%s --help'.", c.App.Name, command, c.App.Name, c.App.Name)
+
+	fmt.Fprintf(os.Stderr, chalk.Red.Color("'%s' is not a %s command..\n"), command, c.App.Name)
+	cli.ShowAppHelp(c)
 	os.Exit(2)
+
 }

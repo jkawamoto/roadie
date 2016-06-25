@@ -41,6 +41,7 @@ func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- err
 			chErr <- err
 			return
 		}
+
 		for _, v := range res.Entries {
 			if v.JsonPayload != nil {
 

@@ -19,6 +19,7 @@ func main() {
 	app.Flags = GlobalFlags
 	app.Commands = Commands
 	app.CommandNotFound = CommandNotFound
+	app.EnableBashCompletion = true
 
 	app.Metadata = map[string]interface{}{
 		"config": config.LoadConfig("./.roadie"),
