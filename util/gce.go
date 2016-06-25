@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ttacon/chalk"
@@ -24,6 +25,16 @@ type InstanceBuilder struct {
 type MetadataItem struct {
 	Key   string
 	Value string
+}
+
+type MachineType struct {
+	Name        string
+	Description string
+}
+
+type Zone struct {
+	Name   string
+	Status string
 }
 
 // NewInstanceBuilder creates a new instance builder associated with
@@ -53,16 +64,20 @@ func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
 }
 
 // AvailableZones returns a slice of zone names.
-func (b *InstanceBuilder) AvailableZones() ([]string, error) {
+func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
 
 	res, err := b.service.Zones.List(b.Project).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	zones := make([]string, len(res.Items))
+	zones := make([]Zone, len(res.Items))
 	for i, v := range res.Items {
-		zones[i] = v.Name
+		fmt.Println(v.Description, v.Name, v.Status)
+		zones[i] = Zone{
+			Name:   v.Name,
+			Status: v.Status,
+		}
 	}
 
 	return zones, nil
@@ -70,16 +85,16 @@ func (b *InstanceBuilder) AvailableZones() ([]string, error) {
 }
 
 // AvailableMachineTypes returns a slice of machie type names.
-func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
+func (b *InstanceBuilder) AvailableMachineTypes() ([]MachineType, error) {
 
 	res, err := b.service.MachineTypes.List(b.Project, "us-central1-b").Do()
 	if err != nil {
 		return nil, err
 	}
 
-	types := make([]string, len(res.Items))
+	types := make([]MachineType, len(res.Items))
 	for i, v := range res.Items {
-		types[i] = v.Name
+		types[i] = MachineType{Name: v.Name, Description: v.Description}
 	}
 
 	return types, nil
