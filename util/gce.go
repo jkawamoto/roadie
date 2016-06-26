@@ -36,6 +36,8 @@ type Zone struct {
 	Status string
 }
 
+// TODO: Context based API.
+
 // NewInstanceBuilder creates a new instance builder associated with
 // a given project.
 func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
@@ -72,7 +74,6 @@ func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
 
 	zones := make([]Zone, len(res.Items))
 	for i, v := range res.Items {
-		fmt.Println(v.Description, v.Name, v.Status)
 		zones[i] = Zone{
 			Name:   v.Name,
 			Status: v.Status,
