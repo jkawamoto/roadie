@@ -69,3 +69,15 @@ func (c *Config) Save() (err error) {
 	return
 
 }
+
+// Print shows current configurations as a TOML style.
+func (c *Config) Print() (err error) {
+
+	data, err := toml.Marshal(*c)
+	if err != nil {
+		return
+	}
+	fmt.Println(string(data))
+	return
+
+}

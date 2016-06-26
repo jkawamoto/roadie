@@ -32,6 +32,14 @@ var GlobalFlags = []cli.Flag{
 // Commands manage sub commands.
 var Commands = []cli.Command{
 	{
+		Name:  "init",
+		Usage: "initialize roadie.",
+		Description: "Check requirements. Install and set up `Google Cloud SDK` if necessary. " +
+			"Create configuration file `.roadie`.",
+		ArgsUsage: " ",
+		Action:    command.CmdInit,
+	},
+	{
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
