@@ -1,4 +1,6 @@
 # roadie
+[![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
+
 A easy way to run your programs on the cloud computing environment.
 
 ## Description
