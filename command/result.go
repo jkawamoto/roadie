@@ -1,15 +1,11 @@
 package command
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
-	"github.com/jkawamoto/pb"
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -28,10 +24,10 @@ func CmdResultList(c *cli.Context) error {
 	conf := GetConfig(c)
 	switch c.NArg() {
 	case 0:
-		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("quiet"))
+		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args()[0]
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("quiet"))
+		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
@@ -60,7 +56,7 @@ func CmdResultShow(c *cli.Context) error {
 
 }
 
-// CmdResultGet downloads results for a given instance names or result files belonging to an instance.
+// CmdResultGet downloads results for a given instance and file names are matched to queries.
 func CmdResultGet(c *cli.Context) error {
 
 	if c.NArg() < 2 {
@@ -70,9 +66,24 @@ func CmdResultGet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-	return downloadFiles(
+	return DownloadFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
 		c.String("o"), c.Args().Tail())
+
+}
+
+// CmdResultDelete deletes results for a given instance and file names are matched to queries.
+func CmdResultDelete(c *cli.Context) error {
+
+	if c.NArg() < 2 {
+		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	instance := c.Args().First()
+	return DeleteFiles(
+		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Args().Tail())
 
 }
 
@@ -102,85 +113,6 @@ func printFileBody(project, bucket, prefix, query string, quiet bool) error {
 				}
 
 			}
-
-		})
-
-}
-
-// DownloadFiles downloads files in a bucket associated with a project,
-// which has a prefix and satisfies a query. Downloaded files will be put in
-// a given directory.
-func downloadFiles(project, bucket, prefix, dir string, queries []string) error {
-
-	if info, err := os.Stat(dir); err != nil {
-		// Given dir does not exist.
-		if err2 := os.MkdirAll(dir, 0777); err2 != nil {
-			return cli.NewExitError(err2.Error(), 2)
-		}
-	} else {
-		if !info.IsDir() {
-			return cli.NewExitError(fmt.Sprintf("Cannot create the directory tree: %s", dir), 2)
-		}
-	}
-
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
-
-			var wg sync.WaitGroup
-			fmt.Println("Downloading...")
-
-			pool, _ := pb.StartPool()
-			for {
-
-				info := <-file
-				if info == nil {
-					break
-				} else if info.Name == "" {
-					continue
-				}
-
-				for _, q := range queries {
-
-					if matched, _ := filepath.Match(q, info.Name); matched {
-
-						bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-						pool.Add(bar)
-
-						wg.Add(1)
-						go func(bar *pb.ProgressBar) {
-
-							defer wg.Done()
-
-							filename := filepath.Join(dir, info.Name)
-							f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-							if err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-								return
-							}
-							defer f.Close()
-
-							buf := bufio.NewWriter(io.MultiWriter(f, bar))
-							defer buf.Flush()
-
-							if err := storage.Download(info.Path, buf); err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
-							} else {
-								bar.Finish()
-							}
-
-						}(bar)
-
-						break
-					}
-
-				}
-
-			}
-
-			wg.Wait()
-			pool.Stop()
-			done <- struct{}{}
 
 		})
 

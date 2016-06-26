@@ -1,7 +1,7 @@
 package util
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/ttacon/chalk"
 
@@ -25,6 +25,18 @@ type MetadataItem struct {
 	Key   string
 	Value string
 }
+
+type MachineType struct {
+	Name        string
+	Description string
+}
+
+type Zone struct {
+	Name   string
+	Status string
+}
+
+// TODO: Context based API.
 
 // NewInstanceBuilder creates a new instance builder associated with
 // a given project.
@@ -53,16 +65,19 @@ func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
 }
 
 // AvailableZones returns a slice of zone names.
-func (b *InstanceBuilder) AvailableZones() ([]string, error) {
+func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
 
 	res, err := b.service.Zones.List(b.Project).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	zones := make([]string, len(res.Items))
+	zones := make([]Zone, len(res.Items))
 	for i, v := range res.Items {
-		zones[i] = v.Name
+		zones[i] = Zone{
+			Name:   v.Name,
+			Status: v.Status,
+		}
 	}
 
 	return zones, nil
@@ -70,16 +85,16 @@ func (b *InstanceBuilder) AvailableZones() ([]string, error) {
 }
 
 // AvailableMachineTypes returns a slice of machie type names.
-func (b *InstanceBuilder) AvailableMachineTypes() ([]string, error) {
+func (b *InstanceBuilder) AvailableMachineTypes() ([]MachineType, error) {
 
 	res, err := b.service.MachineTypes.List(b.Project, "us-central1-b").Do()
 	if err != nil {
 		return nil, err
 	}
 
-	types := make([]string, len(res.Items))
+	types := make([]MachineType, len(res.Items))
 	for i, v := range res.Items {
-		types[i] = v.Name
+		types[i] = MachineType{Name: v.Name, Description: v.Description}
 	}
 
 	return types, nil
@@ -147,10 +162,10 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 	res, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
-			log.Println(res.StatusMessage)
+			fmt.Println(res.StatusMessage)
 		}
 		for _, v := range res.Warnings {
-			log.Println(chalk.Red.Color(v.Message))
+			fmt.Println(chalk.Red.Color(v.Message))
 		}
 	}
 	return
@@ -162,10 +177,10 @@ func (b *InstanceBuilder) StopInstance(name string) (err error) {
 	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
-			log.Println(res.StatusMessage)
+			fmt.Println(res.StatusMessage)
 		}
 		for _, v := range res.Warnings {
-			log.Println(chalk.Red.Color(v.Message))
+			fmt.Println(chalk.Red.Color(v.Message))
 		}
 	}
 	return

@@ -26,7 +26,11 @@ func CmdDataPut(c *cli.Context) error {
 	} else {
 		name = c.Args()[1]
 	}
-	_, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, name, c.Args()[0])
-	return err
+	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, name, c.Args()[0])
+	if err != nil {
+		return err
+	}
 
+	fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+	return nil
 }

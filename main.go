@@ -14,11 +14,12 @@ func main() {
 	app.Version = Version
 	app.Author = Author
 	app.Email = Email
-	app.Usage = ""
+	app.Usage = "A easy way to run your programs on the cloud computing environment."
 
 	app.Flags = GlobalFlags
 	app.Commands = Commands
 	app.CommandNotFound = CommandNotFound
+	app.EnableBashCompletion = true
 
 	app.Metadata = map[string]interface{}{
 		"config": config.LoadConfig("./.roadie"),

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jkawamoto/roadie-cli/command"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -31,41 +32,61 @@ var GlobalFlags = []cli.Flag{
 // Commands manage sub commands.
 var Commands = []cli.Command{
 	{
-		Name:   "run",
-		Usage:  "run a script on Google Cloud Platform.",
-		Action: command.CmdRun,
+		Name:  "init",
+		Usage: "initialize roadie.",
+		Description: "Check requirements. Install and set up `Google Cloud SDK` if necessary. " +
+			"Create configuration file `.roadie`.",
+		ArgsUsage: " ",
+		Action:    command.CmdInit,
+	},
+	{
+		Name:  "run",
+		Usage: "run a script on Google Cloud Platform.",
+		Description: "Create an instance and run a given script on it. " +
+			"`git`, `url`, `local` flags help to deploy source files to the instance. " +
+			"Although source section in script file is used to specify where source files are, " +
+			"those flags overwrite such configuration, " +
+			"and `local` flag uploads local files so that the instance can access it. " +
+			"With the `local` flag, you don't need to make zip files and upload them to somewhere. " +
+			"Script file might have some variables, i.e. parameters. " +
+			"`e` option replaces placeholders by given key-value pairs. " +
+			"A placeholder named `name` looks like {{name}} in script. " +
+			"Option `-e name=abcdefg` replaces {{name}} as abcdefg.",
+		ArgsUsage: "<script file>",
+		Action:    command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "git",
-				Usage: "Git repository.",
+				Usage: "git repository `URL`. Souce files will be cloned from there.",
 			},
 			cli.StringFlag{
 				Name:  "url",
-				Usage: "URL of the source code.",
+				Usage: "source files will be downloaded from `URL`.",
 			},
 			cli.StringFlag{
 				Name:  "local",
-				Usage: "Local path to be run.",
+				Usage: "upload source files from given `PATH` and use it the new instance.",
 			},
 			cli.StringFlag{
 				Name:  "name",
-				Usage: "Instance name.",
+				Usage: "new instance uses the given `NAME`.",
 			},
 			cli.StringSliceFlag{
 				Name:  "e",
-				Usage: "key=value to be set in place holders of the script.",
+				Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
 			},
 			cli.BoolFlag{
 				Name:  "no-shutdown",
-				Usage: "do not shoutdown instance automatically.",
+				Usage: "not shoutdown instance automatically. To stop instance use 'status kill' command.",
 			},
 			cli.BoolFlag{
 				Name:  "overwrite-result-section",
-				Usage: "if set this flag, result section in a given script will be overwritten to default value.",
+				Usage: "if set, result section in a given script will be overwritten to default value.",
 			},
 			cli.Int64Flag{
 				Name:  "disk-size",
-				Usage: "set disk size in GB. (Minimum: 9)",
+				Usage: "set disk size in GB.",
+				Value: 9,
 			},
 			cli.BoolFlag{
 				Name:  "dry",
@@ -105,9 +126,9 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:  "result",
-		Usage: "list up and get results.",
-		Flags: []cli.Flag{},
+		Name:        "result",
+		Usage:       "list up and get results.",
+		Description: "list up, show, and download computation results.",
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -117,6 +138,16 @@ var Commands = []cli.Command{
 					"Otherwise show instance names which have result files.",
 				ArgsUsage: "[<instance name>]",
 				Action:    command.CmdResultList,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "quiet, q",
+						Usage: "only display file names",
+					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
+				},
 			},
 			{
 				Name:  "show",
@@ -132,18 +163,30 @@ var Commands = []cli.Command{
 			},
 			{
 				Name:  "get",
-				Usage: "get a cirtain file.",
+				Usage: "get result files.",
 				Description: "download result files from a given instance and matching given filenames. " +
-					"Filenames accept wildcard characters.",
+					"Filenames accept wildcard characters. " +
+					"Downloaded file will be stored in the current working directory. " +
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
 				ArgsUsage: "<instance name> <filename>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output directory. If not exists, it will be made.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
 					},
 				},
+			},
+			{
+				Name:  "delete",
+				Usage: "delete result files.",
+				Description: "delete result files from a given instance and match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<instance name> <filename>...",
+				Action:    command.CmdResultDelete,
 			},
 		},
 	},
@@ -152,8 +195,6 @@ var Commands = []cli.Command{
 		Usage: "show and upate configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
-		Action: cli.ShowSubcommandHelp,
-		Flags:  []cli.Flag{},
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
@@ -324,28 +365,36 @@ var Commands = []cli.Command{
 						Name:  "quiet, q",
 						Usage: "only display file names",
 					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
 				},
 			},
 			{
-				Name:        "delete",
-				Usage:       "delete source files.",
-				Description: "delete given named files. This accepts multiple names separated by spaces.",
-				ArgsUsage:   "<filename>...",
-				Action:      command.GenerateDeleteAction(command.SourcePrefix),
+				Name:  "delete",
+				Usage: "delete source files.",
+				Description: "delete source files which match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<filename>...",
+				Action:    command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
 				Name:  "get",
-				Usage: "get one source file tarball.",
-				Description: "download a given file from Google Cloud Storage. " +
+				Usage: "get source files.",
+				Description: "download source files which match given filenames. " +
+					"Filenames accept wildcard characters. " +
 					"Downloaded file will be stored in the current working directory. " +
-					"'-o' option changes this behavior. If a file path given, downloaded file will be stored as the name. " +
-					"If a directory name given, downloaded file will be stored in that directory.",
-				ArgsUsage: "<filename>",
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
+				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output file path or directory where downloaded file is stored.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
+						Value: ".",
 					},
 				},
 			},
@@ -354,35 +403,60 @@ var Commands = []cli.Command{
 	{
 		Name:  "data",
 		Usage: "manage data files.",
+		Description: "Manage data files. Data files can be loaded from instance using their url, " +
+			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
+			"Use data section in your script to loda data files in your instance.",
 		Subcommands: cli.Commands{
 			{
-				Name:      "list",
-				Usage:     "show lists of data.",
-				ArgsUsage: " ",
-				Action:    command.GenerateListAction(command.DataPrefix),
+				Name:        "list",
+				Usage:       "show lists of data.",
+				Description: "List up data files. This command does not take any arguments.",
+				ArgsUsage:   " ",
+				Action:      command.GenerateListAction(command.DataPrefix),
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "quiet, q",
+						Usage: "only display file names",
+					},
+					cli.BoolFlag{
+						Name:  "url",
+						Usage: "show url of each file.",
+					},
+				},
 			},
 			{
-				Name:      "put",
-				Usage:     "put a data file.",
+				Name:  "put",
+				Usage: "put a data file.",
+				Description: "Upload a data file. " +
+					"If stored name is given, uploaded file will be renamed and stored as the given name. " +
+					"Otherwise, basename of original file will be used.",
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},
 			{
-				Name:        "delete",
-				Usage:       "delete source files.",
-				Description: "delete given named files. This accepts multiple names separated by spaces.",
-				ArgsUsage:   "<filename>...",
-				Action:      command.GenerateDeleteAction(command.DataPrefix),
+				Name:  "delete",
+				Usage: "delete data files.",
+				Description: "delete data files which match given filenames. " +
+					"Filenames accept wildcard characters. ",
+				ArgsUsage: "<filename>...",
+				Action:    command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
-				Name:      "get",
-				Usage:     "get a data file.",
-				ArgsUsage: "<filename>",
+				Name:  "get",
+				Usage: "get data files.",
+				Description: "download data files which match given filenames. " +
+					"Filenames accept wildcard characters. " +
+					"Downloaded file will be stored in the current working directory. " +
+					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
+					"To avoid this problem, quote each filename.",
+				ArgsUsage: "<filename>...",
 				Action:    command.GenerateGetAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
-						Usage: "output file path or directory where downloaded file is stored.",
+						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
+						Value: ".",
 					},
 				},
 			},
@@ -392,6 +466,9 @@ var Commands = []cli.Command{
 
 // CommandNotFound shows error message and exit when a given command is not found.
 func CommandNotFound(c *cli.Context, command string) {
-	fmt.Fprintf(os.Stderr, "%s: '%s' is not a %s command. See '%s --help'.", c.App.Name, command, c.App.Name, c.App.Name)
+
+	fmt.Fprintf(os.Stderr, chalk.Red.Color("'%s' is not a %s command..\n"), command, c.App.Name)
+	cli.ShowAppHelp(c)
 	os.Exit(2)
+
 }

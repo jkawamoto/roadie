@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie-cli/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -75,7 +76,6 @@ func CmdConfigType(c *cli.Context) error {
 
 // CmdConfigTypeSet sets a new machine type.
 func CmdConfigTypeSet(c *cli.Context) error {
-	// TODO: With -i, --interactive option, set such value interactively.
 	if c.NArg() != 1 {
 		fmt.Printf(
 			chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
@@ -94,7 +94,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 	if err == nil {
 		available := false
 		for _, item := range list {
-			if v == item {
+			if v == item.Name {
 				available = true
 			}
 		}
@@ -127,13 +127,16 @@ func CmdConfigTypeList(c *cli.Context) error {
 	}
 
 	fmt.Println("Available machine types:")
+	table := uitable.New()
+	table.AddRow("MACHINE TYPE", "DESCRIPTION")
 	for _, v := range list {
-		if v == conf.Gcp.MachineType {
-			fmt.Println("* " + chalk.Green.Color(v))
+		if v.Name == conf.Gcp.MachineType {
+			table.AddRow(chalk.Green.Color(v.Name)+"*", chalk.Green.Color(v.Description))
 		} else {
-			fmt.Println("  " + v)
+			table.AddRow(chalk.ResetColor.Color(v.Name), v.Description)
 		}
 	}
+	fmt.Println(table.String())
 	return nil
 
 }
@@ -150,7 +153,7 @@ func CmdConfigTypeShow(c *cli.Context) error {
 }
 
 // getAvailableTypeList retunrs a list of machine types for a given project.
-func getAvailableTypeList(project string) (res []string, err error) {
+func getAvailableTypeList(project string) (res []util.MachineType, err error) {
 
 	var b *util.InstanceBuilder
 	res = nil
@@ -198,7 +201,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 	if err == nil {
 		available := false
 		for _, item := range list {
-			if v == item {
+			if v == item.Name {
 				available = true
 			}
 		}
@@ -231,13 +234,16 @@ func CmdConfigZoneList(c *cli.Context) error {
 	}
 
 	fmt.Println("Available zones:")
+	table := uitable.New()
+	table.AddRow(chalk.ResetColor.Color("ZONE"), "STATUS")
 	for _, v := range list {
-		if v == conf.Gcp.Zone {
-			fmt.Println("* " + chalk.Green.Color(v))
+		if v.Name == conf.Gcp.Zone {
+			table.AddRow(chalk.Green.Color(v.Name)+"*", v.Status)
 		} else {
-			fmt.Println("  " + v)
+			table.AddRow(chalk.ResetColor.Color(v.Name), v.Status)
 		}
 	}
+	fmt.Println(table.String())
 	return nil
 
 }
@@ -254,7 +260,7 @@ func CmdConfigZoneShow(c *cli.Context) error {
 }
 
 // getAvailableZoneList retunrs a list of zones for a given project.
-func getAvailableZoneList(project string) (res []string, err error) {
+func getAvailableZoneList(project string) (res []util.Zone, err error) {
 
 	var b *util.InstanceBuilder
 	res = nil

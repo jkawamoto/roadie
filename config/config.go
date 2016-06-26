@@ -2,8 +2,8 @@ package config
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/naoina/toml"
@@ -41,7 +41,7 @@ func LoadConfig(filename string) *Config {
 		}
 	}
 
-	log.Printf(chalk.Red.Color("Cannot read configuration file %s: %s\n"), filename, err.Error())
+	fmt.Printf(chalk.Red.Color("Cannot read configuration file %s: %s\n"), filename, err.Error())
 	return &Config{
 		Filename: filename,
 	}
@@ -66,6 +66,18 @@ func (c *Config) Save() (err error) {
 	}
 
 	_, err = writer.Write(data)
+	return
+
+}
+
+// Print shows current configurations as a TOML style.
+func (c *Config) Print() (err error) {
+
+	data, err := toml.Marshal(*c)
+	if err != nil {
+		return
+	}
+	fmt.Println(string(data))
 	return
 
 }
