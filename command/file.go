@@ -85,19 +85,27 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 		headers = []string{"INSTANCE NAME", "TIME CREATED"}
 	}
 
+	// Storing previous folder name.
+	prev := ""
+
 	return printList(
 		project, bucket, prefix, quiet, headers,
 		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
 
 			rel, _ := filepath.Rel(prefix, info.Path)
-			if rel != "." && !strings.Contains(rel, "/") {
+			rel = filepath.Dir(rel)
+
+			if rel != "." && rel != prev {
 				if quiet {
 					table.AddRow(rel)
 				} else if url {
-					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat), info.Path)
+					table.AddRow(
+						rel, info.TimeCreated.Format(PrintTimeFormat),
+						fmt.Sprintf("gs://%s/%s", bucket, rel))
 				} else {
 					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}
+				prev = rel
 			}
 
 		})
@@ -179,6 +187,7 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 	fmt.Println("Uploading...")
 	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
+	bar.AlwaysUpdate = true
 	bar.Start()
 	defer bar.Finish()
 
