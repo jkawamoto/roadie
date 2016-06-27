@@ -76,6 +76,10 @@ func getActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
 // CmdStatus shows status of instances.
 func CmdStatus(c *cli.Context) error {
 
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+
 	conf := GetConfig(c)
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
