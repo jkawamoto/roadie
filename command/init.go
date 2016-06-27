@@ -229,18 +229,21 @@ func setupGcloud() (err error) {
 	if err != nil {
 		return
 	}
+	defer stdin.Close()
 	go io.Copy(stdin, os.Stdin)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return
 	}
+	defer stdout.Close()
 	go io.Copy(os.Stdout, stdout)
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return
 	}
+	defer stderr.Close()
 	go io.Copy(os.Stderr, stderr)
 
 	return cmd.Run()

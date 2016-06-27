@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jkawamoto/roadie-cli/command"
+	"github.com/jkawamoto/roadie/command"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -61,6 +61,10 @@ var Commands = []cli.Command{
 		Action:    command.CmdInit,
 	},
 	{
+		// TODO: Support direct run -> running a given command without script file.
+		// TODO: Adding aditional filename to result section.
+		// TODO: Support custom image.
+		// TODO: Following log flab. (less +F)
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +

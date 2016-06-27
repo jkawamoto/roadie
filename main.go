@@ -24,7 +24,7 @@ package main
 import (
 	"os"
 
-	"github.com/jkawamoto/roadie-cli/config"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 

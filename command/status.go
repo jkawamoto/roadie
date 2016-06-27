@@ -29,7 +29,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie-cli/util"
+	"github.com/jkawamoto/roadie/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
