@@ -23,6 +23,7 @@ package command
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -41,17 +42,26 @@ func CmdDataPut(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
-	var name string
-	if n == 1 {
-		name = ""
-	} else {
-		name = c.Args()[1]
-	}
-	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, name, c.Args()[0])
+
+	filenames, err := filepath.Glob(c.Args()[0])
 	if err != nil {
-		return err
+		return cli.NewExitError(err.Error(), 2)
 	}
 
-	fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+	for _, target := range filenames {
+
+		name := ""
+		if n != 1 && len(filenames) == 1 {
+			name = c.Args()[1]
+		}
+
+		location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, name, target)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+	}
+
 	return nil
 }

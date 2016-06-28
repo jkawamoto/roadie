@@ -477,7 +477,9 @@ var Commands = []cli.Command{
 				Usage: "put a data file.",
 				Description: "Upload a data file. " +
 					"If stored name is given, uploaded file will be renamed and stored as the given name. " +
-					"Otherwise, basename of original file will be used.",
+					"Otherwise, basename of original file will be used. " +
+					"File path accepts wild card characters, but if the given file path matches more than 2, " +
+					"stored name will be ignored.",
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},
