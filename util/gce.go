@@ -193,8 +193,8 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 
 }
 
-// StopInstance stops a given named instance.
-func (b *InstanceBuilder) StopInstance(name string) (err error) {
+// DeleteInstance deletes a given named instance.
+func (b *InstanceBuilder) DeleteInstance(name string) (err error) {
 	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {

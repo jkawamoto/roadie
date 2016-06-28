@@ -161,7 +161,7 @@ func CmdStatusKill(c *cli.Context) error {
 	s.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.    \n", strings.Repeat(" ", len(s.Prefix)+2), name)
 	s.Start()
 
-	if err = b.StopInstance(name); err != nil {
+	if err = b.DeleteInstance(name); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), name, err.Error())
