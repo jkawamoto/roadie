@@ -39,6 +39,17 @@ const (
 	StdoutFilePrefix = "stdout"
 )
 
+// CmdResult defines the default behavior which is showing help with --help or
+// -h. Otherwise, do as list command.
+func CmdResult(c *cli.Context) error {
+
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	return CmdResultList(c)
+
+}
+
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 

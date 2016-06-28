@@ -169,6 +169,13 @@ var Commands = []cli.Command{
 		Name:        "result",
 		Usage:       "list up and get results.",
 		Description: "list up, show, and download computation results.",
+		Action:      command.CmdResult,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "help, h",
+				Usage: "show help",
+			},
+		},
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
