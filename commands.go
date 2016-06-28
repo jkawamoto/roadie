@@ -80,6 +80,8 @@ var Commands = []cli.Command{
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
+			// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict)
+			// TODO: Git, URL, local should be subcommands.
 			cli.StringFlag{
 				Name:  "git",
 				Usage: "git repository `URL`. Souce files will be cloned from there.",
@@ -88,6 +90,8 @@ var Commands = []cli.Command{
 				Name:  "url",
 				Usage: "source files will be downloaded from `URL`.",
 			},
+			// TODO: Support exclud pattern
+			// TODO: Test for long path name given.
 			cli.StringFlag{
 				Name:  "local",
 				Usage: "upload source files from given `PATH` and use it the new instance.",
@@ -120,11 +124,22 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		Name:        "status",
-		Usage:       "show instance status.",
-		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time.",
-		ArgsUsage:   " ",
-		Action:      command.CmdStatus,
+		Name:  "status",
+		Usage: "show instance status.",
+		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time. " +
+			"Without `--all` flag, this command shows status of instances of which results are not deleted.",
+		ArgsUsage: " ",
+		Action:    command.CmdStatus,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "help, h",
+				Usage: "show help",
+			},
+			cli.BoolFlag{
+				Name:  "all",
+				Usage: "show all instance status.",
+			},
+		},
 		Subcommands: cli.Commands{
 			{
 				Name:        "kill",
@@ -372,6 +387,7 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		// TODO: Support archive and put a directory.
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +

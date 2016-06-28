@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -81,6 +82,31 @@ func CmdStatus(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	instances := make(map[string]struct{})
+
+	if !c.Bool("all") {
+
+		ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
+			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+				defer func() {
+					done <- struct{}{}
+				}()
+
+				for {
+					info := <-file
+					if info == nil {
+						return
+					}
+
+					rel, _ := filepath.Rel(ResultPrefix, info.Path)
+					rel = filepath.Dir(rel)
+					instances[rel] = struct{}{}
+
+				}
+			})
+
+	}
+
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
 
@@ -109,11 +135,15 @@ loop:
 
 			if payload, err := getActivityPayload(entry); err == nil {
 
-				switch payload.EventSubtype {
-				case eventSubtypeInsert:
-					runnings[payload.Resource.Name] = true
-				case eventSubtypeDelete:
-					runnings[payload.Resource.Name] = false
+				if _, ok := instances[payload.Resource.Name]; c.Bool("all") || ok {
+
+					switch payload.EventSubtype {
+					case eventSubtypeInsert:
+						runnings[payload.Resource.Name] = true
+					case eventSubtypeDelete:
+						runnings[payload.Resource.Name] = false
+					}
+
 				}
 
 			} else {
