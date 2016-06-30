@@ -127,16 +127,21 @@ func CmdRun(c *cli.Context) error {
 
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.instanceName))
-		s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
+		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
 		s.Start()
 		defer s.Stop()
 
-		builder.CreateInstance(script.instanceName, []*util.MetadataItem{
+		err := builder.CreateInstance(script.instanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
 				Value: buf.String(),
 			},
 		}, c.Int64("disk-size"))
+
+		if err != nil {
+			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
+			return cli.NewExitError(err.Error(), 2)
+		}
 
 	}
 
