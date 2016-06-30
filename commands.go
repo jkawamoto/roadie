@@ -30,7 +30,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// GlobalFlags manages golabal flags.
+// GlobalFlags manages global flags.
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "project, p",
@@ -38,7 +38,7 @@ var GlobalFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "type, t",
-		Usage: "overwrite machi type configuration.",
+		Usage: "overwrite machine type configuration.",
 	},
 	cli.StringFlag{
 		Name:  "zone, z",
@@ -84,7 +84,7 @@ var Commands = []cli.Command{
 			// TODO: Git, URL, local should be subcommands.
 			cli.StringFlag{
 				Name:  "git",
-				Usage: "git repository `URL`. Souce files will be cloned from there.",
+				Usage: "git repository `URL`. Source files will be cloned from there.",
 			},
 			cli.StringFlag{
 				Name:  "url",
@@ -106,7 +106,7 @@ var Commands = []cli.Command{
 			},
 			cli.BoolFlag{
 				Name:  "no-shutdown",
-				Usage: "not shoutdown instance automatically. To stop instance use 'status kill' command.",
+				Usage: "not showdown instance automatically. To stop instance use 'status kill' command.",
 			},
 			cli.BoolFlag{
 				Name:  "overwrite-result-section",
@@ -119,14 +119,14 @@ var Commands = []cli.Command{
 			},
 			cli.BoolFlag{
 				Name:  "dry",
-				Usage: "not create any actual instances but pring the startup script to be run instead.",
+				Usage: "not create any actual instances but printing the startup script to be run instead.",
 			},
 		},
 	},
 	{
 		Name:  "status",
 		Usage: "show instance status.",
-		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time. " +
+		Description: "Show status of instances. Stopped instances will be deleted from the output after certain time. " +
 			"Without `--all` flag, this command shows status of instances of which results are not deleted.",
 		ArgsUsage: " ",
 		Action:    command.CmdStatus,
@@ -161,7 +161,7 @@ var Commands = []cli.Command{
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-timestamp",
-				Usage: "Not print timestamps.",
+				Usage: "Not print time stamps.",
 			},
 		},
 	},
@@ -211,13 +211,13 @@ var Commands = []cli.Command{
 			{
 				Name:  "get",
 				Usage: "get result files.",
-				Description: "download result files from a given instance and matching given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download result files from a given instance and matching given file names. " +
+					"File names accept wild-card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<instance name> <filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild-cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<instance name> <file name>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
 					cli.StringFlag{
@@ -230,16 +230,16 @@ var Commands = []cli.Command{
 			{
 				Name:  "delete",
 				Usage: "delete result files.",
-				Description: "delete result files from a given instance and match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<instance name> <filename>...",
+				Description: "delete result files from a given instance and match given file names. " +
+					"File names accept wild card characters. ",
+				ArgsUsage: "<instance name> <file name>...",
 				Action:    command.CmdResultDelete,
 			},
 		},
 	},
 	{
 		Name:  "config",
-		Usage: "show and upate configuration.",
+		Usage: "show and update configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
 		Subcommands: cli.Commands{
@@ -398,7 +398,7 @@ var Commands = []cli.Command{
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
-			"This commange lists up those scripts and delete them if necessary.",
+			"This command lists up those scripts and delete them if necessary.",
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -422,21 +422,21 @@ var Commands = []cli.Command{
 			{
 				Name:  "delete",
 				Usage: "delete source files.",
-				Description: "delete source files which match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<filename>...",
+				Description: "delete source files which match given file names. " +
+					"File names accept wild card characters. ",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
 				Name:  "get",
 				Usage: "get source files.",
-				Description: "download source files which match given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download source files which match given file names. " +
+					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
@@ -446,6 +446,12 @@ var Commands = []cli.Command{
 					},
 				},
 			},
+			{
+				Name:  "put",
+				Usage: "put source files.",
+				// Globパタンを受付，tarball圧縮してアップロード．仮に一ファイルだったとしても同様に扱う．
+				ArgUsage: "",
+			},
 		},
 	},
 	{
@@ -453,7 +459,7 @@ var Commands = []cli.Command{
 		Usage: "manage data files.",
 		Description: "Manage data files. Data files can be loaded from instance using their url, " +
 			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
-			"Use data section in your script to loda data files in your instance.",
+			"Use data section in your script to load data files in your instance.",
 		Subcommands: cli.Commands{
 			{
 				Name:        "list",
@@ -486,21 +492,21 @@ var Commands = []cli.Command{
 			{
 				Name:  "delete",
 				Usage: "delete data files.",
-				Description: "delete data files which match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<filename>...",
+				Description: "delete data files which match given file names. " +
+					"File names accept wild card characters. ",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
 				Name:  "get",
 				Usage: "get data files.",
-				Description: "download data files which match given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download data files which match given file names. " +
+					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
