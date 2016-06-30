@@ -135,15 +135,14 @@ loop:
 
 			if payload, err := getActivityPayload(entry); err == nil {
 
-				if _, ok := instances[payload.Resource.Name]; c.Bool("all") || ok {
+				switch payload.EventSubtype {
+				case eventSubtypeInsert:
+					runnings[payload.Resource.Name] = true
 
-					switch payload.EventSubtype {
-					case eventSubtypeInsert:
-						runnings[payload.Resource.Name] = true
-					case eventSubtypeDelete:
+				case eventSubtypeDelete:
+					if _, ok := instances[payload.Resource.Name]; runnings[payload.Resource.Name] || c.Bool("all") || ok {
 						runnings[payload.Resource.Name] = false
 					}
-
 				}
 
 			} else {
