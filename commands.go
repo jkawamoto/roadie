@@ -394,7 +394,6 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		// TODO: Support archive and put a directory.
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
@@ -449,8 +448,16 @@ var Commands = []cli.Command{
 			{
 				Name:  "put",
 				Usage: "put source files.",
-				// Globパタンを受付，tarball圧縮してアップロード．仮に一ファイルだったとしても同様に扱う．
-				ArgUsage: "",
+				Description: "make a tarball of a given path and upload it. Uploaded file name will be " +
+					"`<name>.tar.gz`.",
+				ArgsUsage: "<dir> <name>",
+				Action:    command.CmdSourcePut,
+				Flags: []cli.Flag{
+					cli.StringSliceFlag{
+						Name:  "exclude, e",
+						Usage: "specify excluding `PATH`. This flag can be set multiply.",
+					},
+				},
 			},
 		},
 	},
