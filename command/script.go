@@ -36,7 +36,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type script struct {
+type Script struct {
 	filename     string
 	instanceName string
 	body         struct {
@@ -50,7 +50,7 @@ type script struct {
 }
 
 // Load a given script file and apply arguments.
-func loadScript(filename string, args []string) (*script, error) {
+func loadScript(filename string, args []string) (*Script, error) {
 
 	// Define function map to replace place holders.
 	funcs := template.FuncMap{}
@@ -88,7 +88,7 @@ func loadScript(filename string, args []string) (*script, error) {
 		hostname = strings.Split(hostname, ".")[0]
 	}
 
-	res := script{
+	res := Script{
 		filename: filename,
 		instanceName: fmt.Sprintf(
 			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")),
@@ -104,7 +104,7 @@ func loadScript(filename string, args []string) (*script, error) {
 }
 
 // Set a git repository to source section.
-func (s *script) setGitSource(repo string) {
+func (s *Script) setGitSource(repo string) {
 	if s.body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
@@ -114,7 +114,7 @@ func (s *script) setGitSource(repo string) {
 }
 
 // Set a URL to source section.
-func (s *script) setURLSource(url string) {
+func (s *Script) setURLSource(url string) {
 	if s.body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
@@ -124,7 +124,7 @@ func (s *script) setURLSource(url string) {
 }
 
 // Upload source files and set that location to source section.
-func (s *script) setLocalSource(path, project, bucket string) error {
+func (s *Script) setLocalSource(path, project, bucket string) error {
 	if s.body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s is overwritten since a path for source codes is given.\n"),
@@ -171,7 +171,7 @@ func (s *script) setLocalSource(path, project, bucket string) error {
 }
 
 // Set result section with a given bucket name.
-func (s *script) setResult(bucket string) {
+func (s *Script) setResult(bucket string) {
 
 	location := util.CreateURL(bucket, ResultPrefix, s.instanceName)
 	s.body.Result = location.String()
@@ -179,7 +179,7 @@ func (s *script) setResult(bucket string) {
 }
 
 // Convert to string.
-func (s *script) String() string {
+func (s *Script) String() string {
 	res, _ := yaml.Marshal(s.body)
 	return string(res)
 }
