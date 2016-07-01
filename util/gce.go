@@ -23,6 +23,7 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ttacon/chalk"
 
@@ -134,7 +135,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 	}
 
 	bluepring := compute.Instance{
-		Name:        name,
+		Name:        strings.ToLower(name),
 		Zone:        b.normalizedZone(),
 		MachineType: b.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
