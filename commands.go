@@ -61,6 +61,7 @@ var Commands = []cli.Command{
 		Action:    command.CmdInit,
 	},
 	{
+		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
 		// TODO: Support custom image.
@@ -80,7 +81,7 @@ var Commands = []cli.Command{
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
-			// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict)
+			// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict) -> add "source" subcommand
 			// TODO: Git, URL, local should be subcommands.
 			cli.StringFlag{
 				Name:  "git",
@@ -120,6 +121,26 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "dry",
 				Usage: "not create any actual instances but printing the startup script to be run instead.",
+			},
+		},
+		Subcommands: cli.Commands{
+			{
+				Name:      "git",
+				Usage:     "Clone source codes from a git repository.",
+				ArgsUsage: "<git url> <script file>",
+				Action:    command.CmdRunGit,
+			},
+			{
+				Name:      "url",
+				Usage:     "Download source codes from a URL.",
+				ArgsUsage: "<url> <script file>",
+				Action:    command.CmdRunUrl,
+			},
+			{
+				Name:      "local",
+				Usage:     "Upload souce codes from a directory.",
+				ArgsUsage: "<dir> <script file>",
+				Action:    command.CmdRunLocal,
 			},
 		},
 	},

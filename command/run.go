@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -42,7 +43,33 @@ func CmdRun(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	yamlFile := c.Args()[0]
+	conf := GetConfig(c)
+	if conf.Gcp.Project == "" {
+		return cli.NewExitError("Project must be given", 2)
+	}
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
+		conf.Gcp.Bucket = conf.Gcp.Project
+	}
+
+	script, err := loadScript(c.Args()[0], c.StringSlice("e"))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	// Check source section.
+	if script.body.Source == "" {
+		return cli.NewExitError("No source section and source flages are given.", 2)
+	}
+	return runScript(conf, script, c)
+}
+
+func CmdRunGit(c *cli.Context) error {
+
+	if c.NArg() != 2 {
+		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	conf := GetConfig(c)
 	if conf.Gcp.Project == "" {
@@ -53,25 +80,80 @@ func CmdRun(c *cli.Context) error {
 		conf.Gcp.Bucket = conf.Gcp.Project
 	}
 
-	script, err := loadScript(yamlFile, c.StringSlice("e"))
+	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
-	if v := c.String("name"); v != "" {
-		script.instanceName = v
+
+	// Prepare source section.
+	script.setGitSource(c.Args()[0])
+
+	return runScript(conf, script, c)
+}
+
+func CmdRunUrl(c *cli.Context) error {
+
+	if c.NArg() != 2 {
+		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	if conf.Gcp.Project == "" {
+		return cli.NewExitError("Project must be given", 2)
+	}
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
+		conf.Gcp.Bucket = conf.Gcp.Project
+	}
+
+	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
 	}
 
 	// Prepare source section.
-	if v := c.String("git"); v != "" {
-		script.setGitSource(v)
-	} else if v := c.String("url"); v != "" {
-		script.setURLSource(v)
-	} else if path := c.String("local"); path != "" {
-		if err := script.setLocalSource(path, conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-	} else if script.body.Source == "" {
-		return cli.NewExitError("No source section and source flages are given.", 2)
+	script.setURLSource(c.Args()[0])
+
+	return runScript(conf, script, c)
+
+}
+
+func CmdRunLocal(c *cli.Context) error {
+
+	if c.NArg() != 2 {
+		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	conf := GetConfig(c)
+	if conf.Gcp.Project == "" {
+		return cli.NewExitError("Project must be given", 2)
+	}
+	if conf.Gcp.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
+		conf.Gcp.Bucket = conf.Gcp.Project
+	}
+
+	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	// Prepare source section.
+	if err := script.setLocalSource(c.Args()[0], conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	return runScript(conf, script, c)
+}
+
+// runScript run a given script with config and context information.
+func runScript(conf *config.Config, script *Script, c *cli.Context) error {
+
+	// Update instance name.
+	if v := c.String("name"); v != "" {
+		script.instanceName = v
 	}
 
 	// Check result section.
@@ -79,14 +161,14 @@ func CmdRun(c *cli.Context) error {
 		script.setResult(conf.Gcp.Bucket)
 	} else {
 		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), yamlFile, script.body.Result)
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.filename, script.body.Result)
 		fmt.Println(
 			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
 		fmt.Println(
 			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
 	}
 
-	// debug:
+	// Debugging info.
 	fmt.Printf("Script to be run:\n%s\n", script.String())
 
 	// Prepare startup script.
@@ -144,6 +226,6 @@ func CmdRun(c *cli.Context) error {
 		}
 
 	}
-
 	return nil
+
 }
