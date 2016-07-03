@@ -30,9 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/util"
-	"github.com/ttacon/chalk"
 	"gopkg.in/yaml.v2"
 )
 
@@ -100,73 +98,6 @@ func loadScript(filename string, args []string) (*Script, error) {
 	}
 
 	return &res, nil
-
-}
-
-// Set a git repository to source section.
-func (s *Script) setGitSource(repo string) {
-	if s.body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
-			s.filename, repo)
-	}
-	s.body.Source = repo
-}
-
-// Set a URL to source section.
-func (s *Script) setURLSource(url string) {
-	if s.body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
-			s.filename, url)
-	}
-	s.body.Source = url
-}
-
-// Upload source files and set that location to source section.
-func (s *Script) setLocalSource(path, project, bucket string) error {
-	if s.body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s is overwritten since a path for source codes is given.\n"),
-			s.filename)
-	}
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-
-	var name string
-	var arcPath string
-	if info.IsDir() {
-
-		filename := s.instanceName + ".tar.gz"
-		arcPath = filepath.Join(os.TempDir(), filename)
-
-		spin := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		spin.Prefix = fmt.Sprintf("Creating an archived file %s...", arcPath)
-		spin.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(spin.Prefix)+2), arcPath)
-		spin.Start()
-		if err := util.Archive(path, arcPath, nil); err != nil {
-			spin.Stop()
-			return err
-		}
-		name = filename
-		spin.Stop()
-
-	} else {
-
-		arcPath = path
-		name = util.Basename(path)
-
-	}
-
-	location, err := UploadToGCS(project, bucket, SourcePrefix, name, arcPath)
-	if err != nil {
-		return err
-	}
-	s.body.Source = location
-	return nil
 
 }
 

@@ -24,6 +24,8 @@ package command
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -64,6 +66,7 @@ func CmdRun(c *cli.Context) error {
 	return runScript(conf, script, c)
 }
 
+// CmdRunGit sets a git repository to the source and creates an instance.
 func CmdRunGit(c *cli.Context) error {
 
 	if c.NArg() != 2 {
@@ -86,11 +89,18 @@ func CmdRunGit(c *cli.Context) error {
 	}
 
 	// Prepare source section.
-	script.setGitSource(c.Args()[0])
+	repo := c.Args()[0]
+	if script.body.Source != "" {
+		fmt.Printf(
+			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
+			script.filename, repo)
+	}
+	script.body.Source = repo
 
 	return runScript(conf, script, c)
 }
 
+// CmdRunUrl sets a url to the source and creates an instance.
 func CmdRunUrl(c *cli.Context) error {
 
 	if c.NArg() != 2 {
@@ -113,12 +123,19 @@ func CmdRunUrl(c *cli.Context) error {
 	}
 
 	// Prepare source section.
-	script.setURLSource(c.Args()[0])
+	url := c.Args()[0]
+	if script.body.Source != "" {
+		fmt.Printf(
+			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
+			script.filename, url)
+	}
+	script.body.Source = url
 
 	return runScript(conf, script, c)
 
 }
 
+// CmdRunLocal uploads a directory as the source and creates an instance.
 func CmdRunLocal(c *cli.Context) error {
 
 	if c.NArg() != 2 {
@@ -141,9 +158,48 @@ func CmdRunLocal(c *cli.Context) error {
 	}
 
 	// Prepare source section.
-	if err := script.setLocalSource(c.Args()[0], conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+	if script.body.Source != "" {
+		fmt.Printf(
+			chalk.Red.Color("The source section of %s is overwritten since a path for source codes is given.\n"),
+			script.filename)
+	}
+
+	path := c.Args()[0]
+	info, err := os.Stat(path)
+	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
+
+	var name string
+	var arcPath string
+	if info.IsDir() {
+
+		filename := script.instanceName + ".tar.gz"
+		arcPath = filepath.Join(os.TempDir(), filename)
+
+		spin := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		spin.Prefix = fmt.Sprintf("Creating an archived file %s...", arcPath)
+		spin.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(spin.Prefix)+2), arcPath)
+		spin.Start()
+		if err := util.Archive(path, arcPath, nil); err != nil {
+			spin.Stop()
+			return cli.NewExitError(err.Error(), 2)
+		}
+		name = filename
+		spin.Stop()
+
+	} else {
+
+		arcPath = path
+		name = util.Basename(path)
+
+	}
+
+	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, name, arcPath)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	script.body.Source = location
 
 	return runScript(conf, script, c)
 }

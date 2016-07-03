@@ -66,6 +66,8 @@ var Commands = []cli.Command{
 		// TODO: Adding aditional filename to result section.
 		// TODO: Support custom image.
 		// TODO: Following log flab. (less +F)
+		// TODO: Lowercase instance name at first.
+		// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict) -> add "source" subcommand
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
@@ -81,22 +83,6 @@ var Commands = []cli.Command{
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
-			// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict) -> add "source" subcommand
-			// TODO: Git, URL, local should be subcommands.
-			cli.StringFlag{
-				Name:  "git",
-				Usage: "git repository `URL`. Source files will be cloned from there.",
-			},
-			cli.StringFlag{
-				Name:  "url",
-				Usage: "source files will be downloaded from `URL`.",
-			},
-			// TODO: Support exclud pattern
-			// TODO: Test for long path name given.
-			cli.StringFlag{
-				Name:  "local",
-				Usage: "upload source files from given `PATH` and use it the new instance.",
-			},
 			cli.StringFlag{
 				Name:  "name",
 				Usage: "new instance uses the given `NAME`.",
@@ -137,10 +123,18 @@ var Commands = []cli.Command{
 				Action:    command.CmdRunUrl,
 			},
 			{
+				// TODO: Test for long path name given.
 				Name:      "local",
 				Usage:     "Upload souce codes from a directory.",
 				ArgsUsage: "<dir> <script file>",
 				Action:    command.CmdRunLocal,
+				Flags: []cli.Flag{
+					// TODO: Support exclud pattern
+					cli.StringSliceFlag{
+						Name:  "exclude",
+						Usage: "exclude `PATTERN` from uploading files. This flag can be set multiply.",
+					},
+				},
 			},
 		},
 	},
@@ -249,6 +243,7 @@ var Commands = []cli.Command{
 				},
 			},
 			{
+				// TODO: If file name is not given, delete all data with asking. (use "*" as file name)
 				Name:  "delete",
 				Usage: "delete result files.",
 				Description: "delete result files from a given instance and match given file names. " +
