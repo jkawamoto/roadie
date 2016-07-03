@@ -100,8 +100,8 @@ func CmdRunGit(c *cli.Context) error {
 	return runScript(conf, script, c)
 }
 
-// CmdRunUrl sets a url to the source and creates an instance.
-func CmdRunUrl(c *cli.Context) error {
+// CmdRunURL sets a url to the source and creates an instance.
+func CmdRunURL(c *cli.Context) error {
 
 	if c.NArg() != 2 {
 		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
@@ -174,6 +174,7 @@ func CmdRunLocal(c *cli.Context) error {
 	var arcPath string
 	if info.IsDir() {
 
+		// Directory will be archived.
 		filename := script.instanceName + ".tar.gz"
 		arcPath = filepath.Join(os.TempDir(), filename)
 
@@ -181,7 +182,7 @@ func CmdRunLocal(c *cli.Context) error {
 		spin.Prefix = fmt.Sprintf("Creating an archived file %s...", arcPath)
 		spin.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(spin.Prefix)+2), arcPath)
 		spin.Start()
-		if err := util.Archive(path, arcPath, nil); err != nil {
+		if err := util.Archive(path, arcPath, c.StringSlice("exclude")); err != nil {
 			spin.Stop()
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -190,6 +191,7 @@ func CmdRunLocal(c *cli.Context) error {
 
 	} else {
 
+		// One source file just will be uploaded.
 		arcPath = path
 		name = util.Basename(path)
 

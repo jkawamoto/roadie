@@ -120,7 +120,7 @@ var Commands = []cli.Command{
 				Name:      "url",
 				Usage:     "Download source codes from a URL.",
 				ArgsUsage: "<url> <script file>",
-				Action:    command.CmdRunUrl,
+				Action:    command.CmdRunURL,
 			},
 			{
 				// TODO: Test for long path name given.
@@ -129,7 +129,6 @@ var Commands = []cli.Command{
 				ArgsUsage: "<dir> <script file>",
 				Action:    command.CmdRunLocal,
 				Flags: []cli.Flag{
-					// TODO: Support exclud pattern
 					cli.StringSliceFlag{
 						Name:  "exclude",
 						Usage: "exclude `PATTERN` from uploading files. This flag can be set multiply.",
