@@ -133,6 +133,9 @@ loop:
 				break loop
 			}
 
+			// If all flag is not set show only following instances;
+			//  - running instances,
+			//  - ended but results are note deleted instances.
 			if payload, err := getActivityPayload(entry); err == nil {
 
 				switch payload.EventSubtype {
@@ -140,8 +143,9 @@ loop:
 					runnings[payload.Resource.Name] = true
 
 				case eventSubtypeDelete:
-					if _, ok := instances[payload.Resource.Name]; runnings[payload.Resource.Name] || c.Bool("all") || ok {
-						runnings[payload.Resource.Name] = false
+					runnings[payload.Resource.Name] = false
+					if _, exist := instances[payload.Resource.Name]; !c.Bool("all") && !exist {
+						delete(runnings, payload.Resource.Name)
 					}
 				}
 
