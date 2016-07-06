@@ -37,7 +37,22 @@ import (
 	"github.com/urfave/cli"
 )
 
+// runOpt manages all arguments and flags defined in run command.
 type runOpt struct {
+
+	// Git repository URL which will be cloned as source codes.
+	Git string
+
+	// URL where source codes are stored.
+	URL string
+
+	// Directory or file path which will be used as source codes.
+	Local string
+
+	// File patterns which will be excluded from source codes in a given
+	// directory. This flag will only work when `local` flag is given with
+	// a directory.
+	Exclude []string
 
 	// Path for the script file to be run.
 	ScriptFile string
@@ -74,6 +89,10 @@ func CmdRun(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	opt := runOpt{
+		Git:                    c.String("git"),
+		URL:                    c.String("url"),
+		Local:                  c.String("local"),
+		Exclude:                c.StringSlice("exclude"),
 		ScriptFile:             c.Args()[0],
 		ScriptArgs:             c.StringSlice("e"),
 		InstanceName:           c.String("name"),
@@ -82,14 +101,18 @@ func CmdRun(c *cli.Context) error {
 		NoShutdown:             c.Bool("no-shutdown"),
 		Dry:                    c.Bool("dry"),
 	}
-	return cmdRun(conf, &opt)
+	if err := cmdRun(conf, &opt); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
-func cmdRun(conf *config.Config, opt *runOpt) error {
+// cmdRun implements the main logic of run command.
+func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project must be given", 2)
+		return fmt.Errorf("Project name must be given.")
 	}
 	if conf.Gcp.Bucket == "" {
 		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
@@ -98,7 +121,7 @@ func cmdRun(conf *config.Config, opt *runOpt) error {
 
 	script, err := loadScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 
 	// Update instance name.
@@ -107,201 +130,96 @@ func cmdRun(conf *config.Config, opt *runOpt) error {
 	}
 
 	// Check source section.
-	if script.body.Source == "" {
-		return cli.NewExitError("No source section and source flages are given.", 2)
+	switch {
+	case opt.Git != "":
+		setGitSource(script, opt.Git)
+
+	case opt.URL != "":
+		setURLSource(script, opt.URL)
+
+	case opt.Local != "":
+		if err = setLocalSource(conf, script, opt.Local, opt.Exclude); err != nil {
+			return
+		}
+
+	case script.body.Source == "":
+		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
 	}
+
 	return runScript(conf, script, opt)
 
 }
 
-// CmdRunGit sets a git repository to the source and creates an instance.
-func CmdRunGit(c *cli.Context) error {
-
-	if c.NArg() != 2 {
-		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
-
-	conf := GetConfig(c)
-	opt := runOpt{
-		ScriptFile:             c.Args()[0],
-		ScriptArgs:             c.StringSlice("e"),
-		InstanceName:           c.String("name"),
-		DiskSize:               c.Int64("disk-size"),
-		OverWriteResultSection: c.Bool("overwrite-result-section"),
-		NoShutdown:             c.Bool("no-shutdown"),
-		Dry:                    c.Bool("dry"),
-	}
-	return cmdRunGit(conf, opt)
-
-}
-
-func cmdRunGit(conf *config.Config, opt *runOpt) error {
-
-	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project must be given", 2)
-	}
-	if conf.Gcp.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
-		conf.Gcp.Bucket = conf.Gcp.Project
-	}
-
-	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	// Update instance name.
-	if v := c.String("name"); v != "" {
-		script.instanceName = strings.ToLower(v)
-	}
-
-	// Prepare source section.
-	repo := c.Args()[0]
+// setGitSource sets a Git repository `repo` to source section in a given `script`.
+// If overwriting source section, it prints warning, too.
+func setGitSource(script *Script, repo string) {
 	if script.body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
 			script.filename, repo)
 	}
 	script.body.Source = repo
-
-	return runScript(conf, script, opt)
 }
 
-// CmdRunURL sets a url to the source and creates an instance.
-func CmdRunURL(c *cli.Context) error {
-
-	if c.NArg() != 2 {
-		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
-
-	conf := GetConfig(c)
-	opt := runOpt{
-		ScriptFile:             c.Args()[0],
-		ScriptArgs:             c.StringSlice("e"),
-		InstanceName:           c.String("name"),
-		DiskSize:               c.Int64("disk-size"),
-		OverWriteResultSection: c.Bool("overwrite-result-section"),
-		NoShutdown:             c.Bool("no-shutdown"),
-		Dry:                    c.Bool("dry"),
-	}
-
-	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project must be given", 2)
-	}
-	if conf.Gcp.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
-		conf.Gcp.Bucket = conf.Gcp.Project
-	}
-
-	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	// Update instance name.
-	if v := c.String("name"); v != "" {
-		script.instanceName = strings.ToLower(v)
-	}
-
-	// Prepare source section.
-	url := c.Args()[0]
+// setURLSource sets a `url` to source section in a given `script`.
+// Source codes will be downloaded from the URL.
+// The file pointed by the URL must be either executable, zipped, or tarballed
+// file. If overwriting source section, it prints warning, too.
+func setURLSource(script *Script, url string) {
 	if script.body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
 			script.filename, url)
 	}
 	script.body.Source = url
-
-	return runScript(conf, script, c)
-
 }
 
-// CmdRunLocal uploads a directory as the source and creates an instance.
-func CmdRunLocal(c *cli.Context) error {
+// setLocalSource sets a GCS URL to source section in a given `script`.
+// It uploads source codes specified by `path` to GCS and set the URL pointing
+// the uploaded files to the source section. If filename patters are given
+// by `excludes`, files matching such patters are excluded to upload.
+// To upload files to GCS, `conf` is used.
+func setLocalSource(conf *config.Config, script *Script, path string, excludes []string) (err error) {
 
-	if c.NArg() != 2 {
-		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
-
-	conf := GetConfig(c)
-	opt := runOpt{
-		ScriptFile:             c.Args()[0],
-		ScriptArgs:             c.StringSlice("e"),
-		InstanceName:           c.String("name"),
-		DiskSize:               c.Int64("disk-size"),
-		OverWriteResultSection: c.Bool("overwrite-result-section"),
-		NoShutdown:             c.Bool("no-shutdown"),
-		Dry:                    c.Bool("dry"),
-	}
-
-	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project must be given", 2)
-	}
-	if conf.Gcp.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
-		conf.Gcp.Bucket = conf.Gcp.Project
-	}
-
-	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	// Update instance name.
-	if v := c.String("name"); v != "" {
-		script.instanceName = strings.ToLower(v)
-	}
-
-	// Prepare source section.
-	if script.body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s is overwritten since a path for source codes is given.\n"),
-			script.filename)
-	}
-
-	path := c.Args()[0]
 	info, err := os.Stat(path)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 
-	var name string
-	var arcPath string
-	if info.IsDir() {
+	var filename string      // File name on GCS.
+	var uploadingPath string // File path to be uploaded.
 
-		// Directory will be archived.
-		filename := script.instanceName + ".tar.gz"
-		arcPath = filepath.Join(os.TempDir(), filename)
+	if info.IsDir() { // Directory will be archived.
+
+		filename = script.instanceName + ".tar.gz"
+		uploadingPath = filepath.Join(os.TempDir(), filename)
 
 		spin := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		spin.Prefix = fmt.Sprintf("Creating an archived file %s...", arcPath)
-		spin.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(spin.Prefix)+2), arcPath)
+		spin.Prefix = fmt.Sprintf("Creating an archived file %s...", uploadingPath)
+		spin.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(spin.Prefix)+2), uploadingPath)
 		spin.Start()
-		if err := util.Archive(path, arcPath, c.StringSlice("exclude")); err != nil {
+
+		if err = util.Archive(path, uploadingPath, excludes); err != nil {
 			spin.Stop()
-			return cli.NewExitError(err.Error(), 2)
+			return
 		}
-		name = filename
+
 		spin.Stop()
 
-	} else {
+	} else { // One source file just will be uploaded.
 
-		// One source file just will be uploaded.
-		arcPath = path
-		name = util.Basename(path)
+		uploadingPath = path
+		filename = util.Basename(path)
 
 	}
 
-	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, name, arcPath)
+	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 	script.body.Source = location
+	return nil
 
-	return runScript(conf, script, c)
 }
 
 // runScript run a given script with config and context information.

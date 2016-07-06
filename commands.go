@@ -61,6 +61,7 @@ var Commands = []cli.Command{
 		Action:    command.CmdInit,
 	},
 	{
+		// TODO: Subcommands help format should be modified.
 		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
@@ -83,6 +84,23 @@ var Commands = []cli.Command{
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "git",
+				Usage: "git repository `URL`. Souce files will be cloned from there.",
+			},
+			cli.StringFlag{
+				Name:  "url",
+				Usage: "source files will be downloaded from `URL`.",
+			},
+			// TODO: Test for long path name given.
+			cli.StringFlag{
+				Name:  "local",
+				Usage: "upload source files from given `PATH` and use it the new instance.",
+			},
+			cli.StringSliceFlag{
+				Name:  "exclude",
+				Usage: "",
+			},
 			cli.StringFlag{
 				Name:  "name",
 				Usage: "new instance uses the given `NAME`.",
@@ -107,33 +125,6 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "dry",
 				Usage: "not create any actual instances but printing the startup script to be run instead.",
-			},
-		},
-		Subcommands: cli.Commands{
-			{
-				Name:      "git",
-				Usage:     "Clone source codes from a git repository.",
-				ArgsUsage: "<git url> <script file>",
-				Action:    command.CmdRunGit,
-			},
-			{
-				Name:      "url",
-				Usage:     "Download source codes from a URL.",
-				ArgsUsage: "<url> <script file>",
-				Action:    command.CmdRunURL,
-			},
-			{
-				// TODO: Test for long path name given.
-				Name:      "local",
-				Usage:     "Upload souce codes from a directory.",
-				ArgsUsage: "<dir> <script file>",
-				Action:    command.CmdRunLocal,
-				Flags: []cli.Flag{
-					cli.StringSliceFlag{
-						Name:  "exclude",
-						Usage: "exclude `PATTERN` from uploading files. This flag can be set multiply.",
-					},
-				},
 			},
 		},
 	},
