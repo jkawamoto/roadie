@@ -57,18 +57,16 @@ var Commands = []cli.Command{
 		Usage: "initialize roadie.",
 		Description: "Check requirements. Install and set up `Google Cloud SDK` if necessary. " +
 			"Create configuration file `.roadie`.",
+		Category:  "Configuration",
 		ArgsUsage: " ",
 		Action:    command.CmdInit,
 	},
 	{
-		// TODO: Subcommands help format should be modified.
 		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
 		// TODO: Support custom image.
-		// TODO: Following log flab. (less +F)
-		// TODO: Lowercase instance name at first.
-		// TODO: Easy way to use previouse uploaded source codes. ("name" flag is conflict) -> add "source" subcommand
+		// TODO: Following log flag. (like less +F)
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
@@ -81,6 +79,7 @@ var Commands = []cli.Command{
 			"`e` option replaces placeholders by given key-value pairs. " +
 			"A placeholder named `name` looks like {{name}} in script. " +
 			"Option `-e name=abcdefg` replaces {{name}} as abcdefg.",
+		Category:  "Execution",
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
@@ -100,6 +99,10 @@ var Commands = []cli.Command{
 			cli.StringSliceFlag{
 				Name:  "exclude",
 				Usage: "",
+			},
+			cli.StringFlag{
+				Name:  "source",
+				Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
 			},
 			cli.StringFlag{
 				Name:  "name",
@@ -129,10 +132,12 @@ var Commands = []cli.Command{
 		},
 	},
 	{
+		// TODO: Subcommands help format should be modified.
 		Name:  "status",
 		Usage: "show instance status.",
 		Description: "Show status of instances. Stopped instances will be deleted from the output after certain time. " +
 			"Without `--all` flag, this command shows status of instances of which results are not deleted.",
+		Category:  "Execution",
 		ArgsUsage: " ",
 		Action:    command.CmdStatus,
 		Flags: []cli.Flag{
@@ -161,6 +166,7 @@ var Commands = []cli.Command{
 		Description: "Show logs for a given instance name. Logs consists of messages from the framework and messages written to stderr. " +
 			"To see messages written stdout from script, use 'result' command. This command required project name is required. " +
 			"To set project name, use 'config project set' command. To find instance names, use 'status' command.",
+		Category:  "Execution",
 		ArgsUsage: "<instance name>",
 		Action:    command.CmdLog,
 		Flags: []cli.Flag{
@@ -174,6 +180,7 @@ var Commands = []cli.Command{
 		Name:        "result",
 		Usage:       "list up and get results.",
 		Description: "list up, show, and download computation results.",
+		Category:    "Data handling",
 		Action:      command.CmdResult,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -248,6 +255,7 @@ var Commands = []cli.Command{
 		Usage: "show and update configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
+		Category: "Configuration",
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
@@ -404,6 +412,7 @@ var Commands = []cli.Command{
 		Usage: "manage source files uploaded by this command.",
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
 			"This command lists up those scripts and delete them if necessary.",
+		Category: "Data handling",
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -473,6 +482,7 @@ var Commands = []cli.Command{
 		Description: "Manage data files. Data files can be loaded from instance using their url, " +
 			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
 			"Use data section in your script to load data files in your instance.",
+		Category: "Data handling",
 		Subcommands: cli.Commands{
 			{
 				Name:        "list",
