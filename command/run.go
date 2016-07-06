@@ -37,6 +37,33 @@ import (
 	"github.com/urfave/cli"
 )
 
+type runOpt struct {
+
+	// Path for the script file to be run.
+	ScriptFile string
+
+	// Arguments for the script.
+	ScriptArgs []string
+
+	// Instance name. If not set, named by script file name and current time.
+	InstanceName string
+
+	// Specify disk size of new instance.
+	DiskSize int64
+
+	// If true, result section will be overwritten so that roadie can manage
+	// result data. Otherwise, users require to manage them by theirself.
+	OverWriteResultSection bool
+
+	// If true, created instance will not shutdown automatically. So, users
+	// require to do it by theirself. This flag can be useful for debugging.
+	NoShutdown bool
+
+	// If true, do not create any instances but show startup script.
+	// This flag is for debugging.
+	Dry bool
+}
+
 // CmdRun specifies the behavior of `run` command.
 func CmdRun(c *cli.Context) error {
 
@@ -46,6 +73,21 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	opt := runOpt{
+		ScriptFile:             c.Args()[0],
+		ScriptArgs:             c.StringSlice("e"),
+		InstanceName:           c.String("name"),
+		DiskSize:               c.Int64("disk-size"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
+		NoShutdown:             c.Bool("no-shutdown"),
+		Dry:                    c.Bool("dry"),
+	}
+	return cmdRun(conf, &opt)
+
+}
+
+func cmdRun(conf *config.Config, opt *runOpt) error {
+
 	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
@@ -54,21 +96,22 @@ func CmdRun(c *cli.Context) error {
 		conf.Gcp.Bucket = conf.Gcp.Project
 	}
 
-	script, err := loadScript(c.Args()[0], c.StringSlice("e"))
+	script, err := loadScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
 	// Update instance name.
-	if v := c.String("name"); v != "" {
-		script.instanceName = strings.ToLower(v)
+	if opt.InstanceName != "" {
+		script.instanceName = strings.ToLower(opt.InstanceName)
 	}
 
 	// Check source section.
 	if script.body.Source == "" {
 		return cli.NewExitError("No source section and source flages are given.", 2)
 	}
-	return runScript(conf, script, c)
+	return runScript(conf, script, opt)
+
 }
 
 // CmdRunGit sets a git repository to the source and creates an instance.
@@ -80,6 +123,21 @@ func CmdRunGit(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	opt := runOpt{
+		ScriptFile:             c.Args()[0],
+		ScriptArgs:             c.StringSlice("e"),
+		InstanceName:           c.String("name"),
+		DiskSize:               c.Int64("disk-size"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
+		NoShutdown:             c.Bool("no-shutdown"),
+		Dry:                    c.Bool("dry"),
+	}
+	return cmdRunGit(conf, opt)
+
+}
+
+func cmdRunGit(conf *config.Config, opt *runOpt) error {
+
 	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
@@ -107,7 +165,7 @@ func CmdRunGit(c *cli.Context) error {
 	}
 	script.body.Source = repo
 
-	return runScript(conf, script, c)
+	return runScript(conf, script, opt)
 }
 
 // CmdRunURL sets a url to the source and creates an instance.
@@ -119,6 +177,16 @@ func CmdRunURL(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	opt := runOpt{
+		ScriptFile:             c.Args()[0],
+		ScriptArgs:             c.StringSlice("e"),
+		InstanceName:           c.String("name"),
+		DiskSize:               c.Int64("disk-size"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
+		NoShutdown:             c.Bool("no-shutdown"),
+		Dry:                    c.Bool("dry"),
+	}
+
 	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
@@ -159,6 +227,16 @@ func CmdRunLocal(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	opt := runOpt{
+		ScriptFile:             c.Args()[0],
+		ScriptArgs:             c.StringSlice("e"),
+		InstanceName:           c.String("name"),
+		DiskSize:               c.Int64("disk-size"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
+		NoShutdown:             c.Bool("no-shutdown"),
+		Dry:                    c.Bool("dry"),
+	}
+
 	if conf.Gcp.Project == "" {
 		return cli.NewExitError("Project must be given", 2)
 	}
@@ -227,10 +305,10 @@ func CmdRunLocal(c *cli.Context) error {
 }
 
 // runScript run a given script with config and context information.
-func runScript(conf *config.Config, script *Script, c *cli.Context) error {
+func runScript(conf *config.Config, script *Script, opt *runOpt) error {
 
 	// Check result section.
-	if script.body.Result == "" || c.Bool("overwrite-result-section") {
+	if script.body.Result == "" || opt.OverWriteResultSection {
 		script.setResult(conf.Gcp.Bucket)
 	} else {
 		fmt.Printf(
@@ -252,7 +330,7 @@ func runScript(conf *config.Config, script *Script, c *cli.Context) error {
 	}
 
 	options := " "
-	if c.Bool("no-shoutdown") {
+	if opt.NoShutdown {
 		options = "--no-shutdown"
 	}
 
@@ -276,7 +354,7 @@ func runScript(conf *config.Config, script *Script, c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
-	if c.Bool("dry") {
+	if opt.Dry {
 		fmt.Printf("Startup script:\n%s\n", buf.String())
 	} else {
 
@@ -291,7 +369,7 @@ func runScript(conf *config.Config, script *Script, c *cli.Context) error {
 				Key:   "startup-script",
 				Value: buf.String(),
 			},
-		}, c.Int64("disk-size"))
+		}, opt.DiskSize)
 
 		if err != nil {
 			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
