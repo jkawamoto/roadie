@@ -119,14 +119,14 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		conf.Gcp.Bucket = conf.Gcp.Project
 	}
 
-	script, err := loadScript(opt.ScriptFile, opt.ScriptArgs)
+	script, err := NewScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return
 	}
 
 	// Update instance name.
 	if opt.InstanceName != "" {
-		script.instanceName = strings.ToLower(opt.InstanceName)
+		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
 	// Check source section.
@@ -142,16 +142,17 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 			return
 		}
 
-	case script.body.Source == "":
+	case script.Body.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
 	}
 
 	// Check result section.
-	if script.body.Result == "" || opt.OverWriteResultSection {
-		script.setResult(conf.Gcp.Bucket)
+	if script.Body.Result == "" || opt.OverWriteResultSection {
+		location := util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.InstanceName)
+		script.Body.Result = location.String()
 	} else {
 		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.filename, script.body.Result)
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.Filename, script.Body.Result)
 		fmt.Println(
 			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
 		fmt.Println(
@@ -175,7 +176,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	buf := &bytes.Buffer{}
 	data := map[string]string{
-		"Name":    script.instanceName,
+		"Name":    script.InstanceName,
 		"Script":  script.String(),
 		"Options": options,
 	}
@@ -198,12 +199,12 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	} else {
 
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.instanceName))
+		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.InstanceName))
 		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
 		s.Start()
 		defer s.Stop()
 
-		err = builder.CreateInstance(script.instanceName, []*util.MetadataItem{
+		err = builder.CreateInstance(script.InstanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
 				Value: buf.String(),
@@ -223,12 +224,12 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
 // If overwriting source section, it prints warning, too.
 func setGitSource(script *Script, repo string) {
-	if script.body.Source != "" {
+	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
-			script.filename, repo)
+			script.Filename, repo)
 	}
-	script.body.Source = repo
+	script.Body.Source = repo
 }
 
 // setURLSource sets a `url` to source section in a given `script`.
@@ -236,12 +237,12 @@ func setGitSource(script *Script, repo string) {
 // The file pointed by the URL must be either executable, zipped, or tarballed
 // file. If overwriting source section, it prints warning, too.
 func setURLSource(script *Script, url string) {
-	if script.body.Source != "" {
+	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
-			script.filename, url)
+			script.Filename, url)
 	}
-	script.body.Source = url
+	script.Body.Source = url
 }
 
 // setLocalSource sets a GCS URL to source section in a given `script`.
@@ -261,7 +262,7 @@ func setLocalSource(conf *config.Config, script *Script, path string, excludes [
 
 	if info.IsDir() { // Directory will be archived.
 
-		filename = script.instanceName + ".tar.gz"
+		filename = script.InstanceName + ".tar.gz"
 		uploadingPath = filepath.Join(os.TempDir(), filename)
 
 		spin := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
@@ -287,7 +288,7 @@ func setLocalSource(conf *config.Config, script *Script, path string, excludes [
 	if err != nil {
 		return
 	}
-	script.body.Source = location
+	script.Body.Source = location
 	return nil
 
 }
