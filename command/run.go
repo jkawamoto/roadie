@@ -146,7 +146,77 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
 	}
 
-	return runScript(conf, script, opt)
+	// Check result section.
+	if script.body.Result == "" || opt.OverWriteResultSection {
+		script.setResult(conf.Gcp.Bucket)
+	} else {
+		fmt.Printf(
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.filename, script.body.Result)
+		fmt.Println(
+			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
+		fmt.Println(
+			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
+	}
+
+	// Debugging info.
+	fmt.Printf("Script to be run:\n%s\n", script.String())
+
+	// Prepare startup script.
+	startup, err := util.Asset("assets/startup.sh")
+	if err != nil {
+		fmt.Println(chalk.Red.Color("Startup script was not found."))
+		return
+	}
+
+	options := " "
+	if opt.NoShutdown {
+		options = "--no-shutdown"
+	}
+
+	buf := &bytes.Buffer{}
+	data := map[string]string{
+		"Name":    script.instanceName,
+		"Script":  script.String(),
+		"Options": options,
+	}
+	temp, err := template.New("startup").Parse(string(startup))
+	if err != nil {
+		return
+	}
+	if err = temp.ExecuteTemplate(buf, "startup", data); err != nil {
+		return
+	}
+
+	// Create an instance.
+	builder, err := util.NewInstanceBuilder(conf.Gcp.Project)
+	if err != nil {
+		return
+	}
+
+	if opt.Dry {
+		fmt.Printf("Startup script:\n%s\n", buf.String())
+	} else {
+
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.instanceName))
+		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
+		s.Start()
+		defer s.Stop()
+
+		err = builder.CreateInstance(script.instanceName, []*util.MetadataItem{
+			&util.MetadataItem{
+				Key:   "startup-script",
+				Value: buf.String(),
+			},
+		}, opt.DiskSize)
+
+		if err != nil {
+			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
+			return
+		}
+
+	}
+	return nil
 
 }
 
@@ -218,83 +288,6 @@ func setLocalSource(conf *config.Config, script *Script, path string, excludes [
 		return
 	}
 	script.body.Source = location
-	return nil
-
-}
-
-// runScript run a given script with config and context information.
-func runScript(conf *config.Config, script *Script, opt *runOpt) error {
-
-	// Check result section.
-	if script.body.Result == "" || opt.OverWriteResultSection {
-		script.setResult(conf.Gcp.Bucket)
-	} else {
-		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.filename, script.body.Result)
-		fmt.Println(
-			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
-		fmt.Println(
-			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
-	}
-
-	// Debugging info.
-	fmt.Printf("Script to be run:\n%s\n", script.String())
-
-	// Prepare startup script.
-	startup, err := util.Asset("assets/startup.sh")
-	if err != nil {
-		fmt.Println(chalk.Red.Color("Startup script was not found."))
-		return cli.NewExitError(err.Error(), 1)
-	}
-
-	options := " "
-	if opt.NoShutdown {
-		options = "--no-shutdown"
-	}
-
-	buf := &bytes.Buffer{}
-	data := map[string]string{
-		"Name":    script.instanceName,
-		"Script":  script.String(),
-		"Options": options,
-	}
-	temp, err := template.New("startup").Parse(string(startup))
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	if err := temp.ExecuteTemplate(buf, "startup", data); err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	// Create an instance.
-	builder, err := util.NewInstanceBuilder(conf.Gcp.Project)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
-	if opt.Dry {
-		fmt.Printf("Startup script:\n%s\n", buf.String())
-	} else {
-
-		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.instanceName))
-		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
-		s.Start()
-		defer s.Stop()
-
-		err := builder.CreateInstance(script.instanceName, []*util.MetadataItem{
-			&util.MetadataItem{
-				Key:   "startup-script",
-				Value: buf.String(),
-			},
-		}, opt.DiskSize)
-
-		if err != nil {
-			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
-			return cli.NewExitError(err.Error(), 2)
-		}
-
-	}
 	return nil
 
 }
