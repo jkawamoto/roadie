@@ -34,10 +34,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Script defines a data structure of script file.
 type Script struct {
-	filename     string
-	instanceName string
-	body         struct {
+	Filename     string
+	InstanceName string
+	Body         struct {
 		APT    []string `yaml:"apt,omitempty"`
 		Source string   `yaml:"source,omitempty"`
 		Data   []string `yaml:"data,omitempty"`
@@ -47,8 +48,8 @@ type Script struct {
 	}
 }
 
-// Load a given script file and apply arguments.
-func loadScript(filename string, args []string) (*Script, error) {
+// NewScript loads a given script file and apply arguments.
+func NewScript(filename string, args []string) (res *Script, err error) {
 
 	// Define function map to replace place holders.
 	funcs := template.FuncMap{}
@@ -66,7 +67,7 @@ func loadScript(filename string, args []string) (*Script, error) {
 	if err != nil {
 		switch err.(type) {
 		case *os.PathError:
-			return nil, err
+			return
 		default:
 			return nil, fmt.Errorf("Cannot apply variables to the place holders in %s", filename)
 		}
@@ -74,8 +75,8 @@ func loadScript(filename string, args []string) (*Script, error) {
 
 	// Replace place holders with given args.
 	buf := &bytes.Buffer{}
-	if err := conf.Execute(buf, nil); err != nil {
-		return nil, err
+	if err = conf.Execute(buf, nil); err != nil {
+		return
 	}
 
 	// Construct a script object.
@@ -86,31 +87,21 @@ func loadScript(filename string, args []string) (*Script, error) {
 		hostname = strings.Split(hostname, ".")[0]
 	}
 
-	res := Script{
-		filename: filename,
-		instanceName: strings.ToLower(fmt.Sprintf(
+	res = &Script{
+		Filename: filename,
+		InstanceName: strings.ToLower(fmt.Sprintf(
 			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405"))),
 	}
 
 	// Unmarshal YAML file.
-	if err := yaml.Unmarshal(buf.Bytes(), &res.body); err != nil {
-		return nil, err
+	if err = yaml.Unmarshal(buf.Bytes(), &res.Body); err != nil {
+		return
 	}
-
-	return &res, nil
-
+	return
 }
 
-// Set result section with a given bucket name.
-func (s *Script) setResult(bucket string) {
-
-	location := util.CreateURL(bucket, ResultPrefix, s.instanceName)
-	s.body.Result = location.String()
-
-}
-
-// Convert to string.
+// String converts this script to a string.
 func (s *Script) String() string {
-	res, _ := yaml.Marshal(s.body)
+	res, _ := yaml.Marshal(s.Body)
 	return string(res)
 }
