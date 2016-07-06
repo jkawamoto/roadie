@@ -59,6 +59,11 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
+	// Update instance name.
+	if v := c.String("name"); v != "" {
+		script.instanceName = strings.ToLower(v)
+	}
+
 	// Check source section.
 	if script.body.Source == "" {
 		return cli.NewExitError("No source section and source flages are given.", 2)
@@ -86,6 +91,11 @@ func CmdRunGit(c *cli.Context) error {
 	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
+	}
+
+	// Update instance name.
+	if v := c.String("name"); v != "" {
+		script.instanceName = strings.ToLower(v)
 	}
 
 	// Prepare source section.
@@ -122,6 +132,11 @@ func CmdRunURL(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
+	// Update instance name.
+	if v := c.String("name"); v != "" {
+		script.instanceName = strings.ToLower(v)
+	}
+
 	// Prepare source section.
 	url := c.Args()[0]
 	if script.body.Source != "" {
@@ -155,6 +170,11 @@ func CmdRunLocal(c *cli.Context) error {
 	script, err := loadScript(c.Args()[1], c.StringSlice("e"))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
+	}
+
+	// Update instance name.
+	if v := c.String("name"); v != "" {
+		script.instanceName = strings.ToLower(v)
 	}
 
 	// Prepare source section.
@@ -208,11 +228,6 @@ func CmdRunLocal(c *cli.Context) error {
 
 // runScript run a given script with config and context information.
 func runScript(conf *config.Config, script *Script, c *cli.Context) error {
-
-	// Update instance name.
-	if v := c.String("name"); v != "" {
-		script.instanceName = v
-	}
 
 	// Check result section.
 	if script.body.Result == "" || c.Bool("overwrite-result-section") {

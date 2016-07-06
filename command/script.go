@@ -88,8 +88,8 @@ func loadScript(filename string, args []string) (*Script, error) {
 
 	res := Script{
 		filename: filename,
-		instanceName: fmt.Sprintf(
-			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")),
+		instanceName: strings.ToLower(fmt.Sprintf(
+			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405"))),
 	}
 
 	// Unmarshal YAML file.
