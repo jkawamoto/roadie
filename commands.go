@@ -65,7 +65,6 @@ var Commands = []cli.Command{
 		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
-		// TODO: Support custom image.
 		// TODO: Following log flag. (like less +F)
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
@@ -123,6 +122,11 @@ var Commands = []cli.Command{
 				Name:  "disk-size",
 				Usage: "set disk size in GB.",
 				Value: 9,
+			},
+			cli.StringFlag{
+				Name:  "image",
+				Usage: "customize the base image which given program will run on.",
+				Value: "jkawamoto/roadie-gcp",
 			},
 			cli.BoolFlag{
 				Name:  "dry",

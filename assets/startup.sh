@@ -32,4 +32,4 @@ cat <<EOF > run.yml
 {{.Script}}
 EOF
 
-docker run -i --name {{.Name}} jkawamoto/roadie-gcp {{.Options}} < run.yml
+docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml

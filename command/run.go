@@ -66,6 +66,9 @@ type runOpt struct {
 	// Instance name. If not set, named by script file name and current time.
 	InstanceName string
 
+	// Base docker image name.
+	Image string
+
 	// Specify disk size of new instance.
 	DiskSize int64
 
@@ -100,6 +103,7 @@ func CmdRun(c *cli.Context) error {
 		ScriptFile:             c.Args()[0],
 		ScriptArgs:             c.StringSlice("e"),
 		InstanceName:           c.String("name"),
+		Image:                  c.String("image"),
 		DiskSize:               c.Int64("disk-size"),
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
 		NoShutdown:             c.Bool("no-shutdown"),
@@ -186,6 +190,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		"Name":    script.InstanceName,
 		"Script":  script.String(),
 		"Options": options,
+		"Image":   opt.Image,
 	}
 	temp, err := template.New("startup").Parse(string(startup))
 	if err != nil {
