@@ -1,5 +1,5 @@
 //
-// util/path.go
+// command/util/path.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //

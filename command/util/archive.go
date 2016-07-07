@@ -1,5 +1,5 @@
 //
-// util/archive.go
+// command/util/archive.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //

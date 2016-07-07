@@ -1,5 +1,5 @@
 //
-// util/gcs_test.go
+// command/util/gcs_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
