@@ -34,6 +34,13 @@ import (
 	"github.com/urfave/cli"
 )
 
+// GcloudConfig defines information recived from `gcloud config list`.
+type GcloudConfig struct {
+	Zone    string
+	Account string
+	Project string
+}
+
 // CmdInit helps to create a configuration file.
 func CmdInit(c *cli.Context) error {
 
@@ -47,40 +54,9 @@ for more detail. Type ctrl-c at anytime to quite.
 
 `, chalk.Bold.TextStyle("Initialize Roadie"))
 
-	// TODO: Windows support.
-
-	// Check basic requirements.
-	fmt.Println("Checking requirements...")
-	if _, err = exec.LookPath("python"); err != nil {
-		return cli.NewExitError(chalk.Red.Color("`python` is not found in PATH. It is required."), -1)
-	} else if _, err = exec.LookPath("curl"); err != nil {
-		return cli.NewExitError(chalk.Red.Color("`curl` is not found in PATH. It is required."), -1)
-	}
-
 	// Check gcloud command.
-	if _, err = exec.LookPath("gcloud"); err != nil {
-		var ans bool
-		fmt.Println(chalk.Red.Color("`Google Cloud SDK` is not foune."))
-		fmt.Println("If you have installed it already, make sure your `PATH` includes `gcloud` command and reloaded it.")
-		ans, err = actor.Confirm(chalk.Yellow.Color("Install `Google Cloud SDK`?"), interact.ConfirmDefaultToYes)
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		} else if !ans {
-			return cli.NewExitError(chalk.Red.Color("Please install it by yourself. See https://cloud.google.com/sdk/"), -1)
-		}
-
-		fmt.Println("Installing `Google Cloud SDK`...")
-		if err = installSDK(); err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
-
-		fmt.Println(chalk.Yellow.Color(`Please restart your shell and continue initialization by typing the following commands:
-
-    $ exec -l $SHELL
-    $ roadie init
-    `))
-		return nil
-
+	if err = checkGcloud(actor); err != nil {
+		return err
 	}
 
 	// Get gcloud configuration.
@@ -215,12 +191,6 @@ func getGcloudConf() (res GcloudConfig, err error) {
 
 }
 
-type GcloudConfig struct {
-	Zone    string
-	Account string
-	Project string
-}
-
 func setupGcloud() (err error) {
 
 	cmd := exec.Command("gcloud", "init")
@@ -229,18 +199,21 @@ func setupGcloud() (err error) {
 	if err != nil {
 		return
 	}
+	defer stdin.Close()
 	go io.Copy(stdin, os.Stdin)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return
 	}
+	defer stdout.Close()
 	go io.Copy(os.Stdout, stdout)
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return
 	}
+	defer stderr.Close()
 	go io.Copy(os.Stderr, stderr)
 
 	return cmd.Run()

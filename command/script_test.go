@@ -21,28 +21,146 @@
 
 package command
 
-import "testing"
+import (
+	"os"
+	"path"
+	"strings"
+	"testing"
+)
 
+const (
+	// simpleScript is a script which doesn't have any place holders.
+	simpleScript = `
+apt:
+- python-numpy
+source: https://github.com/jkawamoto/roadie
+data:
+- gs://somebucket/somedata
+run:
+- abc def
+result: gs://somebucket/result
+upload:
+- xyz
+`
+
+	// complexScript is a script which has a place holder.
+	complexScript = `
+apt:
+- python-numpy
+source: https://github.com/jkawamoto/roadie
+data:
+- gs://somebucket/somedata
+run:
+- abc {{args}}
+result: gs://somebucket/result
+upload:
+- xyz
+`
+)
+
+// TestLoadScript tests loading a script which doesn't have place holders.
 func TestLoadScript(t *testing.T) {
 
-	_, err := loadScript("../test.yml", []string{"method=test"})
+	var err error
+
+	// Prepare testing.
+	filename := path.Join(os.TempDir(), "test.yaml")
+	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		t.Error(err.Error())
+	}
+	_, err = fp.WriteString(simpleScript)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if err = fp.Close(); err != nil {
+		t.Error(err.Error())
+	}
+	t.Logf("Create a test script file in %s", filename)
+	defer os.Remove(filename)
+
+	// Loading test.
+	script, err := NewScript(filename, nil)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Tests
+	if script.Filename != filename {
+		t.Errorf("Filename %s is not equal to %s.", script.Filename, filename)
+	}
+
+	if script.InstanceName != strings.ToLower(script.InstanceName) {
+		t.Errorf("Instance name %s has upper cases.", script.InstanceName)
+	}
+
+	if strings.Contains(script.InstanceName, ".") {
+		t.Errorf("Instance name %s has dots.", script.InstanceName)
+	}
+
+	if len(script.Body.APT) != 1 || script.Body.APT[0] != "python-numpy" {
+		t.Errorf("apt section is not correct: %s", script.Body.APT)
+	}
+
+	if script.Body.Source != "https://github.com/jkawamoto/roadie" {
+		t.Errorf("source section is not correct: %s", script.Body.Source)
+	}
+
+	if len(script.Body.Data) != 1 || script.Body.Data[0] != "gs://somebucket/somedata" {
+		t.Errorf("data section is not correct: %s", script.Body.Data)
+	}
+
+	if len(script.Body.Run) != 1 || script.Body.Run[0] != "abc def" {
+		t.Errorf("run section is not correct: %s", script.Body.Run)
+	}
+
+	if script.Body.Result != "gs://somebucket/result" {
+		t.Errorf("result section is not correct: %s", script.Body.Result)
+	}
+
+	if len(script.Body.Upload) != 1 || script.Body.Upload[0] != "xyz" {
+		t.Errorf("upload section is not correct: %s", script.Body.Upload)
 	}
 
 }
 
-func TestSetGitSource(t *testing.T) {
+// TestLoadScriptWithPlaceholders tests loading a script which has place holders.
+func TestLoadScriptWithPlaceholders(t *testing.T) {
 
-	s, err := loadScript("../test.yml", []string{"method=test"})
+	var err error
+
+	// Prepare testing.
+	filename := path.Join(os.TempDir(), "test.yaml")
+	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = fp.WriteString(complexScript)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if err = fp.Close(); err != nil {
+		t.Error(err.Error())
+	}
+	t.Logf("Create a test script file in %s", filename)
+	defer os.Remove(filename)
+
+	// Loading test.
+	script, err := NewScript(filename, []string{"args=xyz"})
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	s.body.Source = ""
-	s.setGitSource("https://github.com/jkawamoto/roadie-gcp.git")
-	if s.body.Source != "https://github.com/jkawamoto/roadie-gcp.git" {
-		t.Errorf("setGitSource doesn't work: %s", s.body.Source)
+	// Tests
+	if len(script.Body.Run) != 1 || script.Body.Run[0] != "abc xyz" {
+		t.Errorf("run section is not correct: %s", script.Body.Run)
 	}
+
+	// Loading without parameters test.
+	_, err = NewScript(filename, nil)
+	if err == nil {
+		t.Error("Placeholders are not given but script is created.")
+	}
+	t.Logf("Load script w/o arguments gets an error: %s", err.Error())
 
 }

@@ -1,5 +1,5 @@
 //
-// config/config_test.go
+// command/util/gcs_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,10 +19,33 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package config
+package util
 
 import "testing"
 
-func TestLoadConfig(t *testing.T) {
+func TestNewStorage(t *testing.T) {
+
+	_, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+}
+
+func TestUpload(t *testing.T) {
+
+	// s, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
+	// if err != nil {
+	// 	t.Error(err.Error())
+	// }
+	//
+	// location, err := url.Parse("gs://jkawamoto-ppls/.roadie/gcs_test.go")
+	// if err != nil {
+	// 	t.Error(err.Error())
+	// }
+
+	// if err := s.Upload("./gcs_test.go", location); err != nil {
+	// 	t.Error(err.Error())
+	// }
 
 }

@@ -29,133 +29,22 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/briandowns/spinner"
-	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/pb"
-	"github.com/jkawamoto/roadie-cli/util"
+	"github.com/jkawamoto/pb" // Use `public_pool_add` branch.
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
-// AddRecorder is a callback to add file information to a table.
-type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
-
 // ListupFilesWorker is goroutine of a woker called from listupFiles.
 type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{})
-
-// PrintFileList prints a list of files having a given prefix.
-func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) {
-
-	var headers []string
-	if url {
-		headers = []string{"FILE NAME", "SIZE", "TIME CREATED", "URL"}
-	} else {
-		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
-	}
-
-	return printList(
-		project, bucket, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
-
-			if info.Name != "" {
-				if quiet {
-					table.AddRow(info.Name)
-				} else if url {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", bucket, info.Path))
-				} else {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
-				}
-			}
-
-		})
-}
-
-// PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
-
-	var headers []string
-	if url {
-		headers = []string{"INSTANCE NAME", "TIME CREATED", "URL"}
-	} else {
-		headers = []string{"INSTANCE NAME", "TIME CREATED"}
-	}
-
-	return printList(
-		project, bucket, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
-
-			rel, _ := filepath.Rel(prefix, info.Path)
-			if rel != "." && !strings.Contains(rel, "/") {
-				if quiet {
-					table.AddRow(rel)
-				} else if url {
-					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat), info.Path)
-				} else {
-					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
-				}
-			}
-
-		})
-}
-
-func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
-
-	storage, err := util.NewStorage(project, bucket)
-	if err != nil {
-		return
-	}
-
-	ch := make(chan *util.FileInfo)
-	errCh := make(chan error)
-
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
-	s.Start()
-
-	go storage.List(prefix, ch, errCh)
-
-	table := uitable.New()
-	if !quiet {
-		rawHeaders := make([]interface{}, len(headers))
-		for i, v := range headers {
-			rawHeaders[i] = v
-		}
-		table.AddRow(rawHeaders...)
-	}
-
-loop:
-	for {
-		select {
-		case item := <-ch:
-			if item == nil {
-				break loop
-			}
-			addRecorder(table, item, quiet)
-		case err = <-errCh:
-			break loop
-		}
-	}
-
-	s.Stop()
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	fmt.Println(table.String())
-	return nil
-
-}
 
 // UploadToGCS uploads a file to a bucket associated with a project.
 // Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
+	// TODO: Parallel uploading.
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
 		return "", err
@@ -179,6 +68,7 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
 	fmt.Println("Uploading...")
 	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
+	bar.AlwaysUpdate = true
 	bar.Start()
 	defer bar.Finish()
 
@@ -192,11 +82,11 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 // ListupFiles lists up files in a bucket associated with a project and which
 // have a prefix. Information of found files will be sent to worker function via channgel.
 // The worker function will be started as a goroutine.
-func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error {
+func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err error) {
 
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 
 	file := make(chan *util.FileInfo, 10)
@@ -206,38 +96,37 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error
 	go storage.List(prefix, file, errCh)
 	go worker(storage, file, done)
 
-loop:
-	for {
-		select {
-		case <-done:
-			// printFileBodyWorker ends.
-			break loop
-		case err = <-errCh:
-			// storage.List ends but printFileBodyWorker is still working.
-			file <- nil
+	func() {
+		for {
+			select {
+			case <-done:
+				// ListupFilesWorker ends.
+				return
+			case err = <-errCh:
+				// storage.List ends but ListupFilesWorker is still working.
+				file <- nil
+			}
 		}
-	}
+	}()
 
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	return nil
+	return
 
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query. Downloaded files will be put in
 // a given directory.
-func DownloadFiles(project, bucket, prefix, dir string, queries []string) error {
+func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err error) {
 
-	if info, err := os.Stat(dir); err != nil {
+	var info os.FileInfo
+	if info, err = os.Stat(dir); err != nil {
 		// Given dir does not exist.
-		if err2 := os.MkdirAll(dir, 0777); err2 != nil {
-			return cli.NewExitError(err2.Error(), 2)
+		if err = os.MkdirAll(dir, 0777); err != nil {
+			return
 		}
 	} else {
 		if !info.IsDir() {
-			return cli.NewExitError(fmt.Sprintf("Cannot create the directory tree: %s", dir), 2)
+			return fmt.Errorf("Cannot create the directory tree: %s", dir)
 		}
 	}
 
@@ -249,6 +138,8 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 			fmt.Println("Downloading...")
 
 			pool, _ := pb.StartPool()
+			defer pool.Stop()
+
 			for {
 
 				info := <-file
@@ -258,46 +149,40 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 					continue
 				}
 
-				for _, q := range queries {
+				if match(queries, info.Name) {
 
-					if matched, _ := filepath.Match(q, info.Name); matched {
+					bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+					pool.Add(bar)
 
-						bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-						pool.Add(bar)
+					wg.Add(1)
+					go func(info *util.FileInfo, bar *pb.ProgressBar) {
 
-						wg.Add(1)
-						go func(info *util.FileInfo, bar *pb.ProgressBar) {
+						defer wg.Done()
 
-							defer wg.Done()
+						filename := filepath.Join(dir, info.Name)
+						f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+						if err != nil {
+							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+							return
+						}
+						defer f.Close()
 
-							filename := filepath.Join(dir, info.Name)
-							f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-							if err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-								return
-							}
-							defer f.Close()
+						buf := bufio.NewWriter(io.MultiWriter(f, bar))
+						defer buf.Flush()
 
-							buf := bufio.NewWriter(io.MultiWriter(f, bar))
-							defer buf.Flush()
+						if err := storage.Download(info.Path, buf); err != nil {
+							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+						} else {
+							bar.Finish()
+						}
 
-							if err := storage.Download(info.Path, buf); err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
-							} else {
-								bar.Finish()
-							}
-
-						}(info, bar)
-
-						break
-					}
+					}(info, bar)
 
 				}
 
 			}
 
 			wg.Wait()
-			pool.Stop()
 			done <- struct{}{}
 
 		})
@@ -324,21 +209,17 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 					continue
 				}
 
-				for _, q := range queries {
+				if match(queries, info.Name) {
 
-					if matched, _ := filepath.Match(q, info.Name); matched {
+					wg.Add(1)
+					go func(info *util.FileInfo) {
 
-						wg.Add(1)
-						go func(info *util.FileInfo) {
-							defer wg.Done()
-							if err := storage.Delete(info.Path); err != nil {
-								fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
-							}
-						}(info)
+						defer wg.Done()
+						if err := storage.Delete(info.Path); err != nil {
+							fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+						}
 
-						// Break from checking queries.
-						break
-					}
+					}(info)
 
 				}
 
@@ -349,4 +230,45 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 
 		})
 
+}
+
+// PrintFileBody prints file bodies in a bucket associated with a project,
+// which has a prefix ans satisfies query. If quiet is ture, additional messages
+// well be suppressed.
+func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
+
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+
+			for {
+				info := <-file
+				if info == nil {
+					done <- struct{}{}
+					return
+				}
+
+				if info.Name != "" && strings.HasPrefix(info.Name, query) {
+					if !quiet {
+						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+					}
+					if err := storage.Download(info.Path, os.Stdout); err != nil {
+						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+					}
+				}
+
+			}
+
+		})
+
+}
+
+// match returns true if there are at least one pattern matching to name.
+func match(patterns []string, name string) bool {
+	for _, pat := range patterns {
+		if res, _ := filepath.Match(pat, name); res {
+			return true
+		}
+	}
+	return false
 }

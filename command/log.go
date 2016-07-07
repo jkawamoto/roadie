@@ -24,8 +24,11 @@ package command
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/jkawamoto/roadie/config"
 	"github.com/mitchellh/mapstructure"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -40,8 +43,6 @@ type RoadiePayload struct {
 	InstanceName string `mapstructure:"instance_name"`
 }
 
-const PrintTimeFormat = "2006/01/02 15:04:05"
-
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
 
@@ -53,47 +54,83 @@ func CmdLog(c *cli.Context) error {
 	conf := GetConfig(c)
 	name := c.Args()[0]
 	timestamp := !c.Bool("no-timestamp")
+	follow := c.Bool("follow")
+	if err := cmdLog(conf, name, timestamp, follow); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+}
+
+func cmdLog(conf *config.Config, instanceName string, timestamp, follow bool) (err error) {
 
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
-	go GetLogEntries(
-		conf.Gcp.Project,
-		fmt.Sprintf(
-			// Instead of logName, which is specified TAG env in roadie-gce,
-			// use instance name to distinguish instances. This update makes all logs
-			// will have same log name, docker, so that such log can be stored into
-			// GCS easily.
-			//
-			// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
-			"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", name),
-		ch, chErr)
 
-loop:
+	baseFilter := fmt.Sprintf(
+		// Instead of logName, which is specified TAG env in roadie-gce,
+		// use instance name to distinguish instances. This update makes all logs
+		// will have same log name, docker, so that such log can be stored into
+		// GCS easily.
+		//
+		// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
+		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", instanceName)
+
+	filter := baseFilter
+	var lastTimestamp *time.Time
 	for {
-		select {
-		case entry := <-ch:
 
-			if entry == nil {
-				break loop
-			}
+		go GetLogEntries(conf.Gcp.Project, filter, ch, chErr)
 
-			if payload, err := getRoadiePayload(entry); err == nil {
-				if timestamp {
-					fmt.Printf("%v: %s\n", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
-				} else {
-					fmt.Printf("%s\n", payload.Log)
+		err = func() error {
+
+			// Listening channels and print logs.
+			for {
+				select {
+				case entry := <-ch:
+
+					if entry == nil {
+						return nil
+					}
+
+					if payload, err2 := getRoadiePayload(entry); err2 == nil {
+
+						var msg string
+						if timestamp {
+							msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
+						} else {
+							msg = fmt.Sprintf("%s", payload.Log)
+						}
+
+						if payload.Stream == "stdout" {
+							fmt.Println(msg)
+						} else {
+							fmt.Fprintln(os.Stderr, msg)
+						}
+
+						lastTimestamp = &entry.Timestamp
+
+					} else {
+						log.Println(chalk.Red.Color(err2.Error()))
+					}
+
+				case err := <-chErr:
+					return err
 				}
-			} else {
-				log.Println(chalk.Red.Color(err.Error()))
 			}
+		}()
 
-		case err := <-chErr:
-			fmt.Println(err.Error())
-			break loop
+		if err != nil || !follow {
+			break
 		}
-	}
 
-	return nil
+		time.Sleep(30 * time.Second)
+
+		utc := lastTimestamp.In(time.UTC)
+		filter = fmt.Sprintf("%s AND timestamp > \"%s\"", baseFilter, utc.Format(LogTimeFormat))
+
+	}
+	return
+
 }
 
 // getRoadiePayload converts LogEntry's payload to a RoadiePayload.

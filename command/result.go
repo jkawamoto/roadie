@@ -25,9 +25,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/jkawamoto/roadie-cli/util"
+	"github.com/deiwin/interact"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -39,20 +38,37 @@ const (
 	StdoutFilePrefix = "stdout"
 )
 
+// CmdResult defines the default behavior which is showing help with --help or
+// -h. Otherwise, do as list command.
+func CmdResult(c *cli.Context) error {
+
+	if c.Bool("help") {
+		return cli.ShowSubcommandHelp(c)
+	}
+	return CmdResultList(c)
+
+}
+
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
 	conf := GetConfig(c)
+	var err error
 	switch c.NArg() {
 	case 0:
-		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
-		instance := c.Args()[0]
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		instance := c.Args().First()
+		err = PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
@@ -60,20 +76,26 @@ func CmdResultList(c *cli.Context) error {
 func CmdResultShow(c *cli.Context) error {
 
 	conf := GetConfig(c)
+	var err error
 	switch c.NArg() {
 	case 1:
-		instance := c.Args()[0]
-		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		instance := c.Args().First()
+		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
 
 	case 2:
-		instance := c.Args()[0]
-		filePrefix := StdoutFilePrefix + c.Args()[1]
-		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+		instance := c.Args().First()
+		filePrefix := StdoutFilePrefix + c.Args().Get(1)
+		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
@@ -87,54 +109,53 @@ func CmdResultGet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-	return DownloadFiles(
+
+	err := DownloadFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
 		c.String("o"), c.Args().Tail())
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
 // CmdResultDelete deletes results for a given instance and file names are matched to queries.
 func CmdResultDelete(c *cli.Context) error {
 
-	if c.NArg() < 2 {
-		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+	if c.NArg() == 0 {
+		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-	return DeleteFiles(
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Args().Tail())
+	var patterns []string
+	if c.NArg() == 1 {
 
-}
+		actor := interact.NewActor(os.Stdin, os.Stdout)
+		deleteAll, err := actor.Confirm(
+			chalk.Red.Color("File names are not given. Do you want to delete all files?"),
+			interact.ConfirmDefaultToNo)
 
-// printFileBody prints file bodies in a bucket associated with a project,
-// which has a prefix ans satisfies query. If quiet is ture, additional messages
-// well be suppressed.
-func printFileBody(project, bucket, prefix, query string, quiet bool) error {
+		if err != nil {
+			return cli.NewExitError(err.Error(), -1)
+		} else if deleteAll {
+			patterns = []string{"*"}
+		} else {
+			return nil
+		}
 
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+	} else {
+		patterns = c.Args().Tail()
+	}
 
-			for {
-				info := <-file
-				if info == nil {
-					done <- struct{}{}
-					return
-				}
-
-				if info.Name != "" && strings.HasPrefix(info.Name, query) {
-					if !quiet {
-						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
-					}
-					if err := storage.Download(info.Path, os.Stdout); err != nil {
-						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-					}
-				}
-
-			}
-
-		})
+	err := DeleteFiles(
+		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }

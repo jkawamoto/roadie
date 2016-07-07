@@ -1,6 +1,5 @@
-#!/bin/bash
 #
-# startup script
+# Makefile.go
 #
 # Copyright (c) 2016 Junpei Kawamoto
 #
@@ -19,17 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
-cd /root
 
-# Start logging.
-docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
-  -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
+default: build
 
-sleep 30s
+.PHONY: asset
+asset:
+	go-bindata -pkg util -o command/util/assets.go assets/startup.sh
 
-# Run the script
-cat <<EOF > run.yml
-{{.Script}}
-EOF
-
-docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml
+.PHONY: build
+build: asset
+	gox --output pkg/{{.Dir}}_{{.OS}}_{{.Arch}} -arch="amd64" -os="darwin linux windows"

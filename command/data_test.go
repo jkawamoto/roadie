@@ -1,5 +1,5 @@
 //
-// util/gcs_test.go
+// command/data_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,36 +19,30 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package util
+package command
 
 import (
-	"net/url"
 	"testing"
+
+	"github.com/jkawamoto/roadie/config"
 )
 
-func TestNewStorage(t *testing.T) {
+// TestCmdDataPut checks if wrong patterns are given, cmdDataPut returns error,
+// and if empty pattern is given, it do nothing.
+func TestCmdDataPut(t *testing.T) {
 
-	_, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
-	if err != nil {
-		t.Error(err.Error())
+	conf := config.Config{}
+
+	// Test for wrong pattern.
+	if err := cmdDataPut(&conf, "[b-a", ""); err == nil {
+		t.Error("Give a wrong pattern but no errors occur.")
+	} else {
+		t.Logf("Wrong patter makes an error: %s", err.Error())
 	}
 
-}
-
-func TestUpload(t *testing.T) {
-
-	s, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	location, err := url.Parse("gs://jkawamoto-ppls/.roadie/gcs_test.go")
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	if err := s.Upload("./gcs_test.go", location); err != nil {
-		t.Error(err.Error())
+	// Test for empty pattern.
+	if err := cmdDataPut(&conf, "", ""); err != nil {
+		t.Errorf(err.Error())
 	}
 
 }

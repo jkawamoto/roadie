@@ -1,5 +1,5 @@
 //
-// util/gce_test.go
+// command/util/gce_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //

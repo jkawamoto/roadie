@@ -1,5 +1,5 @@
 //
-// util/gce.go
+// command/util/gce.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -23,6 +23,7 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ttacon/chalk"
 
@@ -134,7 +135,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 	}
 
 	bluepring := compute.Instance{
-		Name:        name,
+		Name:        strings.ToLower(name),
 		Zone:        b.normalizedZone(),
 		MachineType: b.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
@@ -193,8 +194,8 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 
 }
 
-// StopInstance stops a given named instance.
-func (b *InstanceBuilder) StopInstance(name string) (err error) {
+// DeleteInstance deletes a given named instance.
+func (b *InstanceBuilder) DeleteInstance(name string) (err error) {
 	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {

@@ -32,6 +32,9 @@ import (
 	"google.golang.org/api/logging/v2beta1"
 )
 
+// LogTimeFormat defines time format of Google Logging.
+const LogTimeFormat = "2006-01-02T15:04:05Z"
+
 // LogEntry defines a generic structure of one log entry.
 type LogEntry struct {
 	Timestamp time.Time
@@ -70,7 +73,7 @@ func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- err
 					v.Timestamp = strings.Split(v.Timestamp, ".")[0] + "Z"
 				}
 
-				timestamp, err := time.Parse("2006-01-02T15:04:05Z", v.Timestamp)
+				timestamp, err := time.Parse(LogTimeFormat, v.Timestamp)
 				if err != nil {
 					fmt.Println(chalk.Red.Color(err.Error()))
 					continue

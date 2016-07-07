@@ -24,10 +24,13 @@ package command
 import (
 	"fmt"
 
-	"github.com/jkawamoto/roadie-cli/config"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
+
+// PrintTimeFormat defines time format to be used to print logs.
+const PrintTimeFormat = "2006/01/02 15:04:05"
 
 // GetConfig returns a config object from a context.
 func GetConfig(c *cli.Context) *config.Config {
@@ -67,7 +70,11 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 
@@ -84,7 +91,11 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		err := DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 
@@ -101,7 +112,10 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args())
+		if err := DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 

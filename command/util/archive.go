@@ -1,5 +1,5 @@
 //
-// util/archive.go
+// command/util/archive.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -79,6 +79,9 @@ func tarballing(writer *tar.Writer, excludes []string) filepath.WalkFunc {
 			return nil
 		}
 
+		// For Windows: Replace path delimiters.
+		path = filepath.ToSlash(path)
+
 		// Write a file header.
 		header, err := tar.FileInfoHeader(info, path)
 		if err != nil {
@@ -88,8 +91,6 @@ func tarballing(writer *tar.Writer, excludes []string) filepath.WalkFunc {
 
 		if strings.HasPrefix(path, "../") {
 			header.Name = path[3:]
-			// } else if strings.HasPrefix(path, "./") {
-			// 	header.Name = path[2:]
 		} else {
 			header.Name = path
 		}

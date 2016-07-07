@@ -25,28 +25,28 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jkawamoto/roadie-cli/command"
+	"github.com/jkawamoto/roadie/command"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
-// GlobalFlags manages golabal flags.
+// GlobalFlags manages global flags.
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "project, p",
-		Usage: "overwrite project name configuration.",
+		Usage: "overwrite project name configuration by `NAME`.",
 	},
 	cli.StringFlag{
 		Name:  "type, t",
-		Usage: "overwrite machi type configuration.",
+		Usage: "overwrite machine type configuration by `TYPE`.",
 	},
 	cli.StringFlag{
 		Name:  "zone, z",
-		Usage: "overwrite zone configuration.",
+		Usage: "overwrite zone configuration by `ZONE`.",
 	},
 	cli.StringFlag{
 		Name:  "bucket, b",
-		Usage: "overwrite bucket name configuration.",
+		Usage: "overwrite bucket name configuration by `NAME`.",
 	},
 }
 
@@ -57,10 +57,14 @@ var Commands = []cli.Command{
 		Usage: "initialize roadie.",
 		Description: "Check requirements. Install and set up `Google Cloud SDK` if necessary. " +
 			"Create configuration file `.roadie`.",
+		Category:  "Configuration",
 		ArgsUsage: " ",
 		Action:    command.CmdInit,
 	},
 	{
+		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
+		// TODO: Support direct run -> running a given command without script file.
+		// TODO: Adding aditional filename to result section.
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
@@ -73,6 +77,7 @@ var Commands = []cli.Command{
 			"`e` option replaces placeholders by given key-value pairs. " +
 			"A placeholder named `name` looks like {{name}} in script. " +
 			"Option `-e name=abcdefg` replaces {{name}} as abcdefg.",
+		Category:  "Execution",
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
@@ -88,6 +93,14 @@ var Commands = []cli.Command{
 				Name:  "local",
 				Usage: "upload source files from given `PATH` and use it the new instance.",
 			},
+			cli.StringSliceFlag{
+				Name:  "exclude",
+				Usage: "",
+			},
+			cli.StringFlag{
+				Name:  "source",
+				Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
+			},
 			cli.StringFlag{
 				Name:  "name",
 				Usage: "new instance uses the given `NAME`.",
@@ -98,7 +111,7 @@ var Commands = []cli.Command{
 			},
 			cli.BoolFlag{
 				Name:  "no-shutdown",
-				Usage: "not shoutdown instance automatically. To stop instance use 'status kill' command.",
+				Usage: "not showdown instance automatically. To stop instance use 'status kill' command.",
 			},
 			cli.BoolFlag{
 				Name:  "overwrite-result-section",
@@ -109,18 +122,40 @@ var Commands = []cli.Command{
 				Usage: "set disk size in GB.",
 				Value: 9,
 			},
+			cli.StringFlag{
+				Name:  "image",
+				Usage: "customize the base image which given program will run on.",
+				Value: "jkawamoto/roadie-gcp",
+			},
 			cli.BoolFlag{
 				Name:  "dry",
-				Usage: "not create any actual instances but pring the startup script to be run instead.",
+				Usage: "not create any actual instances but printing the startup script to be run instead.",
+			},
+			cli.BoolFlag{
+				Name:  "follow, f",
+				Usage: "after creating instance, keep watching logs.",
 			},
 		},
 	},
 	{
-		Name:        "status",
-		Usage:       "show instance status.",
-		Description: "Show status of instances. Stopped insances will be deleted from the output after certain time.",
-		ArgsUsage:   " ",
-		Action:      command.CmdStatus,
+		// TODO: Subcommands help format should be modified.
+		Name:  "status",
+		Usage: "show instance status.",
+		Description: "Show status of instances. Stopped instances will be deleted from the output after certain time. " +
+			"Without `--all` flag, this command shows status of instances of which results are not deleted.",
+		Category:  "Execution",
+		ArgsUsage: " ",
+		Action:    command.CmdStatus,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "help, h",
+				Usage: "show help",
+			},
+			cli.BoolFlag{
+				Name:  "all",
+				Usage: "show all instance status.",
+			},
+		},
 		Subcommands: cli.Commands{
 			{
 				Name:        "kill",
@@ -137,12 +172,17 @@ var Commands = []cli.Command{
 		Description: "Show logs for a given instance name. Logs consists of messages from the framework and messages written to stderr. " +
 			"To see messages written stdout from script, use 'result' command. This command required project name is required. " +
 			"To set project name, use 'config project set' command. To find instance names, use 'status' command.",
+		Category:  "Execution",
 		ArgsUsage: "<instance name>",
 		Action:    command.CmdLog,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-timestamp",
-				Usage: "Not print timestamps.",
+				Usage: "not print time stamps.",
+			},
+			cli.BoolFlag{
+				Name:  "follow, f",
+				Usage: "keep waiting new logs coming.",
 			},
 		},
 	},
@@ -150,6 +190,14 @@ var Commands = []cli.Command{
 		Name:        "result",
 		Usage:       "list up and get results.",
 		Description: "list up, show, and download computation results.",
+		Category:    "Data handling",
+		Action:      command.CmdResult,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "help, h",
+				Usage: "show help",
+			},
+		},
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -185,13 +233,13 @@ var Commands = []cli.Command{
 			{
 				Name:  "get",
 				Usage: "get result files.",
-				Description: "download result files from a given instance and matching given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download result files from a given instance and matching given file names. " +
+					"File names accept wild-card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<instance name> <filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild-cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<instance name> <file name>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
 					cli.StringFlag{
@@ -204,18 +252,20 @@ var Commands = []cli.Command{
 			{
 				Name:  "delete",
 				Usage: "delete result files.",
-				Description: "delete result files from a given instance and match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<instance name> <filename>...",
+				Description: `delete result files from a given instance and match given file names.
+File names accept wild card characters.　If file names are not given, delete all
+files belonging to the instance.`,
+				ArgsUsage: "<instance name> [<file name>...]",
 				Action:    command.CmdResultDelete,
 			},
 		},
 	},
 	{
 		Name:  "config",
-		Usage: "show and upate configuration.",
+		Usage: "show and update configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
+		Category: "Configuration",
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
@@ -371,7 +421,8 @@ var Commands = []cli.Command{
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
-			"This commange lists up those scripts and delete them if necessary.",
+			"This command lists up those scripts and delete them if necessary.",
+		Category: "Data handling",
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -395,27 +446,41 @@ var Commands = []cli.Command{
 			{
 				Name:  "delete",
 				Usage: "delete source files.",
-				Description: "delete source files which match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<filename>...",
+				Description: "delete source files which match given file names. " +
+					"File names accept wild card characters. ",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateDeleteAction(command.SourcePrefix),
 			},
 			{
 				Name:  "get",
 				Usage: "get source files.",
-				Description: "download source files which match given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download source files which match given file names. " +
+					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(command.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
 						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
+					},
+				},
+			},
+			{
+				Name:  "put",
+				Usage: "put source files.",
+				Description: "make a tarball of a given path and upload it. Uploaded file name will be " +
+					"`<name>.tar.gz`.",
+				ArgsUsage: "<dir> <name>",
+				Action:    command.CmdSourcePut,
+				Flags: []cli.Flag{
+					cli.StringSliceFlag{
+						Name:  "exclude, e",
+						Usage: "specify excluding `PATH`. This flag can be set multiply.",
 					},
 				},
 			},
@@ -426,7 +491,8 @@ var Commands = []cli.Command{
 		Usage: "manage data files.",
 		Description: "Manage data files. Data files can be loaded from instance using their url, " +
 			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
-			"Use data section in your script to loda data files in your instance.",
+			"Use data section in your script to load data files in your instance.",
+		Category: "Data handling",
 		Subcommands: cli.Commands{
 			{
 				Name:        "list",
@@ -450,28 +516,30 @@ var Commands = []cli.Command{
 				Usage: "put a data file.",
 				Description: "Upload a data file. " +
 					"If stored name is given, uploaded file will be renamed and stored as the given name. " +
-					"Otherwise, basename of original file will be used.",
+					"Otherwise, basename of original file will be used. " +
+					"File path accepts wild card characters, but if the given file path matches more than 2, " +
+					"stored name will be ignored.",
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},
 			{
 				Name:  "delete",
 				Usage: "delete data files.",
-				Description: "delete data files which match given filenames. " +
-					"Filenames accept wildcard characters. ",
-				ArgsUsage: "<filename>...",
+				Description: "delete data files which match given file names. " +
+					"File names accept wild card characters. ",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateDeleteAction(command.DataPrefix),
 			},
 			{
 				Name:  "get",
 				Usage: "get data files.",
-				Description: "download data files which match given filenames. " +
-					"Filenames accept wildcard characters. " +
+				Description: "download data files which match given file names. " +
+					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wildcards in unexpected way. " +
-					"To avoid this problem, quote each filename.",
-				ArgsUsage: "<filename>...",
+					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"To avoid this problem, quote each file name.",
+				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(command.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{

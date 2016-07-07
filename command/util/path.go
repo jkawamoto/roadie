@@ -1,5 +1,5 @@
 //
-// main.go
+// command/util/path.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,36 +19,30 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package main
+package util
 
 import (
-	"os"
-
-	"github.com/jkawamoto/roadie/config"
-	"github.com/urfave/cli"
+	"net/url"
+	"path/filepath"
 )
 
-func main() {
+// Basename computes the basename of a given filename.
+func Basename(filename string) string {
 
-	app := cli.NewApp()
-	app.Name = Name
-	app.Version = Version
-	app.Author = Author
-	app.Email = Email
-	app.Usage = "A easy way to run your programs on the cloud computing environment."
+	ext := filepath.Ext(filename)
+	bodySize := len(filename) - len(ext)
 
-	app.Flags = GlobalFlags
-	app.Commands = Commands
-	app.CommandNotFound = CommandNotFound
-	app.EnableBashCompletion = true
-	app.Copyright = `roadie  Copyright (C) 2016  Junpei Kawamoto
-This program comes with ABSOLUTELY NO WARRANTY.
-This is free software, and you are welcome to redistribute it
-under certain conditions.`
+	return filepath.Base(filename[:bodySize])
 
-	app.Metadata = map[string]interface{}{
-		"config": config.LoadConfig("./.roadie"),
+}
+
+// CreateURL creates a valid URL for uploaing object.
+func CreateURL(bucket, group, name string) *url.URL {
+
+	return &url.URL{
+		Scheme: "gs",
+		Host:   bucket,
+		Path:   filepath.ToSlash(filepath.Join("/", group, name)),
 	}
 
-	app.Run(os.Args)
 }
