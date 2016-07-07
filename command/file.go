@@ -217,17 +217,18 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error
 	go storage.List(prefix, file, errCh)
 	go worker(storage, file, done)
 
-loop:
-	for {
-		select {
-		case <-done:
-			// printFileBodyWorker ends.
-			break loop
-		case err = <-errCh:
-			// storage.List ends but printFileBodyWorker is still working.
-			file <- nil
+	func() {
+		for {
+			select {
+			case <-done:
+				// ListupFilesWorker ends.
+				return
+			case err = <-errCh:
+				// storage.List ends but ListupFilesWorker is still working.
+				file <- nil
+			}
 		}
-	}
+	}()
 
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -357,6 +358,37 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 
 			wg.Wait()
 			done <- struct{}{}
+
+		})
+
+}
+
+// PrintFileBody prints file bodies in a bucket associated with a project,
+// which has a prefix ans satisfies query. If quiet is ture, additional messages
+// well be suppressed.
+func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
+
+	return ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+
+			for {
+				info := <-file
+				if info == nil {
+					done <- struct{}{}
+					return
+				}
+
+				if info.Name != "" && strings.HasPrefix(info.Name, query) {
+					if !quiet {
+						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+					}
+					if err := storage.Download(info.Path, os.Stdout); err != nil {
+						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+					}
+				}
+
+			}
 
 		})
 

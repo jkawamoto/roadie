@@ -25,10 +25,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/deiwin/interact"
-	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -59,7 +57,7 @@ func CmdResultList(c *cli.Context) error {
 	case 0:
 		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
-		instance := c.Args()[0]
+		instance := c.Args().First()
 		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
@@ -74,13 +72,13 @@ func CmdResultShow(c *cli.Context) error {
 	conf := GetConfig(c)
 	switch c.NArg() {
 	case 1:
-		instance := c.Args()[0]
-		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		instance := c.Args().First()
+		return PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
 
 	case 2:
-		instance := c.Args()[0]
-		filePrefix := StdoutFilePrefix + c.Args()[1]
-		return printFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+		instance := c.Args().First()
+		filePrefix := StdoutFilePrefix + c.Args().Get(1)
+		return PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
@@ -137,36 +135,5 @@ func CmdResultDelete(c *cli.Context) error {
 
 	return DeleteFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
-
-}
-
-// printFileBody prints file bodies in a bucket associated with a project,
-// which has a prefix ans satisfies query. If quiet is ture, additional messages
-// well be suppressed.
-func printFileBody(project, bucket, prefix, query string, quiet bool) error {
-
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
-
-			for {
-				info := <-file
-				if info == nil {
-					done <- struct{}{}
-					return
-				}
-
-				if info.Name != "" && strings.HasPrefix(info.Name, query) {
-					if !quiet {
-						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
-					}
-					if err := storage.Download(info.Path, os.Stdout); err != nil {
-						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-					}
-				}
-
-			}
-
-		})
 
 }
