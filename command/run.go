@@ -54,6 +54,9 @@ type runOpt struct {
 	// a directory.
 	Exclude []string
 
+	// Filename in source directory in GCS.
+	Source string
+
 	// Path for the script file to be run.
 	ScriptFile string
 
@@ -93,6 +96,7 @@ func CmdRun(c *cli.Context) error {
 		URL:                    c.String("url"),
 		Local:                  c.String("local"),
 		Exclude:                c.StringSlice("exclude"),
+		Source:                 c.String("source"),
 		ScriptFile:             c.Args()[0],
 		ScriptArgs:             c.StringSlice("e"),
 		InstanceName:           c.String("name"),
@@ -138,9 +142,12 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		setURLSource(script, opt.URL)
 
 	case opt.Local != "":
-		if err = setLocalSource(conf, script, opt.Local, opt.Exclude); err != nil {
+		if err = setLocalSource(conf, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
 			return
 		}
+
+	case opt.Source != "":
+		setSource(conf, script, opt.Source)
 
 	case script.Body.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
@@ -250,7 +257,8 @@ func setURLSource(script *Script, url string) {
 // the uploaded files to the source section. If filename patters are given
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
-func setLocalSource(conf *config.Config, script *Script, path string, excludes []string) (err error) {
+// If dry is true, it does not upload any files but create a temporary file.
+func setLocalSource(conf *config.Config, script *Script, path string, excludes []string, dry bool) (err error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
@@ -274,21 +282,41 @@ func setLocalSource(conf *config.Config, script *Script, path string, excludes [
 			spin.Stop()
 			return
 		}
+		defer os.Remove(uploadingPath)
 
 		spin.Stop()
 
 	} else { // One source file just will be uploaded.
 
 		uploadingPath = path
-		filename = util.Basename(path)
+		filename = filepath.Base(path)
 
 	}
 
-	location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
-	if err != nil {
-		return
+	var location string // URL where the archive is uploaded.
+	if dry {
+		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
+	} else {
+		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+		if err != nil {
+			return
+		}
 	}
 	script.Body.Source = location
 	return nil
 
+}
+
+// setSource sets a URL to a `file` in source directory in GCS to a given `script`.
+// Source codes will be downloaded from the URL. To defermin bucketname, it requires
+// config. If overwriting source section, it prints warning, too.
+func setSource(conf *config.Config, script *Script, file string) {
+
+	url := util.CreateURL(conf.Gcp.Bucket, SourcePrefix, file).String()
+	if script.Body.Source != "" {
+		fmt.Printf(
+			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a filename is given.\n"),
+			script.Filename, url)
+	}
+	script.Body.Source = url
 }
