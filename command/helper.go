@@ -70,7 +70,11 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 

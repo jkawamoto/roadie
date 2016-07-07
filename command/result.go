@@ -53,16 +53,22 @@ func CmdResult(c *cli.Context) error {
 func CmdResultList(c *cli.Context) error {
 
 	conf := GetConfig(c)
+	var err error
 	switch c.NArg() {
 	case 0:
-		return PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args().First()
-		return PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		err = PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/util"
-	"github.com/urfave/cli"
 )
 
 // AddRecorder is a callback to add file information to a table.
@@ -83,21 +82,10 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 
 func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
-	// TODO: Refactoring this method using ListupFiles.
-	storage, err := util.NewStorage(project, bucket)
-	if err != nil {
-		return
-	}
-
-	ch := make(chan *util.FileInfo)
-	errCh := make(chan error)
-
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
-
-	go storage.List(prefix, ch, errCh)
 
 	table := uitable.New()
 	if !quiet {
@@ -108,24 +96,25 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-loop:
-	for {
-		select {
-		case item := <-ch:
-			if item == nil {
-				break loop
+	err = ListupFiles(
+		project, bucket, prefix,
+		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+
+			for {
+				item := <-file
+				if item == nil {
+					done <- struct{}{}
+					return
+				}
+				addRecorder(table, item, quiet)
 			}
-			addRecorder(table, item, quiet)
-		case err = <-errCh:
-			break loop
-		}
-	}
+
+		})
 
 	s.Stop()
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+	if err == nil {
+		fmt.Println(table.String())
 	}
-	fmt.Println(table.String())
-	return nil
+	return
 
 }
