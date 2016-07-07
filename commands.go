@@ -91,7 +91,6 @@ var Commands = []cli.Command{
 				Name:  "url",
 				Usage: "source files will be downloaded from `URL`.",
 			},
-			// TODO: Test for long path name given.
 			cli.StringFlag{
 				Name:  "local",
 				Usage: "upload source files from given `PATH` and use it the new instance.",
@@ -240,12 +239,12 @@ var Commands = []cli.Command{
 				},
 			},
 			{
-				// TODO: If file name is not given, delete all data with asking. (use "*" as file name)
 				Name:  "delete",
 				Usage: "delete result files.",
-				Description: "delete result files from a given instance and match given file names. " +
-					"File names accept wild card characters. ",
-				ArgsUsage: "<instance name> <file name>...",
+				Description: `delete result files from a given instance and match given file names.
+File names accept wild card characters.　If file names are not given, delete all
+files belonging to the instance.`,
+				ArgsUsage: "<instance name> [<file name>...]",
 				Action:    command.CmdResultDelete,
 			},
 		},

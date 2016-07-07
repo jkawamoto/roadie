@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -107,15 +108,35 @@ func CmdResultGet(c *cli.Context) error {
 // CmdResultDelete deletes results for a given instance and file names are matched to queries.
 func CmdResultDelete(c *cli.Context) error {
 
-	if c.NArg() < 2 {
-		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+	if c.NArg() == 0 {
+		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
+	var patterns []string
+	if c.NArg() == 1 {
+
+		actor := interact.NewActor(os.Stdin, os.Stdout)
+		deleteAll, err := actor.Confirm(
+			chalk.Red.Color("File names are not given. Do you want to delete all files?"),
+			interact.ConfirmDefaultToNo)
+
+		if err != nil {
+			return cli.NewExitError(err.Error(), -1)
+		} else if deleteAll {
+			patterns = []string{"*"}
+		} else {
+			return nil
+		}
+
+	} else {
+		patterns = c.Args().Tail()
+	}
+
 	return DeleteFiles(
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Args().Tail())
+		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
 
 }
 
