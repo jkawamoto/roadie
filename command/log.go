@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -78,11 +79,20 @@ loop:
 			}
 
 			if payload, err := getRoadiePayload(entry); err == nil {
+
+				var msg string
 				if timestamp {
-					fmt.Printf("%v: %s\n", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
+					msg = fmt.Sprintf("%v: %s\n", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
 				} else {
-					fmt.Printf("%s\n", payload.Log)
+					msg = fmt.Sprintf("%s\n", payload.Log)
 				}
+
+				if payload.Stream == "stdout" {
+					fmt.Println(msg)
+				} else {
+					fmt.Fprintln(os.Stderr, msg)
+				}
+
 			} else {
 				log.Println(chalk.Red.Color(err.Error()))
 			}
