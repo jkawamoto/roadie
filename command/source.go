@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -45,28 +46,40 @@ func CmdSourcePut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	root := c.Args()[0]
-	name := fmt.Sprintf("%s.tar.gz", filepath.Base(c.Args()[1]))
-	archPath := filepath.Join(os.TempDir(), name)
+	conf := GetConfig(c)
+	if err := cmdSourcePut(conf, c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+
+}
+
+// cmdSourcePut uploads a directory `root` after making archive file named `name`.
+// If `excludes` are given, any files match such exclude patters are omitted from
+// the archive file.
+func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (err error) {
+
+	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
+	uploadingPath := filepath.Join(os.TempDir(), filename)
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = fmt.Sprintf("Creating %s...", name)
+	s.Prefix = fmt.Sprintf("Creating %s...", filename)
 	s.FinalMSG = fmt.Sprintf("\n%s\rDone.\n", strings.Repeat(" ", len(s.Prefix)+2))
 
 	s.Start()
-	if err := util.Archive(root, archPath, append(c.StringSlice("exclude"), archPath)); err != nil {
-		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create %s.\n"), strings.Repeat(" ", len(s.Prefix)+2), name)
+	if err = util.Archive(root, uploadingPath, append(excludes, uploadingPath)); err != nil {
+		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create %s.\n"), strings.Repeat(" ", len(s.Prefix)+2), filename)
 		s.Stop()
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 	s.Stop()
+	defer os.Remove(uploadingPath)
 
-	conf := GetConfig(c)
-	url, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, name, archPath)
+	url, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
-
 	fmt.Printf("Source files are uploaded to %s\n", chalk.Bold.TextStyle(url))
 	return nil
+
 }

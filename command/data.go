@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -42,26 +43,40 @@ func CmdDataPut(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
-
-	filenames, err := filepath.Glob(c.Args()[0])
-	if err != nil {
+	filename := c.Args()[0]
+	storedName := ""
+	if n == 2 {
+		storedName = c.Args()[1]
+	}
+	if err := cmdDataPut(conf, filename, storedName); err != nil {
 		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+
+}
+
+func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
+
+	filenames, err := filepath.Glob(filename)
+	if err != nil {
+		return
 	}
 
 	for _, target := range filenames {
 
-		name := ""
-		if n != 1 && len(filenames) == 1 {
-			name = c.Args()[1]
+		if storedName == "" {
+			storedName = filepath.Base(target)
 		}
 
-		location, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, name, target)
+		var location string
+		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, storedName, target)
 		if err != nil {
-			return err
+			return
 		}
 
 		fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
 	}
 
 	return nil
+
 }

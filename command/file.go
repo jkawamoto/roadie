@@ -33,7 +33,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/pb"
+	"github.com/jkawamoto/pb" // Use `public_pool_add` branch.
 	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -113,6 +113,7 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 
 func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
+	// TODO: Refactoring this method using ListupFiles.
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
 		return
@@ -164,6 +165,7 @@ loop:
 // for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
+	// TODO: Parallel uploading.
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
 		return "", err

@@ -30,6 +30,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/ttacon/chalk"
@@ -82,9 +83,20 @@ func CmdStatus(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
-	instances := make(map[string]struct{})
+	if err := cmdStatus(conf, c.Bool("all")); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
-	if !c.Bool("all") {
+}
+
+// cmdStatus shows instance information. To obtain such information, `conf` is
+// required. If all is true, print all instances otherwise information of
+// instances of which results are deleted already will be omitted.
+func cmdStatus(conf *config.Config, all bool) error {
+
+	instances := make(map[string]struct{})
+	if !all {
 
 		ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
 			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
@@ -123,42 +135,44 @@ func CmdStatus(c *cli.Context) error {
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
 
-loop:
-	for {
-		select {
-		case entry := <-ch:
+	func() {
 
-			if entry == nil {
-				s.Stop()
-				break loop
-			}
+		for {
+			select {
+			case entry := <-ch:
 
-			// If all flag is not set show only following instances;
-			//  - running instances,
-			//  - ended but results are note deleted instances.
-			if payload, err := getActivityPayload(entry); err == nil {
-
-				switch payload.EventSubtype {
-				case eventSubtypeInsert:
-					runnings[payload.Resource.Name] = true
-
-				case eventSubtypeDelete:
-					runnings[payload.Resource.Name] = false
-					if _, exist := instances[payload.Resource.Name]; !c.Bool("all") && !exist {
-						delete(runnings, payload.Resource.Name)
-					}
+				if entry == nil {
+					return
 				}
 
-			} else {
-				log.Println(chalk.Red.Color(err.Error()))
-			}
+				// If all flag is not set show only following instances;
+				//  - running instances,
+				//  - ended but results are note deleted instances.
+				if payload, err := getActivityPayload(entry); err == nil {
 
-		case err := <-chErr:
-			fmt.Println(err.Error())
-			s.Stop()
-			break loop
+					switch payload.EventSubtype {
+					case eventSubtypeInsert:
+						runnings[payload.Resource.Name] = true
+
+					case eventSubtypeDelete:
+						runnings[payload.Resource.Name] = false
+						if _, exist := instances[payload.Resource.Name]; !all && !exist {
+							delete(runnings, payload.Resource.Name)
+						}
+					}
+
+				} else {
+					log.Println(chalk.Red.Color(err.Error()))
+				}
+
+			case err := <-chErr:
+				fmt.Println(err.Error())
+				return
+			}
 		}
-	}
+
+	}()
+	s.Stop()
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
@@ -183,26 +197,32 @@ func CmdStatusKill(c *cli.Context) error {
 	}
 
 	conf := GetConfig(c)
+	if err := cmdStatusKill(conf, c.Args()[0]); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
+
+}
+
+// cmdStatusKill kills a given instance named `instanceName`.
+func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
+
 	b, err := util.NewInstanceBuilder(conf.Gcp.Project)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 
-	name := c.Args()[0]
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = fmt.Sprintf("Killing instance %s...", name)
-	s.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.    \n", strings.Repeat(" ", len(s.Prefix)+2), name)
+	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
+	s.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.\n", strings.Repeat(" ", len(s.Prefix)+2), instanceName)
 	s.Start()
+	defer s.Stop()
 
-	if err = b.DeleteInstance(name); err != nil {
+	if err = b.DeleteInstance(instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
-			strings.Repeat(" ", len(s.Prefix)+2), name, err.Error())
-	}
-	s.Stop()
-
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())
+		return
 	}
 	return nil
 
