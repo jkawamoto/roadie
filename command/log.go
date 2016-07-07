@@ -93,9 +93,9 @@ func cmdLog(conf *config.Config, instanceName string, timestamp bool) error {
 
 					var msg string
 					if timestamp {
-						msg = fmt.Sprintf("%v: %s\n", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
+						msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
 					} else {
-						msg = fmt.Sprintf("%s\n", payload.Log)
+						msg = fmt.Sprintf("%s", payload.Log)
 					}
 
 					if payload.Stream == "stdout" {
