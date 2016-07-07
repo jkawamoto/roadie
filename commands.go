@@ -34,19 +34,19 @@ import (
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "project, p",
-		Usage: "overwrite project name configuration.",
+		Usage: "overwrite project name configuration by `NAME`.",
 	},
 	cli.StringFlag{
 		Name:  "type, t",
-		Usage: "overwrite machine type configuration.",
+		Usage: "overwrite machine type configuration by `TYPE`.",
 	},
 	cli.StringFlag{
 		Name:  "zone, z",
-		Usage: "overwrite zone configuration.",
+		Usage: "overwrite zone configuration by `ZONE`.",
 	},
 	cli.StringFlag{
 		Name:  "bucket, b",
-		Usage: "overwrite bucket name configuration.",
+		Usage: "overwrite bucket name configuration by `NAME`.",
 	},
 }
 
