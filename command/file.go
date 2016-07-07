@@ -82,11 +82,11 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 // ListupFiles lists up files in a bucket associated with a project and which
 // have a prefix. Information of found files will be sent to worker function via channgel.
 // The worker function will be started as a goroutine.
-func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error {
+func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err error) {
 
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return
 	}
 
 	file := make(chan *util.FileInfo, 10)
@@ -109,26 +109,24 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) error
 		}
 	}()
 
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	return nil
+	return
 
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query. Downloaded files will be put in
 // a given directory.
-func DownloadFiles(project, bucket, prefix, dir string, queries []string) error {
+func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err error) {
 
-	if info, err := os.Stat(dir); err != nil {
+	var info os.FileInfo
+	if info, err = os.Stat(dir); err != nil {
 		// Given dir does not exist.
-		if err2 := os.MkdirAll(dir, 0777); err2 != nil {
-			return cli.NewExitError(err2.Error(), 2)
+		if err = os.MkdirAll(dir, 0777); err != nil {
+			return
 		}
 	} else {
 		if !info.IsDir() {
-			return cli.NewExitError(fmt.Sprintf("Cannot create the directory tree: %s", dir), 2)
+			return fmt.Errorf("Cannot create the directory tree: %s", dir)
 		}
 	}
 
@@ -140,6 +138,8 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 			fmt.Println("Downloading...")
 
 			pool, _ := pb.StartPool()
+			defer pool.Stop()
+
 			for {
 
 				info := <-file
@@ -149,46 +149,40 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) error 
 					continue
 				}
 
-				for _, q := range queries {
+				if match(queries, info.Name) {
 
-					if matched, _ := filepath.Match(q, info.Name); matched {
+					bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+					pool.Add(bar)
 
-						bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-						pool.Add(bar)
+					wg.Add(1)
+					go func(info *util.FileInfo, bar *pb.ProgressBar) {
 
-						wg.Add(1)
-						go func(info *util.FileInfo, bar *pb.ProgressBar) {
+						defer wg.Done()
 
-							defer wg.Done()
+						filename := filepath.Join(dir, info.Name)
+						f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+						if err != nil {
+							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+							return
+						}
+						defer f.Close()
 
-							filename := filepath.Join(dir, info.Name)
-							f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-							if err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-								return
-							}
-							defer f.Close()
+						buf := bufio.NewWriter(io.MultiWriter(f, bar))
+						defer buf.Flush()
 
-							buf := bufio.NewWriter(io.MultiWriter(f, bar))
-							defer buf.Flush()
+						if err := storage.Download(info.Path, buf); err != nil {
+							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+						} else {
+							bar.Finish()
+						}
 
-							if err := storage.Download(info.Path, buf); err != nil {
-								bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
-							} else {
-								bar.Finish()
-							}
-
-						}(info, bar)
-
-						break
-					}
+					}(info, bar)
 
 				}
 
 			}
 
 			wg.Wait()
-			pool.Stop()
 			done <- struct{}{}
 
 		})
@@ -215,21 +209,17 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 					continue
 				}
 
-				for _, q := range queries {
+				if match(queries, info.Name) {
 
-					if matched, _ := filepath.Match(q, info.Name); matched {
+					wg.Add(1)
+					go func(info *util.FileInfo) {
 
-						wg.Add(1)
-						go func(info *util.FileInfo) {
-							defer wg.Done()
-							if err := storage.Delete(info.Path); err != nil {
-								fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
-							}
-						}(info)
+						defer wg.Done()
+						if err := storage.Delete(info.Path); err != nil {
+							fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+						}
 
-						// Break from checking queries.
-						break
-					}
+					}(info)
 
 				}
 
@@ -271,4 +261,14 @@ func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
 
 		})
 
+}
+
+// match returns true if there are at least one pattern matching to name.
+func match(patterns []string, name string) bool {
+	for _, pat := range patterns {
+		if res, _ := filepath.Match(pat, name); res {
+			return true
+		}
+	}
+	return false
 }

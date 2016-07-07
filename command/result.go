@@ -70,20 +70,26 @@ func CmdResultList(c *cli.Context) error {
 func CmdResultShow(c *cli.Context) error {
 
 	conf := GetConfig(c)
+	var err error
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		return PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		return PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
@@ -97,9 +103,15 @@ func CmdResultGet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-	return DownloadFiles(
+
+	err := DownloadFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
 		c.String("o"), c.Args().Tail())
+
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }
 
@@ -133,7 +145,11 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	return DeleteFiles(
+	err := DeleteFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }

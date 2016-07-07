@@ -98,7 +98,7 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
+		err := ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
 			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 				defer func() {
 					done <- struct{}{}
@@ -116,6 +116,10 @@ func cmdStatus(conf *config.Config, all bool) error {
 
 				}
 			})
+
+		if err != nil {
+			return err
+		}
 
 	}
 
@@ -222,8 +226,7 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())
-		return
 	}
-	return nil
+	return
 
 }

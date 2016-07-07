@@ -87,7 +87,11 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		err := DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 
@@ -104,7 +108,10 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		return DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args())
+		if err := DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+		return nil
 
 	}
 
