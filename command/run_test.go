@@ -24,8 +24,8 @@ package command
 import (
 	"testing"
 
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/jkawamoto/roadie/util"
 )
 
 func TestCmdRun(t *testing.T) {

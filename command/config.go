@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/util"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )

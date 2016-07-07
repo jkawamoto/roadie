@@ -31,8 +31,8 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/jkawamoto/roadie/util"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )

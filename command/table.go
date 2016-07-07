@@ -8,7 +8,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/util"
+	"github.com/jkawamoto/roadie/command/util"
 )
 
 // AddRecorder is a callback to add file information to a table.

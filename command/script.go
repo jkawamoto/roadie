@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jkawamoto/roadie/util"
+	"github.com/jkawamoto/roadie/command/util"
 	"gopkg.in/yaml.v2"
 )
 
