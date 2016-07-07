@@ -112,6 +112,9 @@ func CmdRun(c *cli.Context) error {
 	if err := cmdRun(conf, &opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
+	if c.Bool("follow") {
+		return cmdLog(conf, opt.InstanceName, true, true)
+	}
 	return nil
 
 }

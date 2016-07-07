@@ -65,7 +65,6 @@ var Commands = []cli.Command{
 		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
-		// TODO: Following log flag. (like less +F)
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
@@ -131,6 +130,10 @@ var Commands = []cli.Command{
 			cli.BoolFlag{
 				Name:  "dry",
 				Usage: "not create any actual instances but printing the startup script to be run instead.",
+			},
+			cli.BoolFlag{
+				Name:  "follow, f",
+				Usage: "after creating instance, keep watching logs.",
 			},
 		},
 	},
