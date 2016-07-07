@@ -175,7 +175,11 @@ var Commands = []cli.Command{
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-timestamp",
-				Usage: "Not print time stamps.",
+				Usage: "not print time stamps.",
+			},
+			cli.BoolFlag{
+				Name:  "follow, f",
+				Usage: "keep waiting new logs coming.",
 			},
 		},
 	},
