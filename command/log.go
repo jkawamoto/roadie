@@ -42,9 +42,6 @@ type RoadiePayload struct {
 	InstanceName string `mapstructure:"instance_name"`
 }
 
-// PrintTimeFormat defines time format to be used to print logs.
-const PrintTimeFormat = "2006/01/02 15:04:05"
-
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
 

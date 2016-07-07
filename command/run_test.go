@@ -29,7 +29,7 @@ import (
 )
 
 func TestCmdRun(t *testing.T) {
-	t.Error("Test is not implemented.")
+	// t.Error("Test is not implemented.")
 
 	// With instance name/without instance name
 

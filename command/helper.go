@@ -29,6 +29,9 @@ import (
 	"github.com/urfave/cli"
 )
 
+// PrintTimeFormat defines time format to be used to print logs.
+const PrintTimeFormat = "2006/01/02 15:04:05"
+
 // GetConfig returns a config object from a context.
 func GetConfig(c *cli.Context) *config.Config {
 
