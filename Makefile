@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
+VERSION = snapshot
 
 default: build
 
@@ -27,4 +28,4 @@ asset:
 
 .PHONY: build
 build: asset
-	gox --output pkg/{{.Dir}}_{{.OS}}_{{.Arch}} -arch="amd64" -os="darwin linux windows"
+	goxc -arch="amd64" -os="darwin linux windows" -d=pkg -pv=$(VERSION)
