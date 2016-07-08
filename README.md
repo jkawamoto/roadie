@@ -1,17 +1,52 @@
 # roadie
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
 
-A easy way to run your programs on the cloud computing environment.
+A easy way to run your programs on [Google Cloud Platform](https://cloud.google.com/).
 
 ## Description
-`roadie` helps you to upload your source codes to cloud, create and delete instances,
-and manage outputs.
+`roadie` helps you to upload your source codes to the cloud, create and delete
+instances, and manage outputs.
 
+For example,
+
+```sh
+$ roadie run --local . --name analyze-wowah script.yml
+```
+
+uploads your source codes in current directory, and run them in such a manner
+that `script.yml` specifies. The `script.yml` is a simple YAML file like
+
+```yaml
+apt:
+- unrar
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- analyze WoWAH
+```
+
+The above `script.yml` asks roadie to install apt package `unrar` and
+download a data file from such URL as the preparation. Then, it directs
+to run those two commands; unrar the downloaded file, analyze the obtained
+data files.
+
+`roadie` uploads results of such commands to a cloud storage after they finish.
+You can access those results by
+
+```sh
+$ roadie result get analyze-wowah "*" -o ./res
+```
+
+Then, `roadie` downloads all result files into `./res` directory.
 
 ## Install
+Compiled binary files for some platforms are uploaded in [release page](https://github.com/jkawamoto/roadie/releases).
+To install in other platforms following the go manner, use `go get`:
 
-To install, use `go get`:
-
-```bash
+```sh
 $ go get github.com/jkawamoto/roadie
 ```
+
+## License
+This software except files in `docker` folder is released under The GNU General Public License Version 3, see [COPYING](COPYING) for more detail.
