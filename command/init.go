@@ -64,29 +64,33 @@ for more detail. Type ctrl-c at anytime to quite.
 	gcloud, err := getGcloudConf()
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
-	} else if gcloud.Project == "" {
-		var ans bool
-		ans, err = actor.Confirm(chalk.Yellow.Color("`Google Cloud SDK` does not seem to be set up. Setup?"), interact.ConfirmDefaultToYes)
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		} else if !ans {
-			return cli.NewExitError(chalk.Red.Color("Please setup it by yourself. Run `gcloud init`."), -1)
-		}
-
-		fmt.Println("Setting up `Google Cloud SDK`...")
-		if err = setupGcloud(); err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
-		gcloud, err = getGcloudConf()
-		if err != nil {
-			return cli.NewExitError(err.Error(), 1)
-		}
 	}
+	// TODO: Check if gcloud is not initialized or not. (check auth command)
+	// 	 else if gcloud.Project == "" {
+	// 		var ans bool
+	// 		ans, err = actor.Confirm(chalk.Yellow.Color("`Google Cloud SDK` does not seem to be set up. Setup?"), interact.ConfirmDefaultToYes)
+	// 		if err != nil {
+	// 			return cli.NewExitError(err.Error(), 1)
+	// 		} else if !ans {
+	// 			return cli.NewExitError(chalk.Red.Color("Please setup it by yourself. Run `gcloud init`."), -1)
+	// 		}
+	//
+	// 		fmt.Println("Setting up `Google Cloud SDK`...")
+	// 		if err = setupGcloud(); err != nil {
+	// 			return cli.NewExitError(err.Error(), 1)
+	// 		}
+	// 		gcloud, err = getGcloudConf()
+	// 		if err != nil {
+	// 			return cli.NewExitError(err.Error(), 1)
+	// 		}
+	// 	}
 
+	// TODO: Rename project name to project ID.
 	conf := GetConfig(c)
 	conf.Gcp.Project = gcloud.Project
 	conf.Gcp.Zone = gcloud.Zone
 
+	// TODO: Empty is not allowd.
 	message := "Please enter project name"
 	conf.Gcp.Project, err = actor.PromptOptional(message, conf.Gcp.Project, checkNotEmpty)
 	if err != nil {
@@ -99,6 +103,8 @@ for more detail. Type ctrl-c at anytime to quite.
 		return cli.NewExitError(err.Error(), 1)
 	}
 	fmt.Println("")
+
+	// TODO: Ask zone and machine type.
 
 	abs, _ := filepath.Abs(".roadie")
 	fmt.Printf("About to write to %s:\n", abs)
