@@ -1,7 +1,9 @@
 # roadie
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
 
-A easy way to run your programs on [Google Cloud Platform](https://cloud.google.com/).
+A easy way to run your programs on
+[Google Cloud Platform](https://cloud.google.com/).
+See [documents](https://github.com/jkawamoto/roadie/wiki) for more information.
 
 ## Description
 `roadie` helps you to upload your source codes to the cloud, create and delete
