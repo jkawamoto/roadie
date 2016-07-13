@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ttacon/chalk"
+	"github.com/jkawamoto/roadie/chalk"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -106,6 +106,7 @@ func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
 
 }
 
+// TODO: Use current zone.
 // AvailableMachineTypes returns a slice of machie type names.
 func (b *InstanceBuilder) AvailableMachineTypes() ([]MachineType, error) {
 

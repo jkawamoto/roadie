@@ -24,8 +24,8 @@ package command
 import (
 	"fmt"
 
+	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 

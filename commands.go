@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -62,6 +62,7 @@ var Commands = []cli.Command{
 		Action:    command.CmdInit,
 	},
 	{
+		// TODO: Support queue.
 		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
 		// TODO: Support direct run -> running a given command without script file.
 		// TODO: Adding aditional filename to result section.
@@ -261,6 +262,7 @@ files belonging to the instance.`,
 		},
 	},
 	{
+		// TODO SSD option.
 		Name:  "config",
 		Usage: "show and update configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +

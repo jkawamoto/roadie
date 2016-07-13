@@ -1,6 +1,6 @@
-// +build windows
+// +build !windows
 //
-// command/init_windows.go
+// chalk/wrapper_x.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -20,26 +20,32 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package chalk
 
 import (
-	"fmt"
-	"os/exec"
-
-	"github.com/deiwin/interact"
-	"github.com/urfave/cli"
+	baseChalk "github.com/ttacon/chalk"
 )
 
-// checkGcloud checks there are gcloud command.
-func checkGcloud(actor interact.Actor) error {
+var (
+	//Colors
+	Black      = baseChalk.Black
+	Red        = baseChalk.Red
+	Green      = baseChalk.Green
+	Yellow     = baseChalk.Yellow
+	Blue       = baseChalk.Blue
+	Magenta    = baseChalk.Magenta
+	Cyan       = baseChalk.Cyan
+	White      = baseChalk.White
+	ResetColor = baseChalk.ResetColor
 
-	if _, err := exec.LookPath("gcloud"); err != nil {
-		fmt.Println("`Google Cloud SDK` is not found.")
-		fmt.Println("Please visit https://cloud.google.com/sdk/ and install Google Cloud SDK.")
-		fmt.Println("If you have installed it already, make sure your `PATH` includes `gcloud` command and reloaded it.")
-		return cli.NewExitError("", 0)
-	}
+	// Text Styles
+	Bold          = baseChalk.Bold
+	Dim           = baseChalk.Dim
+	Italic        = baseChalk.Italic
+	Underline     = baseChalk.Underline
+	Inverse       = baseChalk.Inverse
+	Hidden        = baseChalk.Hidden
+	Strikethrough = baseChalk.Strikethrough
 
-	return nil
-
-}
+	Reset = baseChalk.Reset
+)

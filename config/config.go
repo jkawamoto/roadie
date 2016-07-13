@@ -27,8 +27,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/jkawamoto/roadie/chalk"
 	"github.com/naoina/toml"
-	"github.com/ttacon/chalk"
 )
 
 // Config defines a structure of config file.

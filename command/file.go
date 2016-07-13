@@ -31,8 +31,8 @@ import (
 	"sync"
 
 	"github.com/jkawamoto/pb" // Use `public_pool_add` branch.
+	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 

@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ttacon/chalk"
+	"github.com/jkawamoto/roadie/chalk"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2beta1"

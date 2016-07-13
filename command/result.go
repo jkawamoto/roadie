@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 
 	"github.com/deiwin/interact"
-	"github.com/ttacon/chalk"
+	"github.com/jkawamoto/roadie/chalk"
 	"github.com/urfave/cli"
 )
 

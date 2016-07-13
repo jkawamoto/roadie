@@ -1,6 +1,6 @@
 // +build windows
 //
-// command/init_windows.go
+// chalkd/wrapper_windows.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -20,26 +20,39 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package chalk
 
 import (
-	"fmt"
-	"os/exec"
-
-	"github.com/deiwin/interact"
-	"github.com/urfave/cli"
+	baseChalk "github.com/ttacon/chalk"
 )
 
-// checkGcloud checks there are gcloud command.
-func checkGcloud(actor interact.Actor) error {
-
-	if _, err := exec.LookPath("gcloud"); err != nil {
-		fmt.Println("`Google Cloud SDK` is not found.")
-		fmt.Println("Please visit https://cloud.google.com/sdk/ and install Google Cloud SDK.")
-		fmt.Println("If you have installed it already, make sure your `PATH` includes `gcloud` command and reloaded it.")
-		return cli.NewExitError("", 0)
-	}
-
-	return nil
-
+type DummyColor struct {
 }
+
+func (d DummyColor) Color(val string) string {
+	return val
+}
+
+var (
+	//Colors
+	Black      = DummyColor{}
+	Red        = DummyColor{}
+	Green      = DummyColor{}
+	Yellow     = DummyColor{}
+	Blue       = DummyColor{}
+	Magenta    = DummyColor{}
+	Cyan       = DummyColor{}
+	White      = DummyColor{}
+	ResetColor = DummyColor{}
+
+	// Text Styles
+	Bold          = baseChalk.TextStyle{}
+	Dim           = baseChalk.TextStyle{}
+	Italic        = baseChalk.TextStyle{}
+	Underline     = baseChalk.TextStyle{}
+	Inverse       = baseChalk.TextStyle{}
+	Hidden        = baseChalk.TextStyle{}
+	Strikethrough = baseChalk.TextStyle{}
+
+	Reset = baseChalk.Reset
+)
