@@ -88,8 +88,8 @@ type runOpt struct {
 // CmdRun specifies the behavior of `run` command.
 func CmdRun(c *cli.Context) error {
 
-	if c.NArg() == 0 {
-		fmt.Println(chalk.Red.Color("Script file is not given."))
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -100,7 +100,7 @@ func CmdRun(c *cli.Context) error {
 		Local:                  c.String("local"),
 		Exclude:                c.StringSlice("exclude"),
 		Source:                 c.String("source"),
-		ScriptFile:             c.Args()[0],
+		ScriptFile:             c.Args().First(),
 		ScriptArgs:             c.StringSlice("e"),
 		InstanceName:           c.String("name"),
 		Image:                  c.String("image"),

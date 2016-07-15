@@ -62,10 +62,6 @@ var Commands = []cli.Command{
 		Action:    command.CmdInit,
 	},
 	{
-		// TODO: Support queue.
-		// TODO: In script file, source:abs, data:abs should be replaced correct url automatically.
-		// TODO: Support direct run -> running a given command without script file.
-		// TODO: Adding aditional filename to result section.
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
 		Description: "Create an instance and run a given script on it. " +
@@ -103,7 +99,7 @@ var Commands = []cli.Command{
 				Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
 			},
 			cli.StringFlag{
-				Name:  "name",
+				Name:  "name, n",
 				Usage: "new instance uses the given `NAME`.",
 			},
 			cli.StringSliceFlag{
@@ -139,7 +135,6 @@ var Commands = []cli.Command{
 		},
 	},
 	{
-		// TODO: Subcommands help format should be modified.
 		Name:  "status",
 		Usage: "show instance status.",
 		Description: "Show status of instances. Stopped instances will be deleted from the output after certain time. " +
@@ -262,7 +257,6 @@ files belonging to the instance.`,
 		},
 	},
 	{
-		// TODO SSD option.
 		Name:  "config",
 		Usage: "show and update configuration.",
 		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
