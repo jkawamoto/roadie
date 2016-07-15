@@ -62,7 +62,6 @@ func LoadConfig(filename string) *Config {
 		}
 	}
 
-	// TODO: Show warning and notify to run init command.
 	fmt.Printf(chalk.Red.Color("Cannot read configuration file %s: %s\n"), filename, err.Error())
 	return &Config{
 		Filename: filename,

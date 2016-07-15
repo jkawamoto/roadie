@@ -44,7 +44,6 @@ type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, d
 // for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
-	// TODO: Parallel uploading.
 	storage, err := util.NewStorage(project, bucket)
 	if err != nil {
 		return "", err

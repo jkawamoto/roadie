@@ -28,4 +28,4 @@ asset:
 
 .PHONY: build
 build: asset
-	goxc -arch="amd64" -os="darwin linux windows" -d=pkg -pv=$(VERSION)
+	goxc -os="darwin linux windows" -d=pkg -pv=$(VERSION)
