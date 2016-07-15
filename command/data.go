@@ -64,12 +64,15 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 
 	for _, target := range filenames {
 
-		if storedName == "" {
-			storedName = filepath.Base(target)
+		var output string
+		if storedName != "" && len(filenames) == 1 {
+			output = storedName
+		} else {
+			output = filepath.Base(target)
 		}
 
 		var location string
-		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, storedName, target)
+		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
 		if err != nil {
 			return
 		}
