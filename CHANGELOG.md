@@ -1,3 +1,13 @@
+## 0.1.4 (2016-07-17)
+###Fixed
+- Look for configuration files.
+- Print warning if Project ID is not set in configure file.
+- Project ID and Bucket name do not allow empty strings.
+- Project name has been renamed to Project ID.
+- Update to use current zone name in order to search available machine types.
+- Run command creates a bucket if necessary.
+
+
 ## 0.1.3 (2016-07-15)
 ### Feature
 
