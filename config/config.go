@@ -26,10 +26,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/naoina/toml"
 )
+
+// ConfigureFile defines configuration file name.
+const ConfigureFile = ".roadie"
+
+// DotGit defines a git repository name.
+const DotGit = ".git"
 
 // Config defines a structure of config file.
 type Config struct {
@@ -42,30 +49,37 @@ type Config struct {
 	}
 }
 
-// LoadConfig loads config from a given file.
-func LoadConfig(filename string) *Config {
+// NewConfig creates a config object. If there is a configure file,
+// it also loads the file, too.
+func NewConfig() (c *Config, err error) {
 
-	var err error
-	var f *os.File
+	c = &Config{
+		Filename: lookup(),
+	}
 
-	if f, err = os.Open(filename); err == nil {
+	if _, exist := os.Stat(c.Filename); exist == nil {
+
+		f, err := os.Open(c.Filename)
+		if err != nil {
+			return nil, fmt.Errorf(
+				chalk.Red.Color("Cannot open configuration file %s. (%s)"),
+				c.Filename, err.Error())
+		}
 		defer f.Close()
 
 		var buf []byte
 		if buf, err = ioutil.ReadAll(f); err == nil {
-
-			var config Config
-			if err = toml.Unmarshal(buf, &config); err == nil {
-				config.Filename = filename
-				return &config
-			}
+			err = toml.Unmarshal(buf, c)
 		}
+		if err != nil {
+			return nil, fmt.Errorf(
+				chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
+				c.Filename, err.Error())
+		}
+
 	}
 
-	fmt.Printf(chalk.Red.Color("Cannot read configuration file %s: %s\n"), filename, err.Error())
-	return &Config{
-		Filename: filename,
-	}
+	return
 
 }
 
@@ -101,4 +115,39 @@ func (c *Config) Print() (err error) {
 	fmt.Println(string(data))
 	return
 
+}
+
+// lookup checks suitable configuration file name.
+// If there is some configuration file in a path from current directory
+// to root, use the found file. If there is a git repository in the same path,
+// use a configuration file set in the same directory of the repository root.
+// Otherwise, use a configuration file in the current directory.
+func lookup() (res string) {
+
+	res = ConfigureFile
+	path, err := filepath.Abs(".")
+	if err != nil {
+		return
+	}
+
+	var repo string
+	for ; path != "/"; path = filepath.Join(path, "..") {
+
+		cand := filepath.Join(path, ConfigureFile)
+		if _, exist := os.Stat(cand); exist == nil {
+			return cand
+		}
+
+		if repo == "" {
+			if _, exist := os.Stat(filepath.Join(path, DotGit)); exist == nil {
+				repo = path
+			}
+		}
+
+	}
+
+	if repo != "" {
+		res = filepath.Join(repo, ConfigureFile)
+	}
+	return
 }
