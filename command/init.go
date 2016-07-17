@@ -106,8 +106,6 @@ for more detail. Type ctrl-c at anytime to quite.
 		return cli.NewExitError(err.Error(), 10)
 	}
 
-	// TODO: Ask zone and machine type.
-
 	abs, _ := filepath.Abs(".roadie")
 	fmt.Printf("About to write to %s:\n", abs)
 	conf.Print()
