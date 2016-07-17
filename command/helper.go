@@ -37,6 +37,10 @@ func GetConfig(c *cli.Context) *config.Config {
 
 	conf, _ := c.App.Metadata["config"].(*config.Config)
 
+	if conf.Gcp.Project == "" && c.Command.Name != "init" {
+		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
+	}
+
 	if v := c.GlobalString("project"); v != "" {
 		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(v))
 		conf.Gcp.Project = v
