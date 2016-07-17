@@ -54,36 +54,31 @@ type FileInfo struct {
 
 // NewStorage creates a new Storage object named a given bucket name.
 // If the given bucket does not exsits, it will be created.
-func NewStorage(project, bucket string) (*Storage, error) {
+func NewStorage(project, bucket string) (s *Storage, err error) {
+
+	s = &Storage{
+		BucketName: bucket,
+	}
 
 	// Create a client.
-	client, err := google.DefaultClient(context.Background(), gcsScope)
-	if err != nil {
-		return nil, err
+	if s.client, err = google.DefaultClient(context.Background(), gcsScope); err != nil {
+		return
 	}
 
 	// Create a servicer.
-	service, err := storage.New(client)
-	if err != nil {
-		return nil, err
+	if s.service, err = storage.New(s.client); err != nil {
+		return
 	}
 
 	// Check the given bucket exists.
-	if _, err := service.Buckets.Get(bucket).Do(); err != nil {
+	if _, exist := s.service.Buckets.Get(bucket).Do(); exist != nil {
 
-		if res, err := service.Buckets.Insert(project, &storage.Bucket{Name: bucket}).Do(); err == nil {
+		var res *storage.Bucket
+		if res, err = s.service.Buckets.Insert(project, &storage.Bucket{Name: bucket}).Do(); err == nil {
 			fmt.Printf("Bucket %s was created at %s", res.Name, res.SelfLink)
-		} else {
-			return nil, err
 		}
-
 	}
-
-	return &Storage{
-		BucketName: bucket,
-		client:     client,
-		service:    service,
-	}, nil
+	return
 
 }
 

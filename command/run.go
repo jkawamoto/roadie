@@ -123,7 +123,7 @@ func CmdRun(c *cli.Context) error {
 func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	if conf.Gcp.Project == "" {
-		return fmt.Errorf("Project name must be given.")
+		return fmt.Errorf("project ID must be given")
 	}
 	if conf.Gcp.Bucket == "" {
 		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
@@ -158,6 +158,11 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	case script.Body.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
+	}
+
+	// Check bucket is ready.
+	if _, err = util.NewStorage(conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+		return
 	}
 
 	// Check result section.

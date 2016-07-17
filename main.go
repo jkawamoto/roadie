@@ -22,6 +22,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jkawamoto/roadie/config"
@@ -46,9 +47,14 @@ This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions.`
 
-	// TODO: Search init file in the path to root.
+	conf, err := config.NewConfig()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	app.Metadata = map[string]interface{}{
-		"config": config.LoadConfig("./.roadie"),
+		"config": conf,
 	}
 
 	app.Run(os.Args)

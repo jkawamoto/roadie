@@ -48,11 +48,13 @@ type MetadataItem struct {
 	Value string
 }
 
+// MachineType defines a structure of machine type infoemation.
 type MachineType struct {
 	Name        string
 	Description string
 }
 
+// Zone defines a structure of zone information.
 type Zone struct {
 	Name   string
 	Status string
@@ -106,11 +108,10 @@ func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
 
 }
 
-// TODO: Use current zone.
 // AvailableMachineTypes returns a slice of machie type names.
 func (b *InstanceBuilder) AvailableMachineTypes() ([]MachineType, error) {
 
-	res, err := b.service.MachineTypes.List(b.Project, "us-central1-b").Do()
+	res, err := b.service.MachineTypes.List(b.Project, b.Zone).Do()
 	if err != nil {
 		return nil, err
 	}

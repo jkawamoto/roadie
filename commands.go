@@ -34,7 +34,7 @@ import (
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "project, p",
-		Usage: "overwrite project name configuration by `NAME`.",
+		Usage: "overwrite project ID configuration by `NAME`.",
 	},
 	cli.StringFlag{
 		Name:  "type, t",
@@ -166,8 +166,8 @@ var Commands = []cli.Command{
 		Name:  "log",
 		Usage: "show logs.",
 		Description: "Show logs for a given instance name. Logs consists of messages from the framework and messages written to stderr. " +
-			"To see messages written stdout from script, use 'result' command. This command required project name is required. " +
-			"To set project name, use 'config project set' command. To find instance names, use 'status' command.",
+			"To see messages written stdout from script, use 'result' command. This command required project ID is required. " +
+			"To set project ID, use 'config project set' command. To find instance names, use 'status' command.",
 		Category:  "Execution",
 		ArgsUsage: "<instance name>",
 		Action:    command.CmdLog,
@@ -265,8 +265,8 @@ files belonging to the instance.`,
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
-				Usage:     "show and update project name of Google Cloud Platform.",
-				ArgsUsage: "[<project name>]",
+				Usage:     "show and update project ID of Google Cloud Platform.",
+				ArgsUsage: "[<project ID>]",
 				Action:    command.CmdConfigProject,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
@@ -277,15 +277,15 @@ files belonging to the instance.`,
 				Subcommands: cli.Commands{
 					{
 						Name:        "set",
-						Usage:       "set project name",
-						Description: "Set a new name to the current project. Project name should start with alphabet and not have spaces.",
-						ArgsUsage:   "<project name>",
+						Usage:       "set project ID",
+						Description: "Set a new name to the current project. project ID should start with alphabet and not have spaces.",
+						ArgsUsage:   "<project ID>",
 						Action:      command.CmdConfigProjectSet,
 					},
 					{
 						Name:        "show",
-						Usage:       "show the current project name.",
-						Description: "Show the current project name.",
+						Usage:       "show the current project ID.",
+						Description: "Show the current project ID.",
 						ArgsUsage:   " ",
 						Action:      command.CmdConfigProjectShow,
 					},
@@ -313,7 +313,7 @@ files belonging to the instance.`,
 						Name:  "list",
 						Usage: "show available machine types.",
 						Description: "Show a list of available machine types for the current project. " +
-							"To receive available machine types, project name must be set. See 'roadie config project'. " +
+							"To receive available machine types, project ID must be set. See 'roadie config project'. " +
 							"This command takes no arguments.",
 						ArgsUsage: " ",
 						Action:    command.CmdConfigTypeList,
@@ -350,7 +350,7 @@ files belonging to the instance.`,
 						Name:  "list",
 						Usage: "show available zones.",
 						Description: "Show a list of zones for the current project. " +
-							"To receive available zones, project name must be set. See 'roadie config project'. " +
+							"To receive available zones, project ID must be set. See 'roadie config project'. " +
 							"This command takes no arguments.",
 						ArgsUsage: " ",
 						Action:    command.CmdConfigZoneList,
@@ -389,7 +389,7 @@ files belonging to the instance.`,
 					// 	Name:  "list",
 					// 	Usage: "show available buckets.",
 					// 	Description: "Show a list of buckets the current project can access. " +
-					// 		"To receive the bucket names, project name must be set. " +
+					// 		"To receive the bucket names, project ID must be set. " +
 					// 		"This command takes no arguments.",
 					// 	ArgsUsage: " ",
 					// 	Action:    command.CmdConfigBucketList,
@@ -405,7 +405,7 @@ files belonging to the instance.`,
 					// 	Name:  "create",
 					// 	Usage: "create a new bucket.",
 					// 	Description: "Create a new bucket with a given name. " +
-					// 		"To create a new bucket, project name must be set.",
+					// 		"To create a new bucket, project ID must be set.",
 					// 	ArgsUsage: "<bucket name>",
 					// 	Action:    command.CmdConfigBucketShow,
 					// },

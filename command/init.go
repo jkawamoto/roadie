@@ -86,26 +86,25 @@ for more detail. Type ctrl-c at anytime to quite.
 	// 		}
 	// 	}
 
-	// TODO: Rename project name to project ID.
 	conf := GetConfig(c)
 	conf.Gcp.Project = gcloud.Project
 	conf.Gcp.Zone = gcloud.Zone
 
-	// TODO: Empty is not allowd.
-	message := "Please enter project name"
-	conf.Gcp.Project, err = actor.PromptOptional(message, conf.Gcp.Project, checkNotEmpty)
+	message := "Please enter project ID"
+	if conf.Gcp.Project == "" {
+		conf.Gcp.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
+	} else {
+		conf.Gcp.Project, err = actor.PromptOptionalAndRetry(message, conf.Gcp.Project, checkNotEmpty)
+	}
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		return cli.NewExitError(err.Error(), 10)
 	}
 
 	message = "Please enter bucket name"
-	conf.Gcp.Bucket, err = actor.PromptOptional(message, conf.Gcp.Project, checkNotEmpty)
+	conf.Gcp.Bucket, err = actor.PromptOptionalAndRetry(message, conf.Gcp.Project, checkNotEmpty)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		return cli.NewExitError(err.Error(), 10)
 	}
-	fmt.Println("")
-
-	// TODO: Ask zone and machine type.
 
 	abs, _ := filepath.Abs(".roadie")
 	fmt.Printf("About to write to %s:\n", abs)
