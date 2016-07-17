@@ -86,7 +86,6 @@ for more detail. Type ctrl-c at anytime to quite.
 	// 		}
 	// 	}
 
-	// TODO: Rename project name to project ID.
 	conf := GetConfig(c)
 	conf.Gcp.Project = gcloud.Project
 	conf.Gcp.Zone = gcloud.Zone

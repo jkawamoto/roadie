@@ -31,7 +31,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// CmdConfigProject shows or sets project name to config file.
+// CmdConfigProject shows or sets project ID to config file.
 func CmdConfigProject(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
@@ -43,7 +43,7 @@ func CmdConfigProject(c *cli.Context) error {
 	return CmdConfigProjectShow(c)
 }
 
-// CmdConfigProjectSet sets a given name to the current project name.
+// CmdConfigProjectSet sets a given name to the current project ID.
 func CmdConfigProjectSet(c *cli.Context) error {
 
 	if c.NArg() != 1 {
@@ -55,13 +55,13 @@ func CmdConfigProjectSet(c *cli.Context) error {
 	var name string
 	name = c.Args()[0]
 	if strings.Contains(name, " ") {
-		fmt.Println(chalk.Red.Color("The given project name has spaces. They are replaced to '_'."))
+		fmt.Println(chalk.Red.Color("The given project ID has spaces. They are replaced to '_'."))
 		name = strings.Replace(name, " ", "_", -1)
 	}
 	if conf.Gcp.Project == "" {
-		fmt.Printf("Set project name:\n  %s\n", chalk.Green.Color(name))
+		fmt.Printf("Set project ID:\n  %s\n", chalk.Green.Color(name))
 	} else {
-		fmt.Printf("Update project name:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
+		fmt.Printf("Update project ID:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
 	}
 	conf.Gcp.Project = name
 
@@ -71,7 +71,7 @@ func CmdConfigProjectSet(c *cli.Context) error {
 	return nil
 }
 
-// CmdConfigProjectShow prints current project name.
+// CmdConfigProjectShow prints current project ID.
 func CmdConfigProjectShow(c *cli.Context) error {
 	conf := GetConfig(c)
 	if conf.Gcp.Project != "" {
@@ -123,7 +123,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 			fmt.Printf(chalk.Red.Color("Updated but the given machine type '%s' is not available.\n"), v)
 		}
 	} else {
-		fmt.Printf(chalk.Red.Color("Since project name is not given, cannot check the given machine type '%s' is available.\n"), v)
+		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given machine type '%s' is available.\n"), v)
 	}
 
 	conf.Gcp.MachineType = v
@@ -139,7 +139,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project name is required to receive available machine types.", 2)
+		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
 
 	list, err := getAvailableTypeList(conf.Gcp.Project)
@@ -230,7 +230,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 			fmt.Printf(chalk.Red.Color("Updated but the given zone '%s' is not available.\n"), v)
 		}
 	} else {
-		fmt.Printf(chalk.Red.Color("Since project name is not given, cannot check the given zone '%s' is available.\n"), v)
+		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given zone '%s' is available.\n"), v)
 	}
 
 	conf.Gcp.Zone = v
@@ -246,7 +246,7 @@ func CmdConfigZoneList(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	if conf.Gcp.Project == "" {
-		return cli.NewExitError("Project name is required to receive available zones.", 2)
+		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
 
 	list, err := getAvailableZoneList(conf.Gcp.Project)
