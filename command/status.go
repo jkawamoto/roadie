@@ -126,9 +126,6 @@ func cmdStatus(conf *config.Config, all bool) error {
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
 
-	// TODO: filter by jsonPayload.actor.user.
-	// jsonPayload.actor.user is an email address of instance owner.
-	// To omit other users instance, filter logs by such data.
 	go GetLogEntries(conf.Gcp.Project,
 		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", ch, chErr)
 

@@ -1,5 +1,5 @@
 ## 0.1.4 (2016-07-17)
-###Fixed
+### Fixed
 - Look for configuration files.
 - Print warning if Project ID is not set in configure file.
 - Project ID and Bucket name do not allow empty strings.

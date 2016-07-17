@@ -60,8 +60,6 @@ type Zone struct {
 	Status string
 }
 
-// TODO: Context based API.
-
 // NewInstanceBuilder creates a new instance builder associated with
 // a given project.
 func NewInstanceBuilder(project string) (*InstanceBuilder, error) {

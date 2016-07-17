@@ -66,25 +66,6 @@ for more detail. Type ctrl-c at anytime to quite.
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
-	// TODO: Check if gcloud is not initialized or not. (check auth command)
-	// 	 else if gcloud.Project == "" {
-	// 		var ans bool
-	// 		ans, err = actor.Confirm(chalk.Yellow.Color("`Google Cloud SDK` does not seem to be set up. Setup?"), interact.ConfirmDefaultToYes)
-	// 		if err != nil {
-	// 			return cli.NewExitError(err.Error(), 1)
-	// 		} else if !ans {
-	// 			return cli.NewExitError(chalk.Red.Color("Please setup it by yourself. Run `gcloud init`."), -1)
-	// 		}
-	//
-	// 		fmt.Println("Setting up `Google Cloud SDK`...")
-	// 		if err = setupGcloud(); err != nil {
-	// 			return cli.NewExitError(err.Error(), 1)
-	// 		}
-	// 		gcloud, err = getGcloudConf()
-	// 		if err != nil {
-	// 			return cli.NewExitError(err.Error(), 1)
-	// 		}
-	// 	}
 
 	conf := GetConfig(c)
 	conf.Gcp.Project = gcloud.Project

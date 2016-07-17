@@ -125,7 +125,6 @@ func cmdLog(conf *config.Config, instanceName string, timestamp, follow bool) (e
 
 		time.Sleep(30 * time.Second)
 
-		// TODO: check status each loop
 		utc := lastTimestamp.In(time.UTC)
 		filter = fmt.Sprintf("%s AND timestamp > \"%s\"", baseFilter, utc.Format(LogTimeFormat))
 
