@@ -1,6 +1,8 @@
 # roadie
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
+[![Build Status](https://travis-ci.org/jkawamoto/roadie.svg?branch=master)](https://travis-ci.org/jkawamoto/roadie)
 [![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
+[![Release](https://img.shields.io/badge/release-0.1.4-lightgrey.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.1.4)
 
 A easy way to run your programs on
 [Google Cloud Platform](https://cloud.google.com/).

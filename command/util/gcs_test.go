@@ -21,11 +21,20 @@
 
 package util
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestNewStorage(t *testing.T) {
 
-	_, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
+	id := os.Getenv("PROJECT_ID")
+	if id == "" {
+		t.Log("Skip this test because no project id is given.")
+		return
+	}
+
+	_, err := NewStorage(id, id)
 	if err != nil {
 		t.Error(err.Error())
 	}

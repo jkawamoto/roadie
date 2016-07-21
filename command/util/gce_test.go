@@ -21,7 +21,11 @@
 
 package util
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"testing"
+)
 
 // func TestCreateInstance(t *testing.T) {
 //
@@ -42,7 +46,13 @@ import "testing"
 
 func TestAvailableZones(t *testing.T) {
 
-	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	id := os.Getenv("PROJECT_ID")
+	if id == "" {
+		t.Log("Skip this test because no project id is given.")
+		return
+	}
+
+	b, err := NewInstanceBuilder(id)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -60,7 +70,13 @@ func TestAvailableZones(t *testing.T) {
 
 func TestAvailableMachineTypes(t *testing.T) {
 
-	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	id := os.Getenv("PROJECT_ID")
+	if id == "" {
+		t.Log("Skip this test because no project id is given.")
+		return
+	}
+
+	b, err := NewInstanceBuilder(id)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -78,13 +94,19 @@ func TestAvailableMachineTypes(t *testing.T) {
 
 func TestNormalizedZone(t *testing.T) {
 
-	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	id := os.Getenv("PROJECT_ID")
+	if id == "" {
+		t.Log("Skip this test because no project id is given.")
+		return
+	}
+
+	b, err := NewInstanceBuilder(id)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
 	b.Zone = "us-central1-c"
-	if b.normalizedZone() != "projects/jkawamoto-ppls/zones/us-central1-c" {
+	if b.normalizedZone() != fmt.Sprintf("projects/%s/zones/us-central1-c", id) {
 		t.Errorf("Zone is not correct: %s", b.Zone)
 	}
 
@@ -92,13 +114,19 @@ func TestNormalizedZone(t *testing.T) {
 
 func TestNormalizedMachineType(t *testing.T) {
 
-	b, err := NewInstanceBuilder("jkawamoto-ppls")
+	id := os.Getenv("PROJECT_ID")
+	if id == "" {
+		t.Log("Skip this test because no project id is given.")
+		return
+	}
+
+	b, err := NewInstanceBuilder(id)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
 	b.MachineType = "n1-standard-2"
-	if b.normalizedMachineType() != "projects/jkawamoto-ppls/zones/us-central1-b/machineTypes/n1-standard-2" {
+	if b.normalizedMachineType() != fmt.Sprintf("projects/%s/zones/us-central1-b/machineTypes/n1-standard-2", id) {
 		t.Errorf("Zone is not correct: %s", b.Zone)
 	}
 
