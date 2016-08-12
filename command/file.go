@@ -30,7 +30,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jkawamoto/pb" // Use `public_pool_add` branch.
+	"github.com/cheggaaa/pb"
+
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
