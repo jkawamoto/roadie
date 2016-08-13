@@ -1,3 +1,8 @@
+## 0.2.1 (2016-08-13)
+### Fixed
+- Issue #15: Delete old container before retrying.
+
+
 ## 0.2.0 (2016-08-12)
 ### Added
 - Support `--retry` option by default it is set to 10.
