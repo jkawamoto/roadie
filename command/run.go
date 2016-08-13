@@ -22,12 +22,10 @@
 package command
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -85,25 +83,6 @@ type runOpt struct {
 	Dry bool
 
 	// The number of times retry roadie-gcp container when GCP's error happens.
-	Retry int64
-}
-
-// startupOpt defines variables used in startup template.
-type startupOpt struct {
-
-	// Name of container.
-	Name string
-
-	// Body of script file.
-	Script string
-
-	// Options
-	Options string
-
-	// Container image.
-	Image string
-
-	// Number of retry.
 	Retry int64
 }
 
@@ -205,36 +184,24 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	fmt.Printf("Script to be run:\n%s\n", script.String())
 
 	// Prepare startup script.
-	startup, err := util.Asset("assets/startup.sh")
-	if err != nil {
-		fmt.Println(chalk.Red.Color("Startup script was not found."))
-		return
-	}
-
 	options := " "
 	if opt.NoShutdown {
 		options = "--no-shutdown"
 	}
-
-	buf := &bytes.Buffer{}
-	data := startupOpt{
+	if opt.Retry <= 0 {
+		opt.Retry = 10
+	}
+	startup, err := Startup(&startupOpt{
 		Name:    script.InstanceName,
 		Script:  script.String(),
 		Options: options,
 		Image:   opt.Image,
 		Retry:   opt.Retry,
-	}
-	temp, err := template.New("startup").Parse(string(startup))
-	if err != nil {
-		return
-	}
-	if err = temp.ExecuteTemplate(buf, "startup", data); err != nil {
-		return
-	}
+	})
 
 	if opt.Dry {
 
-		fmt.Printf("Startup script:\n%s\n", buf.String())
+		fmt.Printf("Startup script:\n%s\n", startup)
 
 	} else {
 
@@ -266,7 +233,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		err = builder.CreateInstance(script.InstanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
-				Value: buf.String(),
+				Value: startup,
 			},
 		}, opt.DiskSize)
 
