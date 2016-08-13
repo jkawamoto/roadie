@@ -1,3 +1,11 @@
+## 0.2.0 (2016-08-12)
+### Added
+- Support `--retry` option by default it is set to 10.
+
+By the option, roadie will retry executing a given program such times
+when GCP error happens.
+
+
 ## 0.1.4 (2016-07-17)
 ### Fixed
 - Look for configuration files.
