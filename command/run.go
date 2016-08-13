@@ -83,6 +83,28 @@ type runOpt struct {
 	// If true, do not create any instances but show startup script.
 	// This flag is for debugging.
 	Dry bool
+
+	// The number of times retry roadie-gcp container when GCP's error happens.
+	Retry int64
+}
+
+// startupOpt defines variables used in startup template.
+type startupOpt struct {
+
+	// Name of container.
+	Name string
+
+	// Body of script file.
+	Script string
+
+	// Options
+	Options string
+
+	// Container image.
+	Image string
+
+	// Number of retry.
+	Retry int64
 }
 
 // CmdRun specifies the behavior of `run` command.
@@ -108,6 +130,7 @@ func CmdRun(c *cli.Context) error {
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
 		NoShutdown:             c.Bool("no-shutdown"),
 		Dry:                    c.Bool("dry"),
+		Retry:                  c.Int64("retry"),
 	}
 	if err := cmdRun(conf, &opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -194,11 +217,12 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	buf := &bytes.Buffer{}
-	data := map[string]string{
-		"Name":    script.InstanceName,
-		"Script":  script.String(),
-		"Options": options,
-		"Image":   opt.Image,
+	data := startupOpt{
+		Name:    script.InstanceName,
+		Script:  script.String(),
+		Options: options,
+		Image:   opt.Image,
+		Retry:   opt.Retry,
 	}
 	temp, err := template.New("startup").Parse(string(startup))
 	if err != nil {
