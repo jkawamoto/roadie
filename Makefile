@@ -42,9 +42,6 @@ release:
 get-deps:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -d -t -v .
-	# go get -d github.com/jkawamoto/pb # Use `public_pool_add` branch.
-	cd $(GOPATH)/src/github.com/jkawamoto/pb && \
-		git checkout -b public_pool_add origin/public_pool_add && cat pool.go
 
 .PHONY: test
 test: asset

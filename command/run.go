@@ -22,12 +22,10 @@
 package command
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -83,6 +81,9 @@ type runOpt struct {
 	// If true, do not create any instances but show startup script.
 	// This flag is for debugging.
 	Dry bool
+
+	// The number of times retry roadie-gcp container when GCP's error happens.
+	Retry int64
 }
 
 // CmdRun specifies the behavior of `run` command.
@@ -108,6 +109,7 @@ func CmdRun(c *cli.Context) error {
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
 		NoShutdown:             c.Bool("no-shutdown"),
 		Dry:                    c.Bool("dry"),
+		Retry:                  c.Int64("retry"),
 	}
 	if err := cmdRun(conf, &opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -182,35 +184,24 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	fmt.Printf("Script to be run:\n%s\n", script.String())
 
 	// Prepare startup script.
-	startup, err := util.Asset("assets/startup.sh")
-	if err != nil {
-		fmt.Println(chalk.Red.Color("Startup script was not found."))
-		return
-	}
-
 	options := " "
 	if opt.NoShutdown {
 		options = "--no-shutdown"
 	}
-
-	buf := &bytes.Buffer{}
-	data := map[string]string{
-		"Name":    script.InstanceName,
-		"Script":  script.String(),
-		"Options": options,
-		"Image":   opt.Image,
+	if opt.Retry <= 0 {
+		opt.Retry = 10
 	}
-	temp, err := template.New("startup").Parse(string(startup))
-	if err != nil {
-		return
-	}
-	if err = temp.ExecuteTemplate(buf, "startup", data); err != nil {
-		return
-	}
+	startup, err := Startup(&startupOpt{
+		Name:    script.InstanceName,
+		Script:  script.String(),
+		Options: options,
+		Image:   opt.Image,
+		Retry:   opt.Retry,
+	})
 
 	if opt.Dry {
 
-		fmt.Printf("Startup script:\n%s\n", buf.String())
+		fmt.Printf("Startup script:\n%s\n", startup)
 
 	} else {
 
@@ -242,7 +233,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		err = builder.CreateInstance(script.InstanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
-				Value: buf.String(),
+				Value: startup,
 			},
 		}, opt.DiskSize)
 

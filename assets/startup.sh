@@ -32,4 +32,7 @@ cat <<EOF > run.yml
 {{.Script}}
 EOF
 
-docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml
+for i in `seq {{.Retry}}`
+do
+  docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml || break
+done
