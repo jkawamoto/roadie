@@ -35,4 +35,5 @@ EOF
 for i in `seq {{.Retry}}`
 do
   docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml || break
+  docker rm {{.Name}}
 done
