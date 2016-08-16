@@ -57,4 +57,5 @@ $ brew install roadie
 ```
 
 ## License
-This software except files in `docker` folder is released under The GNU General Public License Version 3, see [COPYING](COPYING) for more detail.
+This software except files in `docker` folder is released under The GNU General Public License Version 3,
+see [COPYING](https://github.com/jkawamoto/roadie/blob/master/COPYING) for more detail.

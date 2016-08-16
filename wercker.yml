@@ -1,0 +1,19 @@
+box: debian
+build:
+  steps:
+    - install-packages:
+        packages: git
+    - script:
+        name: Prepare submodules
+        code: |-
+          git submodule update --init
+    - arjen/hugo-build:
+        version: "0.15"
+        basedir: docs
+deploy:
+  steps:
+    - install-packages:
+        packages: git ssh-client
+    - lukevivier/gh-pages:
+        token: $GIT_TOKEN
+        basedir: docs/public

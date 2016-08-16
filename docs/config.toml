@@ -8,6 +8,7 @@ theme = "github-project-landing-page"
   AuthorName = "Junpei Kawamoto"
   AuthorURL = "https://www.jkawamoto.info/"
   GithubURL = "https://github.com/jkawamoto/roadie"
+  ProfilePicture = "img/icon.png"
 
   GithubRepo = "roadie"
   GithubOrg = "jkawamoto"
