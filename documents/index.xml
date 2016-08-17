@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Documents on Roadie</title>
+    <link>https://jkawamoto.github.io/roadie/documents/</link>
+    <description>Recent content in Documents on Roadie</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <atom:link href="https://jkawamoto.github.io/roadie/documents/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Configuration</title>
+      <link>https://jkawamoto.github.io/roadie/documents/configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/configuration/</guid>
+      <description>
+
+&lt;p&gt;To update configuration of roadie, use &lt;code&gt;roadie config&lt;/code&gt; command.
+It provides four sub commands:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;project&lt;/strong&gt; shows and updates project ID of Google Cloud Platform,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;zone&lt;/strong&gt; shows and updates zone used to run scripts,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;type&lt;/strong&gt; shows and updates machine type used to run scripts,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;bucket&lt;/strong&gt; shows and updates bucket name used to store related files.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Note that every configurations are stored to &amp;lsquo;.roadie&amp;rsquo;
+in the current working directory.
+You can also update configurations without this command by editing that file.&lt;/p&gt;
+
+&lt;h3 id=&#34;project:a66b35d20295cb764719ac8bd35837ec&#34;&gt;project&lt;/h3&gt;
+
+&lt;p&gt;Project ID is an ID registered in Google Cloud Platform.
+You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;To check the project ID currently set to roadie, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config project
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to set another project ID &lt;code&gt;PROJECT&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config project set PROJECT
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Valid project ID is required to access Google Cloud Platform.
+If you set correct project ID but any commands such as
+&lt;code&gt;roadie config type list&lt;/code&gt; fail,
+make sure you have authenticated your computer by checking &lt;code&gt;gcloud auth list&lt;/code&gt;
+shows your account is credentialed.&lt;/p&gt;
+
+&lt;h3 id=&#34;zone:a66b35d20295cb764719ac8bd35837ec&#34;&gt;zone&lt;/h3&gt;
+
+&lt;p&gt;In Google Cloud Platform, the platform is divided into several zones
+based on actual locations where virtual machine will run.
+You can find current available zones by running&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone list
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;By default, &lt;code&gt;us-central1-b&lt;/code&gt; is chosen.
+To check current zone, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to set another &lt;code&gt;ZONE&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone set ZONE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;type:a66b35d20295cb764719ac8bd35837ec&#34;&gt;type&lt;/h3&gt;
+
+&lt;p&gt;There are some options about machine type on which your program runs.
+Each machine type has different number of virtual CPUs and RAM.
+You can find available machine types by running&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type list
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and &lt;a href=&#34;https://cloud.google.com/compute/pricing&#34;&gt;here&lt;/a&gt; is more information about
+machine types and their pricing.
+Available machine types might be depended to which zone you choose.
+You should set zone before checking machine types.&lt;/p&gt;
+
+&lt;p&gt;By default, &lt;code&gt;n1-standard-1&lt;/code&gt;, which has 1 vCPU and 3.75 GB RAM, is selected.
+To check current machine type, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to set another &lt;code&gt;TYPE&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type set TYPE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;bucket:a66b35d20295cb764719ac8bd35837ec&#34;&gt;bucket&lt;/h3&gt;
+
+&lt;p&gt;Bucket is a place to store any data including source codes and outputs from
+your program.
+Each bucket is identified by bucket name and it must be unique in the world.
+You can choose any name but it is recommended to use same name as your project ID.
+Actually, by default, roadie sets the project ID to the bucket name.&lt;/p&gt;
+
+&lt;p&gt;To check current bucket name, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to set another bucket name &lt;code&gt;NAME&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket set NAME
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Contents</title>
+      <link>https://jkawamoto.github.io/roadie/documents/top/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/top/</guid>
+      <description>
+
+&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; is a easy way to run your programs on &lt;a href=&#34;https://cloud.google.com/&#34;&gt;Google Cloud Platform&lt;/a&gt;.
+It helps you to upload your source codes to the cloud, create and delete
+instances, and manage outputs.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;documents/installation&#34;&gt;Installation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents/configuration&#34;&gt;Configuration&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents/execution&#34;&gt;Run your program&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents/logging&#34;&gt;Logging&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents/data&#34;&gt;Data handling&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;simple-example:aeaecdd37942e8924d7f7cb1f903f73d&#34;&gt;Simple example&lt;/h3&gt;
+
+&lt;p&gt;Suppose your are in a directory which has your source codes and &lt;code&gt;script.yml&lt;/code&gt;,
+then run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name analyze-wowah script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;uploads your source codes in the current directory,
+and run them in such a manner that &lt;code&gt;script.yml&lt;/code&gt; specifies.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;script.yml&lt;/code&gt; is a simple YAML file like&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
+- unrar
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- analyze WoWAH
+upload:
+- *.png
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The above &lt;code&gt;script.yml&lt;/code&gt; asks roadie to install apt package &lt;code&gt;unrar&lt;/code&gt; and
+download a data file from such URL as the preparation. Then, it directs
+to run those two commands; unrar the downloaded file, analyze the obtained
+data files.&lt;/p&gt;
+
+&lt;p&gt;You can check your program is still running or ends by&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie status
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;After the program finishes,
+&lt;code&gt;roadie&lt;/code&gt; uploads results of such commands to a cloud storage.
+You can access those results by&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; will download all result files into &lt;code&gt;./res&lt;/code&gt; directory.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Data</title>
+      <link>https://jkawamoto.github.io/roadie/documents/data/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/data/</guid>
+      <description>
+
+&lt;p&gt;roadie manages three kinds of data in a cloud storage;
+source codes, input data, outputted results.
+To access those data, roadie has commands &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;,
+and &lt;code&gt;result&lt;/code&gt;, respectively.&lt;/p&gt;
+
+&lt;h3 id=&#34;source-command:494b4c66d4128fe395a8c9607fab3629&#34;&gt;source command&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;source&lt;/code&gt; command provides a way to access your source codes
+uploaded by &lt;code&gt;roadie run&lt;/code&gt; command with &lt;code&gt;--local&lt;/code&gt; flag.&lt;/p&gt;
+
+&lt;p&gt;To check source files uploaded, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie source list
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to delete some file named &lt;code&gt;FILENAME&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie source delete FILENAME
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;data-command:494b4c66d4128fe395a8c9607fab3629&#34;&gt;data command&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;data&lt;/code&gt; command manages input data files which may be used in
+&lt;code&gt;data&lt;/code&gt; section in your script file.&lt;/p&gt;
+
+&lt;p&gt;To upload a data file &lt;code&gt;FILENAME&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data put FILENAME
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To check uploaded files and their URL, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data list --url
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The URLs shown by the above command, which start with &lt;code&gt;gs://&lt;/code&gt;,
+can be used in &lt;code&gt;data&lt;/code&gt; section in your script file.&lt;/p&gt;
+
+&lt;p&gt;To delete some file &lt;code&gt;FILENAME&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data delete FILENAME
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;result-command:494b4c66d4128fe395a8c9607fab3629&#34;&gt;result command&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;result&lt;/code&gt; command manages outputs from instances and downloads them to your PC.&lt;/p&gt;
+
+&lt;p&gt;To check instance names which have results, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result list
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and to check file names which instance &lt;code&gt;INSTANCE&lt;/code&gt; has as its result, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result INSTANCE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;To download those files into directory &lt;code&gt;./res&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result get INSTANCE &amp;quot;*&amp;quot; -o ./res
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Execution</title>
+      <link>https://jkawamoto.github.io/roadie/documents/execution/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/execution/</guid>
+      <description>
+
+&lt;h3 id=&#34;execution-model:e52f646d428c71e9ec4e13be59006055&#34;&gt;Execution model&lt;/h3&gt;
+
+&lt;p&gt;roadie runs your program on a container.
+The image of the container is
+&lt;a href=&#34;https://github.com/jkawamoto/roadie-gcp&#34;&gt;jkawamoto/roadie-gcp&lt;/a&gt;
+which is based on &lt;a href=&#34;http://www.ubuntu.com/&#34;&gt;Ubuntu&lt;/a&gt;.
+That means most of Ubuntu packages are available in roadie, too.
+You can install such packages via &lt;code&gt;apt&lt;/code&gt; section in script file.&lt;/p&gt;
+
+&lt;p&gt;On the running container, your program will be set in &lt;code&gt;/data&lt;/code&gt;,
+and other data specified &lt;code&gt;data&lt;/code&gt; section in script file will also be set in
+&lt;code&gt;/data&lt;/code&gt; by default.
+If you provide your source codes as an archived file and
+roadie reports an error that it couldn&amp;rsquo;t find your program,
+make sure that your archive file does not create additional directory.&lt;/p&gt;
+
+&lt;p&gt;For example, you provide your program &lt;code&gt;main&lt;/code&gt; in &lt;code&gt;archive.zip&lt;/code&gt; and
+you expect your program will be set in &lt;code&gt;/data/main&lt;/code&gt;.
+But, depending on a way to create such archive file, your program may be set
+in &lt;code&gt;/data/archive/main&lt;/code&gt;.
+For debugging, add &lt;code&gt;ls -la&lt;/code&gt; on top of the run section in your script.&lt;/p&gt;
+
+&lt;p&gt;Your program has three ways to outputs; writing to &lt;code&gt;stdout&lt;/code&gt;, &lt;code&gt;stderr&lt;/code&gt;, and
+creating other files.&lt;/p&gt;
+
+&lt;p&gt;All outputs written in &lt;code&gt;stdout&lt;/code&gt; are treated as official results.
+They are stored to persistent storage,
+i.e. &lt;a href=&#34;https://cloud.google.com/storage/&#34;&gt;Google Cloud Storage&lt;/a&gt;,
+so that you can access them any time.
+Each command in the &lt;code&gt;run&lt;/code&gt; section of your script makes one file to store
+outputs written in &lt;code&gt;stdout&lt;/code&gt;.
+More precisely, &lt;em&gt;i&lt;/em&gt;-th command creates &lt;code&gt;stdout{i}.txt&lt;/code&gt;,
+where &lt;em&gt;i&lt;/em&gt; is a zero-origin integer.&lt;/p&gt;
+
+&lt;p&gt;On the other hand, outputs written in &lt;code&gt;stderr&lt;/code&gt; are not stored in any persistent
+disks but treated as prompt logs, which means you can check such logs while
+your instance is still running.
+Because outputs written in &lt;code&gt;stderr&lt;/code&gt; cause of network traffic, it isn&amp;rsquo;t
+recommended to write huge messages there.&lt;/p&gt;
+
+&lt;p&gt;By default, any other files created by your program will not be stored as
+results.
+To specify which files should be treated as results
+and stored to persistent storage,
+use &lt;code&gt;upload&lt;/code&gt; section in the script file.&lt;/p&gt;
+
+&lt;h3 id=&#34;run-command:e52f646d428c71e9ec4e13be59006055&#34;&gt;run command&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;roadie run&lt;/code&gt; command creates an instance and runs your program on it.
+This command requires one script file explained in the next section.
+There are many option flags but one of the useful options is &lt;code&gt;--name&lt;/code&gt;,
+which sets a given name to the creating instance.
+So, suppose you will create an instance named &lt;code&gt;instance1&lt;/code&gt;
+with script file &lt;code&gt;script.yml&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --name instance1 script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you don&amp;rsquo;t set any names, roadie makes some name.
+After creating the instance, roadie shows the name of the instance.
+Such name is used to check instance status, see logs,
+and download computation results.&lt;/p&gt;
+
+&lt;h3 id=&#34;script-file:e52f646d428c71e9ec4e13be59006055&#34;&gt;Script file&lt;/h3&gt;
+
+&lt;p&gt;Script file is a YAML file which consists of five sections;
+&lt;code&gt;apt&lt;/code&gt;, &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;run&lt;/code&gt;, &lt;code&gt;upload&lt;/code&gt;.
+Here is a simple example of the script.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
+- unrar
+source: https://github.com/abcdefg/some-program.git
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- ./analyze WoWAH
+upload:
+- *.png
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Roughly speaking, the above script means&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Install apt package &lt;code&gt;unrar&lt;/code&gt;,&lt;/li&gt;
+&lt;li&gt;Clone source codes from a git repository,&lt;/li&gt;
+&lt;li&gt;Download a data file from a certain URL.&lt;/li&gt;
+&lt;li&gt;Execute two commands; expand the downloaded file and run an analyze program.&lt;/li&gt;
+&lt;li&gt;Upload created file matching a glob pattern &lt;code&gt;*.png&lt;/code&gt;
+in addition to outputs written in &lt;code&gt;stdout&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&#34;apt:e52f646d428c71e9ec4e13be59006055&#34;&gt;apt&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;apt&lt;/code&gt; section takes a list of apt package names.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
+- python-numpy
+- python-scipy
+- python-matplotlib
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The above example installs three major python packages.
+Note that, if you want to install apt packages after running some commands,
+you can write normal &lt;code&gt;apt-get install&lt;/code&gt; command in your &lt;code&gt;run&lt;/code&gt; section.&lt;/p&gt;
+
+&lt;h4 id=&#34;source:e52f646d428c71e9ec4e13be59006055&#34;&gt;source&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;source&lt;/code&gt; section takes one URL which points the location your program stored.
+This URL can take several forms.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;If the URL ends with &lt;code&gt;.git&lt;/code&gt;, roadie treats it a Git repository URL.
+roadie use &lt;code&gt;git clone&lt;/code&gt; to obtain your source codes.&lt;/li&gt;
+&lt;li&gt;If the URL starts with &lt;code&gt;dropbox://&lt;/code&gt; instead of &lt;code&gt;http://&lt;/code&gt; and &lt;code&gt;https://&lt;/code&gt;,
+roadie thinks your source codes are provided in public directory in
+&lt;a href=&#34;https://www.dropbox.com/&#34;&gt;Dropbox&lt;/a&gt;.
+You can make such URL easily by replacing &lt;code&gt;https://&lt;/code&gt; to &lt;code&gt;dropbox://&lt;/code&gt;
+in your shared link made by Dropbox.&lt;/li&gt;
+&lt;li&gt;If the URL starts with &lt;code&gt;gs://&lt;/code&gt;, which means your source codes are stored in
+Google Cloud Storage, roadie downloads them.&lt;/li&gt;
+&lt;li&gt;Otherwise, roadie downloads the URL via http or https.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In any cases, if the URL ends with &lt;code&gt;.zip&lt;/code&gt;, &lt;code&gt;.tar&lt;/code&gt;, or &lt;code&gt;.tar.gz&lt;/code&gt;,
+downloaded files are expanded by &lt;code&gt;unzip&lt;/code&gt; or &lt;code&gt;tar&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;p&gt;For example,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;source: https://github.com/jkawamoto/roadie.git
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;clones the Git repository.&lt;/p&gt;
+
+&lt;p&gt;However, if your program is still work in progress,
+it could be trouble to make an archive file and upload it,
+or push your codes to some repository.
+roadie has a function to make such archive file containing files in a directory
+and upload it instead of you. See &lt;strong&gt;specify source codes on the fly&lt;/strong&gt; section.&lt;/p&gt;
+
+&lt;p&gt;The downloaded source codes are stored in &lt;code&gt;/data&lt;/code&gt; directory.&lt;/p&gt;
+
+&lt;p&gt;If your source codes are written in python
+and they have &lt;code&gt;requirements.txt&lt;/code&gt; or &lt;code&gt;requirements.in&lt;/code&gt;,
+those required packages will be installed automatically.&lt;/p&gt;
+
+&lt;h4 id=&#34;data:e52f646d428c71e9ec4e13be59006055&#34;&gt;data&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;data&lt;/code&gt; section takes a list of URLs.
+Those URL support, &lt;code&gt;http&lt;/code&gt;, &lt;code&gt;https&lt;/code&gt;, &lt;code&gt;gs&lt;/code&gt;, and &lt;code&gt;dropbox&lt;/code&gt;.
+As same as &lt;code&gt;source&lt;/code&gt; section, if the URL ends with &lt;code&gt;.zip&lt;/code&gt;, &lt;code&gt;.tar&lt;/code&gt;, or &lt;code&gt;.tar.gz&lt;/code&gt;,
+those files are expanded as expected.&lt;/p&gt;
+
+&lt;p&gt;By default, downloaded files are stored in &lt;code&gt;/data&lt;/code&gt; directory,
+which is same directory as source codes.
+You can customize destinations by adding &lt;code&gt;:&lt;/code&gt; plus destination path to each URL.
+For example,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;data:
+- https://www.sample.com/program.zip:/data/input
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;downloads &lt;code&gt;program.zip&lt;/code&gt; and stored files in the zip into &lt;code&gt;/data/input&lt;/code&gt;.
+Here is another example,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;data:
+- gs://your-project/dataset/some_data_v2.json:some_data.json
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;downloads &lt;code&gt;somr_data_v2.json&lt;/code&gt; into &lt;code&gt;/data&lt;/code&gt; from a bucket in
+Google Cloud Storage, and rename it to &lt;code&gt;some_data.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;run:e52f646d428c71e9ec4e13be59006055&#34;&gt;run&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;run&lt;/code&gt; section takes a list of commands.
+You can write any commands such as running your program,
+installing any packages,
+downloading any files (you should use &lt;code&gt;data&lt;/code&gt; section, though), etc.&lt;/p&gt;
+
+&lt;p&gt;Note that, you may need to start your command with &lt;code&gt;./&lt;/code&gt;
+if the running commands are in your source codes and set in &lt;code&gt;/data&lt;/code&gt;.
+roadie doesn&amp;rsquo;t add &lt;code&gt;/data&lt;/code&gt; to &lt;code&gt;$PATH&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;For example, if your program is written in &lt;a href=&#34;https://nodejs.org/en/&#34;&gt;node.js&lt;/a&gt;,
+the first command may &lt;code&gt;npm install&lt;/code&gt;.
+Of course, you need.js to install node in &lt;code&gt;apt&lt;/code&gt; section.&lt;/p&gt;
+
+&lt;p&gt;Each command listed in the &lt;code&gt;run&lt;/code&gt; section has a zero-origin number,
+i,e, the first command has 0.
+This number is used to store outputs written in &lt;code&gt;stdout&lt;/code&gt; and
+the outputs written in &lt;code&gt;stdout&lt;/code&gt; from &lt;em&gt;i&lt;/em&gt;-th command are stored
+in &lt;code&gt;stdout{i}.txt&lt;/code&gt; file.
+Those files will be accessed via &lt;code&gt;roadie result&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;upload:e52f646d428c71e9ec4e13be59006055&#34;&gt;upload&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;upload&lt;/code&gt; section takes a list of
+&lt;a href=&#34;https://en.wikipedia.org/wiki/Glob_(programming&#34;&gt;glob&lt;/a&gt;) patterns.
+Files matching one of those patterns are treated of results
+and uploaded to a cloud storage.
+To access those uploaded files, use &lt;code&gt;roadie result&lt;/code&gt; command.&lt;/p&gt;
+
+&lt;h3 id=&#34;specify-source-codes-on-the-fly:e52f646d428c71e9ec4e13be59006055&#34;&gt;Specify source codes on the fly&lt;/h3&gt;
+
+&lt;p&gt;Sometimes, it is difficult to provide your source codes from the web,
+such as Git repository, Dropbox, and some web site.
+roadie helps to upload your source code from a local PC to a cloud storage,
+which is a private place.
+If you use this function, you can omit &lt;code&gt;source&lt;/code&gt; section in your script file.&lt;/p&gt;
+
+&lt;h4 id=&#34;upload-source-codes-from-a-local-directory:e52f646d428c71e9ec4e13be59006055&#34;&gt;Upload source codes from a local directory&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;--local&lt;/code&gt; flag of &lt;code&gt;roadie run&lt;/code&gt; command takes a path of your source codes.
+For example,&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name instance-1 script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;notifies roadie of the current path as the root path of your source codes.
+roadie makes an archive file of the path and uploads it to a cloud storage.
+Then, the created instance will use that file as the source codes.&lt;/p&gt;
+
+&lt;p&gt;If you give a path of one file with &lt;code&gt;--local&lt;/code&gt; flag,
+roadie uploads that file and the created instance will use it.&lt;/p&gt;
+
+&lt;h4 id=&#34;previously-uploaded-files:e52f646d428c71e9ec4e13be59006055&#34;&gt;Previously uploaded files&lt;/h4&gt;
+
+&lt;p&gt;&lt;code&gt;--source&lt;/code&gt; flag of &lt;code&gt;roadie run&lt;/code&gt; command takes an instance name
+which run previously.
+If the previous instance created with &lt;code&gt;--local&lt;/code&gt; flag,
+the created new instance will use same uploaded source file.
+For example, you created an instance by&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name instance-1 script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and now you are creating another instance by&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --source instance-1 --name instance2 script2.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;the new instance named &lt;code&gt;instance-2&lt;/code&gt; uses same source codes as &lt;code&gt;instance-1&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Installation</title>
+      <link>https://jkawamoto.github.io/roadie/documents/installation/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
+      <description>
+
+&lt;h3 id=&#34;requirements:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Requirements&lt;/h3&gt;
+
+&lt;p&gt;Since roadie currently supports only
+&lt;a href=&#34;https://cloud.google.com/&#34;&gt;Google Cloud Platform&lt;/a&gt;,
+you need to register it at first.&lt;/p&gt;
+
+&lt;p&gt;roadie uses Google&amp;rsquo;s &lt;a href=&#34;https://cloud.google.com/sdk/&#34;&gt;Cloud SDK&lt;/a&gt;.
+Please install and initialize it by yourself.
+&lt;code&gt;gcloud auth list&lt;/code&gt; shows an authorized account name, i.e. an email address,
+after success of initialization.&lt;/p&gt;
+
+&lt;h3 id=&#34;install:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Install&lt;/h3&gt;
+
+&lt;p&gt;roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
+Download one of them according to your environment and put the binary into
+a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
+
+&lt;p&gt;You can also install roadie by following the go manner.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ go get github.com/jkawamoto/roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Then, the binary will be installed in &lt;code&gt;$GOPATH/bin&lt;/code&gt;.
+In this case, you need to install &lt;code&gt;go&lt;/code&gt; before running &lt;code&gt;go get&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you are using mac, you can install &lt;code&gt;roadie&lt;/code&gt; via &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
+$ brew install roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;initialization:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Initialization&lt;/h3&gt;
+
+&lt;p&gt;Each project needs to initialize roadie and notifies the &lt;em&gt;project ID&lt;/em&gt; and
+a bucket name.
+Project ID is an ID registered in Google Cloud Platform.
+You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
+Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie init
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The initialization command asks you the current Google Cloud Platform&amp;rsquo;s project
+ID and other your preference, then makes configuration file &lt;code&gt;.roadie&lt;/code&gt; in the
+current directory.&lt;/p&gt;
+
+&lt;p&gt;Although the configuration file is a text file and you can edit it,
+roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.
+See &lt;a href=&#34;documents/configuration&#34;&gt;configuration page&lt;/a&gt; for more information.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Logging</title>
+      <link>https://jkawamoto.github.io/roadie/documents/logging/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/logging/</guid>
+      <description>
+
+&lt;p&gt;After running your program, it is helpful to check status of your program,
+i.e. instance, and check logs.
+roadie provides two commands:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;status&lt;/strong&gt; shows status of all instances and kill an instance.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;log&lt;/strong&gt; shows logs from an instance.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;status:3f3af53408cff75953b33723c0b061bb&#34;&gt;status&lt;/h3&gt;
+
+&lt;p&gt;Status command &lt;code&gt;roadie status&lt;/code&gt; shows your instances are running or have ended.
+If your instance has already ended and you also deleted all result data
+from the instance, such instance name will be omitted to print.
+To print all instance status including such deleted instances, use &lt;code&gt;--all&lt;/code&gt; flag.
+However, status of old instances will be deleted after a certain period of time.&lt;/p&gt;
+
+&lt;p&gt;The another property of status command is to kill some instance.
+To kill instance &lt;code&gt;INSTANCE&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie status kill INSTANCE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you kill an instance, outputs from the instance might not be stored.&lt;/p&gt;
+
+&lt;h3 id=&#34;log:3f3af53408cff75953b33723c0b061bb&#34;&gt;log&lt;/h3&gt;
+
+&lt;p&gt;Log command prints log messages from an instance.
+To see log messages from instance &lt;code&gt;INSTANCE&lt;/code&gt;, run&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie log INSTANCE
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The log messages consist of logs about preprocess and post process,
+and outputs your programs write in standard err (&lt;code&gt;stderr&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;roadie&amp;rsquo;s execution model treats outputs written in standard output (&lt;code&gt;stdout&lt;/code&gt;)
+and &lt;code&gt;stderr&lt;/code&gt; in different way.
+Outputs written in &lt;code&gt;stdout&lt;/code&gt; are uploaded to a bucket as parts of results
+from your program.
+You can see and download such outputs by &lt;code&gt;roadie result&lt;/code&gt; command but
+you cannot check them while your instance is running.&lt;/p&gt;
+
+&lt;p&gt;On the other hand, outputs written in &lt;code&gt;stderr&lt;/code&gt; are not stored in any persistent
+disks but treated as prompt logs, which means you can check such logs while
+your instance is still running.
+Because outputs written in &lt;code&gt;stderr&lt;/code&gt; cause of network traffic, it isn&amp;rsquo;t
+recommended to write huge messages there.&lt;/p&gt;
+
+&lt;h4 id=&#34;options:3f3af53408cff75953b33723c0b061bb&#34;&gt;options&lt;/h4&gt;
+
+&lt;p&gt;Log command has two option flags; &lt;code&gt;--no-timestamp&lt;/code&gt; and &lt;code&gt;--follow&lt;/code&gt;.
+If &lt;code&gt;--no-timestamp&lt;/code&gt; flag is set, roadie omits to print time stamps.
+If &lt;code&gt;--follow&lt;/code&gt; flag is set, roadie will not end and keep waiting new logs coming. To stop it, use &lt;code&gt;control + c&lt;/code&gt;.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

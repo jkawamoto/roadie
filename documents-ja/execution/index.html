@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A easy way to run your programs on Google Cloud Platform.">
+    <meta name="author" content="Junpei Kawamoto">
+    <meta name="Identifier-URL" content="https://jkawamoto.github.io/roadie/" />
+
+    <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
+
+    <meta property="og:title" content="プログラムの実行" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
+    <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
+    <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
+
+    <base href="https://jkawamoto.github.io/roadie/">
+    <title>プログラムの実行</title>
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/landing-page.css" rel="stylesheet">
+
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+    <style>
+      .navbar {
+    border-color: #e7e7e7;
+}
+
+.content-section-a,
+footer,
+.navbar {
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+.navbar a:link,
+.navbar-default .navbar-nav>li>a {
+  color: #777;
+}
+
+.navbar a:hover,
+.navbar-default .navbar-nav>li>a:hover {
+  color: rgb(51, 51, 51);
+}
+
+.content-section-b {
+  background-color: white;
+  color: #333;
+}
+
+body {
+  color: rgb(51, 51, 51);
+}
+
+.header-container h1,
+.header-container h2,
+.header-container h3,
+.header-container h4 {
+  color: rgb(51, 51, 51);
+}
+
+    </style>
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({
+        google_ad_client: "ca-pub-4734862314145555",
+        enable_page_level_ads: true
+      });
+    </script>
+
+</head>
+<body>
+
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="page-scroll navbar-brand" href="#intro">Roadie</a>
+        </div>
+        
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie">Github</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents/top/">Docs</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
+                
+                <li>
+                  <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
+                </li>
+            </ul>
+        </div>
+        
+    </div>
+    
+</nav>
+
+
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">プログラムの実行</h2>
+          
+
+<h3 id="プログラムの実行モデル:e52f646d428c71e9ec4e13be59006055">プログラムの実行モデル</h3>
+
+<p><code>roadie</code> は，与えらえたプログラムをコンテナを用いて実行します．
+このコンテナのイメージには，
+<a href="http://www.ubuntu.com/">Ubuntu</a> を基にした
+<a href="https://github.com/jkawamoto/roadie-gcp">jkawamoto/roadie-gcp</a>
+が使用されています．
+そのため，Ubuntu で利用可能なほとんどのパッケージが <code>roadie</code> でも利用可能です．
+スクリプトファイルの <code>apt</code> セクションで利用したいパッケージを登録することができます．</p>
+
+<p>実行中のコンテナでは，プログラムは <code>/data</code> にコピーされます．
+また，スクリプトファイルの <code>data</code> セクションで列挙されたデータファイルも，
+デフォルトでは <code>/data</code> にコピーされます．</p>
+
+<p>もし，ソースコードをアーカイブファイルとして用意し，
+<code>roadie</code> がソースコードが見つからないというエラーを出した場合，
+アーカイブがディレクトリを生成しないか確認してください．
+例えば，<code>main</code> という名前のプログラムをアーカイブした <code>archive.zip</code>
+というファイルがある場合，解凍後は <code>/data/main</code> に <code>main</code> がコピーされる場合と，
+<code>/data/archive/main</code> が作成される場合があります．
+デバッグのためには，スクリプトの <code>run</code> セクションに <code>ls -la</code> などを追加すれば良いでしょう．</p>
+
+<p>一般的に，プログラムは標準出力 <code>stdout</code> と標準エラー出力 <code>stderr</code> に
+メッセージを書き出すことができます．
+また，任意のファイルを作成することもできます．</p>
+
+<p><code>roadie</code> では，標準出力 <code>stdout</code> に書き出されたメッセージは，
+プログラムの実行結果として扱われ永続的なストレージである
+<a href="https://cloud.google.com/storage/">Google Cloud Storage</a>,
+に保存されます．
+スクリプトファイルの <code>run</code> セクションに書かれたコマンドは，
+0番から順に番号を振られます．
+各コマンドが標準出力へ書き出したメッセージは <code>stdout{番号}.txt</code> という名前で保存されます．
+コンテナ上では，<code>/tmp</code> に各ファイルが記録されるので，
+他のコマンドから利用することもできます．</p>
+
+<p>一方，標準エラー出力 <code>stderr</code> に書き出されたメッセージは，
+即時性のあるログとして扱われ永続的なストレージには保存されません．
+その代わり，プログラムの実行中に <code>roadie log</code> コマンドを使って取得することができます．
+標準エラー出力は通信を発生させるため，巨大なメッセージを書き出すことは避けた方が良いでしょう．</p>
+
+<p>デフォルトでは，<code>roadie</code> は他のファイルをプログラムの実行結果としては扱いません．
+<code>roadie</code> にどのファイルを実行結果として扱い永続的なストレージへ保存すべきか教えるためには，
+スクリプトの <code>upload</code> セクションを使ってください．</p>
+
+<h3 id="run-コマンド:e52f646d428c71e9ec4e13be59006055">run コマンド</h3>
+
+<p><code>roadie run</code> コマンドは，新しい仮想マシンを作成しその上でプログラムを実行します．
+このコマンドは，次の節で説明するスクリプトファイルを引数として受け取ります．
+その他，多数のオプションが用意されていますが，
+最も重要なオプションの一つに <code>--name</code> オプションがあります．
+このオプションを用いることで，作成する仮想マシンに名前を付けることができ，
+また実行結果の取得にもこの名前を使用します．
+なお，<code>--name</code> オプションが与えれれない場合は，
+スクリプトファイル名から一意の名前を生成します．</p>
+
+<p>スクリプトファイルが <code>script.yml</code> で名前が <code>instance1</code>
+である仮想マシンを作成するためには，</p>
+
+<pre><code class="language-sh">$ roadie run --name instance1 script.yml
+</code></pre>
+
+<p>を実行します．</p>
+
+<h3 id="スクリプトファイル:e52f646d428c71e9ec4e13be59006055">スクリプトファイル</h3>
+
+<p>スクリプトファイルは，<code>apt</code>, <code>source</code>, <code>data</code>, <code>run</code>, <code>upload</code> の 5要素からなる
+YAML ファイルです．
+簡単なサンプルファイルは次のようになります．</p>
+
+<pre><code class="language-yaml">apt:
+- unrar
+source: https://github.com/abcdefg/some-program.git
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- ./analyze WoWAH
+upload:
+- *.png
+</code></pre>
+
+<p>大雑把にいうと，上記のスクリプトファイルは次のことを実行します．</p>
+
+<ol>
+<li>apt パッケージの <code>unrar</code> をインストールします,</li>
+<li>ソースコードを Git リポジトリからクローンします,</li>
+<li>ある URL からデータファイルをダウンロードします，</li>
+<li>二つのコマンド，ダウンロードしたファイルの解凍と解析プログラムの実行を行います，</li>
+<li>計算結果として，標準出力に書かれたメッセージと <code>*.png</code> にマッチするファイルを
+クラウドストレージへアップロードします．</li>
+</ol>
+
+<p>なお，スクリプトファイルでは，不要なセクションは省略できます．</p>
+
+<h4 id="apt-セクション:e52f646d428c71e9ec4e13be59006055">apt セクション</h4>
+
+<p><code>apt</code> セクションはプログラムの実行に必要な apt パッケージのリストを設定します．</p>
+
+<pre><code class="language-yaml">apt:
+- python-numpy
+- python-scipy
+- python-matplotlib
+</code></pre>
+
+<p>上の例では，科学技術計算によく用いられる Python パッケージをインストールしています．
+もし，何らかのコマンドを実行した後で apt パッケージのインストールが必要な場合は，
+<code>run</code> セクションい <code>apt-get install</code> コマンドを追加してください．</p>
+
+<h4 id="source-セクション:e52f646d428c71e9ec4e13be59006055">source セクション</h4>
+
+<p><code>source</code> セクションでは，プログラムで必要となるデータファイルの URL リストを指摘できます．
+これらの URL には次の拡張が利用できます．</p>
+
+<ul>
+<li>URL が <code>.git</code> で終わる場合，Git リポジトリとして扱われます．
+すなわち，ソースコードの取得に <code>git clone</code> が使われます．</li>
+<li>URL が <code>dropbox://</code> で始まる場合，ソースコードは
+<a href="https://www.dropbox.com/">Dropbox</a> にあるとみなされます．
+この URL は，Dropbox 上で作成された公開リンクの，<code>https</code> を <code>dropbox</code> へ
+書き換えたものです．</li>
+<li>URL が <code>gs://</code> で始まる場合，そのリソースは Google Cloud Storage 上に
+あるとみなされます．</li>
+<li>それ以外では，<code>http</code> と <code>https</code> から始まる URL をサポートしています．</li>
+</ul>
+
+<p>どの場合でも，URL が <code>.zip</code>, <code>.tar</code> または <code>.tar.gz</code> で終わる場合，
+適切に解凍されます．</p>
+
+<p>例えば，</p>
+
+<pre><code class="language-yaml">source: https://github.com/jkawamoto/roadie.git
+</code></pre>
+
+<p>は，Github からソースコードをクローンして利用します．</p>
+
+<p>しかし，プログラムが開発途中の場合など，
+アーカイブを作成してどこかに配置することが手間な場合もあります．
+<code>roadie</code> は，ローカルにあるファイルをクラウドストレージにアップロードして，
+それらをソースコードとして利用する機能も提供しています．
+この機能を使えば，Web にファイルを保存するスペースを持っていなくても，
+クラウドを利用することができます．
+詳細は，後の節を参照してください．</p>
+
+<p><code>source</code> セクションで指定されたソースファイルは，
+仮想マシン上の <code>/data</code> にコピーされます．
+また，ソースファイルが Python で記載されていて，
+<code>requirements.txt</code> か <code>requirements.in</code> ファイルを含む場合，
+依存パッケージは自動でインストールされます．</p>
+
+<h4 id="data-セクション:e52f646d428c71e9ec4e13be59006055">data セクション</h4>
+
+<p><code>data</code> セクションでは，プログラムの実行に必要なデータファイルの取得先
+URL リストを指定します．
+URL には，<code>source</code> セクションで説明した，
+<code>http</code>, <code>https</code>, <code>gs</code> そして <code>dropbox</code> の 4種類のスキームが利用できます．
+また，同様に URL が <code>.zip</code>, <code>.tar</code> または <code>.tar.gz</code> で終わっている場合，
+適切に解凍されます．</p>
+
+<p>デフォルトでは，指定されたファイルは <code>/data</code> ディレクトリにコピーされます．
+もし他のディレクトリに保存する必要がある場合，
+URL に <code>:</code> に続けて保存先パスを与えることができます．
+例えば，</p>
+
+<pre><code class="language-yaml">data:
+- https://www.sample.com/program.zip:/data/input
+</code></pre>
+
+<p>は，<code>program.zip</code> をダウンロードし，
+解凍して得られたファイルを <code>/data/input</code> にコピーします．
+URL が指すファイルがアーカイブでない場合，別名保存になります．
+例えば，</p>
+
+<pre><code class="language-yaml">data:
+- gs://your-project/dataset/some_data_v2.json:some_data.json
+</code></pre>
+
+<p>は，<code>somr_data_v2.json</code> を Google Cloud Storage からダウンロードし，
+<code>some_data.json</code> という名前で <code>/data</code> に保存します．</p>
+
+<h4 id="run-セクション:e52f646d428c71e9ec4e13be59006055">run セクション</h4>
+
+<p><code>run</code> セクションには，実行するコマンドを順に記述します．
+ここには，任意のコマンドを列挙することができます．
+例えば，プログラムの実行に必要な追加パッケージがある場合は，
+ここでインストールを支持することができます．</p>
+
+<p>例えば，<a href="https://nodejs.org/en/">node.js</a> 用のアプリケーションの場合，
+<code>run</code> セクション最初のコマンドは <code>npm install</code> になるでしょう．
+この時，<code>apt</code> セクションで node.js をインストールするのを忘れないでください．</p>
+
+<p><code>source</code> セクションで指定したソースファイルを実行する場合，
+各コマンドを <code>./</code> で始めることを忘れないでください．
+<code>roadie</code> は自動で <code>/data</code> をパスへは追加しません．</p>
+
+<p><code>run</code> セクションに列挙された各コマンドには，0 から順に番号が割り当てられます．
+つまり，最初のコマンドは 0 番になります．
+このこ番号は，標準出力へ書き出されたメッセージの参照に利用します．
+<em>i</em> 番目のコマンドの出力は <code>stdout{i}.txt</code> としてクラウドストレージに保存されます．
+これらのファイルは <code>roadie result</code> コマンドで取得できます．</p>
+
+<h4 id="upload-セクション:e52f646d428c71e9ec4e13be59006055">upload セクション</h4>
+
+<p><code>upload</code> セクションには，
+<a href="https://en.wikipedia.org/wiki/Glob_(programming">glob</a>)
+パタンのリストを設定します.
+いずれかのパタンにマッチしたファイルは，
+プログラムの実行結果としてクラウドストレージで保存されます．
+これらのファイルも <code>roadie result</code> コマンドで取得できます．</p>
+
+<h3 id="ローカルファイルをソースコードとして使用する:e52f646d428c71e9ec4e13be59006055">ローカルファイルをソースコードとして使用する</h3>
+
+<p><code>source</code> セクションでは，Web 上の様々なところから
+ソースコードを取得できるようになっています．
+しかし，プログラムが開発途中である場合など，Web 上に配置することが手間な場合もあるでしょう．
+<code>roadie</code> では，ローカルにあるファイルをクラウドストレージへアップロードし，
+それらをソースコードとして利用する仕組みが備わっています．
+この機能を使う場合，スクリプトファイルの <code>source</code> セクションは省略できます．</p>
+
+<p><code>roadie run</code> コマンドに <code>--local</code> フラッグを用いてローカルディレクトリを指定した場合，
+<code>roadie</code> は，指定されたディレクトリ以下のファイルをソースコードとして扱います．</p>
+
+<p>例えば，</p>
+
+<pre><code class="language-sh">$ roadie run --local . --name instance-1 script.yml
+</code></pre>
+
+<p>では，カレントディレクトリ以下のファイルがソースコードとして扱われます．
+これらのファイルはアーカイブされ，クラウドストレージにアップロードされます．
+そして，そのアーカイブをソースコードとする仮想マシンを作成し実行します．</p>
+
+<p>もし，<code>--local</code> フラッグでディレクトリではなく単一のファイルを指定した場合，
+そのファイルをソースファイルとして扱います．</p>
+
+<p>この <code>--local</code> フラッグを利用してアップロードされたソースファイルは，
+再利用することができます．
+ソースコードの変更なしに，別のパラメータでプログラムを実行させたい場合などに便利です．
+ソースコードの再利用には，<code>--source</code> と共に，再利用したい仮想マシンの名前を渡します．</p>
+
+<p>例えば，<code>--local</code> フラッグを使って，次のようにプログラムを実行したとします．</p>
+
+<pre><code class="language-sh">$ roadie run --local . --name instance-1 script.yml
+</code></pre>
+
+<p>この時にアップロードされたソースコードを再利用する場合，</p>
+
+<pre><code class="language-sh">$ roadie run --source instance-1 --name instance2 script2.yml
+</code></pre>
+
+<p>上記のように指定します．</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="content-section-a">
+  <div class="container">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-4734862314145555"
+         data-ad-slot="6733697427"
+         data-ad-format="auto"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="copyright text-muted small">
+                  Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
+                  The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
+                </p>
+            </div>
+            <div class="col-md-4">
+		Built with <a href="http://gohugo.io">Hugo</a> and the
+		<a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
+		theme.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery-2.2.0.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery.easing-1.3.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/bootstrap.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/landing-page.js"></script>
+
+
+
+
+<script>
+ (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
+   Date();a=s.createElement(o),
+		                  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ ga('create', 'UA-82315630-1', 'auto');
+ ga('send', 'pageview');
+</script>
+
+
+
+</body>
+</html>
+

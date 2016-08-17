@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A easy way to run your programs on Google Cloud Platform.">
+    <meta name="author" content="Junpei Kawamoto">
+    <meta name="Identifier-URL" content="https://jkawamoto.github.io/roadie/" />
+
+    <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
+
+    <meta property="og:title" content="Execution" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
+    <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
+    <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
+
+    <base href="https://jkawamoto.github.io/roadie/">
+    <title>Execution</title>
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/landing-page.css" rel="stylesheet">
+
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+    <style>
+      .navbar {
+    border-color: #e7e7e7;
+}
+
+.content-section-a,
+footer,
+.navbar {
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+.navbar a:link,
+.navbar-default .navbar-nav>li>a {
+  color: #777;
+}
+
+.navbar a:hover,
+.navbar-default .navbar-nav>li>a:hover {
+  color: rgb(51, 51, 51);
+}
+
+.content-section-b {
+  background-color: white;
+  color: #333;
+}
+
+body {
+  color: rgb(51, 51, 51);
+}
+
+.header-container h1,
+.header-container h2,
+.header-container h3,
+.header-container h4 {
+  color: rgb(51, 51, 51);
+}
+
+    </style>
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({
+        google_ad_client: "ca-pub-4734862314145555",
+        enable_page_level_ads: true
+      });
+    </script>
+
+</head>
+<body>
+
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="page-scroll navbar-brand" href="#intro">Roadie</a>
+        </div>
+        
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie">Github</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents/top/">Docs</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
+                
+                <li>
+                  <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
+                </li>
+            </ul>
+        </div>
+        
+    </div>
+    
+</nav>
+
+
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">Execution</h2>
+          
+
+<h3 id="execution-model:e52f646d428c71e9ec4e13be59006055">Execution model</h3>
+
+<p>roadie runs your program on a container.
+The image of the container is
+<a href="https://github.com/jkawamoto/roadie-gcp">jkawamoto/roadie-gcp</a>
+which is based on <a href="http://www.ubuntu.com/">Ubuntu</a>.
+That means most of Ubuntu packages are available in roadie, too.
+You can install such packages via <code>apt</code> section in script file.</p>
+
+<p>On the running container, your program will be set in <code>/data</code>,
+and other data specified <code>data</code> section in script file will also be set in
+<code>/data</code> by default.
+If you provide your source codes as an archived file and
+roadie reports an error that it couldn&rsquo;t find your program,
+make sure that your archive file does not create additional directory.</p>
+
+<p>For example, you provide your program <code>main</code> in <code>archive.zip</code> and
+you expect your program will be set in <code>/data/main</code>.
+But, depending on a way to create such archive file, your program may be set
+in <code>/data/archive/main</code>.
+For debugging, add <code>ls -la</code> on top of the run section in your script.</p>
+
+<p>Your program has three ways to outputs; writing to <code>stdout</code>, <code>stderr</code>, and
+creating other files.</p>
+
+<p>All outputs written in <code>stdout</code> are treated as official results.
+They are stored to persistent storage,
+i.e. <a href="https://cloud.google.com/storage/">Google Cloud Storage</a>,
+so that you can access them any time.
+Each command in the <code>run</code> section of your script makes one file to store
+outputs written in <code>stdout</code>.
+More precisely, <em>i</em>-th command creates <code>stdout{i}.txt</code>,
+where <em>i</em> is a zero-origin integer.</p>
+
+<p>On the other hand, outputs written in <code>stderr</code> are not stored in any persistent
+disks but treated as prompt logs, which means you can check such logs while
+your instance is still running.
+Because outputs written in <code>stderr</code> cause of network traffic, it isn&rsquo;t
+recommended to write huge messages there.</p>
+
+<p>By default, any other files created by your program will not be stored as
+results.
+To specify which files should be treated as results
+and stored to persistent storage,
+use <code>upload</code> section in the script file.</p>
+
+<h3 id="run-command:e52f646d428c71e9ec4e13be59006055">run command</h3>
+
+<p><code>roadie run</code> command creates an instance and runs your program on it.
+This command requires one script file explained in the next section.
+There are many option flags but one of the useful options is <code>--name</code>,
+which sets a given name to the creating instance.
+So, suppose you will create an instance named <code>instance1</code>
+with script file <code>script.yml</code>, run</p>
+
+<pre><code class="language-sh">$ roadie run --name instance1 script.yml
+</code></pre>
+
+<p>If you don&rsquo;t set any names, roadie makes some name.
+After creating the instance, roadie shows the name of the instance.
+Such name is used to check instance status, see logs,
+and download computation results.</p>
+
+<h3 id="script-file:e52f646d428c71e9ec4e13be59006055">Script file</h3>
+
+<p>Script file is a YAML file which consists of five sections;
+<code>apt</code>, <code>source</code>, <code>data</code>, <code>run</code>, <code>upload</code>.
+Here is a simple example of the script.</p>
+
+<pre><code class="language-yaml">apt:
+- unrar
+source: https://github.com/abcdefg/some-program.git
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- ./analyze WoWAH
+upload:
+- *.png
+</code></pre>
+
+<p>Roughly speaking, the above script means</p>
+
+<ol>
+<li>Install apt package <code>unrar</code>,</li>
+<li>Clone source codes from a git repository,</li>
+<li>Download a data file from a certain URL.</li>
+<li>Execute two commands; expand the downloaded file and run an analyze program.</li>
+<li>Upload created file matching a glob pattern <code>*.png</code>
+in addition to outputs written in <code>stdout</code></li>
+</ol>
+
+<h4 id="apt:e52f646d428c71e9ec4e13be59006055">apt</h4>
+
+<p><code>apt</code> section takes a list of apt package names.</p>
+
+<pre><code class="language-yaml">apt:
+- python-numpy
+- python-scipy
+- python-matplotlib
+</code></pre>
+
+<p>The above example installs three major python packages.
+Note that, if you want to install apt packages after running some commands,
+you can write normal <code>apt-get install</code> command in your <code>run</code> section.</p>
+
+<h4 id="source:e52f646d428c71e9ec4e13be59006055">source</h4>
+
+<p><code>source</code> section takes one URL which points the location your program stored.
+This URL can take several forms.</p>
+
+<ul>
+<li>If the URL ends with <code>.git</code>, roadie treats it a Git repository URL.
+roadie use <code>git clone</code> to obtain your source codes.</li>
+<li>If the URL starts with <code>dropbox://</code> instead of <code>http://</code> and <code>https://</code>,
+roadie thinks your source codes are provided in public directory in
+<a href="https://www.dropbox.com/">Dropbox</a>.
+You can make such URL easily by replacing <code>https://</code> to <code>dropbox://</code>
+in your shared link made by Dropbox.</li>
+<li>If the URL starts with <code>gs://</code>, which means your source codes are stored in
+Google Cloud Storage, roadie downloads them.</li>
+<li>Otherwise, roadie downloads the URL via http or https.</li>
+</ul>
+
+<p>In any cases, if the URL ends with <code>.zip</code>, <code>.tar</code>, or <code>.tar.gz</code>,
+downloaded files are expanded by <code>unzip</code> or <code>tar</code> command.</p>
+
+<p>For example,</p>
+
+<pre><code class="language-yaml">source: https://github.com/jkawamoto/roadie.git
+</code></pre>
+
+<p>clones the Git repository.</p>
+
+<p>However, if your program is still work in progress,
+it could be trouble to make an archive file and upload it,
+or push your codes to some repository.
+roadie has a function to make such archive file containing files in a directory
+and upload it instead of you. See <strong>specify source codes on the fly</strong> section.</p>
+
+<p>The downloaded source codes are stored in <code>/data</code> directory.</p>
+
+<p>If your source codes are written in python
+and they have <code>requirements.txt</code> or <code>requirements.in</code>,
+those required packages will be installed automatically.</p>
+
+<h4 id="data:e52f646d428c71e9ec4e13be59006055">data</h4>
+
+<p><code>data</code> section takes a list of URLs.
+Those URL support, <code>http</code>, <code>https</code>, <code>gs</code>, and <code>dropbox</code>.
+As same as <code>source</code> section, if the URL ends with <code>.zip</code>, <code>.tar</code>, or <code>.tar.gz</code>,
+those files are expanded as expected.</p>
+
+<p>By default, downloaded files are stored in <code>/data</code> directory,
+which is same directory as source codes.
+You can customize destinations by adding <code>:</code> plus destination path to each URL.
+For example,</p>
+
+<pre><code class="language-yaml">data:
+- https://www.sample.com/program.zip:/data/input
+</code></pre>
+
+<p>downloads <code>program.zip</code> and stored files in the zip into <code>/data/input</code>.
+Here is another example,</p>
+
+<pre><code class="language-yaml">data:
+- gs://your-project/dataset/some_data_v2.json:some_data.json
+</code></pre>
+
+<p>downloads <code>somr_data_v2.json</code> into <code>/data</code> from a bucket in
+Google Cloud Storage, and rename it to <code>some_data.json</code>.</p>
+
+<h4 id="run:e52f646d428c71e9ec4e13be59006055">run</h4>
+
+<p><code>run</code> section takes a list of commands.
+You can write any commands such as running your program,
+installing any packages,
+downloading any files (you should use <code>data</code> section, though), etc.</p>
+
+<p>Note that, you may need to start your command with <code>./</code>
+if the running commands are in your source codes and set in <code>/data</code>.
+roadie doesn&rsquo;t add <code>/data</code> to <code>$PATH</code>.</p>
+
+<p>For example, if your program is written in <a href="https://nodejs.org/en/">node.js</a>,
+the first command may <code>npm install</code>.
+Of course, you need.js to install node in <code>apt</code> section.</p>
+
+<p>Each command listed in the <code>run</code> section has a zero-origin number,
+i,e, the first command has 0.
+This number is used to store outputs written in <code>stdout</code> and
+the outputs written in <code>stdout</code> from <em>i</em>-th command are stored
+in <code>stdout{i}.txt</code> file.
+Those files will be accessed via <code>roadie result</code>.</p>
+
+<h4 id="upload:e52f646d428c71e9ec4e13be59006055">upload</h4>
+
+<p><code>upload</code> section takes a list of
+<a href="https://en.wikipedia.org/wiki/Glob_(programming">glob</a>) patterns.
+Files matching one of those patterns are treated of results
+and uploaded to a cloud storage.
+To access those uploaded files, use <code>roadie result</code> command.</p>
+
+<h3 id="specify-source-codes-on-the-fly:e52f646d428c71e9ec4e13be59006055">Specify source codes on the fly</h3>
+
+<p>Sometimes, it is difficult to provide your source codes from the web,
+such as Git repository, Dropbox, and some web site.
+roadie helps to upload your source code from a local PC to a cloud storage,
+which is a private place.
+If you use this function, you can omit <code>source</code> section in your script file.</p>
+
+<h4 id="upload-source-codes-from-a-local-directory:e52f646d428c71e9ec4e13be59006055">Upload source codes from a local directory</h4>
+
+<p><code>--local</code> flag of <code>roadie run</code> command takes a path of your source codes.
+For example,</p>
+
+<pre><code class="language-sh">$ roadie run --local . --name instance-1 script.yml
+</code></pre>
+
+<p>notifies roadie of the current path as the root path of your source codes.
+roadie makes an archive file of the path and uploads it to a cloud storage.
+Then, the created instance will use that file as the source codes.</p>
+
+<p>If you give a path of one file with <code>--local</code> flag,
+roadie uploads that file and the created instance will use it.</p>
+
+<h4 id="previously-uploaded-files:e52f646d428c71e9ec4e13be59006055">Previously uploaded files</h4>
+
+<p><code>--source</code> flag of <code>roadie run</code> command takes an instance name
+which run previously.
+If the previous instance created with <code>--local</code> flag,
+the created new instance will use same uploaded source file.
+For example, you created an instance by</p>
+
+<pre><code class="language-sh">$ roadie run --local . --name instance-1 script.yml
+</code></pre>
+
+<p>and now you are creating another instance by</p>
+
+<pre><code class="language-sh">$ roadie run --source instance-1 --name instance2 script2.yml
+</code></pre>
+
+<p>the new instance named <code>instance-2</code> uses same source codes as <code>instance-1</code>.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="content-section-a">
+  <div class="container">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-4734862314145555"
+         data-ad-slot="6733697427"
+         data-ad-format="auto"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="copyright text-muted small">
+                  Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
+                  The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
+                </p>
+            </div>
+            <div class="col-md-4">
+		Built with <a href="http://gohugo.io">Hugo</a> and the
+		<a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
+		theme.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery-2.2.0.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery.easing-1.3.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/bootstrap.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/landing-page.js"></script>
+
+
+
+
+<script>
+ (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
+   Date();a=s.createElement(o),
+		                  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ ga('create', 'UA-82315630-1', 'auto');
+ ga('send', 'pageview');
+</script>
+
+
+
+</body>
+</html>
+

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/README/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/configuration/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/top/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/data/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/execution/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/installation/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/logging/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/installation/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/logging/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/top/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/data/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/execution/</loc>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/configuration/</loc>
+  </url>
+  
+</urlset>

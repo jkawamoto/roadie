@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A easy way to run your programs on Google Cloud Platform.">
+    <meta name="author" content="Junpei Kawamoto">
+    <meta name="Identifier-URL" content="https://jkawamoto.github.io/roadie/" />
+
+    <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
+
+    <meta property="og:title" content="ファイルの管理" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
+    <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
+    <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
+
+    <base href="https://jkawamoto.github.io/roadie/">
+    <title>ファイルの管理</title>
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
+
+    
+    <link href="https://jkawamoto.github.io/roadie/css/landing-page.css" rel="stylesheet">
+
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+    <style>
+      .navbar {
+    border-color: #e7e7e7;
+}
+
+.content-section-a,
+footer,
+.navbar {
+  background-color: #f8f8f8;
+  color: #333;
+}
+
+.navbar a:link,
+.navbar-default .navbar-nav>li>a {
+  color: #777;
+}
+
+.navbar a:hover,
+.navbar-default .navbar-nav>li>a:hover {
+  color: rgb(51, 51, 51);
+}
+
+.content-section-b {
+  background-color: white;
+  color: #333;
+}
+
+body {
+  color: rgb(51, 51, 51);
+}
+
+.header-container h1,
+.header-container h2,
+.header-container h3,
+.header-container h4 {
+  color: rgb(51, 51, 51);
+}
+
+    </style>
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({
+        google_ad_client: "ca-pub-4734862314145555",
+        enable_page_level_ads: true
+      });
+    </script>
+
+</head>
+<body>
+
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="page-scroll navbar-brand" href="#intro">Roadie</a>
+        </div>
+        
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie">Github</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents/top/">Docs</a></li>
+                
+                
+                <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
+                
+                <li>
+                  <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
+                </li>
+            </ul>
+        </div>
+        
+    </div>
+    
+</nav>
+
+
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">ファイルの管理</h2>
+          
+
+<p><code>roadie</code> は 3種類のデータをクラウドストレージ上に保存します．
+それらのデータを管理するために，<code>source</code>, <code>data</code>, <code>result</code> の
+3コマンドが用意されています．</p>
+
+<h3 id="source-コマンド:494b4c66d4128fe395a8c9607fab3629">source コマンド</h3>
+
+<p><code>source</code> コマンドは <code>roadie run</code> に <code>--local</code> フラッグを付けてアップロードした
+ソースコードの管理を行います．</p>
+
+<p>これまでにアップロードされたソースコードアーカイブの一覧を取得するには，</p>
+
+<pre><code class="language-sh">$ roadie source list
+</code></pre>
+
+<p>を実行します．また，その中から <code>FILENAME</code> というファイルを削除する場合，</p>
+
+<pre><code class="language-sh">$ roadie source delete FILENAME
+</code></pre>
+
+<p>を実行します．</p>
+
+<h3 id="data-コマンド:494b4c66d4128fe395a8c9607fab3629">data コマンド</h3>
+
+<p><code>data</code> コマンドは，スクリプトファイルの <code>data</code> セクションで利用する
+データファイルの管理を行います．</p>
+
+<p>あるファイル <code>FILENAME</code> を <code>data</code> セクションで利用するためにアップロードする場合，</p>
+
+<pre><code class="language-sh">$ roadie data put FILENAME
+</code></pre>
+
+<p>を実行してください．アップロードされたファイルの URL が表示されます．
+また，これまでにアップロードしたファイルと，その URL を取得するには，</p>
+
+<pre><code class="language-sh">$ roadie data list --url
+</code></pre>
+
+<p>を実行してください．</p>
+
+<p>アップロード済みのデータファイル <code>FILENAME</code> を削除するには，</p>
+
+<pre><code class="language-sh">$ roadie data delete FILENAME
+</code></pre>
+
+<p>を実行してください．</p>
+
+<h3 id="result-コマンド:494b4c66d4128fe395a8c9607fab3629">result コマンド</h3>
+
+<p><code>result</code> コマンドは計算結果としてアップロードされたファイルを管理し，
+ローカル PC へのダウンロード機能を提供します．</p>
+
+<p>実行が終了したインスタンスの一覧を取得するには，</p>
+
+<pre><code class="language-sh">$ roadie result list
+</code></pre>
+
+<p>を実行してください．また，各インスタンス <code>INSTANCE</code> がアップロードした
+計算結果のファイルを調べるには，</p>
+
+<pre><code class="language-sh">$ roadie result INSTANCE
+</code></pre>
+
+<p>を実行してください．</p>
+
+<p><code>roadie result get</code> コマンドは，
+それらのファイルのうち与えられた Glob パタンにマッチするファイルをダウンロードします．
+ワイルドカードを用いてすべての結果を取得する場合，</p>
+
+<pre><code class="language-sh">$ roadie result get INSTANCE &quot;*&quot; -o ./res
+</code></pre>
+
+<p>を実行してください．<code>-o</code> フラッグによりダウンロードしたファイルの保存先を指定できます．</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="content-section-a">
+  <div class="container">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-4734862314145555"
+         data-ad-slot="6733697427"
+         data-ad-format="auto"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+</div>
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="copyright text-muted small">
+                  Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
+                  The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
+                </p>
+            </div>
+            <div class="col-md-4">
+		Built with <a href="http://gohugo.io">Hugo</a> and the
+		<a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
+		theme.
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery-2.2.0.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/jquery.easing-1.3.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/bootstrap.min.js"></script>
+
+
+<script src="https://jkawamoto.github.io/roadie/js/landing-page.js"></script>
+
+
+
+
+<script>
+ (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
+   Date();a=s.createElement(o),
+		                  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+ })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ ga('create', 'UA-82315630-1', 'auto');
+ ga('send', 'pageview');
+</script>
+
+
+
+</body>
+</html>
+
