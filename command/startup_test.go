@@ -49,7 +49,7 @@ func TestStartup(t *testing.T) {
 		t.Error("Instance name is wrong")
 	}
 
-	if !strings.Contains(res, fmt.Sprintf("docker rm %s", opt.Name)) {
+	if !strings.Contains(res, fmt.Sprintf("docker rm -f %s", opt.Name)) {
 		t.Error("Before retrying, previous container must be deleted.")
 	}
 
