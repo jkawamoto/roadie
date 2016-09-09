@@ -22,9 +22,15 @@
 cd /root
 
 # Start logging.
-docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
-  -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
-
+if [ -n "`docker ps -a | grep fluentd`" ]; then
+  docker rm -f fluentd
+fi
+for i in `seq 5`
+do
+  docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
+    -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd \
+    || break
+done
 sleep 30s
 
 # Run the script
@@ -34,6 +40,8 @@ EOF
 
 for i in `seq {{.Retry}}`
 do
+  if [ -n "`docker ps -a | grep {{.Name}}`" ]; then
+    docker rm -f {{.Name}}
+  fi
   docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml || break
-  docker rm {{.Name}}
 done
