@@ -1,3 +1,11 @@
+## 0.2.2 (2016-09-08)
+### Added
+- Support to restart program after rebooting containers.
+
+### Fixed
+- Retry number in run command.
+
+
 ## 0.2.1 (2016-08-13)
 ### Fixed
 - Issue #15: Delete old container before retrying.
