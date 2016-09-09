@@ -109,7 +109,7 @@ func CmdRun(c *cli.Context) error {
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
 		NoShutdown:             c.Bool("no-shutdown"),
 		Dry:                    c.Bool("dry"),
-		Retry:                  c.Int64("retry"),
+		Retry:                  c.Int64("retry") + 1,
 	}
 	if err := cmdRun(conf, &opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
