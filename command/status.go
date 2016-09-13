@@ -23,57 +23,20 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/mitchellh/mapstructure"
 	"github.com/urfave/cli"
 )
-
-const (
-	eventSubtypeInsert = "compute.instances.insert"
-	eventSubtypeDelete = "compute.instances.delete"
-)
-
-// ActivityPayload defines the payload structure of activity log.
-type ActivityPayload struct {
-	EventTimestampUs string `mapstructure:"event_timestamp_us"`
-	EventType        string `mapstructure:"vent_type"`
-	TraceID          string `mapstructure:"trace_id"`
-	Actor            struct {
-		User string
-	}
-	Resource struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-	Version      string
-	EventSubtype string `mapstructure:"event_subtype"`
-	Operation    struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-}
-
-// getActivityPayload converts LogEntry's payload to a ActivityPayload.
-func getActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
-	var res ActivityPayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
 
 // CmdStatus shows status of instances.
 func CmdStatus(c *cli.Context) error {
@@ -94,6 +57,11 @@ func CmdStatus(c *cli.Context) error {
 // required. If all is true, print all instances otherwise information of
 // instances of which results are deleted already will be omitted.
 func cmdStatus(conf *config.Config, all bool) error {
+
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Prefix = "Loading information..."
+	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
+	s.Start()
 
 	instances := make(map[string]struct{})
 	if !all {
@@ -123,57 +91,33 @@ func cmdStatus(conf *config.Config, all bool) error {
 
 	}
 
-	ch := make(chan *LogEntry)
-	chErr := make(chan error)
-
-	go GetLogEntries(conf.Gcp.Project,
-		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", ch, chErr)
-
 	runnings := make(map[string]bool)
+	ctx := context.Background()
+	requester, _ := log.NewCloudLoggingService(ctx)
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
-	s.Start()
+	err := log.GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
 
-	func() {
+		// If all flag is not set, show only following instances;
+		//  - running instances,
+		//  - ended but results are note deleted instances.
+		switch payload.EventSubtype {
+		case log.EventSubtypeInsert:
+			runnings[payload.Resource.Name] = true
 
-		for {
-			select {
-			case entry := <-ch:
-
-				if entry == nil {
-					return
-				}
-
-				// If all flag is not set show only following instances;
-				//  - running instances,
-				//  - ended but results are note deleted instances.
-				if payload, err := getActivityPayload(entry); err == nil {
-
-					switch payload.EventSubtype {
-					case eventSubtypeInsert:
-						runnings[payload.Resource.Name] = true
-
-					case eventSubtypeDelete:
-						runnings[payload.Resource.Name] = false
-						if _, exist := instances[payload.Resource.Name]; !all && !exist {
-							delete(runnings, payload.Resource.Name)
-						}
-					}
-
-				} else {
-					log.Println(chalk.Red.Color(err.Error()))
-				}
-
-			case err := <-chErr:
-				fmt.Println(err.Error())
-				return
+		case log.EventSubtypeDelete:
+			runnings[payload.Resource.Name] = false
+			if _, exist := instances[payload.Resource.Name]; !all && !exist {
+				delete(runnings, payload.Resource.Name)
 			}
 		}
 
-	}()
+		return
+
+	})
 	s.Stop()
+	if err != nil {
+		return err
+	}
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
