@@ -86,6 +86,12 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 		opt.Output = ioutil.Discard
 	}
 
+	ctx := context.Background()
+	requester, err := NewCloudLoggingService(ctx)
+	if err != nil {
+		return
+	}
+
 	// Instead of logName, which is specified TAG env in roadie-gce,
 	// use instance name to distinguish instances. This update makes all logs
 	// will have same log name, docker, so that such log can be stored into
@@ -98,7 +104,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	var lastTimestamp *time.Time
 	for {
 
-		err = GetLogEntries(context.Background(), conf.Gcp.Project, filter, func(entry *LogEntry) (err error) {
+		err = GetLogEntries(ctx, conf.Gcp.Project, filter, requester, func(entry *LogEntry) (err error) {
 
 			// nil entry can be passed.
 			if entry == nil {

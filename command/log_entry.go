@@ -41,12 +41,21 @@ type LogEntry struct {
 	Payload   interface{}
 }
 
-// GetLogEntries downloads log entries as a goroutine.
-func GetLogEntries(ctx context.Context, project, filter string, handler func(*LogEntry) error) (err error) {
+// LogEntryRequester is an inteface used in GetLogEntries.
+// This interface requests supplying Do method which process a request of
+// obtaining log entries.
+type LogEntryRequester interface {
+	Do(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
+}
 
-	// context may be canceled in this function.
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// CloudLoggingService implements LogEntryRequester interface.
+// It requests logs to google cloud logging service.
+type CloudLoggingService struct {
+	service *logging.Service
+}
+
+// NewCloudLoggingService creates a new CloudLoggingService with a given context.
+func NewCloudLoggingService(ctx context.Context) (res CloudLoggingService, err error) {
 
 	client, err := google.DefaultClient(ctx, logging.CloudPlatformReadOnlyScope)
 	if err != nil {
@@ -58,26 +67,28 @@ func GetLogEntries(ctx context.Context, project, filter string, handler func(*Lo
 		return
 	}
 
-	return getLogEntries(ctx, project, filter, handler, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-
-		return service.Entries.List(req).Do()
-
-	})
+	return CloudLoggingService{service: service}, nil
 
 }
 
-// getLogEntries requests log entries of a given project via requestDo function.
+// Do requests a given request with the specified context.
+func (s CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+	return s.service.Entries.List(req).Do()
+
+}
+
+// GetLogEntries requests log entries of a given project via a given requester.
 // Obtained log entries are filtered by a given filter query and will be passed
 // a given handler entry by entry. If the handler returns non nil value,
 // obtaining log entries is canceled immediately.
-func getLogEntries(ctx context.Context, project, filter string,
-	handler func(*LogEntry) error, requestDo func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)) (err error) {
+func GetLogEntries(ctx context.Context, project, filter string, requester LogEntryRequester, handler func(*LogEntry) error) (err error) {
 
 	// pageToken will be used when logs are divided into several pages.
 	pageToken := ""
 	for {
 
-		res, err := requestDo(&logging.ListLogEntriesRequest{
+		res, err := requester.Do(&logging.ListLogEntriesRequest{
 			ProjectIds: []string{project},
 			Filter:     filter,
 			PageToken:  pageToken,

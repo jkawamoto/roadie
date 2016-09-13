@@ -130,8 +130,10 @@ func cmdStatus(conf *config.Config, all bool) error {
 	}
 
 	runnings := make(map[string]bool)
-	GetLogEntries(context.Background(), conf.Gcp.Project,
-		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", func(entry *LogEntry) (err error) {
+	ctx := context.Background()
+	requester, _ := NewCloudLoggingService(ctx)
+	GetLogEntries(ctx, conf.Gcp.Project,
+		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", requester, func(entry *LogEntry) (err error) {
 
 			if entry == nil {
 				return
