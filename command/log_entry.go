@@ -55,7 +55,7 @@ type CloudLoggingService struct {
 }
 
 // NewCloudLoggingService creates a new CloudLoggingService with a given context.
-func NewCloudLoggingService(ctx context.Context) (res CloudLoggingService, err error) {
+func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService, err error) {
 
 	client, err := google.DefaultClient(ctx, logging.CloudPlatformReadOnlyScope)
 	if err != nil {
@@ -67,12 +67,12 @@ func NewCloudLoggingService(ctx context.Context) (res CloudLoggingService, err e
 		return
 	}
 
-	return CloudLoggingService{service: service}, nil
+	return &CloudLoggingService{service: service}, nil
 
 }
 
 // Do requests a given request with the specified context.
-func (s CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
 	return s.service.Entries.List(req).Do()
 

@@ -77,6 +77,10 @@ type logOpt struct {
 	Follow bool
 	// io.Writer to be outputted logs.
 	Output io.Writer
+	// Context, default is context.Background.
+	Context context.Context
+	// Used to obtain log entries.
+	Requester *CloudLoggingService
 }
 
 func cmdLog(conf *config.Config, opt *logOpt) (err error) {
@@ -85,11 +89,14 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	if opt.Output == nil {
 		opt.Output = ioutil.Discard
 	}
-
-	ctx := context.Background()
-	requester, err := NewCloudLoggingService(ctx)
-	if err != nil {
-		return
+	if opt.Context == nil {
+		opt.Context = context.Background()
+	}
+	if opt.Requester == nil {
+		opt.Requester, err = NewCloudLoggingService(opt.Context)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Instead of logName, which is specified TAG env in roadie-gce,
@@ -104,7 +111,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	var lastTimestamp *time.Time
 	for {
 
-		err = GetLogEntries(ctx, conf.Gcp.Project, filter, requester, func(entry *LogEntry) (err error) {
+		err = GetLogEntries(opt.Context, conf.Gcp.Project, filter, opt.Requester, func(entry *LogEntry) (err error) {
 
 			// nil entry can be passed.
 			if entry == nil {
