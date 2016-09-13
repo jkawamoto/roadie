@@ -105,11 +105,19 @@ func getLogEntries(ctx context.Context, project, filter string,
 			}
 			timestamp = timestamp.In(time.Local)
 
-			if err = handler(&LogEntry{
-				Timestamp: timestamp,
-				Payload:   v.JsonPayload,
-			}); err != nil {
-				return err
+			select {
+			case <-ctx.Done():
+				// If canceled, return with a given error.
+				return ctx.Err()
+
+			default:
+				// Not canceled yet, pass an obtained entry to the handler.
+				if err = handler(&LogEntry{
+					Timestamp: timestamp,
+					Payload:   v.JsonPayload,
+				}); err != nil {
+					return err
+				}
 			}
 
 		}

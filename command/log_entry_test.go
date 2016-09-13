@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -125,6 +126,75 @@ func TestGetLogEntries(t *testing.T) {
 	// Checking how many times handker called.
 	if invoked != 4 {
 		t.Error("NextPageToken doesn't work")
+	}
+
+}
+
+func TestStopGetLogEntries(t *testing.T) {
+
+	// Test getLogEntries will be canceled when handler returns non nil values.
+	var invoked int
+	project := "test-project"
+	filter := "test-filter"
+	getLogEntries(context.Background(), project, filter,
+		func(entry *LogEntry) error {
+			invoked++
+			return fmt.Errorf("Test error.")
+		},
+		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+			return &logging.ListLogEntriesResponse{
+				Entries: []*logging.LogEntry{
+					&logging.LogEntry{
+						JsonPayload: "samplePayload",
+						Timestamp:   "2006-01-02T15:04:05Z",
+					},
+					&logging.LogEntry{
+						JsonPayload: "samplePayload",
+						Timestamp:   "2006-01-02T15:04:05.12345Z",
+					},
+				}}, nil
+
+		})
+
+	if invoked != 1 {
+		t.Error("handler reutns some error but getLogEntries didn't stop")
+	}
+
+}
+
+func TestCancelGetLogEntries(t *testing.T) {
+
+	// Test getLogEntries will be canceled via context.
+	project := "test-project"
+	filter := "test-filter"
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var invoked int
+	getLogEntries(ctx, project, filter,
+		func(entry *LogEntry) error {
+			invoked++
+			cancel()
+			return nil
+		},
+		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+			return &logging.ListLogEntriesResponse{
+				Entries: []*logging.LogEntry{
+					&logging.LogEntry{
+						JsonPayload: "samplePayload",
+						Timestamp:   "2006-01-02T15:04:05Z",
+					},
+					&logging.LogEntry{
+						JsonPayload: "samplePayload",
+						Timestamp:   "2006-01-02T15:04:05.12345Z",
+					},
+				}}, nil
+
+		})
+
+	if invoked != 1 {
+		t.Error("context was canceled but getLogEntries didn't stop")
 	}
 
 }
