@@ -23,10 +23,11 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
@@ -95,6 +96,11 @@ func CmdStatus(c *cli.Context) error {
 // instances of which results are deleted already will be omitted.
 func cmdStatus(conf *config.Config, all bool) error {
 
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Prefix = "Loading information..."
+	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
+	s.Start()
+
 	instances := make(map[string]struct{})
 	if !all {
 
@@ -123,56 +129,37 @@ func cmdStatus(conf *config.Config, all bool) error {
 
 	}
 
-	ch := make(chan *LogEntry)
-	chErr := make(chan error)
-
-	go GetLogEntries(conf.Gcp.Project,
-		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", ch, chErr)
-
 	runnings := make(map[string]bool)
+	GetLogEntries(context.Background(), conf.Gcp.Project,
+		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", func(entry *LogEntry) (err error) {
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
-	s.Start()
-
-	func() {
-
-		for {
-			select {
-			case entry := <-ch:
-
-				if entry == nil {
-					return
-				}
-
-				// If all flag is not set show only following instances;
-				//  - running instances,
-				//  - ended but results are note deleted instances.
-				if payload, err := getActivityPayload(entry); err == nil {
-
-					switch payload.EventSubtype {
-					case eventSubtypeInsert:
-						runnings[payload.Resource.Name] = true
-
-					case eventSubtypeDelete:
-						runnings[payload.Resource.Name] = false
-						if _, exist := instances[payload.Resource.Name]; !all && !exist {
-							delete(runnings, payload.Resource.Name)
-						}
-					}
-
-				} else {
-					log.Println(chalk.Red.Color(err.Error()))
-				}
-
-			case err := <-chErr:
-				fmt.Println(err.Error())
+			if entry == nil {
 				return
 			}
-		}
 
-	}()
+			// If all flag is not set show only following instances;
+			//  - running instances,
+			//  - ended but results are note deleted instances.
+			payload, err := getActivityPayload(entry)
+			if err != nil {
+				return
+			}
+
+			switch payload.EventSubtype {
+			case eventSubtypeInsert:
+				runnings[payload.Resource.Name] = true
+
+			case eventSubtypeDelete:
+				runnings[payload.Resource.Name] = false
+				if _, exist := instances[payload.Resource.Name]; !all && !exist {
+					delete(runnings, payload.Resource.Name)
+				}
+			}
+
+			return
+
+		})
+
 	s.Stop()
 
 	table := uitable.New()

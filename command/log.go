@@ -25,10 +25,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/config"
@@ -85,9 +86,6 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 		opt.Output = ioutil.Discard
 	}
 
-	ch := make(chan *LogEntry)
-	chErr := make(chan error)
-
 	// Instead of logName, which is specified TAG env in roadie-gce,
 	// use instance name to distinguish instances. This update makes all logs
 	// will have same log name, docker, so that such log can be stored into
@@ -100,45 +98,35 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	var lastTimestamp *time.Time
 	for {
 
-		go GetLogEntries(conf.Gcp.Project, filter, ch, chErr)
+		err = GetLogEntries(context.Background(), conf.Gcp.Project, filter, func(entry *LogEntry) (err error) {
 
-		err = func() error {
-
-			// Listening channels and print logs.
-			for {
-				select {
-				case entry := <-ch:
-
-					if entry == nil {
-						return nil
-					}
-
-					if payload, err2 := getRoadiePayload(entry); err2 == nil {
-
-						var msg string
-						if opt.Timestamp {
-							msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
-						} else {
-							msg = fmt.Sprintf("%s", payload.Log)
-						}
-
-						if payload.Stream == "stdout" {
-							fmt.Println(msg)
-						} else {
-							fmt.Fprintln(os.Stderr, msg)
-						}
-
-						lastTimestamp = &entry.Timestamp
-
-					} else {
-						log.Println(chalk.Red.Color(err2.Error()))
-					}
-
-				case err := <-chErr:
-					return err
-				}
+			// nil entry can be passed.
+			if entry == nil {
+				return nil
 			}
-		}()
+
+			payload, err := getRoadiePayload(entry)
+			if err != nil {
+				return
+			}
+
+			var msg string
+			if opt.Timestamp {
+				msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
+			} else {
+				msg = fmt.Sprintf("%s", payload.Log)
+			}
+
+			if payload.Stream == "stdout" {
+				fmt.Println(msg)
+			} else {
+				fmt.Fprintln(os.Stderr, msg)
+			}
+
+			lastTimestamp = &entry.Timestamp
+			return
+
+		})
 
 		if err != nil || !opt.Follow {
 			break
