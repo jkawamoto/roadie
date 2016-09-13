@@ -102,57 +102,36 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 		return
 	}
 
-	// Instead of logName, which is specified TAG env in roadie-gce,
-	// use instance name to distinguish instances. This update makes all logs
-	// will have same log name, docker, so that such log can be stored into
-	// GCS easily.
-	baseFilter := fmt.Sprintf(
-		// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
-		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", opt.InstanceName)
-
-	var filter string
-	var lastTimestamp *time.Time
-	filter = fmt.Sprintf("%s AND timestamp > \"%s\"", baseFilter, start.In(time.UTC).Format(LogTimeFormat))
 	for {
 
-		err = GetLogEntries(opt.Context, conf.Gcp.Project, filter, opt.Requester, func(entry *LogEntry) (err error) {
+		err = GetInstanceLogEntries(
+			opt.Context, conf.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *RoadiePayload) (err error) {
 
-			// nil entry can be passed.
-			if entry == nil {
-				return nil
-			}
+				var msg string
+				if opt.Timestamp {
+					msg = fmt.Sprintf("%v: %s", timestamp.Format(PrintTimeFormat), payload.Log)
+				} else {
+					msg = fmt.Sprintf("%s", payload.Log)
+				}
 
-			payload, err := NewRoadiePayload(entry)
-			if err != nil {
+				if payload.Stream == "stdout" {
+					fmt.Fprintln(opt.Output, msg)
+				} else {
+					fmt.Fprintln(os.Stderr, msg)
+				}
+
+				start = timestamp
 				return
-			}
 
-			var msg string
-			if opt.Timestamp {
-				msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
-			} else {
-				msg = fmt.Sprintf("%s", payload.Log)
-			}
-
-			if payload.Stream == "stdout" {
-				fmt.Fprintln(opt.Output, msg)
-			} else {
-				fmt.Fprintln(os.Stderr, msg)
-			}
-
-			lastTimestamp = &entry.Timestamp
-			return
-
-		})
-
-		if err != nil || !opt.Follow {
+			})
+		if err != nil {
 			break
 		}
 
+		if !opt.Follow {
+			break
+		}
 		time.Sleep(30 * time.Second)
-
-		utc := lastTimestamp.In(time.UTC)
-		filter = fmt.Sprintf("%s AND timestamp > \"%s\"", baseFilter, utc.Format(LogTimeFormat))
 
 	}
 	return
