@@ -35,7 +35,7 @@ func TestGetLogEntries(t *testing.T) {
 	// Test giving project name and filter are passed to requestDo.
 	project := "test-project"
 	filter := "test-filter"
-	GetLogEntriesFunc(context.Background(), project, filter,
+	GetEntriesFunc(context.Background(), project, filter,
 		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
 			// Checking project id.
@@ -58,13 +58,13 @@ func TestGetLogEntries(t *testing.T) {
 
 			return &logging.ListLogEntriesResponse{}, nil
 		},
-		func(_ *LogEntry) error {
+		func(_ *Entry) error {
 			return nil
 		})
 
 	// Test giving entries are passed to handler.
 	samplePayload := struct{ Key, Value string }{Key: "key", Value: "value"}
-	GetLogEntriesFunc(context.Background(), project, filter,
+	GetEntriesFunc(context.Background(), project, filter,
 		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
 			return &logging.ListLogEntriesResponse{
@@ -80,7 +80,7 @@ func TestGetLogEntries(t *testing.T) {
 				}}, nil
 
 		},
-		func(entry *LogEntry) error {
+		func(entry *Entry) error {
 
 			t.Log("Timestamp is", entry.Timestamp)
 			if entry.Timestamp.Year() != 2006 {
@@ -97,8 +97,8 @@ func TestGetLogEntries(t *testing.T) {
 	// Test giving token will be used and handler will be received entries given from
 	// another page.
 	var invoked int
-	GetLogEntries(context.Background(), project, filter,
-		func() LogEntryRequesterFunc {
+	GetEntries(context.Background(), project, filter,
+		func() EntryRequesterFunc {
 			var counter int
 			token := "next-token"
 			return func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
@@ -132,7 +132,7 @@ func TestGetLogEntries(t *testing.T) {
 
 			}
 		}(),
-		func(entry *LogEntry) error {
+		func(entry *Entry) error {
 
 			invoked++
 			t.Log("Timestamp is", entry.Timestamp)
@@ -159,7 +159,7 @@ func TestStopGetLogEntries(t *testing.T) {
 	var invoked int
 	project := "test-project"
 	filter := "test-filter"
-	GetLogEntriesFunc(context.Background(), project, filter,
+	GetEntriesFunc(context.Background(), project, filter,
 		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
 			return &logging.ListLogEntriesResponse{
@@ -175,7 +175,7 @@ func TestStopGetLogEntries(t *testing.T) {
 				}}, nil
 
 		},
-		func(entry *LogEntry) error {
+		func(entry *Entry) error {
 			invoked++
 			return fmt.Errorf("Test error.")
 		})
@@ -194,7 +194,7 @@ func TestCancelGetLogEntries(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var invoked int
-	GetLogEntriesFunc(ctx, project, filter,
+	GetEntriesFunc(ctx, project, filter,
 		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
 			return &logging.ListLogEntriesResponse{
@@ -210,7 +210,7 @@ func TestCancelGetLogEntries(t *testing.T) {
 				}}, nil
 
 		},
-		func(entry *LogEntry) error {
+		func(entry *Entry) error {
 			invoked++
 			cancel()
 			return nil

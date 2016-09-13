@@ -31,7 +31,7 @@ func TestCmdLog(t *testing.T) {
 		InstanceName: instance,
 	}
 
-	var requester log.LogEntryRequesterFunc
+	var requester log.EntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
 	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
@@ -125,7 +125,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 		InstanceName: instance,
 	}
 
-	var requester log.LogEntryRequesterFunc
+	var requester log.EntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
 	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 

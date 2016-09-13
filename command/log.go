@@ -73,7 +73,7 @@ type logOpt struct {
 	// Context, default is context.Background.
 	Context context.Context
 	// Used to obtain log entries.
-	Requester log.LogEntryRequester
+	Requester log.EntryRequester
 }
 
 func cmdLog(opt *logOpt) (err error) {

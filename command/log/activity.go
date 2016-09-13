@@ -48,7 +48,7 @@ type ActivityPayload struct {
 }
 
 // NewActivityPayload converts LogEntry's payload to a ActivityPayload.
-func NewActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
+func NewActivityPayload(entry *Entry) (*ActivityPayload, error) {
 	var res ActivityPayload
 	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
 		return nil, err

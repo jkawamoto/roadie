@@ -31,22 +31,22 @@ import (
 	"google.golang.org/api/logging/v2beta1"
 )
 
-// LogEntry defines a generic structure of one log entry.
-type LogEntry struct {
+// Entry defines a generic structure of one log entry.
+type Entry struct {
 	Timestamp time.Time
 	Payload   interface{}
 }
 
-// GetLogEntriesFunc is a helper function to call GetLogEntries with LogEntryRequesterFunc.
-func GetLogEntriesFunc(ctx context.Context, project, filter string, requester LogEntryRequesterFunc, handler func(*LogEntry) error) (err error) {
-	return GetLogEntries(ctx, project, filter, requester, handler)
+// GetEntriesFunc is a helper function to call GetEntries with EntryRequesterFunc.
+func GetEntriesFunc(ctx context.Context, project, filter string, requester EntryRequesterFunc, handler func(*Entry) error) (err error) {
+	return GetEntries(ctx, project, filter, requester, handler)
 }
 
-// GetLogEntries requests log entries of a given project via a given requester.
+// GetEntries requests log entries of a given project via a given requester.
 // Obtained log entries are filtered by a given filter query and will be passed
 // a given handler entry by entry. If the handler returns non nil value,
 // obtaining log entries is canceled immediately.
-func GetLogEntries(ctx context.Context, project, filter string, requester LogEntryRequester, handler func(*LogEntry) error) (err error) {
+func GetEntries(ctx context.Context, project, filter string, requester EntryRequester, handler func(*Entry) error) (err error) {
 
 	// pageToken will be used when logs are divided into several pages.
 	pageToken := ""
@@ -72,7 +72,7 @@ func GetLogEntries(ctx context.Context, project, filter string, requester LogEnt
 				v.Timestamp = strings.Split(v.Timestamp, ".")[0] + "Z"
 			}
 
-			timestamp, err := time.Parse(LogTimeFormat, v.Timestamp)
+			timestamp, err := time.Parse(TimeFormat, v.Timestamp)
 			// TODO: Should be replaced to outputting to stderr via some logging method.
 			if err != nil {
 				fmt.Println(chalk.Red.Color(err.Error()))
@@ -87,7 +87,7 @@ func GetLogEntries(ctx context.Context, project, filter string, requester LogEnt
 
 			default:
 				// Not canceled yet, pass an obtained entry to the handler.
-				if err = handler(&LogEntry{
+				if err = handler(&Entry{
 					Timestamp: timestamp,
 					Payload:   v.JsonPayload,
 				}); err != nil {
@@ -110,7 +110,7 @@ func GetLogEntries(ctx context.Context, project, filter string, requester LogEnt
 
 // GetInstanceLogEntriesFunc is a helper function to call GetInstanceLogEntries with LogEntryRequesterFunc.
 func GetInstanceLogEntriesFunc(
-	ctx context.Context, project, instanceName string, start time.Time, requester LogEntryRequesterFunc, handler func(time.Time, *RoadiePayload) error) (err error) {
+	ctx context.Context, project, instanceName string, start time.Time, requester EntryRequesterFunc, handler func(time.Time, *RoadiePayload) error) (err error) {
 
 	return GetInstanceLogEntries(ctx, project, instanceName, start, requester, handler)
 }
@@ -119,7 +119,7 @@ func GetInstanceLogEntriesFunc(
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
 func GetInstanceLogEntries(
-	ctx context.Context, project, instanceName string, start time.Time, requester LogEntryRequester, handler func(time.Time, *RoadiePayload) error) (err error) {
+	ctx context.Context, project, instanceName string, start time.Time, requester EntryRequester, handler func(time.Time, *RoadiePayload) error) (err error) {
 
 	// Instead of logName, which is specified TAG env in roadie-gce,
 	// use instance name to distinguish instances. This update makes all logs
@@ -127,9 +127,9 @@ func GetInstanceLogEntries(
 	// GCS easily.
 	filter := fmt.Sprintf(
 		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\" AND timestamp > \"%s\"",
-		instanceName, start.In(time.UTC).Format(LogTimeFormat))
+		instanceName, start.In(time.UTC).Format(TimeFormat))
 
-	return GetLogEntries(ctx, project, filter, requester, func(entry *LogEntry) error {
+	return GetEntries(ctx, project, filter, requester, func(entry *Entry) error {
 		payload, err := NewRoadiePayload(entry)
 		if err != nil {
 			return err
@@ -140,7 +140,7 @@ func GetInstanceLogEntries(
 
 // GetOperationLogEntriesFunc is a helper function to call GetOperationLogEntries with LogEntryRequesterFunc.
 func GetOperationLogEntriesFunc(ctx context.Context,
-	project string, requester LogEntryRequesterFunc, handler func(time.Time, *ActivityPayload) error) (err error) {
+	project string, requester EntryRequesterFunc, handler func(time.Time, *ActivityPayload) error) (err error) {
 
 	return GetOperationLogEntries(ctx, project, requester, handler)
 }
@@ -149,11 +149,11 @@ func GetOperationLogEntriesFunc(ctx context.Context,
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
 func GetOperationLogEntries(ctx context.Context,
-	project string, requester LogEntryRequester, handler func(time.Time, *ActivityPayload) error) (err error) {
+	project string, requester EntryRequester, handler func(time.Time, *ActivityPayload) error) (err error) {
 
-	return GetLogEntries(
+	return GetEntries(
 		ctx, project, "jsonPayload.event_type = \"GCE_OPERATION_DONE\"", requester,
-		func(entry *LogEntry) error {
+		func(entry *Entry) error {
 			payload, err := NewActivityPayload(entry)
 			if err != nil {
 				return err

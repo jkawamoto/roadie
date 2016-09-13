@@ -22,8 +22,8 @@
 package log
 
 const (
-	// LogTimeFormat defines time format of Google Logging.
-	LogTimeFormat = "2006-01-02T15:04:05Z"
+	// TimeFormat defines time format of Google Logging.
+	TimeFormat = "2006-01-02T15:04:05Z"
 
 	// EventSubtypeInsert means this event is creating an instance.
 	EventSubtypeInsert = "compute.instances.insert"

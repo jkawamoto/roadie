@@ -37,7 +37,7 @@ type RoadiePayload struct {
 }
 
 // NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func NewRoadiePayload(entry *LogEntry) (*RoadiePayload, error) {
+func NewRoadiePayload(entry *Entry) (*RoadiePayload, error) {
 
 	var res RoadiePayload
 	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
