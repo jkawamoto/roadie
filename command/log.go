@@ -23,6 +23,8 @@ package command
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -46,34 +48,53 @@ type RoadiePayload struct {
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
 
+	// Checking the number of arguments.
 	if c.NArg() != 1 {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
-	name := c.Args()[0]
-	timestamp := !c.Bool("no-timestamp")
-	follow := c.Bool("follow")
-	if err := cmdLog(conf, name, timestamp, follow); err != nil {
+	// Run the log command.
+	if err := cmdLog(GetConfig(c), &logOpt{
+		InstanceName: c.Args()[0],
+		Timestamp:    !c.Bool("no-timestamp"),
+		Follow:       c.Bool("follow"),
+		Output:       os.Stdout,
+	}); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
 }
 
-func cmdLog(conf *config.Config, instanceName string, timestamp, follow bool) (err error) {
+// logOpt manages arguments for log command.
+type logOpt struct {
+	// InstanceName of which logs are shown.
+	InstanceName string
+	// If true, timestame is also printed.
+	Timestamp bool
+	// If true, keep waiting new logs.
+	Follow bool
+	// io.Writer to be outputted logs.
+	Output io.Writer
+}
+
+func cmdLog(conf *config.Config, opt *logOpt) (err error) {
+
+	// Validate option.
+	if opt.Output == nil {
+		opt.Output = ioutil.Discard
+	}
 
 	ch := make(chan *LogEntry)
 	chErr := make(chan error)
 
+	// Instead of logName, which is specified TAG env in roadie-gce,
+	// use instance name to distinguish instances. This update makes all logs
+	// will have same log name, docker, so that such log can be stored into
+	// GCS easily.
 	baseFilter := fmt.Sprintf(
-		// Instead of logName, which is specified TAG env in roadie-gce,
-		// use instance name to distinguish instances. This update makes all logs
-		// will have same log name, docker, so that such log can be stored into
-		// GCS easily.
-		//
 		// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
-		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", instanceName)
+		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", opt.InstanceName)
 
 	filter := baseFilter
 	var lastTimestamp *time.Time
@@ -95,7 +116,7 @@ func cmdLog(conf *config.Config, instanceName string, timestamp, follow bool) (e
 					if payload, err2 := getRoadiePayload(entry); err2 == nil {
 
 						var msg string
-						if timestamp {
+						if opt.Timestamp {
 							msg = fmt.Sprintf("%v: %s", entry.Timestamp.Format(PrintTimeFormat), payload.Log)
 						} else {
 							msg = fmt.Sprintf("%s", payload.Log)
@@ -119,7 +140,7 @@ func cmdLog(conf *config.Config, instanceName string, timestamp, follow bool) (e
 			}
 		}()
 
-		if err != nil || !follow {
+		if err != nil || !opt.Follow {
 			break
 		}
 

@@ -115,7 +115,12 @@ func CmdRun(c *cli.Context) error {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	if c.Bool("follow") {
-		return cmdLog(conf, opt.InstanceName, true, true)
+		return cmdLog(conf, &logOpt{
+			InstanceName: opt.InstanceName,
+			Timestamp:    true,
+			Follow:       true,
+			Output:       os.Stdout,
+		})
 	}
 	return nil
 
