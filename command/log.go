@@ -124,7 +124,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 			}
 
 			if payload.Stream == "stdout" {
-				fmt.Println(msg)
+				fmt.Fprintln(opt.Output, msg)
 			} else {
 				fmt.Fprintln(os.Stderr, msg)
 			}
