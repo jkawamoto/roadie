@@ -42,50 +42,76 @@ type LogEntry struct {
 }
 
 // GetLogEntries downloads log entries as a goroutine.
-func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- error) {
+func GetLogEntries(ctx context.Context, project, filter string, handler func(*LogEntry) error) (err error) {
 
-	client, err := google.DefaultClient(context.Background(), logging.CloudPlatformReadOnlyScope)
+	// context may be canceled in this function.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	client, err := google.DefaultClient(ctx, logging.CloudPlatformReadOnlyScope)
 	if err != nil {
-		chErr <- err
 		return
 	}
 
 	service, err := logging.New(client)
 	if err != nil {
-		chErr <- err
 		return
 	}
 
+	return getLogEntries(ctx, project, filter, handler, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+		return service.Entries.List(req).Do()
+
+	})
+
+}
+
+// getLogEntries requests log entries of a given project via requestDo function.
+// Obtained log entries are filtered by a given filter query and will be passed
+// a given handler entry by entry. If the handler returns non nil value,
+// obtaining log entries is canceled immediately.
+func getLogEntries(ctx context.Context, project, filter string,
+	handler func(*LogEntry) error, requestDo func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)) (err error) {
+
+	// pageToken will be used when logs are divided into several pages.
 	pageToken := ""
 	for {
 
-		res, err := service.Entries.List(&logging.ListLogEntriesRequest{
-			ProjectIds: []string{project}, Filter: filter, PageToken: pageToken}).Do()
+		res, err := requestDo(&logging.ListLogEntriesRequest{
+			ProjectIds: []string{project},
+			Filter:     filter,
+			PageToken:  pageToken,
+		})
 		if err != nil {
-			chErr <- err
-			return
+			return err
 		}
 
 		for _, v := range res.Entries {
-			if v.JsonPayload != nil {
-
-				if strings.Contains(v.Timestamp, ".") {
-					v.Timestamp = strings.Split(v.Timestamp, ".")[0] + "Z"
-				}
-
-				timestamp, err := time.Parse(LogTimeFormat, v.Timestamp)
-				if err != nil {
-					fmt.Println(chalk.Red.Color(err.Error()))
-					continue
-				}
-				timestamp = timestamp.In(time.Local)
-
-				ch <- &LogEntry{
-					Timestamp: timestamp,
-					Payload:   v.JsonPayload,
-				}
-
+			// TODO: Entries which don't have JsonPayload may containe system messages.
+			if v.JsonPayload == nil {
+				continue
 			}
+
+			// Time format of log entries aren't generalized. Thus reformat it here.
+			if strings.Contains(v.Timestamp, ".") {
+				v.Timestamp = strings.Split(v.Timestamp, ".")[0] + "Z"
+			}
+
+			timestamp, err := time.Parse(LogTimeFormat, v.Timestamp)
+			// TODO: Should be replaced to outputting to stderr via some logging method.
+			if err != nil {
+				fmt.Println(chalk.Red.Color(err.Error()))
+				continue
+			}
+			timestamp = timestamp.In(time.Local)
+
+			if err = handler(&LogEntry{
+				Timestamp: timestamp,
+				Payload:   v.JsonPayload,
+			}); err != nil {
+				return err
+			}
+
 		}
 
 		pageToken = res.NextPageToken
@@ -95,6 +121,6 @@ func GetLogEntries(project, filter string, ch chan<- *LogEntry, chErr chan<- err
 
 	}
 
-	ch <- nil
+	return
 
 }
