@@ -1,5 +1,5 @@
 //
-// command/log/log_entry.go
+// command/log/entry.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -27,65 +27,14 @@ import (
 	"time"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/mitchellh/mapstructure"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/logging/v2beta1"
 )
-
-// LogTimeFormat defines time format of Google Logging.
-const LogTimeFormat = "2006-01-02T15:04:05Z"
 
 // LogEntry defines a generic structure of one log entry.
 type LogEntry struct {
 	Timestamp time.Time
 	Payload   interface{}
-}
-
-// LogEntryRequester is an interface used in GetLogEntries.
-// This interface requests supplying Do method which process a request of
-// obtaining log entries.
-type LogEntryRequester interface {
-	Do(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
-}
-
-// CloudLoggingService implements LogEntryRequester interface.
-// It requests logs to google cloud logging service.
-type CloudLoggingService struct {
-	service *logging.Service
-}
-
-// NewCloudLoggingService creates a new CloudLoggingService with a given context.
-func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService, err error) {
-
-	client, err := google.DefaultClient(ctx, logging.CloudPlatformReadOnlyScope)
-	if err != nil {
-		return
-	}
-
-	service, err := logging.New(client)
-	if err != nil {
-		return
-	}
-
-	return &CloudLoggingService{service: service}, nil
-
-}
-
-// Do requests a given request with the specified context.
-func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-
-	return s.service.Entries.List(req).Do()
-
-}
-
-// LogEntryRequesterFunc will be used to implement LogEntryRequester interface
-// on functions.
-type LogEntryRequesterFunc func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
-
-// Do implements LogEntryRequester interface.
-func (f LogEntryRequesterFunc) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return f(req)
 }
 
 // GetLogEntriesFunc is a helper function to call GetLogEntries with LogEntryRequesterFunc.
@@ -212,64 +161,3 @@ func GetOperationLogEntries(ctx context.Context,
 			return handler(entry.Timestamp, payload)
 		})
 }
-
-// RoadiePayload defines the payload structure of instance logs.
-type RoadiePayload struct {
-	Username     string
-	Stream       string
-	Log          string
-	ContainerID  string `mapstructure:"container_id"`
-	InstanceName string `mapstructure:"instance_name"`
-}
-
-// NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func NewRoadiePayload(entry *LogEntry) (*RoadiePayload, error) {
-
-	var res RoadiePayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	res.Log = strings.TrimRight(res.Log, "\n")
-
-	return &res, nil
-}
-
-// ActivityPayload defines the payload structure of activity log.
-type ActivityPayload struct {
-	EventTimestampUs string `mapstructure:"event_timestamp_us"`
-	EventType        string `mapstructure:"vent_type"`
-	TraceID          string `mapstructure:"trace_id"`
-	Actor            struct {
-		User string
-	}
-	Resource struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-	Version      string
-	EventSubtype string `mapstructure:"event_subtype"`
-	Operation    struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-}
-
-// NewActivityPayload converts LogEntry's payload to a ActivityPayload.
-func NewActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
-	var res ActivityPayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
-
-const (
-	// EventSubtypeInsert means this event is creating an instance.
-	EventSubtypeInsert = "compute.instances.insert"
-	// EventSubtypeDelete means this event is deleting an instance.
-	EventSubtypeDelete = "compute.instances.delete"
-)
