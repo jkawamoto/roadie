@@ -78,6 +78,20 @@ func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.L
 
 }
 
+// LogEntryRequesterFunc will be used to implement LogEntryRequester interface
+// on functions.
+type LogEntryRequesterFunc func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
+
+// Do implements LogEntryRequester interface.
+func (f LogEntryRequesterFunc) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+	return f(req)
+}
+
+// GetLogEntriesFunc is a helper function to call GetLogEntries with LogEntryRequesterFunc.
+func GetLogEntriesFunc(ctx context.Context, project, filter string, requester LogEntryRequesterFunc, handler func(*LogEntry) error) (err error) {
+	return GetLogEntries(ctx, project, filter, requester, handler)
+}
+
 // GetLogEntries requests log entries of a given project via a given requester.
 // Obtained log entries are filtered by a given filter query and will be passed
 // a given handler entry by entry. If the handler returns non nil value,

@@ -8,20 +8,6 @@ import (
 	logging "google.golang.org/api/logging/v2beta1"
 )
 
-// LogEntryRequesterFunc will be used to implement LogEntryRequester interface
-// on functions.
-type LogEntryRequesterFunc func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
-
-// Do implements LogEntryRequester interface.
-func (f LogEntryRequesterFunc) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return f(req)
-}
-
-// Helper function to call GetLogEntries with LogEntryRequesterFunc.
-func GetLogEntriesFunc(ctx context.Context, project, filter string, requester LogEntryRequesterFunc, handler func(*LogEntry) error) (err error) {
-	return GetLogEntries(ctx, project, filter, requester, handler)
-}
-
 // Test for GetLogEntries method.
 func TestGetLogEntries(t *testing.T) {
 
