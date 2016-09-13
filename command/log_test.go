@@ -120,7 +120,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 	newPayload := RoadiePayload{
 		Username:     "not used",
 		Stream:       "stdout",
-		Log:          "this log entries must be appeard",
+		Log:          "this log entries must be appeared",
 		ContainerID:  "not used",
 		InstanceName: instance,
 	}
@@ -176,7 +176,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 			t.Error("Filter doesn't have the given instance name:", req.Filter)
 		}
 		if !strings.Contains(req.Filter, "timestamp > \"2006-03-02T15:04:05Z\"") {
-			t.Error("Filter doesn't request newer log entries after the reest instance created:", req.Filter)
+			t.Error("Filter doesn't request newer log entries after the newest instance created:", req.Filter)
 		}
 
 		return &logging.ListLogEntriesResponse{

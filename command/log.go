@@ -61,7 +61,7 @@ func CmdLog(c *cli.Context) error {
 type logOpt struct {
 	// InstanceName of which logs are shown.
 	InstanceName string
-	// If true, timestame is also printed.
+	// If true, timestamp is also printed.
 	Timestamp bool
 	// If true, keep waiting new logs.
 	Follow bool

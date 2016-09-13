@@ -73,7 +73,7 @@ func TestGetLogEntries(t *testing.T) {
 			return nil
 		})
 
-	// Test giving token will be used and handler will be received entries gived from
+	// Test giving token will be used and handler will be received entries given from
 	// another page.
 	var invoked int
 	GetLogEntries(context.Background(), project, filter,
@@ -125,7 +125,7 @@ func TestGetLogEntries(t *testing.T) {
 			return nil
 		})
 
-	// Checking how many times handker called.
+	// Checking how many times handler called.
 	if invoked != 4 {
 		t.Error("NextPageToken doesn't work")
 	}
@@ -160,7 +160,7 @@ func TestStopGetLogEntries(t *testing.T) {
 		})
 
 	if invoked != 1 {
-		t.Error("handler reutns some error but getLogEntries didn't stop")
+		t.Error("handler returns some error but getLogEntries didn't stop")
 	}
 
 }

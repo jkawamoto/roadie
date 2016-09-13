@@ -42,7 +42,7 @@ type LogEntry struct {
 	Payload   interface{}
 }
 
-// LogEntryRequester is an inteface used in GetLogEntries.
+// LogEntryRequester is an interface used in GetLogEntries.
 // This interface requests supplying Do method which process a request of
 // obtaining log entries.
 type LogEntryRequester interface {
@@ -113,7 +113,7 @@ func GetLogEntries(ctx context.Context, project, filter string, requester LogEnt
 		}
 
 		for _, v := range res.Entries {
-			// TODO: Entries which don't have JsonPayload may containe system messages.
+			// TODO: Entries which don't have JsonPayload may contain system messages.
 			if v.JsonPayload == nil {
 				continue
 			}
@@ -196,7 +196,7 @@ func GetOperationLogEntriesFunc(ctx context.Context,
 	return GetOperationLogEntries(ctx, project, requester, handler)
 }
 
-// GetOperationLogEntries requests log entries about google cloud platform oprations.
+// GetOperationLogEntries requests log entries about google cloud platform operations.
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
 func GetOperationLogEntries(ctx context.Context,
@@ -213,7 +213,7 @@ func GetOperationLogEntries(ctx context.Context,
 		})
 }
 
-// RoadiePayload defines the payload structure of insance logs.
+// RoadiePayload defines the payload structure of instance logs.
 type RoadiePayload struct {
 	Username     string
 	Stream       string
