@@ -34,47 +34,8 @@ import (
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/mitchellh/mapstructure"
 	"github.com/urfave/cli"
 )
-
-const (
-	eventSubtypeInsert = "compute.instances.insert"
-	eventSubtypeDelete = "compute.instances.delete"
-)
-
-// ActivityPayload defines the payload structure of activity log.
-type ActivityPayload struct {
-	EventTimestampUs string `mapstructure:"event_timestamp_us"`
-	EventType        string `mapstructure:"vent_type"`
-	TraceID          string `mapstructure:"trace_id"`
-	Actor            struct {
-		User string
-	}
-	Resource struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-	Version      string
-	EventSubtype string `mapstructure:"event_subtype"`
-	Operation    struct {
-		Zone string
-		Type string
-		ID   string
-		Name string
-	}
-}
-
-// getActivityPayload converts LogEntry's payload to a ActivityPayload.
-func getActivityPayload(entry *LogEntry) (*ActivityPayload, error) {
-	var res ActivityPayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	return &res, nil
-}
 
 // CmdStatus shows status of instances.
 func CmdStatus(c *cli.Context) error {
@@ -142,16 +103,16 @@ func cmdStatus(conf *config.Config, all bool) error {
 			// If all flag is not set show only following instances;
 			//  - running instances,
 			//  - ended but results are note deleted instances.
-			payload, err := getActivityPayload(entry)
+			payload, err := NewActivityPayload(entry)
 			if err != nil {
 				return
 			}
 
 			switch payload.EventSubtype {
-			case eventSubtypeInsert:
+			case EventSubtypeInsert:
 				runnings[payload.Resource.Name] = true
 
-			case eventSubtypeDelete:
+			case EventSubtypeDelete:
 				runnings[payload.Resource.Name] = false
 				if _, exist := instances[payload.Resource.Name]; !all && !exist {
 					delete(runnings, payload.Resource.Name)

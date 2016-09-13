@@ -26,37 +26,14 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/mitchellh/mapstructure"
 	"github.com/urfave/cli"
 )
-
-// RoadiePayload defines the payload structure of insance logs.
-type RoadiePayload struct {
-	Username     string
-	Stream       string
-	Log          string
-	ContainerID  string `mapstructure:"container_id"`
-	InstanceName string `mapstructure:"instance_name"`
-}
-
-// NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func NewRoadiePayload(entry *LogEntry) (*RoadiePayload, error) {
-
-	var res RoadiePayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	res.Log = strings.TrimRight(res.Log, "\n")
-
-	return &res, nil
-}
 
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
