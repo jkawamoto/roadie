@@ -92,7 +92,7 @@ type logOpt struct {
 	// Context, default is context.Background.
 	Context context.Context
 	// Used to obtain log entries.
-	Requester *CloudLoggingService
+	Requester LogEntryRequester
 }
 
 func cmdLog(conf *config.Config, opt *logOpt) (err error) {
