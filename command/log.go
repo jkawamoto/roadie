@@ -46,6 +46,18 @@ type RoadiePayload struct {
 	InstanceName string `mapstructure:"instance_name"`
 }
 
+// NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
+func NewRoadiePayload(entry *LogEntry) (*RoadiePayload, error) {
+
+	var res RoadiePayload
+	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
+		return nil, err
+	}
+	res.Log = strings.TrimRight(res.Log, "\n")
+
+	return &res, nil
+}
+
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
 
@@ -118,7 +130,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 				return nil
 			}
 
-			payload, err := getRoadiePayload(entry)
+			payload, err := NewRoadiePayload(entry)
 			if err != nil {
 				return
 			}
@@ -153,16 +165,4 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	}
 	return
 
-}
-
-// getRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func getRoadiePayload(entry *LogEntry) (*RoadiePayload, error) {
-
-	var res RoadiePayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
-	}
-	res.Log = strings.TrimRight(res.Log, "\n")
-
-	return &res, nil
 }
