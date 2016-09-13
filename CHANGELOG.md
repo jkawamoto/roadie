@@ -1,3 +1,8 @@
+## 0.2.3 (2016-09-13)
+### Fixed
+- Output log entries of old instances when reusing same instance name.
+
+
 ## 0.2.2 (2016-09-08)
 ### Added
 - Support to restart program after rebooting containers.
