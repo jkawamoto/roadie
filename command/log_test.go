@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	logging "google.golang.org/api/logging/v2beta1"
-
-	"github.com/jkawamoto/roadie/config"
 )
 
 // resource a structure used in ActivityPayload.Resource.
@@ -78,7 +76,7 @@ func TestCmdLog(t *testing.T) {
 
 	// Without timestamp.
 	output = &bytes.Buffer{}
-	cmdLog(&config.Config{}, &logOpt{
+	cmdLog(&logOpt{
 		InstanceName: instance,
 		Output:       output,
 		Requester:    requester,
@@ -93,7 +91,7 @@ func TestCmdLog(t *testing.T) {
 
 	// With timestamp.
 	output = &bytes.Buffer{}
-	cmdLog(&config.Config{}, &logOpt{
+	cmdLog(&logOpt{
 		InstanceName: instance,
 		Timestamp:    true,
 		Output:       output,
@@ -193,7 +191,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 	}
 
 	// Send a request.
-	cmdLog(&config.Config{}, &logOpt{
+	cmdLog(&logOpt{
 		InstanceName: instance,
 		Requester:    requester,
 	})

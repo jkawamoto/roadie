@@ -45,7 +45,8 @@ func CmdLog(c *cli.Context) error {
 	}
 
 	// Run the log command.
-	if err := cmdLog(GetConfig(c), &logOpt{
+	if err := cmdLog(&logOpt{
+		Config:       *GetConfig(c),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
@@ -56,9 +57,10 @@ func CmdLog(c *cli.Context) error {
 	return nil
 }
 
-// TODO: logOpt should has config.Config.
 // logOpt manages arguments for log command.
 type logOpt struct {
+	// Config maintains configurations.
+	Config config.Config
 	// InstanceName of which logs are shown.
 	InstanceName string
 	// If true, timestamp is also printed.
@@ -73,7 +75,7 @@ type logOpt struct {
 	Requester LogEntryRequester
 }
 
-func cmdLog(conf *config.Config, opt *logOpt) (err error) {
+func cmdLog(opt *logOpt) (err error) {
 
 	// Validate option.
 	if opt.Output == nil {
@@ -91,7 +93,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 
 	// Determine when the newest instance starts.
 	var start time.Time
-	if err = GetOperationLogEntries(opt.Context, conf.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *ActivityPayload) (err error) {
+	if err = GetOperationLogEntries(opt.Context, opt.Config.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *ActivityPayload) (err error) {
 		if payload.Resource.Name == opt.InstanceName {
 			if payload.EventSubtype == EventSubtypeInsert {
 				start = timestamp
@@ -105,7 +107,7 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 	for {
 
 		err = GetInstanceLogEntries(
-			opt.Context, conf.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *RoadiePayload) (err error) {
+			opt.Context, opt.Config.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *RoadiePayload) (err error) {
 
 				var msg string
 				if opt.Timestamp {
