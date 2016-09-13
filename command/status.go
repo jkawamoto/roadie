@@ -32,6 +32,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
@@ -92,18 +93,18 @@ func cmdStatus(conf *config.Config, all bool) error {
 
 	runnings := make(map[string]bool)
 	ctx := context.Background()
-	requester, _ := NewCloudLoggingService(ctx)
+	requester, _ := log.NewCloudLoggingService(ctx)
 
-	err := GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *ActivityPayload) (err error) {
+	err := log.GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
 
 		// If all flag is not set, show only following instances;
 		//  - running instances,
 		//  - ended but results are note deleted instances.
 		switch payload.EventSubtype {
-		case EventSubtypeInsert:
+		case log.EventSubtypeInsert:
 			runnings[payload.Resource.Name] = true
 
-		case EventSubtypeDelete:
+		case log.EventSubtypeDelete:
 			runnings[payload.Resource.Name] = false
 			if _, exist := instances[payload.Resource.Name]; !all && !exist {
 				delete(runnings, payload.Resource.Name)

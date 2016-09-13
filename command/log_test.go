@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jkawamoto/roadie/command/log"
+
 	logging "google.golang.org/api/logging/v2beta1"
 )
 
@@ -21,7 +23,7 @@ type resource struct {
 func TestCmdLog(t *testing.T) {
 
 	instance := "test-instance"
-	samplePayload := RoadiePayload{
+	samplePayload := log.RoadiePayload{
 		Username:     "not used",
 		Stream:       "stdout",
 		Log:          "sample log output",
@@ -29,7 +31,7 @@ func TestCmdLog(t *testing.T) {
 		InstanceName: instance,
 	}
 
-	var requester LogEntryRequesterFunc
+	var requester log.LogEntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
 	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
@@ -39,12 +41,12 @@ func TestCmdLog(t *testing.T) {
 			return &logging.ListLogEntriesResponse{
 				Entries: []*logging.LogEntry{
 					&logging.LogEntry{
-						JsonPayload: ActivityPayload{
+						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
 							Resource: resource{
 								Name: instance,
 							},
-							EventSubtype: EventSubtypeInsert,
+							EventSubtype: log.EventSubtypeInsert,
 						},
 						Timestamp: "2006-01-02T15:04:05Z",
 					},
@@ -115,7 +117,7 @@ func TestCmdLog(t *testing.T) {
 func TestCmdLogWithReusedInstanceName(t *testing.T) {
 
 	instance := "test-instance"
-	newPayload := RoadiePayload{
+	newPayload := log.RoadiePayload{
 		Username:     "not used",
 		Stream:       "stdout",
 		Log:          "this log entries must be appeared",
@@ -123,7 +125,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 		InstanceName: instance,
 	}
 
-	var requester LogEntryRequesterFunc
+	var requester log.LogEntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
 	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
@@ -134,34 +136,34 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 				Entries: []*logging.LogEntry{
 					// Start an old instance.
 					&logging.LogEntry{
-						JsonPayload: ActivityPayload{
+						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
 							Resource: resource{
 								Name: instance,
 							},
-							EventSubtype: EventSubtypeInsert,
+							EventSubtype: log.EventSubtypeInsert,
 						},
 						Timestamp: "2006-01-02T15:04:05Z",
 					},
 					// Stop the old instance.
 					&logging.LogEntry{
-						JsonPayload: ActivityPayload{
+						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
 							Resource: resource{
 								Name: instance,
 							},
-							EventSubtype: EventSubtypeDelete,
+							EventSubtype: log.EventSubtypeDelete,
 						},
 						Timestamp: "2006-02-02T15:04:05Z",
 					},
 					// Start a new instance.
 					&logging.LogEntry{
-						JsonPayload: ActivityPayload{
+						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
 							Resource: resource{
 								Name: instance,
 							},
-							EventSubtype: EventSubtypeInsert,
+							EventSubtype: log.EventSubtypeInsert,
 						},
 						Timestamp: "2006-03-02T15:04:05Z",
 					},

@@ -31,6 +31,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -72,7 +73,7 @@ type logOpt struct {
 	// Context, default is context.Background.
 	Context context.Context
 	// Used to obtain log entries.
-	Requester LogEntryRequester
+	Requester log.LogEntryRequester
 }
 
 func cmdLog(opt *logOpt) (err error) {
@@ -85,7 +86,7 @@ func cmdLog(opt *logOpt) (err error) {
 		opt.Context = context.Background()
 	}
 	if opt.Requester == nil {
-		opt.Requester, err = NewCloudLoggingService(opt.Context)
+		opt.Requester, err = log.NewCloudLoggingService(opt.Context)
 		if err != nil {
 			return err
 		}
@@ -93,9 +94,9 @@ func cmdLog(opt *logOpt) (err error) {
 
 	// Determine when the newest instance starts.
 	var start time.Time
-	if err = GetOperationLogEntries(opt.Context, opt.Config.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *ActivityPayload) (err error) {
+	if err = log.GetOperationLogEntries(opt.Context, opt.Config.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *log.ActivityPayload) (err error) {
 		if payload.Resource.Name == opt.InstanceName {
-			if payload.EventSubtype == EventSubtypeInsert {
+			if payload.EventSubtype == log.EventSubtypeInsert {
 				start = timestamp
 			}
 		}
@@ -106,8 +107,8 @@ func cmdLog(opt *logOpt) (err error) {
 
 	for {
 
-		err = GetInstanceLogEntries(
-			opt.Context, opt.Config.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *RoadiePayload) (err error) {
+		err = log.GetInstanceLogEntries(
+			opt.Context, opt.Config.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *log.RoadiePayload) (err error) {
 
 				var msg string
 				if opt.Timestamp {

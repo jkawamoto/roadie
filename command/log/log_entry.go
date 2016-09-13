@@ -1,5 +1,5 @@
 //
-// command/log_entry.go
+// command/log/log_entry.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package log
 
 import (
 	"fmt"
