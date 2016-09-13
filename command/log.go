@@ -56,6 +56,7 @@ func CmdLog(c *cli.Context) error {
 	return nil
 }
 
+// TODO: logOpt should has config.Config.
 // logOpt manages arguments for log command.
 type logOpt struct {
 	// InstanceName of which logs are shown.
@@ -88,6 +89,19 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 		}
 	}
 
+	// Determine when the newest instance starts.
+	var start time.Time
+	if err = GetOperationLogEntries(opt.Context, conf.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *ActivityPayload) (err error) {
+		if payload.Resource.Name == opt.InstanceName {
+			if payload.EventSubtype == EventSubtypeInsert {
+				start = timestamp
+			}
+		}
+		return
+	}); err != nil {
+		return
+	}
+
 	// Instead of logName, which is specified TAG env in roadie-gce,
 	// use instance name to distinguish instances. This update makes all logs
 	// will have same log name, docker, so that such log can be stored into
@@ -96,8 +110,9 @@ func cmdLog(conf *config.Config, opt *logOpt) (err error) {
 		// "resource.type = \"gce_instance\" AND logName = \"projects/%s/logs/%s\"", project, name),
 		"resource.type = \"gce_instance\" AND jsonPayload.instance_name = \"%s\"", opt.InstanceName)
 
-	filter := baseFilter
+	var filter string
 	var lastTimestamp *time.Time
+	filter = fmt.Sprintf("%s AND timestamp > \"%s\"", baseFilter, start.In(time.UTC).Format(LogTimeFormat))
 	for {
 
 		err = GetLogEntries(opt.Context, conf.Gcp.Project, filter, opt.Requester, func(entry *LogEntry) (err error) {

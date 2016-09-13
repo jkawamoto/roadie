@@ -93,8 +93,8 @@ func cmdStatus(conf *config.Config, all bool) error {
 	runnings := make(map[string]bool)
 	ctx := context.Background()
 	requester, _ := NewCloudLoggingService(ctx)
-	// TODO: Check return value.
-	GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(payload *ActivityPayload) (err error) {
+
+	err := GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *ActivityPayload) (err error) {
 
 		// If all flag is not set, show only following instances;
 		//  - running instances,
@@ -113,8 +113,10 @@ func cmdStatus(conf *config.Config, all bool) error {
 		return
 
 	})
-
 	s.Stop()
+	if err != nil {
+		return err
+	}
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
