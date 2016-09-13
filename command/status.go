@@ -93,35 +93,26 @@ func cmdStatus(conf *config.Config, all bool) error {
 	runnings := make(map[string]bool)
 	ctx := context.Background()
 	requester, _ := NewCloudLoggingService(ctx)
-	GetLogEntries(ctx, conf.Gcp.Project,
-		"jsonPayload.event_type = \"GCE_OPERATION_DONE\"", requester, func(entry *LogEntry) (err error) {
+	// TODO: Check return value.
+	GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(payload *ActivityPayload) (err error) {
 
-			if entry == nil {
-				return
+		// If all flag is not set, show only following instances;
+		//  - running instances,
+		//  - ended but results are note deleted instances.
+		switch payload.EventSubtype {
+		case EventSubtypeInsert:
+			runnings[payload.Resource.Name] = true
+
+		case EventSubtypeDelete:
+			runnings[payload.Resource.Name] = false
+			if _, exist := instances[payload.Resource.Name]; !all && !exist {
+				delete(runnings, payload.Resource.Name)
 			}
+		}
 
-			// If all flag is not set show only following instances;
-			//  - running instances,
-			//  - ended but results are note deleted instances.
-			payload, err := NewActivityPayload(entry)
-			if err != nil {
-				return
-			}
+		return
 
-			switch payload.EventSubtype {
-			case EventSubtypeInsert:
-				runnings[payload.Resource.Name] = true
-
-			case EventSubtypeDelete:
-				runnings[payload.Resource.Name] = false
-				if _, exist := instances[payload.Resource.Name]; !all && !exist {
-					delete(runnings, payload.Resource.Name)
-				}
-			}
-
-			return
-
-		})
+	})
 
 	s.Stop()
 

@@ -159,6 +159,26 @@ func GetLogEntries(ctx context.Context, project, filter string, requester LogEnt
 
 }
 
+// GetOperationLogEntriesFunc is a helper function to call GetOperationLogEntries with LogEntryRequesterFunc.
+func GetOperationLogEntriesFunc(ctx context.Context, project string, requester LogEntryRequesterFunc, handler func(*ActivityPayload) error) (err error) {
+	return GetOperationLogEntries(ctx, project, requester, handler)
+}
+
+// GetOperationLogEntries requests log entries about google cloud platform oprations.
+// Obtained log entries will be passed a given handler entry by entry.
+// If the handler returns non nil value, obtaining log entries is canceled immediately.
+func GetOperationLogEntries(ctx context.Context, project string, requester LogEntryRequester, handler func(*ActivityPayload) error) (err error) {
+	return GetLogEntries(
+		ctx, project, "jsonPayload.event_type = \"GCE_OPERATION_DONE\"", requester,
+		func(entry *LogEntry) error {
+			payload, err := NewActivityPayload(entry)
+			if err != nil {
+				return err
+			}
+			return handler(payload)
+		})
+}
+
 // RoadiePayload defines the payload structure of insance logs.
 type RoadiePayload struct {
 	Username     string
