@@ -30,6 +30,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
@@ -138,7 +139,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		conf.Gcp.Bucket = conf.Gcp.Project
 	}
 
-	script, err := NewScript(opt.ScriptFile, opt.ScriptArgs)
+	script, err := resource.NewScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return
 	}
@@ -197,7 +198,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	if opt.Retry <= 0 {
 		opt.Retry = 10
 	}
-	startup, err := Startup(&startupOpt{
+	startup, err := resource.Startup(&resource.StartupOpt{
 		Name:    script.InstanceName,
 		Script:  script.String(),
 		Options: options,
@@ -255,7 +256,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
 // If overwriting source section, it prints warning, too.
-func setGitSource(script *Script, repo string) {
+func setGitSource(script *resource.Script, repo string) {
 	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
@@ -268,7 +269,7 @@ func setGitSource(script *Script, repo string) {
 // Source codes will be downloaded from the URL.
 // The file pointed by the URL must be either executable, zipped, or tarballed
 // file. If overwriting source section, it prints warning, too.
-func setURLSource(script *Script, url string) {
+func setURLSource(script *resource.Script, url string) {
 	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
@@ -283,7 +284,7 @@ func setURLSource(script *Script, url string) {
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
 // If dry is true, it does not upload any files but create a temporary file.
-func setLocalSource(conf *config.Config, script *Script, path string, excludes []string, dry bool) (err error) {
+func setLocalSource(conf *config.Config, script *resource.Script, path string, excludes []string, dry bool) (err error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
@@ -335,7 +336,7 @@ func setLocalSource(conf *config.Config, script *Script, path string, excludes [
 // setSource sets a URL to a `file` in source directory in GCS to a given `script`.
 // Source codes will be downloaded from the URL. To defermin bucketname, it requires
 // config. If overwriting source section, it prints warning, too.
-func setSource(conf *config.Config, script *Script, file string) {
+func setSource(conf *config.Config, script *resource.Script, file string) {
 
 	url := util.CreateURL(conf.Gcp.Bucket, SourcePrefix, file).String()
 	if script.Body.Source != "" {

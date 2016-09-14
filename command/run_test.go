@@ -24,6 +24,7 @@ package command
 import (
 	"testing"
 
+	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 )
@@ -52,7 +53,7 @@ func TestCmdRun(t *testing.T) {
 // TestSetGitSource checks setGitSource sets correct repository url.
 func TestSetGitSource(t *testing.T) {
 
-	script := Script{}
+	script := resource.Script{}
 	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
 
 	if script.Body.Source != "https://github.com/jkawamoto/roadie.git" {
@@ -64,7 +65,7 @@ func TestSetGitSource(t *testing.T) {
 // TestSetURLSource checks setURLSource sets correct url.
 func TestSetURLSource(t *testing.T) {
 
-	script := Script{}
+	script := resource.Script{}
 	setURLSource(&script, "https://github.com/jkawamoto/roadie")
 
 	if script.Body.Source != "https://github.com/jkawamoto/roadie" {
@@ -81,13 +82,13 @@ func TestSetLocalSource(t *testing.T) {
 	conf := config.Config{}
 	conf.Gcp.Bucket = "somebucket"
 
-	var script Script
+	var script resource.Script
 	var err error
 
 	// Test with directories.
 	for _, target := range []string{".", "../command", ".."} {
 
-		script = Script{
+		script = resource.Script{
 			InstanceName: "test",
 		}
 
@@ -102,7 +103,7 @@ func TestSetLocalSource(t *testing.T) {
 	}
 
 	// Test with a file.
-	script = Script{
+	script = resource.Script{
 		InstanceName: "test",
 	}
 	if err = setLocalSource(&conf, &script, "run.go", nil, true); err != nil {
@@ -126,7 +127,7 @@ func TestSetSource(t *testing.T) {
 	conf := config.Config{}
 	conf.Gcp.Bucket = "somebucket"
 
-	script := Script{}
+	script := resource.Script{}
 
 	setSource(&conf, &script, "abc.zip")
 

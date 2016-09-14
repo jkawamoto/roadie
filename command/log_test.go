@@ -33,7 +33,7 @@ import (
 )
 
 // resource a structure used in ActivityPayload.Resource.
-type resource struct {
+type PayloadResource struct {
 	Zone string
 	Type string
 	ID   string
@@ -64,7 +64,7 @@ func TestCmdLog(t *testing.T) {
 					&logging.LogEntry{
 						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
-							Resource: resource{
+							Resource: PayloadResource{
 								Name: instance,
 							},
 							EventSubtype: log.EventSubtypeInsert,
@@ -159,7 +159,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 					&logging.LogEntry{
 						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
-							Resource: resource{
+							Resource: PayloadResource{
 								Name: instance,
 							},
 							EventSubtype: log.EventSubtypeInsert,
@@ -170,7 +170,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 					&logging.LogEntry{
 						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
-							Resource: resource{
+							Resource: PayloadResource{
 								Name: instance,
 							},
 							EventSubtype: log.EventSubtypeDelete,
@@ -181,7 +181,7 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 					&logging.LogEntry{
 						JsonPayload: log.ActivityPayload{
 							EventType: "GCE_OPERATION_DONE",
-							Resource: resource{
+							Resource: PayloadResource{
 								Name: instance,
 							},
 							EventSubtype: log.EventSubtypeInsert,

@@ -1,5 +1,5 @@
 //
-// command/script_test.go
+// command/resource/script_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package resource
 
 import (
 	"os"
