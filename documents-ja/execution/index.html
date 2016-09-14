@@ -249,6 +249,8 @@ upload:
 書き換えたものです．</li>
 <li>URL が <code>gs://</code> で始まる場合，そのリソースは Google Cloud Storage 上に
 あるとみなされます．</li>
+<li>URL が <code>roadie://&lt;name&gt;</code> の形である場合, 過去に実行した <code>&lt;name&gt;</code> というインスタンス
+で使用したソースコードと同じものを利用します．</li>
 <li>それ以外では，<code>http</code> と <code>https</code> から始まる URL をサポートしています．</li>
 </ul>
 
@@ -305,6 +307,12 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 <p>は，<code>somr_data_v2.json</code> を Google Cloud Storage からダウンロードし，
 <code>some_data.json</code> という名前で <code>/data</code> に保存します．</p>
+
+<p>また，ここでも <code>roadie://</code> で始まる URL を使用することができます．
+<code>roadie://somefile.dat</code> は  <code>gs://&lt;your bucket&gt;/.roadie/data/somefile.dat</code>
+と同じものとして扱われます．
+ここで，<code>gs://&lt;your bucket&gt;/.roadie/data/</code> は <code>roadie data put</code> コマンドにて
+アップロードしたデータファイルのデフォルトの格納先です．</p>
 
 <h4 id="run-セクション:e52f646d428c71e9ec4e13be59006055">run セクション</h4>
 

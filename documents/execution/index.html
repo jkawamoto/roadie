@@ -247,6 +247,9 @@ You can make such URL easily by replacing <code>https://</code> to <code>dropbox
 in your shared link made by Dropbox.</li>
 <li>If the URL starts with <code>gs://</code>, which means your source codes are stored in
 Google Cloud Storage, roadie downloads them.</li>
+<li>If the URL likes <code>roadie://&lt;name&gt;</code>, which means your source codes are
+maintained in <code>roadie</code> and specifies to use as same source codes as ones
+used in instance <code>&lt;name&gt;</code>,</li>
 <li>Otherwise, roadie downloads the URL via http or https.</li>
 </ul>
 
@@ -297,6 +300,11 @@ Here is another example,</p>
 
 <p>downloads <code>somr_data_v2.json</code> into <code>/data</code> from a bucket in
 Google Cloud Storage, and rename it to <code>some_data.json</code>.</p>
+
+<p>In this section, URL scheme <code>roadie://</code> is also supported.
+<code>roadie://somefile.dat</code> means <code>gs://&lt;your bucket&gt;/.roadie/data/somefile.dat</code>.
+The place <code>gs://&lt;your bucket&gt;/.roadie/data/</code> is the default place,
+<code>roadie</code> uploads your fils via <code>roadie data put</code> command.</p>
 
 <h4 id="run:e52f646d428c71e9ec4e13be59006055">run</h4>
 

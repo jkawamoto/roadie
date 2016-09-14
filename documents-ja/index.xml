@@ -444,6 +444,8 @@ upload:
 書き換えたものです．&lt;/li&gt;
 &lt;li&gt;URL が &lt;code&gt;gs://&lt;/code&gt; で始まる場合，そのリソースは Google Cloud Storage 上に
 あるとみなされます．&lt;/li&gt;
+&lt;li&gt;URL が &lt;code&gt;roadie://&amp;lt;name&amp;gt;&lt;/code&gt; の形である場合, 過去に実行した &lt;code&gt;&amp;lt;name&amp;gt;&lt;/code&gt; というインスタンス
+で使用したソースコードと同じものを利用します．&lt;/li&gt;
 &lt;li&gt;それ以外では，&lt;code&gt;http&lt;/code&gt; と &lt;code&gt;https&lt;/code&gt; から始まる URL をサポートしています．&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -500,6 +502,12 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;は，&lt;code&gt;somr_data_v2.json&lt;/code&gt; を Google Cloud Storage からダウンロードし，
 &lt;code&gt;some_data.json&lt;/code&gt; という名前で &lt;code&gt;/data&lt;/code&gt; に保存します．&lt;/p&gt;
+
+&lt;p&gt;また，ここでも &lt;code&gt;roadie://&lt;/code&gt; で始まる URL を使用することができます．
+&lt;code&gt;roadie://somefile.dat&lt;/code&gt; は  &lt;code&gt;gs://&amp;lt;your bucket&amp;gt;/.roadie/data/somefile.dat&lt;/code&gt;
+と同じものとして扱われます．
+ここで，&lt;code&gt;gs://&amp;lt;your bucket&amp;gt;/.roadie/data/&lt;/code&gt; は &lt;code&gt;roadie data put&lt;/code&gt; コマンドにて
+アップロードしたデータファイルのデフォルトの格納先です．&lt;/p&gt;
 
 &lt;h4 id=&#34;run-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;run セクション&lt;/h4&gt;
 

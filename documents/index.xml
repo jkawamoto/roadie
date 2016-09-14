@@ -382,6 +382,9 @@ You can make such URL easily by replacing &lt;code&gt;https://&lt;/code&gt; to &
 in your shared link made by Dropbox.&lt;/li&gt;
 &lt;li&gt;If the URL starts with &lt;code&gt;gs://&lt;/code&gt;, which means your source codes are stored in
 Google Cloud Storage, roadie downloads them.&lt;/li&gt;
+&lt;li&gt;If the URL likes &lt;code&gt;roadie://&amp;lt;name&amp;gt;&lt;/code&gt;, which means your source codes are
+maintained in &lt;code&gt;roadie&lt;/code&gt; and specifies to use as same source codes as ones
+used in instance &lt;code&gt;&amp;lt;name&amp;gt;&lt;/code&gt;,&lt;/li&gt;
 &lt;li&gt;Otherwise, roadie downloads the URL via http or https.&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -432,6 +435,11 @@ Here is another example,&lt;/p&gt;
 
 &lt;p&gt;downloads &lt;code&gt;somr_data_v2.json&lt;/code&gt; into &lt;code&gt;/data&lt;/code&gt; from a bucket in
 Google Cloud Storage, and rename it to &lt;code&gt;some_data.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In this section, URL scheme &lt;code&gt;roadie://&lt;/code&gt; is also supported.
+&lt;code&gt;roadie://somefile.dat&lt;/code&gt; means &lt;code&gt;gs://&amp;lt;your bucket&amp;gt;/.roadie/data/somefile.dat&lt;/code&gt;.
+The place &lt;code&gt;gs://&amp;lt;your bucket&amp;gt;/.roadie/data/&lt;/code&gt; is the default place,
+&lt;code&gt;roadie&lt;/code&gt; uploads your fils via &lt;code&gt;roadie data put&lt;/code&gt; command.&lt;/p&gt;
 
 &lt;h4 id=&#34;run:e52f646d428c71e9ec4e13be59006055&#34;&gt;run&lt;/h4&gt;
 
