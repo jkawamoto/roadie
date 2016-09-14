@@ -75,11 +75,11 @@ type runOpt struct {
 	DiskSize int64
 
 	// If true, result section will be overwritten so that roadie can manage
-	// result data. Otherwise, users require to manage them by theirself.
+	// result data. Otherwise, users require to manage them by their self.
 	OverWriteResultSection bool
 
 	// If true, created instance will not shutdown automatically. So, users
-	// require to do it by theirself. This flag can be useful for debugging.
+	// require to do it by their self. This flag can be useful for debugging.
 	NoShutdown bool
 
 	// If true, do not create any instances but show startup script.
@@ -172,7 +172,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		setSource(conf, script, opt.Source)
 
 	case script.Body.Source == "":
-		fmt.Println(chalk.Red.Color("No source section and source flages are given."))
+		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
 	}
 
 	// Check bucket is ready.
@@ -340,7 +340,7 @@ func setLocalSource(conf *config.Config, script *resource.Script, path string, e
 }
 
 // setSource sets a URL to a `file` in source directory in GCS to a given `script`.
-// Source codes will be downloaded from the URL. To defermin bucketname, it requires
+// Source codes will be downloaded from the URL. To determine bucketname, it requires
 // config. If overwriting source section, it prints warning, too.
 func setSource(conf *config.Config, script *resource.Script, file string) {
 

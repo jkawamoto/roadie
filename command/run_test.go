@@ -34,7 +34,7 @@ func TestCmdRun(t *testing.T) {
 
 	// With instance name/without instance name
 
-	// with corerct script / no script
+	// with correct script / no script
 
 	// Get flag.
 
@@ -50,7 +50,7 @@ func TestCmdRun(t *testing.T) {
 
 }
 
-// TestSetGitSource checks setGitSource sets correct repository url.
+// TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
 
 	script := resource.Script{}
