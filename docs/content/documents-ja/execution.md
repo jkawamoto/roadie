@@ -123,6 +123,8 @@ apt:
   書き換えたものです．
 - URL が `gs://` で始まる場合，そのリソースは Google Cloud Storage 上に
   あるとみなされます．
+- URL が `roadie://<name>` の形である場合, 過去に実行した `<name>` というインスタンス
+  で使用したソースコードと同じものを利用します．
 - それ以外では，`http` と `https` から始まる URL をサポートしています．
 
 どの場合でも，URL が `.zip`, `.tar` または `.tar.gz` で終わる場合，
@@ -181,6 +183,12 @@ data:
 
 は，`somr_data_v2.json` を Google Cloud Storage からダウンロードし，
 `some_data.json` という名前で `/data` に保存します．
+
+また，ここでも `roadie://` で始まる URL を使用することができます．
+`roadie://somefile.dat` は  `gs://<your bucket>/.roadie/data/somefile.dat`
+と同じものとして扱われます．
+ここで，`gs://<your bucket>/.roadie/data/` は `roadie data put` コマンドにて
+アップロードしたデータファイルのデフォルトの格納先です．
 
 
 #### run セクション

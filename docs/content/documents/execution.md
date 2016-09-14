@@ -117,6 +117,9 @@ This URL can take several forms.
   in your shared link made by Dropbox.
 - If the URL starts with `gs://`, which means your source codes are stored in
   Google Cloud Storage, roadie downloads them.
+- If the URL likes `roadie://<name>`, which means your source codes are
+  maintained in `roadie` and specifies to use as same source codes as ones
+  used in instance `<name>`,
 - Otherwise, roadie downloads the URL via http or https.
 
 In any cases, if the URL ends with `.zip`, `.tar`, or `.tar.gz`,
@@ -166,6 +169,11 @@ data:
 
 downloads `somr_data_v2.json` into `/data` from a bucket in
 Google Cloud Storage, and rename it to `some_data.json`.
+
+In this section, URL scheme `roadie://` is also supported.
+`roadie://somefile.dat` means `gs://<your bucket>/.roadie/data/somefile.dat`.
+The place `gs://<your bucket>/.roadie/data/` is the default place,
+`roadie` uploads your fils via `roadie data put` command.
 
 #### run
 `run` section takes a list of commands.
