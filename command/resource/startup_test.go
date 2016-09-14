@@ -1,5 +1,5 @@
 //
-// command/startup_test.go
+// command/resource/startup_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package resource
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ import (
 // TestStartup tests startup function.
 func TestStartup(t *testing.T) {
 
-	opt := &startupOpt{
+	opt := &StartupOpt{
 		Name:    "test-name",
 		Script:  "test-script\nline2",
 		Options: "--options",

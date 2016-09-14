@@ -1,5 +1,5 @@
 //
-// command/startup.go
+// command/resource/startup.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package resource
 
 import (
 	"bytes"
@@ -30,8 +30,8 @@ import (
 	"github.com/ttacon/chalk"
 )
 
-// startupOpt defines variables used in startup template.
-type startupOpt struct {
+// StartupOpt defines variables used in startup template.
+type StartupOpt struct {
 
 	// Name of container.
 	Name string
@@ -50,7 +50,7 @@ type startupOpt struct {
 }
 
 // Startup constructs a startup script by given options.
-func Startup(opt *startupOpt) (res string, err error) {
+func Startup(opt *StartupOpt) (res string, err error) {
 
 	startup, err := util.Asset("assets/startup.sh")
 	if err != nil {

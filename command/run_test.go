@@ -24,6 +24,7 @@ package command
 import (
 	"testing"
 
+	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 )
@@ -33,7 +34,7 @@ func TestCmdRun(t *testing.T) {
 
 	// With instance name/without instance name
 
-	// with corerct script / no script
+	// with correct script / no script
 
 	// Get flag.
 
@@ -49,10 +50,10 @@ func TestCmdRun(t *testing.T) {
 
 }
 
-// TestSetGitSource checks setGitSource sets correct repository url.
+// TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
 
-	script := Script{}
+	script := resource.Script{}
 	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
 
 	if script.Body.Source != "https://github.com/jkawamoto/roadie.git" {
@@ -64,7 +65,7 @@ func TestSetGitSource(t *testing.T) {
 // TestSetURLSource checks setURLSource sets correct url.
 func TestSetURLSource(t *testing.T) {
 
-	script := Script{}
+	script := resource.Script{}
 	setURLSource(&script, "https://github.com/jkawamoto/roadie")
 
 	if script.Body.Source != "https://github.com/jkawamoto/roadie" {
@@ -81,13 +82,13 @@ func TestSetLocalSource(t *testing.T) {
 	conf := config.Config{}
 	conf.Gcp.Bucket = "somebucket"
 
-	var script Script
+	var script resource.Script
 	var err error
 
 	// Test with directories.
 	for _, target := range []string{".", "../command", ".."} {
 
-		script = Script{
+		script = resource.Script{
 			InstanceName: "test",
 		}
 
@@ -102,7 +103,7 @@ func TestSetLocalSource(t *testing.T) {
 	}
 
 	// Test with a file.
-	script = Script{
+	script = resource.Script{
 		InstanceName: "test",
 	}
 	if err = setLocalSource(&conf, &script, "run.go", nil, true); err != nil {
@@ -126,12 +127,66 @@ func TestSetSource(t *testing.T) {
 	conf := config.Config{}
 	conf.Gcp.Bucket = "somebucket"
 
-	script := Script{}
+	script := resource.Script{}
 
 	setSource(&conf, &script, "abc.zip")
 
 	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "abc.zip").String() {
 		t.Errorf("source section is not correct: %s", script.Body.Source)
+	}
+
+}
+
+// TestReplaceURLScheme checks that function replaces URLs which start with "roadie://".
+// to "gs://<bucketname>/.roadie/".
+func TestReplaceURLScheme(t *testing.T) {
+
+	type GCP struct {
+		Project     string
+		MachineType string
+		Zone        string
+		Bucket      string
+	}
+
+	type ScriptBody struct {
+		APT    []string `yaml:"apt,omitempty"`
+		Source string   `yaml:"source,omitempty"`
+		Data   []string `yaml:"data,omitempty"`
+		Run    []string `yaml:"run,omitempty"`
+		Result string   `yaml:"result,omitempty"`
+		Upload []string `yaml:"upload,omitempty"`
+	}
+
+	conf := config.Config{
+		Gcp: GCP{
+			Bucket: "test-bucket",
+		},
+	}
+
+	script := resource.Script{
+		Body: ScriptBody{
+			Source: "roadie://some-sourcefile",
+			Data: []string{
+				"roadie://some-datafile",
+			},
+			Result: "roadie://result-file",
+		},
+	}
+
+	// Run.
+	if err := replaceURLScheme(&conf, &script); err != nil {
+		t.Fatal("replaceURLScheme returns an error:", err.Error())
+	}
+
+	// Check results.
+	if script.Body.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
+		t.Error("source section is not correct:", script.Body.Source)
+	}
+	if script.Body.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
+		t.Error("data section is not correct:", script.Body.Data)
+	}
+	if script.Body.Result != "gs://test-bucket/.roadie/result/result-file" {
+		t.Error("result section is not correct:", script.Body.Result)
 	}
 
 }
