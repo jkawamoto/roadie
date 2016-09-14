@@ -136,3 +136,57 @@ func TestSetSource(t *testing.T) {
 	}
 
 }
+
+// TestReplaceURLScheme checks that function replaces URLs which start with "roadie://".
+// to "gs://<bucketname>/.roadie/".
+func TestReplaceURLScheme(t *testing.T) {
+
+	type GCP struct {
+		Project     string
+		MachineType string
+		Zone        string
+		Bucket      string
+	}
+
+	type ScriptBody struct {
+		APT    []string `yaml:"apt,omitempty"`
+		Source string   `yaml:"source,omitempty"`
+		Data   []string `yaml:"data,omitempty"`
+		Run    []string `yaml:"run,omitempty"`
+		Result string   `yaml:"result,omitempty"`
+		Upload []string `yaml:"upload,omitempty"`
+	}
+
+	conf := config.Config{
+		Gcp: GCP{
+			Bucket: "test-bucket",
+		},
+	}
+
+	script := resource.Script{
+		Body: ScriptBody{
+			Source: "roadie://some-sourcefile",
+			Data: []string{
+				"roadie://some-datafile",
+			},
+			Result: "roadie://result-file",
+		},
+	}
+
+	// Run.
+	if err := replaceURLScheme(&conf, &script); err != nil {
+		t.Fatal("replaceURLScheme returns an error:", err.Error())
+	}
+
+	// Check results.
+	if script.Body.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
+		t.Error("source section is not correct:", script.Body.Source)
+	}
+	if script.Body.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
+		t.Error("data section is not correct:", script.Body.Data)
+	}
+	if script.Body.Result != "gs://test-bucket/.roadie/result/result-file" {
+		t.Error("result section is not correct:", script.Body.Result)
+	}
+
+}

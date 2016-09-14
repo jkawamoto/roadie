@@ -36,6 +36,9 @@ import (
 	"github.com/urfave/cli"
 )
 
+// RoadieSchemePrefix is the prefix of roadie scheme URLs.
+const RoadieSchemePrefix = "roadie://"
+
 // runOpt manages all arguments and flags defined in run command.
 type runOpt struct {
 
@@ -141,6 +144,9 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	script, err := resource.NewScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
+		return
+	}
+	if err = replaceURLScheme(conf, script); err != nil {
 		return
 	}
 
@@ -345,4 +351,30 @@ func setSource(conf *config.Config, script *resource.Script, file string) {
 			script.Filename, url)
 	}
 	script.Body.Source = url
+}
+
+// replaceURLScheme replaced URLs which start with "roadie://".
+// Those URLs are modified to "gs://<bucketname>/.roadie/".
+func replaceURLScheme(conf *config.Config, script *resource.Script) error {
+
+	offset := len(RoadieSchemePrefix)
+
+	// Replace source section.
+	if strings.HasPrefix(script.Body.Source, RoadieSchemePrefix) {
+		script.Body.Source = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
+	}
+
+	// Replace data section.
+	for i, url := range script.Body.Data {
+		if strings.HasPrefix(url, RoadieSchemePrefix) {
+			script.Body.Data[i] = util.CreateURL(conf.Gcp.Bucket, DataPrefix, url[offset:]).String()
+		}
+	}
+
+	// Replace result section.
+	if strings.HasPrefix(script.Body.Result, RoadieSchemePrefix) {
+		script.Body.Result = util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
+	}
+
+	return nil
 }
