@@ -1,3 +1,12 @@
+## 0.2.4 (2016-09-14)
+### Added
+- Support a new URL scheme `roadie://` which is a shortcut to
+  `gs://<your bucket>/.roadie/<section>` in script files.
+
+For example, a URL `roadie://sample.dat` in `data` section of your script file,
+will be treated as `gs://<your bucket>/.roadie/data/sample.dat`.
+It will reduce your types to make script files.
+
 ## 0.2.3 (2016-09-13)
 ### Fixed
 - Output log entries of old instances when reusing same instance name.
@@ -41,7 +50,7 @@ when GCP error happens.
 
 ### Fixed
 
-- A bug of uploaded filenames that all uploaded files were saved as a same name.
+- A bug of uploaded file names that all uploaded files were saved as a same name.
 
 
 ## 0.1.2 (2016-07-13)
