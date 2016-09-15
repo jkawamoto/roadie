@@ -23,11 +23,14 @@ package util
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/jkawamoto/roadie/config"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -53,9 +56,15 @@ type FileInfo struct {
 	Size        uint64
 }
 
-// NewStorage creates a new storage accessor to a given bucket name
-// under the given contest. If the given bucket does not exsits, it will be created.
-func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err error) {
+// NewStorage creates a new storage accessor to a bucket name under the given contest.
+// The context must have a config.
+// If the given bucket does not exsits, it will be created.
+func NewStorage(ctx context.Context) (s *Storage, err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("Context dosen't have a config: %s", ctx)
+	}
 
 	// Create a client.
 	client, err := google.DefaultClient(ctx, gcsScope)
@@ -68,15 +77,13 @@ func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err er
 		return
 	}
 
-	s = &Storage{
-		BucketName: bucket,
-		project:    project,
+	return &Storage{
+		BucketName: cfg.Gcp.Bucket,
+		project:    cfg.Gcp.Project,
 		ctx:        ctx,
 		client:     client,
 		service:    service,
-	}
-
-	return
+	}, nil
 
 }
 

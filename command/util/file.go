@@ -52,7 +52,7 @@ func UploadFiles(ctx context.Context, prefix, name, input string) (string, error
 		return "", fmt.Errorf("Config is not attached to the given Context: %s", ctx)
 	}
 
-	storage, err := NewStorage(ctx, cfg.Gcp.Project, cfg.Gcp.Bucket)
+	storage, err := NewStorage(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -95,12 +95,7 @@ func UploadFiles(ctx context.Context, prefix, name, input string) (string, error
 // In this case, this function also returns the given error value.
 func ListupFiles(ctx context.Context, prefix string, handler ListupFilesHandler) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("Config is not attached to the given Context: %s", ctx)
-	}
-
-	storage, err := NewStorage(ctx, cfg.Gcp.Project, cfg.Gcp.Bucket)
+	storage, err := NewStorage(ctx)
 	if err != nil {
 		return
 	}
