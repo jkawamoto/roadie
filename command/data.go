@@ -68,6 +68,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	ctx = config.NewContext(ctx, conf)
 	for _, target := range filenames {
 
 		var output string
@@ -79,7 +80,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 
 		// TODO: Make a goroutine to upload parallel.
 		var location string
-		location, err = util.UploadToGCS(ctx, conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
+		location, err = util.UploadFiles(ctx, DataPrefix, output, target)
 		if err != nil {
 			return
 		}

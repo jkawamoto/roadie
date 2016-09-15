@@ -76,8 +76,8 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		err := PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(
+			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -97,11 +97,8 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		conf := GetConfig(c)
-		err := util.DownloadFiles(ctx, conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		err := util.DownloadFiles(
+			config.NewContext(context.Background(), GetConfig(c)), prefix, c.String("o"), c.Args())
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -121,11 +118,8 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		conf := GetConfig(c)
-		if err := util.DeleteFiles(ctx, conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+		if err := util.DeleteFiles(
+			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil

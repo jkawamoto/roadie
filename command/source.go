@@ -63,6 +63,7 @@ func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (er
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ctx = config.NewContext(ctx, conf)
 
 	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
 	uploadingPath := filepath.Join(os.TempDir(), filename)
@@ -80,7 +81,7 @@ func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	url, err := util.UploadToGCS(ctx, conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+	url, err := util.UploadFiles(ctx, SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return
 	}

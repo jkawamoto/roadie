@@ -32,13 +32,19 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 )
 
 // AddRecorder is a callback to add file information to a table.
 type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) {
+func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Context doesn't have any Config: %s", ctx)
+	}
 
 	var headers []string
 	if url {
@@ -47,28 +53,31 @@ func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) 
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(
-		project, bucket, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *util.FileInfo, quiet bool) {
 
-			if info.Name != "" {
-				if quiet {
-					table.AddRow(info.Name)
-				} else if url {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", bucket, info.Path))
-				} else {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
-				}
+		if info.Name != "" {
+			if quiet {
+				table.AddRow(info.Name)
+			} else if url {
+				table.AddRow(info.Name, fmt.Sprintf(
+					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
+					fmt.Sprintf("gs://%s/%s", cfg.Gcp.Bucket, info.Path))
+			} else {
+				table.AddRow(info.Name, fmt.Sprintf(
+					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
 			}
+		}
 
-		})
+	})
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
+func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Context doesn't have Config: %s", ctx)
+	}
 
 	var headers []string
 	if url {
@@ -80,8 +89,7 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 	// Storing previous folder name.
 	prev := ""
 
-	return printList(
-		project, bucket, prefix, quiet, headers,
+	return printList(ctx, prefix, quiet, headers,
 		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
 
 			rel, _ := filepath.Rel(prefix, info.Path)
@@ -93,7 +101,7 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 				} else if url {
 					table.AddRow(
 						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", bucket, rel))
+						fmt.Sprintf("gs://%s/%s", cfg.Gcp.Bucket, rel))
 				} else {
 					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}
@@ -103,7 +111,7 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 		})
 }
 
-func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
+func printList(ctx context.Context, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -119,7 +127,7 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-	err = util.ListupFiles(context.Background(), project, bucket, prefix, func(storage *util.Storage, info *util.FileInfo) error {
+	err = util.ListupFiles(ctx, prefix, func(storage *util.Storage, info *util.FileInfo) error {
 
 		addRecorder(table, info, quiet)
 		return nil

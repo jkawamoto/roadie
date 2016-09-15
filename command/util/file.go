@@ -35,18 +35,24 @@ import (
 	"github.com/cheggaaa/pb"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
 // ListupFilesHandler is a handler of LlistupFiles.
 type ListupFilesHandler func(storage *Storage, info *FileInfo) error
 
-// UploadToGCS uploads a file to a bucket associated with a project under a given
+// UploadFiles uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func UploadToGCS(ctx context.Context, project, bucket, prefix, name, input string) (string, error) {
+func UploadFiles(ctx context.Context, prefix, name, input string) (string, error) {
 
-	storage, err := NewStorage(ctx, project, bucket)
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return "", fmt.Errorf("Config is not attached to the given Context: %s", ctx)
+	}
+
+	storage, err := NewStorage(ctx, cfg.Gcp.Project, cfg.Gcp.Bucket)
 	if err != nil {
 		return "", err
 	}
@@ -57,7 +63,7 @@ func UploadToGCS(ctx context.Context, project, bucket, prefix, name, input strin
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := CreateURL(bucket, prefix, name)
+	location := CreateURL(cfg.Gcp.Bucket, prefix, name)
 
 	info, err := os.Stat(input)
 	if err != nil {
@@ -87,9 +93,14 @@ func UploadToGCS(ctx context.Context, project, bucket, prefix, name, input strin
 // have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func ListupFiles(ctx context.Context, project, bucket, prefix string, handler ListupFilesHandler) (err error) {
+func ListupFiles(ctx context.Context, prefix string, handler ListupFilesHandler) (err error) {
 
-	storage, err := NewStorage(ctx, project, bucket)
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Config is not attached to the given Context: %s", ctx)
+	}
+
+	storage, err := NewStorage(ctx, cfg.Gcp.Project, cfg.Gcp.Bucket)
 	if err != nil {
 		return
 	}
@@ -112,7 +123,7 @@ func ListupFiles(ctx context.Context, project, bucket, prefix string, handler Li
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
-func DownloadFiles(ctx context.Context, project, bucket, prefix, dir string, queries []string) (err error) {
+func DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (err error) {
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -133,7 +144,7 @@ func DownloadFiles(ctx context.Context, project, bucket, prefix, dir string, que
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -185,14 +196,14 @@ func DownloadFiles(ctx context.Context, project, bucket, prefix, dir string, que
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func DeleteFiles(ctx context.Context, project, bucket, prefix string, queries []string) error {
+func DeleteFiles(ctx context.Context, prefix string, queries []string) error {
 
 	fmt.Println("Deleting...")
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -230,7 +241,7 @@ func DeleteFiles(ctx context.Context, project, bucket, prefix string, queries []
 // If quiet is ture, additional messages well be suppressed.
 func PrintFileBody(ctx context.Context, project, bucket, prefix, query string, quiet bool) error {
 
-	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():

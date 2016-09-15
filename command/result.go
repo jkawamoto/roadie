@@ -31,6 +31,7 @@ import (
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -55,14 +56,15 @@ func CmdResult(c *cli.Context) error {
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
-	conf := GetConfig(c)
+	ctx := config.NewContext(context.Background(), GetConfig(c))
+
 	var err error
 	switch c.NArg() {
 	case 0:
-		err = PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(ctx, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		err = PrintFileList(ctx, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
@@ -114,10 +116,9 @@ func CmdResultGet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	instance := c.Args().First()
-
-	err := util.DownloadFiles(context.Background(),
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
-		c.String("o"), c.Args().Tail())
+	err := util.DownloadFiles(
+		config.NewContext(context.Background(), conf),
+		filepath.Join(ResultPrefix, instance), c.String("o"), c.Args().Tail())
 
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -156,8 +157,8 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	err := util.DeleteFiles(context.Background(),
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
+	err := util.DeleteFiles(
+		config.NewContext(context.Background(), conf), filepath.Join(ResultPrefix, instance), patterns)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}

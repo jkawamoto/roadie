@@ -60,6 +60,7 @@ func cmdStatus(conf *config.Config, all bool) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ctx = config.NewContext(ctx, conf)
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -69,21 +70,20 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		if err := util.ListupFiles(ctx, conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
-			func(storage *util.Storage, info *util.FileInfo) error {
+		if err := util.ListupFiles(ctx, ResultPrefix, func(storage *util.Storage, info *util.FileInfo) error {
 
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
 
-				default:
-					rel, _ := filepath.Rel(ResultPrefix, info.Path)
-					rel = filepath.Dir(rel)
-					instances[rel] = struct{}{}
-					return nil
-				}
+			default:
+				rel, _ := filepath.Rel(ResultPrefix, info.Path)
+				rel = filepath.Dir(rel)
+				instances[rel] = struct{}{}
+				return nil
+			}
 
-			}); err != nil {
+		}); err != nil {
 			return err
 		}
 
