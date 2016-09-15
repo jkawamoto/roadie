@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"golang.org/x/net/context"
+
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -63,6 +65,9 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 		return
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for _, target := range filenames {
 
 		var output string
@@ -72,8 +77,9 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 			output = filepath.Base(target)
 		}
 
+		// TODO: Make a goroutine to upload parallel.
 		var location string
-		location, err = util.UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
+		location, err = util.UploadToGCS(ctx, conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
 		if err != nil {
 			return
 		}

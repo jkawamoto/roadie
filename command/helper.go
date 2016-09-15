@@ -24,6 +24,8 @@ package command
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -95,8 +97,11 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		conf := GetConfig(c)
-		err := util.DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		err := util.DownloadFiles(ctx, conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -116,8 +121,11 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		conf := GetConfig(c)
-		if err := util.DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+		if err := util.DeleteFiles(ctx, conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil

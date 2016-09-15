@@ -27,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/command/util"
@@ -117,7 +119,7 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-	err = util.ListupFiles(project, bucket, prefix, func(storage *util.Storage, info *util.FileInfo) error {
+	err = util.ListupFiles(context.Background(), project, bucket, prefix, func(storage *util.Storage, info *util.FileInfo) error {
 
 		addRecorder(table, info, quiet)
 		return nil

@@ -157,6 +157,9 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Check source section.
 	switch {
 	case opt.Git != "":
@@ -166,7 +169,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		setURLSource(script, opt.URL)
 
 	case opt.Local != "":
-		if err = setLocalSource(conf, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
+		if err = setLocalSource(ctx, conf, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
 			return
 		}
 
@@ -178,7 +181,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Check a specified bucket exists and create it if not.
-	if storage, e := util.NewStorage(context.Background(), conf.Gcp.Project, conf.Gcp.Bucket); e != nil {
+	if storage, e := util.NewStorage(ctx, conf.Gcp.Project, conf.Gcp.Bucket); e != nil {
 		return e
 	} else if e := storage.CreateIfNotExists(); e != nil {
 		return e
@@ -288,13 +291,13 @@ func setURLSource(script *resource.Script, url string) {
 	script.Body.Source = url
 }
 
-// setLocalSource sets a GCS URL to source section in a given `script`.
+// setLocalSource sets a GCS URL to source section in a given `script` under a given context.
 // It uploads source codes specified by `path` to GCS and set the URL pointing
 // the uploaded files to the source section. If filename patters are given
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
 // If dry is true, it does not upload any files but create a temporary file.
-func setLocalSource(conf *config.Config, script *resource.Script, path string, excludes []string, dry bool) (err error) {
+func setLocalSource(ctx context.Context, conf *config.Config, script *resource.Script, path string, excludes []string, dry bool) (err error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
@@ -333,7 +336,7 @@ func setLocalSource(conf *config.Config, script *resource.Script, path string, e
 	if dry {
 		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = util.UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+		location, err = util.UploadToGCS(ctx, conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}
