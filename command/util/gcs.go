@@ -23,7 +23,6 @@ package util
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -40,6 +39,7 @@ const gcsScope = storage.DevstorageFullControlScope
 // Storage object.
 type Storage struct {
 	BucketName string
+	project    string
 	client     *http.Client
 	service    *storage.Service
 }
@@ -56,29 +56,38 @@ type FileInfo struct {
 // under the given contest. If the given bucket does not exsits, it will be created.
 func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err error) {
 
+	// Create a client.
+	client, err := google.DefaultClient(ctx, gcsScope)
+	if err != nil {
+		return
+	}
+	// Create a servicer.
+	service, err := storage.New(client)
+	if err != nil {
+		return
+	}
+
 	s = &Storage{
 		BucketName: bucket,
-	}
-
-	// Create a client.
-	if s.client, err = google.DefaultClient(ctx, gcsScope); err != nil {
-		return
-	}
-
-	// Create a servicer.
-	if s.service, err = storage.New(s.client); err != nil {
-		return
+		project:    project,
+		client:     client,
+		service:    service,
 	}
 
 	// Check the given bucket exists.
-	if _, exist := s.service.Buckets.Get(bucket).Do(); exist != nil {
-
-		var res *storage.Bucket
-		if res, err = s.service.Buckets.Insert(project, &storage.Bucket{Name: bucket}).Do(); err == nil {
-			fmt.Printf("Bucket %s was created at %s", res.Name, res.SelfLink)
-		}
-	}
+	err = s.createIfNotExists()
 	return
+
+}
+
+// createIfNotExists creates the bucket if not exists.
+func (s *Storage) createIfNotExists() error {
+
+	var err error
+	if _, exist := s.service.Buckets.Get(s.BucketName).Do(); exist != nil {
+		_, err = s.service.Buckets.Insert(s.project, &storage.Bucket{Name: s.BucketName}).Do()
+	}
+	return err
 
 }
 
