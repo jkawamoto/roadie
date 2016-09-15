@@ -261,10 +261,9 @@ func (s *Storage) DeleteFiles(prefix string, queries []string) error {
 	})
 }
 
-// PrintFileBody prints file bodies in a bucket associated with a project,
-// which has a prefix and satisfies query under a context.
+// PrintFileBody prints file bodies which has a prefix and satisfies query under a context.
 // If quiet is ture, additional messages well be suppressed.
-func (s *Storage) PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
+func (s *Storage) PrintFileBody(prefix, query string, quiet bool) error {
 
 	return s.ListupFiles(prefix, func(info *FileInfo) error {
 
