@@ -117,20 +117,12 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-	err = util.ListupFiles(
-		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+	err = util.ListupFiles(project, bucket, prefix, func(storage *util.Storage, info *util.FileInfo) error {
 
-			for {
-				item := <-file
-				if item == nil {
-					done <- struct{}{}
-					return
-				}
-				addRecorder(table, item, quiet)
-			}
+		addRecorder(table, info, quiet)
+		return nil
 
-		})
+	})
 
 	s.Stop()
 	if err == nil {

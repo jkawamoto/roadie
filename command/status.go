@@ -66,26 +66,15 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		err := util.ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
-			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
-				defer func() {
-					done <- struct{}{}
-				}()
+		if err := util.ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
+			func(storage *util.Storage, info *util.FileInfo) error {
 
-				for {
-					info := <-file
-					if info == nil {
-						return
-					}
+				rel, _ := filepath.Rel(ResultPrefix, info.Path)
+				rel = filepath.Dir(rel)
+				instances[rel] = struct{}{}
+				return nil
 
-					rel, _ := filepath.Rel(ResultPrefix, info.Path)
-					rel = filepath.Dir(rel)
-					instances[rel] = struct{}{}
-
-				}
-			})
-
-		if err != nil {
+			}); err != nil {
 			return err
 		}
 
