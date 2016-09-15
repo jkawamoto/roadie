@@ -56,10 +56,10 @@ func PrepareBucket(ctx context.Context) error {
 
 }
 
-// UploadFiles uploads a file to a bucket associated with a project under a given
+// UploadFile uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func UploadFiles(ctx context.Context, prefix, name, input string) (string, error) {
+func UploadFile(ctx context.Context, prefix, name, input string) (string, error) {
 
 	cfg, ok := config.FromContext(ctx)
 	if !ok {

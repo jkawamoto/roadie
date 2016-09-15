@@ -94,7 +94,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 			}
 
 			var location string
-			location, err = util.UploadFiles(ctx, DataPrefix, output, target)
+			location, err = util.UploadFile(ctx, DataPrefix, output, target)
 			if err != nil {
 				// TODO: Show warning.
 			}

@@ -340,7 +340,7 @@ func setLocalSource(ctx context.Context, script *resource.Script, path string, e
 	if dry {
 		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = util.UploadFiles(ctx, SourcePrefix, filename, uploadingPath)
+		location, err = util.UploadFile(ctx, SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}
