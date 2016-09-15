@@ -27,8 +27,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
-	"time"
 
 	"github.com/jkawamoto/roadie/config"
 
@@ -46,14 +44,6 @@ type Storage struct {
 	ctx        context.Context
 	client     *http.Client
 	service    *storage.Service
-}
-
-// FileInfo defines file information structure.
-type FileInfo struct {
-	Name        string
-	Path        string
-	TimeCreated time.Time
-	Size        uint64
 }
 
 // NewStorage creates a new storage accessor to a bucket name under the given contest.
@@ -176,18 +166,4 @@ func (s *Storage) Delete(name string) error {
 
 	return s.service.Objects.Delete(s.BucketName, name).Do()
 
-}
-
-// NewFileInfo creates a file info from an object.
-func NewFileInfo(f *storage.Object) *FileInfo {
-
-	splitedName := strings.Split(f.Name, "/")
-	t, _ := time.Parse("2006-01-02T15:04:05", strings.Split(f.TimeCreated, ".")[0])
-
-	return &FileInfo{
-		Name:        splitedName[len(splitedName)-1],
-		Path:        f.Name,
-		TimeCreated: t.In(time.Local),
-		Size:        f.Size,
-	}
 }
