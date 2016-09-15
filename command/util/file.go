@@ -1,5 +1,5 @@
 //
-// command/file.go
+// command/util/file.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package util
 
 import (
 	"bufio"
@@ -35,19 +35,18 @@ import (
 	"github.com/cheggaaa/pb"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
 // ListupFilesWorker is goroutine of a woker called from listupFiles.
-type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{})
+type ListupFilesWorker func(storage *Storage, file <-chan *FileInfo, done chan<- struct{})
 
 // UploadToGCS uploads a file to a bucket associated with a project.
 // Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
-	storage, err := util.NewStorage(context.Background(), project, bucket)
+	storage, err := NewStorage(context.Background(), project, bucket)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +57,7 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := util.CreateURL(bucket, prefix, name)
+	location := CreateURL(bucket, prefix, name)
 
 	info, err := os.Stat(input)
 	if err != nil {
@@ -89,7 +88,7 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 // The worker function will be started as a goroutine.
 func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err error) {
 
-	storage, err := util.NewStorage(context.Background(), project, bucket)
+	storage, err := NewStorage(context.Background(), project, bucket)
 	if err != nil {
 		return
 	}
@@ -97,7 +96,7 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err 
 		return
 	}
 
-	file := make(chan *util.FileInfo, 10)
+	file := make(chan *FileInfo, 10)
 	done := make(chan struct{})
 	errCh := make(chan error)
 
@@ -140,7 +139,7 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err e
 
 	return ListupFiles(
 		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
 
 			var wg sync.WaitGroup
 			fmt.Println("Downloading...")
@@ -163,7 +162,7 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err e
 					pool.Add(bar)
 
 					wg.Add(1)
-					go func(info *util.FileInfo, bar *pb.ProgressBar) {
+					go func(info *FileInfo, bar *pb.ProgressBar) {
 
 						defer wg.Done()
 
@@ -203,7 +202,7 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 
 	return ListupFiles(
 		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
 
 			var wg sync.WaitGroup
 			fmt.Println("Deleting...")
@@ -220,7 +219,7 @@ func DeleteFiles(project, bucket, prefix string, queries []string) error {
 				if match(queries, info.Name) {
 
 					wg.Add(1)
-					go func(info *util.FileInfo) {
+					go func(info *FileInfo) {
 
 						defer wg.Done()
 						if err := storage.Delete(info.Path); err != nil {
@@ -247,7 +246,7 @@ func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
 
 	return ListupFiles(
 		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
 
 			for {
 				info := <-file

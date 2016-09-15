@@ -333,7 +333,7 @@ func setLocalSource(conf *config.Config, script *resource.Script, path string, e
 	if dry {
 		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+		location, err = util.UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}

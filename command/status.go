@@ -66,7 +66,7 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		err := ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
+		err := util.ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
 			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 				defer func() {
 					done <- struct{}{}

@@ -117,7 +117,7 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-	err = ListupFiles(
+	err = util.ListupFiles(
 		project, bucket, prefix,
 		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
 

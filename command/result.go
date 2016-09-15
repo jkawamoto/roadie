@@ -28,6 +28,7 @@ import (
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -80,12 +81,12 @@ func CmdResultShow(c *cli.Context) error {
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		err = util.PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+		err = util.PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
@@ -110,7 +111,7 @@ func CmdResultGet(c *cli.Context) error {
 	conf := GetConfig(c)
 	instance := c.Args().First()
 
-	err := DownloadFiles(
+	err := util.DownloadFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
 		c.String("o"), c.Args().Tail())
 
@@ -151,7 +152,7 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	err := DeleteFiles(
+	err := util.DeleteFiles(
 		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)

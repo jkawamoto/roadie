@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -72,7 +73,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 		}
 
 		var location string
-		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
+		location, err = util.UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, DataPrefix, output, target)
 		if err != nil {
 			return
 		}

@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -95,7 +96,7 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		err := DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		err := util.DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -116,7 +117,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		}
 
 		conf := GetConfig(c)
-		if err := DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+		if err := util.DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
