@@ -42,67 +42,78 @@ type Storage struct {
 	BucketName string
 	project    string
 	ctx        context.Context
-	client     *http.Client
-	service    *storage.Service
 }
 
 // NewStorage creates a new storage accessor to a bucket name under the given contest.
 // The context must have a config.
 // If the given bucket does not exsits, it will be created.
-func NewStorage(ctx context.Context) (s *Storage, err error) {
+func NewStorage(ctx context.Context) (*Storage, error) {
 
 	cfg, ok := config.FromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Context dosen't have a config: %s", ctx)
 	}
 
-	// Create a client.
-	client, err := google.DefaultClient(ctx, gcsScope)
-	if err != nil {
-		return
-	}
-	// Create a servicer.
-	service, err := storage.New(client)
-	if err != nil {
-		return
-	}
-
 	return &Storage{
 		BucketName: cfg.Gcp.Bucket,
 		project:    cfg.Gcp.Project,
 		ctx:        ctx,
-		client:     client,
-		service:    service,
 	}, nil
 
 }
 
-// CreateIfNotExists creates the bucket if not exists.
-func (s *Storage) CreateIfNotExists() error {
+// newService creates a new service object.
+func (s *Storage) newService() (service *storage.Service, err error) {
 
-	var err error
-	if _, exist := s.service.Buckets.Get(s.BucketName).Do(); exist != nil {
-		_, err = s.service.Buckets.Insert(s.project, &storage.Bucket{Name: s.BucketName}).Do()
+	var client *http.Client
+	// Create a client.
+	client, err = google.DefaultClient(s.ctx, gcsScope)
+	if err != nil {
+		return
 	}
-	return err
+	// Create a servicer.
+	return storage.New(client)
+
+}
+
+// CreateIfNotExists creates the bucket if not exists.
+func (s *Storage) CreateIfNotExists() (err error) {
+
+	service, err := s.newService()
+	if err != nil {
+		return
+	}
+
+	if _, exist := service.Buckets.Get(s.BucketName).Do(); exist != nil {
+		_, err = service.Buckets.Insert(s.project, &storage.Bucket{Name: s.BucketName}).Do()
+	}
+	return
 
 }
 
 // Upload a file to a location.
-func (s *Storage) Upload(in io.Reader, location *url.URL) error {
+func (s *Storage) Upload(in io.Reader, location *url.URL) (err error) {
+
+	service, err := s.newService()
+	if err != nil {
+		return
+	}
 
 	object := &storage.Object{Name: location.Path[1:]}
-	if _, err := s.service.Objects.Insert(s.BucketName, object).Media(in).Do(); err != nil {
-		return err
-	}
-	return nil
+	_, err = service.Objects.Insert(s.BucketName, object).Media(in).Do()
+	return
 
 }
 
 // Download downloads a file and write it to a given writer.
 func (s *Storage) Download(filename string, out io.Writer) (err error) {
 
-	res, err := s.service.Objects.Get(s.BucketName, filename).Download()
+	service, err := s.newService()
+	if err != nil {
+		return
+	}
+
+	res, err := service.Objects.Get(s.BucketName, filename).Download()
 	if err != nil {
 		return
 	}
@@ -115,13 +126,19 @@ func (s *Storage) Download(filename string, out io.Writer) (err error) {
 }
 
 // Status returns a file status of an object.
-func (s *Storage) Status(filename string) (*FileInfo, error) {
+func (s *Storage) Status(filename string) (info *FileInfo, err error) {
 
-	res, err := s.service.Objects.Get(s.BucketName, filename).Do()
+	service, err := s.newService()
 	if err != nil {
-		return nil, err
+		return
 	}
-	return NewFileInfo(res), nil
+
+	res, err := service.Objects.Get(s.BucketName, filename).Do()
+	if err != nil {
+		return
+	}
+	info = NewFileInfo(res)
+	return
 
 }
 
@@ -131,10 +148,15 @@ func (s *Storage) Status(filename string) (*FileInfo, error) {
 // In that case, this function will also return the given value.
 func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
 
+	service, err := s.newService()
+	if err != nil {
+		return err
+	}
+
 	var token string
 	for {
 
-		res, err := s.service.Objects.List(s.BucketName).Prefix(prefix).PageToken(token).Do()
+		res, err := service.Objects.List(s.BucketName).Prefix(prefix).PageToken(token).Do()
 		if err != nil {
 			return err
 		}
@@ -162,8 +184,12 @@ func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
 }
 
 // Delete deletes a given file.
-func (s *Storage) Delete(name string) error {
+func (s *Storage) Delete(name string) (err error) {
 
-	return s.service.Objects.Delete(s.BucketName, name).Do()
+	service, err := s.newService()
+	if err != nil {
+		return
+	}
+	return service.Objects.Delete(s.BucketName, name).Do()
 
 }
