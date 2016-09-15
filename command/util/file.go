@@ -38,8 +38,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-// ListupFilesWorker is goroutine of a woker called from listupFiles.
-type ListupFilesWorker func(storage *Storage, file <-chan *FileInfo, done chan<- struct{})
+// ListupFilesHandler is a handler of LlistupFiles.
+type ListupFilesHandler func(storage *Storage, info *FileInfo) error
 
 // UploadToGCS uploads a file to a bucket associated with a project.
 // Uploaded file will have a given name. This function returns a URL
@@ -84,9 +84,10 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 }
 
 // ListupFiles lists up files in a bucket associated with a project and which
-// have a prefix. Information of found files will be sent to worker function via channgel.
-// The worker function will be started as a goroutine.
-func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err error) {
+// have a prefix. Information of found files will be passed to a handler.
+// If the handler returns non nil value, the listing up will be canceled.
+// In this case, this function also returns the given error value.
+func ListupFiles(project, bucket, prefix string, handler ListupFilesHandler) (err error) {
 
 	storage, err := NewStorage(context.Background(), project, bucket)
 	if err != nil {
@@ -96,17 +97,9 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err 
 		return
 	}
 
-	file := make(chan *FileInfo, 10)
-	done := make(chan struct{})
-
-	go worker(storage, file, done)
-	err = storage.List(prefix, func(info *FileInfo) error {
-		file <- info
-		return nil
+	return storage.List(prefix, func(info *FileInfo) error {
+		return handler(storage, info)
 	})
-	file <- nil
-	<-done
-	return
 
 }
 
@@ -127,62 +120,54 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err e
 		}
 	}
 
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
+	fmt.Println("Downloading...")
+	pool, _ := pb.StartPool()
+	defer pool.Stop()
 
-			var wg sync.WaitGroup
-			fmt.Println("Downloading...")
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
-			pool, _ := pb.StartPool()
-			defer pool.Stop()
+	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-			for {
+		// If Name is empty, it might be a folder or a special file.
+		if info.Name == "" {
+			return nil
+		}
 
-				info := <-file
-				if info == nil {
-					break
-				} else if info.Name == "" {
-					continue
+		if match(queries, info.Name) {
+
+			bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+			pool.Add(bar)
+
+			wg.Add(1)
+			go func(info *FileInfo, bar *pb.ProgressBar) {
+
+				defer wg.Done()
+
+				filename := filepath.Join(dir, info.Name)
+				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if err != nil {
+					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+					return
+				}
+				defer f.Close()
+
+				buf := bufio.NewWriter(io.MultiWriter(f, bar))
+				defer buf.Flush()
+
+				if err := storage.Download(info.Path, buf); err != nil {
+					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+				} else {
+					bar.Finish()
 				}
 
-				if match(queries, info.Name) {
+			}(info, bar)
 
-					bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-					pool.Add(bar)
+		}
 
-					wg.Add(1)
-					go func(info *FileInfo, bar *pb.ProgressBar) {
+		return nil
 
-						defer wg.Done()
-
-						filename := filepath.Join(dir, info.Name)
-						f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-						if err != nil {
-							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-							return
-						}
-						defer f.Close()
-
-						buf := bufio.NewWriter(io.MultiWriter(f, bar))
-						defer buf.Flush()
-
-						if err := storage.Download(info.Path, buf); err != nil {
-							bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
-						} else {
-							bar.Finish()
-						}
-
-					}(info, bar)
-
-				}
-
-			}
-
-			wg.Wait()
-			done <- struct{}{}
-
-		})
+	})
 
 }
 
@@ -190,73 +175,61 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err e
 // which has a prefix and satisfies a query.
 func DeleteFiles(project, bucket, prefix string, queries []string) error {
 
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
+	fmt.Println("Deleting...")
 
-			var wg sync.WaitGroup
-			fmt.Println("Deleting...")
+	var wg sync.WaitGroup
+	defer wg.Wait()
 
-			for {
+	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-				info := <-file
-				if info == nil {
-					break
-				} else if info.Name == "" {
-					continue
+		// If Name is empty, it might be a folder or a special file.
+		if info.Name == "" {
+			return nil
+		}
+
+		if match(queries, info.Name) {
+
+			wg.Add(1)
+			go func(info *FileInfo) {
+
+				defer wg.Done()
+				if err := storage.Delete(info.Path); err != nil {
+					fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
 				}
 
-				if match(queries, info.Name) {
+			}(info)
 
-					wg.Add(1)
-					go func(info *FileInfo) {
+		}
 
-						defer wg.Done()
-						if err := storage.Delete(info.Path); err != nil {
-							fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
-						}
-
-					}(info)
-
-				}
-
-			}
-
-			wg.Wait()
-			done <- struct{}{}
-
-		})
+		return nil
+	})
 
 }
 
 // PrintFileBody prints file bodies in a bucket associated with a project,
-// which has a prefix ans satisfies query. If quiet is ture, additional messages
+// which has a prefix and satisfies query. If quiet is ture, additional messages
 // well be suppressed.
 func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
 
-	return ListupFiles(
-		project, bucket, prefix,
-		func(storage *Storage, file <-chan *FileInfo, done chan<- struct{}) {
+	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-			for {
-				info := <-file
-				if info == nil {
-					done <- struct{}{}
-					return
-				}
+		// If Name is empty, it might be a folder or a special file.
+		if info == nil {
+			return nil
+		}
 
-				if info.Name != "" && strings.HasPrefix(info.Name, query) {
-					if !quiet {
-						fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
-					}
-					if err := storage.Download(info.Path, os.Stdout); err != nil {
-						fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-					}
-				}
-
+		if info.Name != "" && strings.HasPrefix(info.Name, query) {
+			if !quiet {
+				fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
 			}
+			if err := storage.Download(info.Path, os.Stdout); err != nil {
+				fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+			}
+		}
 
-		})
+		return nil
+
+	})
 
 }
 
