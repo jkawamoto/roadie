@@ -98,24 +98,14 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err 
 
 	file := make(chan *FileInfo, 10)
 	done := make(chan struct{})
-	errCh := make(chan error)
 
-	go storage.List(prefix, file, errCh)
 	go worker(storage, file, done)
-
-	func() {
-		for {
-			select {
-			case <-done:
-				// ListupFilesWorker ends.
-				return
-			case err = <-errCh:
-				// storage.List ends but ListupFilesWorker is still working.
-				file <- nil
-			}
-		}
-	}()
-
+	err = storage.List(prefix, func(info *FileInfo) error {
+		file <- info
+		return nil
+	})
+	file <- nil
+	<-done
 	return
 
 }
