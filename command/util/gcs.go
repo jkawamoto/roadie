@@ -40,6 +40,7 @@ const gcsScope = storage.DevstorageFullControlScope
 type Storage struct {
 	BucketName string
 	project    string
+	ctx        context.Context
 	client     *http.Client
 	service    *storage.Service
 }
@@ -70,6 +71,7 @@ func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err er
 	s = &Storage{
 		BucketName: bucket,
 		project:    project,
+		ctx:        ctx,
 		client:     client,
 		service:    service,
 	}
@@ -141,9 +143,16 @@ func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
 		}
 
 		for _, item := range res.Items {
-			if err := handler(NewFileInfo(item)); err != nil {
-				return err
+
+			select {
+			case <-s.ctx.Done():
+				return s.ctx.Err()
+			default:
+				if err := handler(NewFileInfo(item)); err != nil {
+					return err
+				}
 			}
+
 		}
 
 		if res.NextPageToken == "" {
