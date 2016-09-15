@@ -146,7 +146,7 @@ func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error
 // Found items will be passed to a given handler item by item.
 // If the handler returns a non nil value, listing up will be canceled.
 // In that case, this function will also return the given value.
-func (s *CloudStorageService) List(prefix string, handler func(*FileInfo) error) error {
+func (s *CloudStorageService) List(prefix string, handler FileInfoHandler) error {
 
 	service, err := s.newService()
 	if err != nil {

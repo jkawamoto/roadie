@@ -25,6 +25,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,38 +40,55 @@ import (
 	"github.com/urfave/cli"
 )
 
-// ListupFilesHandler is a handler of LlistupFiles.
-type ListupFilesHandler func(storage *Storage, info *FileInfo) error
+// Storage provides APIs to access a cloud storage.
+type Storage struct {
+	service storageServicer
+}
+
+// FileInfoHandler is a handler to recieve a file info.
+type FileInfoHandler func(*FileInfo) error
+
+// storageServicer defines APIs a storage service provider must have.
+type storageServicer interface {
+	CreateIfNotExists() error
+	Upload(in io.Reader, location *url.URL) error
+	Download(filename string, out io.Writer) error
+	Status(filename string) (*FileInfo, error)
+	List(prefix string, handler FileInfoHandler) error
+	Delete(name string) error
+}
+
+// NewStorage creates a cloud storage accessor with a given context.
+// The context must have a Config.
+func NewStorage(ctx context.Context) (*Storage, error) {
+
+	service, err := NewCloudStorageService(ctx)
+	return &Storage{
+		service: service,
+	}, err
+
+}
 
 // PrepareBucket makes a bucket if it doesn't exist under a given context.
 // The given context must have a config.
-func PrepareBucket(ctx context.Context) error {
+func (s *Storage) PrepareBucket(ctx context.Context) error {
 
-	// Check a specified bucket exists and create it if not.
-	if storage, e := NewStorage(ctx); e != nil {
-		return e
-	} else if e := storage.CreateIfNotExists(); e != nil {
-		return e
-	}
-	return nil
+	return s.service.CreateIfNotExists()
 
 }
 
 // UploadFile uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func UploadFile(ctx context.Context, prefix, name, input string) (string, error) {
+func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (string, error) {
 
 	cfg, ok := config.FromContext(ctx)
 	if !ok {
 		return "", fmt.Errorf("Config is not attached to the given Context: %s", ctx)
 	}
 
-	storage, err := NewStorage(ctx)
-	if err != nil {
-		return "", err
-	}
-	if err = storage.CreateIfNotExists(); err != nil {
+	var err error
+	if err = s.service.CreateIfNotExists(); err != nil {
 		return "", err
 	}
 
@@ -96,7 +114,7 @@ func UploadFile(ctx context.Context, prefix, name, input string) (string, error)
 	bar.Start()
 	defer bar.Finish()
 
-	if err := storage.Upload(bar.NewProxyReader(file), location); err != nil {
+	if err := s.service.Upload(bar.NewProxyReader(file), location); err != nil {
 		return "", cli.NewExitError(err.Error(), 2)
 	}
 	return location.String(), nil
@@ -107,23 +125,19 @@ func UploadFile(ctx context.Context, prefix, name, input string) (string, error)
 // have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func ListupFiles(ctx context.Context, prefix string, handler ListupFilesHandler) (err error) {
+func (s *Storage) ListupFiles(ctx context.Context, prefix string, handler FileInfoHandler) (err error) {
 
-	storage, err := NewStorage(ctx)
-	if err != nil {
-		return
-	}
-	if err = storage.CreateIfNotExists(); err != nil {
+	if err = s.service.CreateIfNotExists(); err != nil {
 		return
 	}
 
-	return storage.List(prefix, func(info *FileInfo) error {
+	return s.service.List(prefix, func(info *FileInfo) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 
 		default:
-			return handler(storage, info)
+			return handler(info)
 		}
 	})
 
@@ -132,7 +146,8 @@ func ListupFiles(ctx context.Context, prefix string, handler ListupFilesHandler)
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
-func DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (err error) {
+func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (err error) {
+	// TODO: add callbacka to show progress bar and this function doesn't handle such bars.
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -153,7 +168,7 @@ func DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (e
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
+	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -186,7 +201,7 @@ func DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (e
 					buf := bufio.NewWriter(io.MultiWriter(f, bar))
 					defer buf.Flush()
 
-					if err := storage.Download(info.Path, buf); err != nil {
+					if err := s.service.Download(info.Path, buf); err != nil {
 						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
 					} else {
 						bar.Finish()
@@ -205,14 +220,15 @@ func DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (e
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func DeleteFiles(ctx context.Context, prefix string, queries []string) error {
+func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []string) error {
 
 	fmt.Println("Deleting...")
+	// TODO: Show deleting file names.
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
+	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -229,12 +245,10 @@ func DeleteFiles(ctx context.Context, prefix string, queries []string) error {
 
 				wg.Add(1)
 				go func(info *FileInfo) {
-
 					defer wg.Done()
-					if err := storage.Delete(info.Path); err != nil {
+					if err := s.service.Delete(info.Path); err != nil {
 						fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
 					}
-
 				}(info)
 
 			}
@@ -248,9 +262,9 @@ func DeleteFiles(ctx context.Context, prefix string, queries []string) error {
 // PrintFileBody prints file bodies in a bucket associated with a project,
 // which has a prefix and satisfies query under a context.
 // If quiet is ture, additional messages well be suppressed.
-func PrintFileBody(ctx context.Context, project, bucket, prefix, query string, quiet bool) error {
+func (s *Storage) PrintFileBody(ctx context.Context, project, bucket, prefix, query string, quiet bool) error {
 
-	return ListupFiles(ctx, prefix, func(storage *Storage, info *FileInfo) error {
+	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -266,7 +280,7 @@ func PrintFileBody(ctx context.Context, project, bucket, prefix, query string, q
 				if !quiet {
 					fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
 				}
-				if err := storage.Download(info.Path, os.Stdout); err != nil {
+				if err := s.service.Download(info.Path, os.Stdout); err != nil {
 					fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
 				}
 			}
