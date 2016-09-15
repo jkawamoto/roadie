@@ -74,14 +74,12 @@ func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err er
 		service:    service,
 	}
 
-	// Check the given bucket exists.
-	err = s.createIfNotExists()
 	return
 
 }
 
-// createIfNotExists creates the bucket if not exists.
-func (s *Storage) createIfNotExists() error {
+// CreateIfNotExists creates the bucket if not exists.
+func (s *Storage) CreateIfNotExists() error {
 
 	var err error
 	if _, exist := s.service.Buckets.Get(s.BucketName).Do(); exist != nil {

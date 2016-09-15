@@ -177,9 +177,11 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
 	}
 
-	// Check bucket is ready.
-	if _, err = util.NewStorage(context.Background(), conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
-		return
+	// Check a specified bucket exists and create it if not.
+	if storage, e := util.NewStorage(context.Background(), conf.Gcp.Project, conf.Gcp.Bucket); e != nil {
+		return e
+	} else if e := storage.CreateIfNotExists(); e != nil {
+		return e
 	}
 
 	// Check result section.

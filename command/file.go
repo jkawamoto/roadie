@@ -51,6 +51,9 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if err = storage.CreateIfNotExists(); err != nil {
+		return "", err
+	}
 
 	if name == "" {
 		name = filepath.Base(input)
@@ -88,6 +91,9 @@ func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err 
 
 	storage, err := util.NewStorage(context.Background(), project, bucket)
 	if err != nil {
+		return
+	}
+	if err = storage.CreateIfNotExists(); err != nil {
 		return
 	}
 
