@@ -129,19 +129,7 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 // In this case, this function also returns the given error value.
 func (s *Storage) ListupFiles(prefix string, handler FileInfoHandler) (err error) {
 
-	if err = s.service.CreateIfNotExists(); err != nil {
-		return
-	}
-
-	return s.service.List(prefix, func(info *FileInfo) error {
-		select {
-		case <-s.ctx.Done():
-			return s.ctx.Err()
-
-		default:
-			return handler(info)
-		}
-	})
+	return s.service.List(prefix, handler)
 
 }
 
