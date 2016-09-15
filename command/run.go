@@ -182,10 +182,8 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Check a specified bucket exists and create it if not.
-	if storage, e := util.NewStorage(ctx); e != nil {
-		return e
-	} else if e := storage.CreateIfNotExists(); e != nil {
-		return e
+	if err = util.PrepareBucket(ctx); err != nil {
+		return err
 	}
 
 	// Check result section.

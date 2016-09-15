@@ -42,6 +42,20 @@ import (
 // ListupFilesHandler is a handler of LlistupFiles.
 type ListupFilesHandler func(storage *Storage, info *FileInfo) error
 
+// PrepareBucket makes a bucket if it doesn't exist under a given context.
+// The given context must have a config.
+func PrepareBucket(ctx context.Context) error {
+
+	// Check a specified bucket exists and create it if not.
+	if storage, e := NewStorage(ctx); e != nil {
+		return e
+	} else if e := storage.CreateIfNotExists(); e != nil {
+		return e
+	}
+	return nil
+
+}
+
 // UploadFiles uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
