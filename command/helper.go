@@ -97,9 +97,13 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		err := util.DownloadFiles(
-			config.NewContext(context.Background(), GetConfig(c)), prefix, c.String("o"), c.Args())
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage, err := util.NewStorage(ctx)
 		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+
+		if err = storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
@@ -118,8 +122,13 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		if err := util.DeleteFiles(
-			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Args()); err != nil {
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage, err := util.NewStorage(ctx)
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+
+		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil

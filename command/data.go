@@ -71,6 +71,11 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 	defer cancel()
 	ctx = config.NewContext(ctx, conf)
 
+	storage, err := util.NewStorage(ctx)
+	if err != nil {
+		return
+	}
+
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
@@ -94,7 +99,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 			}
 
 			var location string
-			location, err = util.UploadFile(ctx, DataPrefix, output, target)
+			location, err = storage.UploadFile(DataPrefix, output, target)
 			if err != nil {
 				// TODO: Show warning.
 			}

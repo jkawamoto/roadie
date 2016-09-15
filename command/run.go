@@ -157,9 +157,19 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
+	// Prepare a context.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = config.NewContext(ctx, conf)
+
+	// Check a specified bucket exists and create it if not.
+	storage, err := util.NewStorage(ctx)
+	if err != nil {
+		return
+	}
+	if err = storage.PrepareBucket(); err != nil {
+		return err
+	}
 
 	// Check source section.
 	switch {
@@ -170,7 +180,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		setURLSource(script, opt.URL)
 
 	case opt.Local != "":
-		if err = setLocalSource(ctx, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
+		if err = setLocalSource(ctx, storage, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
 			return
 		}
 
@@ -179,11 +189,6 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	case script.Body.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
-	}
-
-	// Check a specified bucket exists and create it if not.
-	if err = util.PrepareBucket(ctx); err != nil {
-		return err
 	}
 
 	// Check result section.
@@ -296,7 +301,7 @@ func setURLSource(script *resource.Script, url string) {
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
 // If dry is true, it does not upload any files but create a temporary file.
-func setLocalSource(ctx context.Context, script *resource.Script, path string, excludes []string, dry bool) (err error) {
+func setLocalSource(ctx context.Context, storage *util.Storage, script *resource.Script, path string, excludes []string, dry bool) (err error) {
 
 	conf, ok := config.FromContext(ctx)
 	if !ok {
@@ -340,7 +345,7 @@ func setLocalSource(ctx context.Context, script *resource.Script, path string, e
 	if dry {
 		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = util.UploadFile(ctx, SourcePrefix, filename, uploadingPath)
+		location, err = storage.UploadFile(SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}

@@ -117,6 +117,7 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 	s.Prefix = "Loading information..."
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
+	defer s.Stop()
 
 	table := uitable.New()
 	if !quiet {
@@ -127,16 +128,18 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	err = util.ListupFiles(ctx, prefix, func(storage *util.Storage, info *util.FileInfo) error {
+	storage, err := util.NewStorage(ctx)
+	if err != nil {
+		return
+	}
 
+	err = storage.ListupFiles(prefix, func(info *util.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
-
 	})
 
-	s.Stop()
 	if err == nil {
-		fmt.Println(table.String())
+		s.FinalMSG += table.String()
 	}
 	return
 

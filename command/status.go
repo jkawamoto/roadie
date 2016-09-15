@@ -58,9 +58,9 @@ func CmdStatus(c *cli.Context) error {
 // instances of which results are deleted already will be omitted.
 func cmdStatus(conf *config.Config, all bool) error {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := config.NewContext(context.Background(), conf)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	ctx = config.NewContext(ctx, conf)
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -70,7 +70,12 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		if err := util.ListupFiles(ctx, ResultPrefix, func(storage *util.Storage, info *util.FileInfo) error {
+		storage, err := util.NewStorage(ctx)
+		if err != nil {
+			return err
+		}
+
+		if err := storage.ListupFiles(ResultPrefix, func(info *util.FileInfo) error {
 
 			select {
 			case <-ctx.Done():
