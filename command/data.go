@@ -24,6 +24,8 @@ package command
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -67,25 +69,39 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	ctx = config.NewContext(ctx, conf)
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	semaphore := make(chan struct{}, runtime.NumCPU()-1)
+
 	for _, target := range filenames {
 
-		var output string
-		if storedName != "" && len(filenames) == 1 {
-			output = storedName
-		} else {
-			output = filepath.Base(target)
-		}
+		wg.Add(1)
+		go func(target string) {
+			defer wg.Done()
 
-		// TODO: Make a goroutine to upload parallel.
-		var location string
-		location, err = util.UploadFiles(ctx, DataPrefix, output, target)
-		if err != nil {
-			return
-		}
+			semaphore <- struct{}{}
+			defer func() {
+				<-semaphore
+			}()
 
-		fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+			var output string
+			if storedName != "" && len(filenames) == 1 {
+				output = storedName
+			} else {
+				output = filepath.Base(target)
+			}
+
+			var location string
+			location, err = util.UploadFiles(ctx, DataPrefix, output, target)
+			if err != nil {
+				// TODO: Show warning.
+			}
+			fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+
+		}(target)
+
 	}
 
 	return nil
