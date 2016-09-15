@@ -1,5 +1,5 @@
 //
-// command/util/gcs.go
+// command/util/cloudstorage.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //

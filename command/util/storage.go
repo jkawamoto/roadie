@@ -1,5 +1,5 @@
 //
-// command/util/file.go
+// command/util/storage.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
