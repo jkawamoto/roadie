@@ -42,6 +42,9 @@ import (
 
 // Storage provides APIs to access a cloud storage.
 type Storage struct {
+	// Context this Storage associates with.
+	ctx context.Context
+	// Servicer.
 	service storageServicer
 }
 
@@ -64,6 +67,7 @@ func NewStorage(ctx context.Context) (*Storage, error) {
 
 	service, err := NewCloudStorageService(ctx)
 	return &Storage{
+		ctx:     ctx,
 		service: service,
 	}, err
 
@@ -71,20 +75,18 @@ func NewStorage(ctx context.Context) (*Storage, error) {
 
 // PrepareBucket makes a bucket if it doesn't exist under a given context.
 // The given context must have a config.
-func (s *Storage) PrepareBucket(ctx context.Context) error {
-
+func (s *Storage) PrepareBucket() error {
 	return s.service.CreateIfNotExists()
-
 }
 
 // UploadFile uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (string, error) {
+func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 
-	cfg, ok := config.FromContext(ctx)
+	cfg, ok := config.FromContext(s.ctx)
 	if !ok {
-		return "", fmt.Errorf("Config is not attached to the given Context: %s", ctx)
+		return "", fmt.Errorf("Config is not attached to the given Context: %s", s.ctx)
 	}
 
 	var err error
@@ -125,7 +127,7 @@ func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (s
 // have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func (s *Storage) ListupFiles(ctx context.Context, prefix string, handler FileInfoHandler) (err error) {
+func (s *Storage) ListupFiles(prefix string, handler FileInfoHandler) (err error) {
 
 	if err = s.service.CreateIfNotExists(); err != nil {
 		return
@@ -133,8 +135,8 @@ func (s *Storage) ListupFiles(ctx context.Context, prefix string, handler FileIn
 
 	return s.service.List(prefix, func(info *FileInfo) error {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-s.ctx.Done():
+			return s.ctx.Err()
 
 		default:
 			return handler(info)
@@ -146,7 +148,7 @@ func (s *Storage) ListupFiles(ctx context.Context, prefix string, handler FileIn
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
-func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (err error) {
+func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error) {
 	// TODO: add callbacka to show progress bar and this function doesn't handle such bars.
 
 	var info os.FileInfo
@@ -168,11 +170,11 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	return s.ListupFiles(prefix, func(info *FileInfo) error {
 
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-s.ctx.Done():
+			return s.ctx.Err()
 
 		default:
 			// If Name is empty, it might be a folder or a special file.
@@ -220,7 +222,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []string) error {
+func (s *Storage) DeleteFiles(prefix string, queries []string) error {
 
 	fmt.Println("Deleting...")
 	// TODO: Show deleting file names.
@@ -228,11 +230,11 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []stri
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	return s.ListupFiles(prefix, func(info *FileInfo) error {
 
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-s.ctx.Done():
+			return s.ctx.Err()
 
 		default:
 
@@ -262,13 +264,13 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []stri
 // PrintFileBody prints file bodies in a bucket associated with a project,
 // which has a prefix and satisfies query under a context.
 // If quiet is ture, additional messages well be suppressed.
-func (s *Storage) PrintFileBody(ctx context.Context, project, bucket, prefix, query string, quiet bool) error {
+func (s *Storage) PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
 
-	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	return s.ListupFiles(prefix, func(info *FileInfo) error {
 
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-s.ctx.Done():
+			return s.ctx.Err()
 
 		default:
 			// If Name is empty, it might be a folder or a special file.
