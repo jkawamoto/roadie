@@ -126,29 +126,33 @@ func (s *Storage) Status(filename string) (*FileInfo, error) {
 
 }
 
-// List is a goroutine to list up files in a bucket.
-func (s *Storage) List(prefix string, resCh chan<- *FileInfo, errCh chan<- error) {
+// List searches items, i.e. files and folders, matching a given prefix.
+// Found items will be passed to a given handler item by item.
+// If the handler returns a non nil value, listing up will be canceled.
+// In that case, this function will also return the given value.
+func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
 
-	token := ""
+	var token string
 	for {
 
 		res, err := s.service.Objects.List(s.BucketName).Prefix(prefix).PageToken(token).Do()
 		if err != nil {
-			errCh <- err
-			return
+			return err
 		}
 
 		for _, item := range res.Items {
-			resCh <- NewFileInfo(item)
+			if err := handler(NewFileInfo(item)); err != nil {
+				return err
+			}
 		}
 
-		token = res.NextPageToken
-		if token == "" {
-			resCh <- nil
-			return
+		if res.NextPageToken == "" {
+			return nil
 		}
+		token = res.NextPageToken
 
 	}
+
 }
 
 // Delete deletes a given file.
