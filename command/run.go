@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/resource"
@@ -176,7 +178,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Check bucket is ready.
-	if _, err = util.NewStorage(conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
+	if _, err = util.NewStorage(context.Background(), conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
 		return
 	}
 

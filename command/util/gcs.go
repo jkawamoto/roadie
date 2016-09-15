@@ -52,16 +52,16 @@ type FileInfo struct {
 	Size        uint64
 }
 
-// NewStorage creates a new Storage object named a given bucket name.
-// If the given bucket does not exsits, it will be created.
-func NewStorage(project, bucket string) (s *Storage, err error) {
+// NewStorage creates a new storage accessor to a given bucket name
+// under the given contest. If the given bucket does not exsits, it will be created.
+func NewStorage(ctx context.Context, project, bucket string) (s *Storage, err error) {
 
 	s = &Storage{
 		BucketName: bucket,
 	}
 
 	// Create a client.
-	if s.client, err = google.DefaultClient(context.Background(), gcsScope); err != nil {
+	if s.client, err = google.DefaultClient(ctx, gcsScope); err != nil {
 		return
 	}
 

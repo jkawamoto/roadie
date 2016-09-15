@@ -30,6 +30,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/net/context"
+
 	"github.com/cheggaaa/pb"
 
 	"github.com/jkawamoto/roadie/chalk"
@@ -45,7 +47,7 @@ type ListupFilesWorker func(storage *util.Storage, file <-chan *util.FileInfo, d
 // for the uploaded file with error object.
 func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 
-	storage, err := util.NewStorage(project, bucket)
+	storage, err := util.NewStorage(context.Background(), project, bucket)
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +86,7 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 // The worker function will be started as a goroutine.
 func ListupFiles(project, bucket, prefix string, worker ListupFilesWorker) (err error) {
 
-	storage, err := util.NewStorage(project, bucket)
+	storage, err := util.NewStorage(context.Background(), project, bucket)
 	if err != nil {
 		return
 	}

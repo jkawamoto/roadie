@@ -24,6 +24,8 @@ package util
 import (
 	"os"
 	"testing"
+
+	"golang.org/x/net/context"
 )
 
 func TestNewStorage(t *testing.T) {
@@ -34,7 +36,7 @@ func TestNewStorage(t *testing.T) {
 		return
 	}
 
-	_, err := NewStorage(id, id)
+	_, err := NewStorage(context.Background(), id, id)
 	if err != nil {
 		t.Error(err.Error())
 	}
