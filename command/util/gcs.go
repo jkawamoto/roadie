@@ -37,24 +37,24 @@ import (
 
 const gcsScope = storage.DevstorageFullControlScope
 
-// Storage object.
-type Storage struct {
+// CloudStorageService object.
+type CloudStorageService struct {
 	BucketName string
 	project    string
 	ctx        context.Context
 }
 
-// NewStorage creates a new storage accessor to a bucket name under the given contest.
+// NewCloudStorageService creates a new storage accessor to a bucket name under the given contest.
 // The context must have a config.
 // If the given bucket does not exsits, it will be created.
-func NewStorage(ctx context.Context) (*Storage, error) {
+func NewCloudStorageService(ctx context.Context) (*CloudStorageService, error) {
 
 	cfg, ok := config.FromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Context dosen't have a config: %s", ctx)
 	}
 
-	return &Storage{
+	return &CloudStorageService{
 		BucketName: cfg.Gcp.Bucket,
 		project:    cfg.Gcp.Project,
 		ctx:        ctx,
@@ -63,7 +63,7 @@ func NewStorage(ctx context.Context) (*Storage, error) {
 }
 
 // newService creates a new service object.
-func (s *Storage) newService() (service *storage.Service, err error) {
+func (s *CloudStorageService) newService() (service *storage.Service, err error) {
 
 	var client *http.Client
 	// Create a client.
@@ -77,7 +77,7 @@ func (s *Storage) newService() (service *storage.Service, err error) {
 }
 
 // CreateIfNotExists creates the bucket if not exists.
-func (s *Storage) CreateIfNotExists() (err error) {
+func (s *CloudStorageService) CreateIfNotExists() (err error) {
 
 	service, err := s.newService()
 	if err != nil {
@@ -92,7 +92,7 @@ func (s *Storage) CreateIfNotExists() (err error) {
 }
 
 // Upload a file to a location.
-func (s *Storage) Upload(in io.Reader, location *url.URL) (err error) {
+func (s *CloudStorageService) Upload(in io.Reader, location *url.URL) (err error) {
 
 	service, err := s.newService()
 	if err != nil {
@@ -106,7 +106,7 @@ func (s *Storage) Upload(in io.Reader, location *url.URL) (err error) {
 }
 
 // Download downloads a file and write it to a given writer.
-func (s *Storage) Download(filename string, out io.Writer) (err error) {
+func (s *CloudStorageService) Download(filename string, out io.Writer) (err error) {
 
 	service, err := s.newService()
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *Storage) Download(filename string, out io.Writer) (err error) {
 }
 
 // Status returns a file status of an object.
-func (s *Storage) Status(filename string) (info *FileInfo, err error) {
+func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error) {
 
 	service, err := s.newService()
 	if err != nil {
@@ -146,7 +146,7 @@ func (s *Storage) Status(filename string) (info *FileInfo, err error) {
 // Found items will be passed to a given handler item by item.
 // If the handler returns a non nil value, listing up will be canceled.
 // In that case, this function will also return the given value.
-func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
+func (s *CloudStorageService) List(prefix string, handler func(*FileInfo) error) error {
 
 	service, err := s.newService()
 	if err != nil {
@@ -184,7 +184,7 @@ func (s *Storage) List(prefix string, handler func(*FileInfo) error) error {
 }
 
 // Delete deletes a given file.
-func (s *Storage) Delete(name string) (err error) {
+func (s *CloudStorageService) Delete(name string) (err error) {
 
 	service, err := s.newService()
 	if err != nil {
