@@ -41,12 +41,12 @@ import (
 // ListupFilesHandler is a handler of LlistupFiles.
 type ListupFilesHandler func(storage *Storage, info *FileInfo) error
 
-// UploadToGCS uploads a file to a bucket associated with a project.
-// Uploaded file will have a given name. This function returns a URL
+// UploadToGCS uploads a file to a bucket associated with a project under a given
+// context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
+func UploadToGCS(ctx context.Context, project, bucket, prefix, name, input string) (string, error) {
 
-	storage, err := NewStorage(context.Background(), project, bucket)
+	storage, err := NewStorage(ctx, project, bucket)
 	if err != nil {
 		return "", err
 	}
@@ -84,12 +84,12 @@ func UploadToGCS(project, bucket, prefix, name, input string) (string, error) {
 }
 
 // ListupFiles lists up files in a bucket associated with a project and which
-// have a prefix. Information of found files will be passed to a handler.
+// have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func ListupFiles(project, bucket, prefix string, handler ListupFilesHandler) (err error) {
+func ListupFiles(ctx context.Context, project, bucket, prefix string, handler ListupFilesHandler) (err error) {
 
-	storage, err := NewStorage(context.Background(), project, bucket)
+	storage, err := NewStorage(ctx, project, bucket)
 	if err != nil {
 		return
 	}
@@ -98,15 +98,21 @@ func ListupFiles(project, bucket, prefix string, handler ListupFilesHandler) (er
 	}
 
 	return storage.List(prefix, func(info *FileInfo) error {
-		return handler(storage, info)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			return handler(storage, info)
+		}
 	})
 
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
-// which has a prefix and satisfies a query. Downloaded files will be put in
-// a given directory.
-func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err error) {
+// which has a prefix and satisfies a query under a given context.
+// Downloaded files will be put in a given directory.
+func DownloadFiles(ctx context.Context, project, bucket, prefix, dir string, queries []string) (err error) {
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -127,107 +133,126 @@ func DownloadFiles(project, bucket, prefix, dir string, queries []string) (err e
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-		// If Name is empty, it might be a folder or a special file.
-		if info.Name == "" {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			// If Name is empty, it might be a folder or a special file.
+			if info.Name == "" {
+				return nil
+			}
+
+			if match(queries, info.Name) {
+
+				bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+				pool.Add(bar)
+
+				wg.Add(1)
+				go func(info *FileInfo, bar *pb.ProgressBar) {
+
+					defer wg.Done()
+
+					filename := filepath.Join(dir, info.Name)
+					f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					if err != nil {
+						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
+						return
+					}
+					defer f.Close()
+
+					buf := bufio.NewWriter(io.MultiWriter(f, bar))
+					defer buf.Flush()
+
+					if err := storage.Download(info.Path, buf); err != nil {
+						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+					} else {
+						bar.Finish()
+					}
+
+				}(info, bar)
+
+			}
+
 			return nil
 		}
 
-		if match(queries, info.Name) {
-
-			bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-			pool.Add(bar)
-
-			wg.Add(1)
-			go func(info *FileInfo, bar *pb.ProgressBar) {
-
-				defer wg.Done()
-
-				filename := filepath.Join(dir, info.Name)
-				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-				if err != nil {
-					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-					return
-				}
-				defer f.Close()
-
-				buf := bufio.NewWriter(io.MultiWriter(f, bar))
-				defer buf.Flush()
-
-				if err := storage.Download(info.Path, buf); err != nil {
-					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
-				} else {
-					bar.Finish()
-				}
-
-			}(info, bar)
-
-		}
-
-		return nil
-
 	})
-
 }
 
 // DeleteFiles deletes files in a bucket associated with a project,
-// which has a prefix and satisfies a query.
-func DeleteFiles(project, bucket, prefix string, queries []string) error {
+// which has a prefix and satisfies a query. This request will be done under a
+// given context.
+func DeleteFiles(ctx context.Context, project, bucket, prefix string, queries []string) error {
 
 	fmt.Println("Deleting...")
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-		// If Name is empty, it might be a folder or a special file.
-		if info.Name == "" {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+
+			// If Name is empty, it might be a folder or a special file.
+			if info.Name == "" {
+				return nil
+			}
+
+			if match(queries, info.Name) {
+
+				wg.Add(1)
+				go func(info *FileInfo) {
+
+					defer wg.Done()
+					if err := storage.Delete(info.Path); err != nil {
+						fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+					}
+
+				}(info)
+
+			}
+
 			return nil
 		}
 
-		if match(queries, info.Name) {
-
-			wg.Add(1)
-			go func(info *FileInfo) {
-
-				defer wg.Done()
-				if err := storage.Delete(info.Path); err != nil {
-					fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
-				}
-
-			}(info)
-
-		}
-
-		return nil
 	})
-
 }
 
 // PrintFileBody prints file bodies in a bucket associated with a project,
-// which has a prefix and satisfies query. If quiet is ture, additional messages
-// well be suppressed.
-func PrintFileBody(project, bucket, prefix, query string, quiet bool) error {
+// which has a prefix and satisfies query under a context.
+// If quiet is ture, additional messages well be suppressed.
+func PrintFileBody(ctx context.Context, project, bucket, prefix, query string, quiet bool) error {
 
-	return ListupFiles(project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
+	return ListupFiles(ctx, project, bucket, prefix, func(storage *Storage, info *FileInfo) error {
 
-		// If Name is empty, it might be a folder or a special file.
-		if info == nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			// If Name is empty, it might be a folder or a special file.
+			if info == nil {
+				return nil
+			}
+
+			if info.Name != "" && strings.HasPrefix(info.Name, query) {
+				if !quiet {
+					fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+				}
+				if err := storage.Download(info.Path, os.Stdout); err != nil {
+					fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
+				}
+			}
+
 			return nil
 		}
-
-		if info.Name != "" && strings.HasPrefix(info.Name, query) {
-			if !quiet {
-				fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
-			}
-			if err := storage.Download(info.Path, os.Stdout); err != nil {
-				fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-			}
-		}
-
-		return nil
 
 	})
 
