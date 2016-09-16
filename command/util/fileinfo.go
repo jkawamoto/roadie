@@ -1,5 +1,5 @@
 //
-// command/util/gcs_test.go
+// command/util/fileinfo.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -22,39 +22,30 @@
 package util
 
 import (
-	"os"
-	"testing"
+	"strings"
+	"time"
+
+	storage "google.golang.org/api/storage/v1"
 )
 
-func TestNewStorage(t *testing.T) {
-
-	id := os.Getenv("PROJECT_ID")
-	if id == "" {
-		t.Log("Skip this test because no project id is given.")
-		return
-	}
-
-	_, err := NewStorage(id, id)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
+// FileInfo defines file information structure.
+type FileInfo struct {
+	Name        string
+	Path        string
+	TimeCreated time.Time
+	Size        uint64
 }
 
-func TestUpload(t *testing.T) {
+// NewFileInfo creates a file info from an object.
+func NewFileInfo(f *storage.Object) *FileInfo {
 
-	// s, err := NewStorage("jkawamoto-ppls", "jkawamoto-ppls")
-	// if err != nil {
-	// 	t.Error(err.Error())
-	// }
-	//
-	// location, err := url.Parse("gs://jkawamoto-ppls/.roadie/gcs_test.go")
-	// if err != nil {
-	// 	t.Error(err.Error())
-	// }
+	splitedName := strings.Split(f.Name, "/")
+	t, _ := time.Parse("2006-01-02T15:04:05", strings.Split(f.TimeCreated, ".")[0])
 
-	// if err := s.Upload("./gcs_test.go", location); err != nil {
-	// 	t.Error(err.Error())
-	// }
-
+	return &FileInfo{
+		Name:        splitedName[len(splitedName)-1],
+		Path:        f.Name,
+		TimeCreated: t.In(time.Local),
+		Size:        f.Size,
+	}
 }

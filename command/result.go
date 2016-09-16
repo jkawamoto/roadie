@@ -26,8 +26,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/net/context"
+
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -52,14 +56,15 @@ func CmdResult(c *cli.Context) error {
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
-	conf := GetConfig(c)
+	ctx := config.NewContext(context.Background(), GetConfig(c))
+
 	var err error
 	switch c.NArg() {
 	case 0:
-		err = PrintDirList(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(ctx, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		err = PrintFileList(ctx, filepath.Join(ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
@@ -75,17 +80,23 @@ func CmdResultList(c *cli.Context) error {
 // CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
 func CmdResultShow(c *cli.Context) error {
 
-	conf := GetConfig(c)
 	var err error
+
+	ctx := config.NewContext(context.Background(), GetConfig(c))
+	storage, err := util.NewStorage(ctx)
+	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), StdoutFilePrefix, os.Stdout, true)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = PrintFileBody(conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), filePrefix, true)
+		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), filePrefix, os.Stdout, false)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
@@ -106,15 +117,16 @@ func CmdResultGet(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-
-	conf := GetConfig(c)
 	instance := c.Args().First()
 
-	err := DownloadFiles(
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance),
-		c.String("o"), c.Args().Tail())
-
+	ctx := config.NewContext(context.Background(), GetConfig(c))
+	storage, err := util.NewStorage(ctx)
 	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	path := filepath.Join(ResultPrefix, instance)
+	if err := storage.DownloadFiles(path, c.String("o"), c.Args().Tail()); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -129,7 +141,6 @@ func CmdResultDelete(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
 	instance := c.Args().First()
 	var patterns []string
 	if c.NArg() == 1 {
@@ -151,9 +162,14 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	err := DeleteFiles(
-		conf.Gcp.Project, conf.Gcp.Bucket, filepath.Join(ResultPrefix, instance), patterns)
+	ctx := config.NewContext(context.Background(), GetConfig(c))
+	storage, err := util.NewStorage(ctx)
 	if err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+
+	path := filepath.Join(ResultPrefix, instance)
+	if err := storage.DeleteFiles(path, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil

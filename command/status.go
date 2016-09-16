@@ -58,6 +58,10 @@ func CmdStatus(c *cli.Context) error {
 // instances of which results are deleted already will be omitted.
 func cmdStatus(conf *config.Config, all bool) error {
 
+	ctx := config.NewContext(context.Background(), conf)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
@@ -66,52 +70,56 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		err := ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
-			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
-				defer func() {
-					done <- struct{}{}
-				}()
-
-				for {
-					info := <-file
-					if info == nil {
-						return
-					}
-
-					rel, _ := filepath.Rel(ResultPrefix, info.Path)
-					rel = filepath.Dir(rel)
-					instances[rel] = struct{}{}
-
-				}
-			})
-
+		storage, err := util.NewStorage(ctx)
 		if err != nil {
+			return err
+		}
+
+		if err := storage.ListupFiles(ResultPrefix, func(info *util.FileInfo) error {
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+
+			default:
+				rel, _ := filepath.Rel(ResultPrefix, info.Path)
+				rel = filepath.Dir(rel)
+				instances[rel] = struct{}{}
+				return nil
+			}
+
+		}); err != nil {
 			return err
 		}
 
 	}
 
 	runnings := make(map[string]bool)
-	ctx := context.Background()
 	requester, _ := log.NewCloudLoggingService(ctx)
 
 	err := log.GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
 
-		// If all flag is not set, show only following instances;
-		//  - running instances,
-		//  - ended but results are note deleted instances.
-		switch payload.EventSubtype {
-		case log.EventSubtypeInsert:
-			runnings[payload.Resource.Name] = true
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-		case log.EventSubtypeDelete:
-			runnings[payload.Resource.Name] = false
-			if _, exist := instances[payload.Resource.Name]; !all && !exist {
-				delete(runnings, payload.Resource.Name)
+		default:
+
+			// If all flag is not set, show only following instances;
+			//  - running instances,
+			//  - ended but results are note deleted instances.
+			switch payload.EventSubtype {
+			case log.EventSubtypeInsert:
+				runnings[payload.Resource.Name] = true
+
+			case log.EventSubtypeDelete:
+				runnings[payload.Resource.Name] = false
+				if _, exist := instances[payload.Resource.Name]; !all && !exist {
+					delete(runnings, payload.Resource.Name)
+				}
 			}
+			return
 		}
-
-		return
 
 	})
 	s.Stop()

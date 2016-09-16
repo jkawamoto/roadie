@@ -24,7 +24,10 @@ package command
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -73,8 +76,8 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		err := PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(
+			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -94,9 +97,13 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		err := DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage, err := util.NewStorage(ctx)
 		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+
+		if err = storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
@@ -115,8 +122,13 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		if err := DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage, err := util.NewStorage(ctx)
+		if err != nil {
+			return cli.NewExitError(err.Error(), 2)
+		}
+
+		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil

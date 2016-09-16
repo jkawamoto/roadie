@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
@@ -59,6 +61,10 @@ func CmdSourcePut(c *cli.Context) error {
 // the archive file.
 func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (err error) {
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx = config.NewContext(ctx, conf)
+
 	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
 	uploadingPath := filepath.Join(os.TempDir(), filename)
 
@@ -75,7 +81,12 @@ func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	url, err := UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+	storage, err := util.NewStorage(ctx)
+	if err != nil {
+		return
+	}
+
+	url, err := storage.UploadFile(SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return
 	}
