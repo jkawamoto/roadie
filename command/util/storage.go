@@ -192,7 +192,7 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 					defer buf.Flush()
 
 					if err := s.service.Download(info.Path, buf); err != nil {
-						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot doenload %s (%s)"), info.Name, err.Error()))
+						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, err.Error()))
 					} else {
 						bar.Finish()
 					}
@@ -260,11 +260,6 @@ func (s *Storage) PrintFileBody(prefix, query string, quiet bool) error {
 			return s.ctx.Err()
 
 		default:
-			// If Name is empty, it might be a folder or a special file.
-			if info == nil {
-				return nil
-			}
-
 			if info.Name != "" && strings.HasPrefix(info.Name, query) {
 				if !quiet {
 					fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
