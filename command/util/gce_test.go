@@ -23,111 +23,27 @@ package util
 
 import (
 	"fmt"
-	"os"
 	"testing"
 )
 
-// func TestCreateInstance(t *testing.T) {
-//
-// 	b, err := NewInstanceBuilder("jkawamoto-ppls")
-// 	if err != nil {
-// 		t.Error(err.Error())
-// 	}
-//
-// 	if err := b.CreateInstance("test-instance"); err != nil {
-// 		t.Error(err.Error())
-// 	}
-//
-// 	if err := b.StopInstance("test-instance"); err != nil {
-// 		t.Error(err.Error())
-// 	}
-//
-// }
-
-func TestAvailableZones(t *testing.T) {
-
-	id := os.Getenv("PROJECT_ID")
-	if id == "" {
-		t.Log("Skip this test because no project id is given.")
-		return
-	}
-
-	b, err := NewInstanceBuilder(id)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	zones, err := b.AvailableZones()
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	for _, v := range zones {
-		t.Logf("Available zone: %s", v)
-	}
-
-}
-
-func TestAvailableMachineTypes(t *testing.T) {
-
-	id := os.Getenv("PROJECT_ID")
-	if id == "" {
-		t.Log("Skip this test because no project id is given.")
-		return
-	}
-
-	b, err := NewInstanceBuilder(id)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	types, err := b.AvailableMachineTypes()
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	for _, v := range types {
-		t.Logf("Available machine type: %s", v)
-	}
-
-}
-
 func TestNormalizedZone(t *testing.T) {
 
-	id := os.Getenv("PROJECT_ID")
-	if id == "" {
-		t.Log("Skip this test because no project id is given.")
-		return
-	}
-
-	b, err := NewInstanceBuilder(id)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	b.Zone = "us-central1-c"
-	if b.normalizedZone() != fmt.Sprintf("projects/%s/zones/us-central1-c", id) {
-		t.Errorf("Zone is not correct: %s", b.Zone)
+	project := "sample-project"
+	zone := "us-central1-c"
+	if res := normalizedZone(project, zone); res != fmt.Sprintf("projects/%s/zones/%s", project, zone) {
+		t.Error("Normalized zone isn's correct:", res)
 	}
 
 }
 
 func TestNormalizedMachineType(t *testing.T) {
 
-	id := os.Getenv("PROJECT_ID")
-	if id == "" {
-		t.Log("Skip this test because no project id is given.")
-		return
-	}
+	project := "sample-project"
+	zone := "us-central1-c"
+	machine := "n1-standard-2"
+	if res := normalizedMachineType(project, zone, machine); res != fmt.Sprintf("projects/%s/zones/%s/machineTypes/%s", project, zone, machine) {
 
-	b, err := NewInstanceBuilder(id)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	b.MachineType = "n1-standard-2"
-	if b.normalizedMachineType() != fmt.Sprintf("projects/%s/zones/us-central1-b/machineTypes/n1-standard-2", id) {
-		t.Errorf("Zone is not correct: %s", b.Zone)
+		t.Error("Normalized machine type isn't correct:", res)
 	}
 
 }
