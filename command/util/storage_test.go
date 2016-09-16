@@ -171,6 +171,7 @@ func TestPrepareBucket(t *testing.T) {
 
 	s := &Storage{
 		service: newMockStorageServicer(t, nil),
+		Log:     os.Stderr,
 	}
 	if err := s.PrepareBucket(); err != nil {
 		t.Error("PrepareBucket returns an error:", err.Error())
@@ -192,6 +193,7 @@ func TestUploadFile(t *testing.T) {
 	s := &Storage{
 		ctx:     config.NewContext(context.Background(), cfg),
 		service: service,
+		Log:     os.Stderr,
 	}
 	s.UploadFile(service.prefix, service.filename, service.filename)
 
@@ -212,6 +214,7 @@ func TestListupFiles(t *testing.T) {
 	s := &Storage{
 		ctx:     config.NewContext(context.Background(), cfg),
 		service: service,
+		Log:     os.Stderr,
 	}
 
 	stop := fmt.Errorf("Listing up should stop")
@@ -244,6 +247,7 @@ func TestDownloadFiles(t *testing.T) {
 	s := &Storage{
 		ctx:     config.NewContext(context.Background(), cfg),
 		service: service,
+		Log:     os.Stderr,
 	}
 
 	var err error
@@ -287,6 +291,7 @@ func TestCancelDownloadFiles(t *testing.T) {
 	s := &Storage{
 		ctx:     ctx,
 		service: service,
+		Log:     os.Stderr,
 	}
 
 	var err error
@@ -328,6 +333,7 @@ func TestDeleteFiles(t *testing.T) {
 	s := &Storage{
 		ctx:     config.NewContext(context.Background(), cfg),
 		service: service,
+		Log:     os.Stderr,
 	}
 
 	// Start download.
@@ -351,6 +357,7 @@ func TestPrintFileBody(t *testing.T) {
 	s := &Storage{
 		ctx:     config.NewContext(context.Background(), cfg),
 		service: service,
+		Log:     os.Stderr,
 	}
 
 	expected, err := ioutil.ReadFile(service.filename)

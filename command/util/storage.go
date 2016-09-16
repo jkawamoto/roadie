@@ -46,6 +46,8 @@ type Storage struct {
 	ctx context.Context
 	// Servicer.
 	service storageServicer
+	// Writer logs to be printed.
+	Log io.Writer
 }
 
 // FileInfoHandler is a handler to recieve a file info.
@@ -69,6 +71,7 @@ func NewStorage(ctx context.Context) (*Storage, error) {
 	return &Storage{
 		ctx:     ctx,
 		service: service,
+		Log:     os.Stderr,
 	}, err
 
 }
@@ -110,8 +113,9 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 	}
 	defer file.Close()
 
-	fmt.Println("Uploading...")
+	fmt.Fprintln(s.Log, "Uploading...")
 	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
+	bar.Output = s.Log
 	bar.AlwaysUpdate = true
 	bar.Start()
 	defer bar.Finish()
@@ -137,7 +141,6 @@ func (s *Storage) ListupFiles(prefix string, handler FileInfoHandler) (err error
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
 func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error) {
-	// TODO: add callbacka to show progress bar and this function doesn't handle such bars.
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -151,7 +154,7 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 		}
 	}
 
-	fmt.Println("Downloading...")
+	fmt.Fprintln(s.Log, "Downloading...")
 	pool, _ := pb.StartPool()
 	defer pool.Stop()
 
@@ -173,6 +176,7 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 			if match(queries, info.Name) {
 
 				bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+				bar.Output = s.Log
 				pool.Add(bar)
 
 				wg.Add(1)
@@ -212,8 +216,9 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 // given context.
 func (s *Storage) DeleteFiles(prefix string, queries []string) error {
 
-	fmt.Println("Deleting...")
-	// TODO: Show deleting file names.
+	fmt.Fprintln(s.Log, "Deleting...")
+	pool, _ := pb.StartPool()
+	defer pool.Stop()
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
@@ -233,11 +238,17 @@ func (s *Storage) DeleteFiles(prefix string, queries []string) error {
 
 			if match(queries, info.Name) {
 
+				bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+				bar.Output = s.Log
+				pool.Add(bar)
+
 				wg.Add(1)
 				go func(info *FileInfo) {
 					defer wg.Done()
+					defer bar.Add64(int64(info.Size))
+
 					if err := s.service.Delete(info.Path); err != nil {
-						fmt.Printf(chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+						fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
 					}
 				}(info)
 
@@ -264,9 +275,7 @@ func (s *Storage) PrintFileBody(prefix, query string, output io.Writer, header b
 				if header {
 					fmt.Fprintf(output, chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
 				}
-				if err := s.service.Download(info.Path, output); err != nil {
-					fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
-				}
+				return s.service.Download(info.Path, output)
 			}
 
 			return nil
