@@ -56,6 +56,8 @@ func NewConfig() (c *Config, err error) {
 	c = &Config{
 		Filename: lookup(),
 	}
+	c.Gcp.Zone = "us-central1-b"
+	c.Gcp.MachineType = "n1-standard-1"
 
 	if _, exist := os.Stat(c.Filename); exist == nil {
 
