@@ -43,11 +43,13 @@ func TestSave(t *testing.T) {
 
 	cfg := Config{
 		Filename: filepath.Join(dir, "config.toml"),
+		Gcp: Gcp{
+			Project:     "sample-project",
+			Bucket:      "sample-bucket",
+			Zone:        "sample-zone",
+			MachineType: "sample-machine-type",
+		},
 	}
-	cfg.Gcp.Project = "sample-project"
-	cfg.Gcp.Bucket = "sample-bucket"
-	cfg.Gcp.Zone = "sample-zone"
-	cfg.Gcp.MachineType = "sample-machine-type"
 
 	// Test Save method.
 	if err = cfg.Save(); err != nil {

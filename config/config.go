@@ -38,15 +38,23 @@ const ConfigureFile = ".roadie"
 // DotGit defines a git repository name.
 const DotGit = ".git"
 
+// Gcp defines information to access Google Cloud Platform.
+type Gcp struct {
+	// Project name.
+	Project string
+	// Bucket name
+	Bucket string
+	// Zone where instances will run.
+	Zone string
+	// Default machine type of new instances.
+	MachineType string
+}
+
 // Config defines a structure of config file.
 type Config struct {
+	Gcp
+	// Config file name used to save/load this config.
 	Filename string `toml:"-"`
-	Gcp      struct {
-		Project     string
-		MachineType string
-		Zone        string
-		Bucket      string
-	}
 }
 
 // NewConfig creates a config object. If there is a configure file,
