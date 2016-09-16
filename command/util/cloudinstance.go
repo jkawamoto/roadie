@@ -1,5 +1,5 @@
 //
-// command/util/gce.go
+// command/util/cloudinstance.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
