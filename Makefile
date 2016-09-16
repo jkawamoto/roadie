@@ -25,7 +25,7 @@ default: build
 
 .PHONY: asset
 asset:
-	go-bindata -pkg util -o command/util/assets.go assets/startup.sh
+	go-bindata -pkg resource -o command/resource/assets.go assets/startup.sh
 
 
 .PHONY: build
