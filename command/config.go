@@ -25,8 +25,11 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -111,7 +114,8 @@ func CmdConfigTypeSet(c *cli.Context) error {
 		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.Gcp.MachineType, chalk.Green.Color(v))
 	}
 
-	list, err := getAvailableTypeList(conf.Gcp.Project)
+	ctx := config.NewContext(context.Background(), conf)
+	list, err := util.AvailableMachineTypes(ctx)
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -142,7 +146,8 @@ func CmdConfigTypeList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
 
-	list, err := getAvailableTypeList(conf.Gcp.Project)
+	ctx := config.NewContext(context.Background(), conf)
+	list, err := util.AvailableMachineTypes(ctx)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -171,21 +176,6 @@ func CmdConfigTypeShow(c *cli.Context) error {
 		fmt.Println(chalk.Red.Color("Not set") + " - 'n1-standard-1' will be used by default.")
 	}
 	return nil
-}
-
-// getAvailableTypeList retunrs a list of machine types for a given project.
-func getAvailableTypeList(project string) (res []util.MachineType, err error) {
-
-	var b *util.InstanceBuilder
-	res = nil
-
-	b, err = util.NewInstanceBuilder(project)
-	if err != nil {
-		return
-	}
-	res, err = b.AvailableMachineTypes()
-	return
-
 }
 
 // CmdConfigZone shows current configuration of zone,
@@ -218,7 +208,8 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Gcp.Zone, chalk.Green.Color(v))
 	}
 
-	list, err := getAvailableZoneList(conf.Gcp.Project)
+	ctx := config.NewContext(context.Background(), conf)
+	list, err := util.AvailableZones(ctx)
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -249,7 +240,8 @@ func CmdConfigZoneList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
 
-	list, err := getAvailableZoneList(conf.Gcp.Project)
+	ctx := config.NewContext(context.Background(), conf)
+	list, err := util.AvailableZones(ctx)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -278,21 +270,6 @@ func CmdConfigZoneShow(c *cli.Context) error {
 		fmt.Println(chalk.Red.Color("Not set") + " - 'us-central1-b' will be used by default.")
 	}
 	return nil
-}
-
-// getAvailableZoneList retunrs a list of zones for a given project.
-func getAvailableZoneList(project string) (res []util.Zone, err error) {
-
-	var b *util.InstanceBuilder
-	res = nil
-
-	b, err = util.NewInstanceBuilder(project)
-	if err != nil {
-		return
-	}
-	res, err = b.AvailableZones()
-	return
-
 }
 
 // CmdConfigBucket shows current configuration of bucket name,

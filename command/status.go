@@ -160,10 +160,7 @@ func CmdStatusKill(c *cli.Context) error {
 // cmdStatusKill kills a given instance named `instanceName`.
 func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 
-	b, err := util.NewInstanceBuilder(conf.Gcp.Project)
-	if err != nil {
-		return
-	}
+	ctx := config.NewContext(context.Background(), conf)
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
@@ -171,7 +168,7 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 	s.Start()
 	defer s.Stop()
 
-	if err = b.DeleteInstance(instanceName); err != nil {
+	if err = util.DeleteInstance(ctx, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())

@@ -229,32 +229,13 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	} else {
 
-		// Create an instance.
-		var builder *util.InstanceBuilder
-		builder, err = util.NewInstanceBuilder(conf.Gcp.Project)
-		if err != nil {
-			return
-		}
-
-		// Set zone and machine type.
-		if conf.Gcp.Zone == "" {
-			fmt.Printf(chalk.Red.Color("Zone is not set. %s will be used.\n"), builder.Zone)
-		} else {
-			builder.Zone = conf.Gcp.Zone
-		}
-		if conf.Gcp.MachineType == "" {
-			fmt.Printf(chalk.Red.Color("MachineType is not set. %s will be used.\n"), builder.MachineType)
-		} else {
-			builder.MachineType = conf.Gcp.MachineType
-		}
-
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.InstanceName))
 		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
 		s.Start()
 		defer s.Stop()
 
-		err = builder.CreateInstance(script.InstanceName, []*util.MetadataItem{
+		err = util.CreateInstance(ctx, script.InstanceName, []*util.MetadataItem{
 			&util.MetadataItem{
 				Key:   "startup-script",
 				Value: startup,
