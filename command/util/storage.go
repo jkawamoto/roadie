@@ -250,8 +250,8 @@ func (s *Storage) DeleteFiles(prefix string, queries []string) error {
 }
 
 // PrintFileBody prints file bodies which has a prefix and satisfies query under a context.
-// If quiet is ture, additional messages well be suppressed.
-func (s *Storage) PrintFileBody(prefix, query string, quiet bool) error {
+// If header is ture, additional messages well be printed.
+func (s *Storage) PrintFileBody(prefix, query string, output io.Writer, header bool) error {
 
 	return s.ListupFiles(prefix, func(info *FileInfo) error {
 
@@ -261,10 +261,10 @@ func (s *Storage) PrintFileBody(prefix, query string, quiet bool) error {
 
 		default:
 			if info.Name != "" && strings.HasPrefix(info.Name, query) {
-				if !quiet {
-					fmt.Printf(chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+				if header {
+					fmt.Fprintf(output, chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
 				}
-				if err := s.service.Download(info.Path, os.Stdout); err != nil {
+				if err := s.service.Download(info.Path, output); err != nil {
 					fmt.Printf(chalk.Red.Color("Cannot download %s (%s)."), info.Name, err.Error())
 				}
 			}

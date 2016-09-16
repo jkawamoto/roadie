@@ -22,6 +22,7 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -338,6 +339,7 @@ func TestDeleteFiles(t *testing.T) {
 
 func TestPrintFileBody(t *testing.T) {
 
+	var err error
 	cfg := &config.Config{
 		Gcp: Gcp{
 			Project: "sample-project",
@@ -351,8 +353,25 @@ func TestPrintFileBody(t *testing.T) {
 		service: service,
 	}
 
-	if err := s.PrintFileBody(service.prefix, service.filename, false); err != nil {
+	expected, err := ioutil.ReadFile(service.filename)
+	if err != nil {
+		t.Fatal("Cannot read a sample file:", err.Error())
+	}
+
+	output := &bytes.Buffer{}
+	if err = s.PrintFileBody(service.prefix, service.filename, output, false); err != nil {
 		t.Error("PrintFileBody returns an error:", err.Error())
+	}
+	if output.String() != string(expected) {
+		t.Error("Printed file body isn't correct:", output.String())
+	}
+
+	output.Reset()
+	if err = s.PrintFileBody(service.prefix, service.filename, output, true); err != nil {
+		t.Error("PrintFileBody returns an error:", err.Error())
+	}
+	if !strings.HasSuffix(output.String(), string(expected)) {
+		t.Error("Printed file body isn't correct:", output.String())
 	}
 
 }

@@ -91,12 +91,12 @@ func CmdResultShow(c *cli.Context) error {
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), StdoutFilePrefix, false)
+		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), StdoutFilePrefix, os.Stdout, true)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), filePrefix, true)
+		err = storage.PrintFileBody(filepath.Join(ResultPrefix, instance), filePrefix, os.Stdout, false)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
