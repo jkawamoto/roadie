@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/config"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -33,14 +34,6 @@ import (
 )
 
 const gceScope = compute.CloudPlatformScope
-
-// InstanceBuilder maintains configurations to create new instances.
-type InstanceBuilder struct {
-	Project     string
-	Zone        string
-	MachineType string
-	service     *compute.Service
-}
 
 // MetadataItem has Key and Value properties.
 type MetadataItem struct {
@@ -60,9 +53,8 @@ type Zone struct {
 	Status string
 }
 
-// NewInstanceBuilder creates a new instance builder associated with
-// a given project.
-func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
+// newComputeService creates a new service under a given context.
+func newComputeService(ctx context.Context) (*compute.Service, error) {
 
 	// Create a client.
 	client, err := google.DefaultClient(context.Background(), gceScope)
@@ -71,60 +63,80 @@ func NewInstanceBuilder(project string) (*InstanceBuilder, error) {
 	}
 
 	// Create a servicer.
-	service, err := compute.New(client)
-	if err != nil {
-		return nil, err
-	}
-
-	res := &InstanceBuilder{
-		Project:     project,
-		Zone:        "us-central1-b",
-		MachineType: "n1-standard-1",
-		service:     service,
-	}
-	return res, nil
+	return compute.New(client)
 
 }
 
 // AvailableZones returns a slice of zone names.
-func (b *InstanceBuilder) AvailableZones() ([]Zone, error) {
+func AvailableZones(ctx context.Context) (zones []Zone, err error) {
 
-	res, err := b.service.Zones.List(b.Project).Do()
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+		return
+	}
+
+	service, err := newComputeService(ctx)
+	if err != nil {
+		return
+	}
+
+	res, err := service.Zones.List(cfg.Gcp.Project).Do()
 	if err != nil {
 		return nil, err
 	}
 
-	zones := make([]Zone, len(res.Items))
+	zones = make([]Zone, len(res.Items))
 	for i, v := range res.Items {
 		zones[i] = Zone{
 			Name:   v.Name,
 			Status: v.Status,
 		}
 	}
-
-	return zones, nil
+	return
 
 }
 
 // AvailableMachineTypes returns a slice of machie type names.
-func (b *InstanceBuilder) AvailableMachineTypes() ([]MachineType, error) {
+func AvailableMachineTypes(ctx context.Context) (types []MachineType, err error) {
 
-	res, err := b.service.MachineTypes.List(b.Project, b.Zone).Do()
-	if err != nil {
-		return nil, err
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+		return
 	}
 
-	types := make([]MachineType, len(res.Items))
+	service, err := newComputeService(ctx)
+	if err != nil {
+		return
+	}
+
+	res, err := service.MachineTypes.List(cfg.Gcp.Project, cfg.Gcp.Zone).Do()
+	if err != nil {
+		return
+	}
+
+	types = make([]MachineType, len(res.Items))
 	for i, v := range res.Items {
 		types[i] = MachineType{Name: v.Name, Description: v.Description}
 	}
-
-	return types, nil
+	return
 
 }
 
 // CreateInstance creates a new instance based on the bilder's configuration.
-func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, disksize int64) (err error) {
+func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, disksize int64) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+		return
+	}
+
+	service, err := newComputeService(ctx)
+	if err != nil {
+		return
+	}
 
 	matadataItems := make([]*compute.MetadataItems, len(metadata))
 	for i, v := range metadata {
@@ -136,8 +148,8 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 
 	bluepring := compute.Instance{
 		Name:        strings.ToLower(name),
-		Zone:        b.normalizedZone(),
-		MachineType: b.normalizedMachineType(),
+		Zone:        normalizedZone(cfg.Gcp.Project, cfg.Gcp.Zone),
+		MachineType: normalizedMachineType(cfg.Gcp.Project, cfg.Gcp.Zone, cfg.Gcp.MachineType),
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Type:       "PERSISTENT",
@@ -146,7 +158,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-					DiskType:    b.normalizedZone() + "/diskTypes/pd-standard",
+					DiskType:    normalizedZone(cfg.Gcp.Project, cfg.Gcp.Zone) + "/diskTypes/pd-standard",
 					DiskSizeGb:  disksize,
 				},
 			},
@@ -154,7 +166,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 		CanIpForward: false,
 		NetworkInterfaces: []*compute.NetworkInterface{
 			&compute.NetworkInterface{
-				Network: "projects/" + b.Project + "/global/networks/default",
+				Network: "projects/" + cfg.Gcp.Project + "/global/networks/default",
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
 						Name: "External NAT",
@@ -181,7 +193,7 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 		},
 	}
 
-	res, err := b.service.Instances.Insert(b.Project, b.Zone, &bluepring).Do()
+	res, err := service.Instances.Insert(cfg.Gcp.Project, cfg.Gcp.Zone, &bluepring).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
 			fmt.Println(res.StatusMessage)
@@ -195,8 +207,20 @@ func (b *InstanceBuilder) CreateInstance(name string, metadata []*MetadataItem, 
 }
 
 // DeleteInstance deletes a given named instance.
-func (b *InstanceBuilder) DeleteInstance(name string) (err error) {
-	res, err := b.service.Instances.Stop(b.Project, b.Zone, name).Do()
+func DeleteInstance(ctx context.Context, name string) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+		return
+	}
+
+	service, err := newComputeService(ctx)
+	if err != nil {
+		return
+	}
+
+	res, err := service.Instances.Stop(cfg.Gcp.Project, cfg.Gcp.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
 			fmt.Println(res.StatusMessage)
@@ -209,11 +233,11 @@ func (b *InstanceBuilder) DeleteInstance(name string) (err error) {
 }
 
 // normalizedZone returns the normalized zone string of Zone property.
-func (b *InstanceBuilder) normalizedZone() string {
-	return "projects/" + b.Project + "/zones/" + b.Zone
+func normalizedZone(project, zone string) string {
+	return "projects/" + project + "/zones/" + zone
 }
 
 // normalizedMachineType returns the normalized instance type of MachineType property.
-func (b *InstanceBuilder) normalizedMachineType() string {
-	return b.normalizedZone() + "/machineTypes/" + b.MachineType
+func normalizedMachineType(project, zone, mtype string) string {
+	return normalizedZone(project, zone) + "/machineTypes/" + mtype
 }
