@@ -27,7 +27,10 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/jkawamoto/roadie/command/log"
+	"github.com/jkawamoto/roadie/config"
 
 	logging "google.golang.org/api/logging/v2beta1"
 )
@@ -96,10 +99,13 @@ func TestCmdLog(t *testing.T) {
 	// Start tests.
 	var output *bytes.Buffer
 	var scanner *bufio.Scanner
+	cfg := &config.Config{}
+	ctx := config.NewContext(context.Background(), cfg)
 
 	// Without timestamp.
 	output = &bytes.Buffer{}
 	cmdLog(&logOpt{
+		Context:      ctx,
 		InstanceName: instance,
 		Output:       output,
 		Requester:    requester,
@@ -115,6 +121,7 @@ func TestCmdLog(t *testing.T) {
 	// With timestamp.
 	output = &bytes.Buffer{}
 	cmdLog(&logOpt{
+		Context:      ctx,
 		InstanceName: instance,
 		Timestamp:    true,
 		Output:       output,
@@ -214,7 +221,10 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 	}
 
 	// Send a request.
+	cfg := &config.Config{}
+	ctx := config.NewContext(context.Background(), cfg)
 	cmdLog(&logOpt{
+		Context:      ctx,
 		InstanceName: instance,
 		Requester:    requester,
 	})

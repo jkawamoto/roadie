@@ -55,8 +55,8 @@ func NewCloudStorageService(ctx context.Context) (*CloudStorageService, error) {
 	}
 
 	return &CloudStorageService{
-		BucketName: cfg.Gcp.Bucket,
-		project:    cfg.Gcp.Project,
+		BucketName: cfg.Bucket,
+		project:    cfg.Project,
 		ctx:        ctx,
 	}, nil
 

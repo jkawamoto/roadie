@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jkawamoto/roadie/config"
+
 	"golang.org/x/net/context"
 	logging "google.golang.org/api/logging/v2beta1"
 )
@@ -33,53 +35,57 @@ import (
 func TestGetLogEntries(t *testing.T) {
 
 	// Test giving project name and filter are passed to requestDo.
-	project := "test-project"
-	filter := "test-filter"
-	GetEntriesFunc(context.Background(), project, filter,
-		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-
-			// Checking project id.
-			t.Log("ProjectIds is", req.ProjectIds)
-			exist := false
-			for _, id := range req.ProjectIds {
-				if id == project {
-					exist = true
-				}
-			}
-			if !exist {
-				t.Error("ProjectIds doesn't have the giving project id")
-			}
-
-			// Checking filter.
-			t.Log("Filter is", req.Filter)
-			if req.Filter != filter {
-				t.Error("Filter doesn't match the giving filter")
-			}
-
-			return &logging.ListLogEntriesResponse{}, nil
+	cfg := &config.Config{
+		Gcp: config.Gcp{
+			Project: "test-project",
 		},
+	}
+	ctx := config.NewContext(context.Background(), cfg)
+	filter := "test-filter"
+
+	GetEntriesFunc(ctx, filter, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+		// Checking project id.
+		t.Log("ProjectIds is", req.ProjectIds)
+		exist := false
+		for _, id := range req.ProjectIds {
+			if id == cfg.Project {
+				exist = true
+			}
+		}
+		if !exist {
+			t.Error("ProjectIds doesn't have the giving project id")
+		}
+
+		// Checking filter.
+		t.Log("Filter is", req.Filter)
+		if req.Filter != filter {
+			t.Error("Filter doesn't match the giving filter")
+		}
+
+		return &logging.ListLogEntriesResponse{}, nil
+	},
 		func(_ *Entry) error {
 			return nil
 		})
 
 	// Test giving entries are passed to handler.
 	samplePayload := struct{ Key, Value string }{Key: "key", Value: "value"}
-	GetEntriesFunc(context.Background(), project, filter,
-		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+	GetEntriesFunc(ctx, filter, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
-			return &logging.ListLogEntriesResponse{
-				Entries: []*logging.LogEntry{
-					&logging.LogEntry{
-						JsonPayload: samplePayload,
-						Timestamp:   "2006-01-02T15:04:05Z",
-					},
-					&logging.LogEntry{
-						JsonPayload: samplePayload,
-						Timestamp:   "2006-01-02T15:04:05.12345Z",
-					},
-				}}, nil
+		return &logging.ListLogEntriesResponse{
+			Entries: []*logging.LogEntry{
+				&logging.LogEntry{
+					JsonPayload: samplePayload,
+					Timestamp:   "2006-01-02T15:04:05Z",
+				},
+				&logging.LogEntry{
+					JsonPayload: samplePayload,
+					Timestamp:   "2006-01-02T15:04:05.12345Z",
+				},
+			}}, nil
 
-		},
+	},
 		func(entry *Entry) error {
 
 			t.Log("Timestamp is", entry.Timestamp)
@@ -97,7 +103,7 @@ func TestGetLogEntries(t *testing.T) {
 	// Test giving token will be used and handler will be received entries given from
 	// another page.
 	var invoked int
-	GetEntries(context.Background(), project, filter,
+	GetEntries(ctx, filter,
 		func() EntryRequesterFunc {
 			var counter int
 			token := "next-token"
@@ -157,24 +163,28 @@ func TestGetLogEntries(t *testing.T) {
 func TestStopGetLogEntries(t *testing.T) {
 
 	var invoked int
-	project := "test-project"
-	filter := "test-filter"
-	GetEntriesFunc(context.Background(), project, filter,
-		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-
-			return &logging.ListLogEntriesResponse{
-				Entries: []*logging.LogEntry{
-					&logging.LogEntry{
-						JsonPayload: "samplePayload",
-						Timestamp:   "2006-01-02T15:04:05Z",
-					},
-					&logging.LogEntry{
-						JsonPayload: "samplePayload",
-						Timestamp:   "2006-01-02T15:04:05.12345Z",
-					},
-				}}, nil
-
+	cfg := &config.Config{
+		Gcp: config.Gcp{
+			Project: "test-project",
 		},
+	}
+	ctx := config.NewContext(context.Background(), cfg)
+	filter := "test-filter"
+	GetEntriesFunc(ctx, filter, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+
+		return &logging.ListLogEntriesResponse{
+			Entries: []*logging.LogEntry{
+				&logging.LogEntry{
+					JsonPayload: "samplePayload",
+					Timestamp:   "2006-01-02T15:04:05Z",
+				},
+				&logging.LogEntry{
+					JsonPayload: "samplePayload",
+					Timestamp:   "2006-01-02T15:04:05.12345Z",
+				},
+			}}, nil
+
+	},
 		func(entry *Entry) error {
 			invoked++
 			return fmt.Errorf("Test error.")
@@ -189,27 +199,30 @@ func TestStopGetLogEntries(t *testing.T) {
 // Test getLogEntries will be canceled via context.
 func TestCancelGetLogEntries(t *testing.T) {
 
-	project := "test-project"
+	cfg := &config.Config{
+		Gcp: config.Gcp{
+			Project: "test-project",
+		},
+	}
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
 	filter := "test-filter"
-	ctx, cancel := context.WithCancel(context.Background())
 
 	var invoked int
-	GetEntriesFunc(ctx, project, filter,
-		func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+	GetEntriesFunc(ctx, filter, func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
 
-			return &logging.ListLogEntriesResponse{
-				Entries: []*logging.LogEntry{
-					&logging.LogEntry{
-						JsonPayload: "samplePayload",
-						Timestamp:   "2006-01-02T15:04:05Z",
-					},
-					&logging.LogEntry{
-						JsonPayload: "samplePayload",
-						Timestamp:   "2006-01-02T15:04:05.12345Z",
-					},
-				}}, nil
+		return &logging.ListLogEntriesResponse{
+			Entries: []*logging.LogEntry{
+				&logging.LogEntry{
+					JsonPayload: "samplePayload",
+					Timestamp:   "2006-01-02T15:04:05Z",
+				},
+				&logging.LogEntry{
+					JsonPayload: "samplePayload",
+					Timestamp:   "2006-01-02T15:04:05.12345Z",
+				},
+			}}, nil
 
-		},
+	},
 		func(entry *Entry) error {
 			invoked++
 			cancel()

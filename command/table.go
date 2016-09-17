@@ -61,7 +61,7 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 			} else if url {
 				table.AddRow(info.Name, fmt.Sprintf(
 					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-					fmt.Sprintf("gs://%s/%s", cfg.Gcp.Bucket, info.Path))
+					fmt.Sprintf("gs://%s/%s", cfg.Bucket, info.Path))
 			} else {
 				table.AddRow(info.Name, fmt.Sprintf(
 					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
@@ -101,7 +101,7 @@ func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err erro
 				} else if url {
 					table.AddRow(
 						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", cfg.Gcp.Bucket, rel))
+						fmt.Sprintf("gs://%s/%s", cfg.Bucket, rel))
 				} else {
 					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}

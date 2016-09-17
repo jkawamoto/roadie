@@ -81,7 +81,7 @@ func AvailableZones(ctx context.Context) (zones []Zone, err error) {
 		return
 	}
 
-	res, err := service.Zones.List(cfg.Gcp.Project).Do()
+	res, err := service.Zones.List(cfg.Project).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func AvailableMachineTypes(ctx context.Context) (types []MachineType, err error)
 		return
 	}
 
-	res, err := service.MachineTypes.List(cfg.Gcp.Project, cfg.Gcp.Zone).Do()
+	res, err := service.MachineTypes.List(cfg.Project, cfg.Zone).Do()
 	if err != nil {
 		return
 	}
@@ -148,8 +148,8 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 
 	bluepring := compute.Instance{
 		Name:        strings.ToLower(name),
-		Zone:        normalizedZone(cfg.Gcp.Project, cfg.Gcp.Zone),
-		MachineType: normalizedMachineType(cfg.Gcp.Project, cfg.Gcp.Zone, cfg.Gcp.MachineType),
+		Zone:        normalizedZone(cfg.Gcp),
+		MachineType: normalizedMachineType(cfg.Gcp),
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Type:       "PERSISTENT",
@@ -158,7 +158,7 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-					DiskType:    normalizedZone(cfg.Gcp.Project, cfg.Gcp.Zone) + "/diskTypes/pd-standard",
+					DiskType:    normalizedZone(cfg.Gcp) + "/diskTypes/pd-standard",
 					DiskSizeGb:  disksize,
 				},
 			},
@@ -166,7 +166,7 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 		CanIpForward: false,
 		NetworkInterfaces: []*compute.NetworkInterface{
 			&compute.NetworkInterface{
-				Network: "projects/" + cfg.Gcp.Project + "/global/networks/default",
+				Network: "projects/" + cfg.Project + "/global/networks/default",
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
 						Name: "External NAT",
@@ -193,7 +193,7 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 		},
 	}
 
-	res, err := service.Instances.Insert(cfg.Gcp.Project, cfg.Gcp.Zone, &bluepring).Do()
+	res, err := service.Instances.Insert(cfg.Project, cfg.Zone, &bluepring).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
 			fmt.Println(res.StatusMessage)
@@ -220,7 +220,7 @@ func DeleteInstance(ctx context.Context, name string) (err error) {
 		return
 	}
 
-	res, err := service.Instances.Stop(cfg.Gcp.Project, cfg.Gcp.Zone, name).Do()
+	res, err := service.Instances.Stop(cfg.Project, cfg.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
 			fmt.Println(res.StatusMessage)
@@ -233,11 +233,11 @@ func DeleteInstance(ctx context.Context, name string) (err error) {
 }
 
 // normalizedZone returns the normalized zone string of Zone property.
-func normalizedZone(project, zone string) string {
-	return "projects/" + project + "/zones/" + zone
+func normalizedZone(gcp config.Gcp) string {
+	return "projects/" + gcp.Project + "/zones/" + gcp.Zone
 }
 
 // normalizedMachineType returns the normalized instance type of MachineType property.
-func normalizedMachineType(project, zone, mtype string) string {
-	return normalizedZone(project, zone) + "/machineTypes/" + mtype
+func normalizedMachineType(gcp config.Gcp) string {
+	return normalizedZone(gcp) + "/machineTypes/" + gcp.MachineType
 }

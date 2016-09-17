@@ -37,13 +37,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-type Gcp struct {
-	Project     string
-	MachineType string
-	Zone        string
-	Bucket      string
-}
-
 type mockStorageServicer struct {
 	t        *testing.T
 	bucket   string
@@ -64,10 +57,10 @@ func newMockStorageServicer(t *testing.T, cfg *config.Config) *mockStorageServic
 
 	return &mockStorageServicer{
 		t:        t,
-		bucket:   cfg.Gcp.Bucket,
+		bucket:   cfg.Bucket,
 		prefix:   prefix,
 		filename: filename,
-		location: fmt.Sprintf("gs://%s/%s/%s", cfg.Gcp.Bucket, prefix, filename),
+		location: fmt.Sprintf("gs://%s/%s/%s", cfg.Bucket, prefix, filename),
 	}
 
 }
@@ -183,7 +176,7 @@ func TestPrepareBucket(t *testing.T) {
 func TestUploadFile(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},
@@ -203,7 +196,7 @@ func TestUploadFile(t *testing.T) {
 func TestListupFiles(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},
@@ -237,7 +230,7 @@ func TestListupFiles(t *testing.T) {
 func TestDownloadFiles(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},
@@ -280,7 +273,7 @@ func TestDownloadFiles(t *testing.T) {
 func TestCancelDownloadFiles(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},
@@ -323,7 +316,7 @@ func TestCancelDownloadFiles(t *testing.T) {
 func TestDeleteFiles(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},
@@ -347,7 +340,7 @@ func TestPrintFileBody(t *testing.T) {
 
 	var err error
 	cfg := &config.Config{
-		Gcp: Gcp{
+		Gcp: config.Gcp{
 			Project: "sample-project",
 			Bucket:  "sample-bucket",
 		},

@@ -38,45 +38,53 @@ const ConfigureFile = ".roadie"
 // DotGit defines a git repository name.
 const DotGit = ".git"
 
+// Gcp defines information to access Google Cloud Platform.
+type Gcp struct {
+	// Project name.
+	Project string
+	// Bucket name
+	Bucket string
+	// Zone where instances will run.
+	Zone string
+	// Default machine type of new instances.
+	MachineType string
+}
+
 // Config defines a structure of config file.
 type Config struct {
+	Gcp
+	// Config file name used to save/load this config.
 	Filename string `toml:"-"`
-	Gcp      struct {
-		Project     string
-		MachineType string
-		Zone        string
-		Bucket      string
-	}
 }
 
 // NewConfig creates a config object. If there is a configure file,
 // it also loads the file, too.
-func NewConfig() (c *Config, err error) {
+func NewConfig() (cfg *Config, err error) {
 
-	c = &Config{
+	cfg = &Config{
 		Filename: lookup(),
 	}
-	c.Gcp.Zone = "us-central1-b"
-	c.Gcp.MachineType = "n1-standard-1"
+	cfg.Zone = "us-central1-b"
+	cfg.MachineType = "n1-standard-1"
 
-	if _, exist := os.Stat(c.Filename); exist == nil {
+	if _, exist := os.Stat(cfg.Filename); exist == nil {
 
-		f, err := os.Open(c.Filename)
+		f, err := os.Open(cfg.Filename)
 		if err != nil {
 			return nil, fmt.Errorf(
 				chalk.Red.Color("Cannot open configuration file %s. (%s)"),
-				c.Filename, err.Error())
+				cfg.Filename, err.Error())
 		}
 		defer f.Close()
 
 		var buf []byte
 		if buf, err = ioutil.ReadAll(f); err == nil {
-			err = toml.Unmarshal(buf, c)
+			err = toml.Unmarshal(buf, cfg)
 		}
 		if err != nil {
 			return nil, fmt.Errorf(
 				chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
-				c.Filename, err.Error())
+				cfg.Filename, err.Error())
 		}
 
 	}
