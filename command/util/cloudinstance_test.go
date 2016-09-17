@@ -24,13 +24,18 @@ package util
 import (
 	"fmt"
 	"testing"
+
+	"github.com/jkawamoto/roadie/config"
 )
 
 func TestNormalizedZone(t *testing.T) {
 
-	project := "sample-project"
-	zone := "us-central1-c"
-	if res := normalizedZone(project, zone); res != fmt.Sprintf("projects/%s/zones/%s", project, zone) {
+	gcp := config.Gcp{
+		Project: "sample-project",
+		Zone:    "us-central1-c",
+	}
+
+	if res := normalizedZone(gcp); res != fmt.Sprintf("projects/%s/zones/%s", gcp.Project, gcp.Zone) {
 		t.Error("Normalized zone isn's correct:", res)
 	}
 
@@ -38,10 +43,12 @@ func TestNormalizedZone(t *testing.T) {
 
 func TestNormalizedMachineType(t *testing.T) {
 
-	project := "sample-project"
-	zone := "us-central1-c"
-	machine := "n1-standard-2"
-	if res := normalizedMachineType(project, zone, machine); res != fmt.Sprintf("projects/%s/zones/%s/machineTypes/%s", project, zone, machine) {
+	gcp := config.Gcp{
+		Project:     "sample-project",
+		Zone:        "us-central1-c",
+		MachineType: "n1-standard-2",
+	}
+	if res := normalizedMachineType(gcp); res != fmt.Sprintf("projects/%s/zones/%s/machineTypes/%s", gcp.Project, gcp.Zone, gcp.MachineType) {
 
 		t.Error("Normalized machine type isn't correct:", res)
 	}

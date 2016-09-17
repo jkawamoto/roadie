@@ -148,8 +148,8 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 
 	bluepring := compute.Instance{
 		Name:        strings.ToLower(name),
-		Zone:        normalizedZone(cfg.Project, cfg.Zone),
-		MachineType: normalizedMachineType(cfg.Project, cfg.Zone, cfg.MachineType),
+		Zone:        normalizedZone(cfg.Gcp),
+		MachineType: normalizedMachineType(cfg.Gcp),
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Type:       "PERSISTENT",
@@ -158,7 +158,7 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-					DiskType:    normalizedZone(cfg.Project, cfg.Zone) + "/diskTypes/pd-standard",
+					DiskType:    normalizedZone(cfg.Gcp) + "/diskTypes/pd-standard",
 					DiskSizeGb:  disksize,
 				},
 			},
@@ -233,11 +233,11 @@ func DeleteInstance(ctx context.Context, name string) (err error) {
 }
 
 // normalizedZone returns the normalized zone string of Zone property.
-func normalizedZone(project, zone string) string {
-	return "projects/" + project + "/zones/" + zone
+func normalizedZone(gcp config.Gcp) string {
+	return "projects/" + gcp.Project + "/zones/" + gcp.Zone
 }
 
 // normalizedMachineType returns the normalized instance type of MachineType property.
-func normalizedMachineType(project, zone, mtype string) string {
-	return normalizedZone(project, zone) + "/machineTypes/" + mtype
+func normalizedMachineType(gcp config.Gcp) string {
+	return normalizedZone(gcp) + "/machineTypes/" + gcp.MachineType
 }
