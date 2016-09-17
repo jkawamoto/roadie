@@ -1,5 +1,5 @@
 //
-// command/util/storage_test.go
+// command/cloud/storage_test.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package util
+package cloud
 
 import (
 	"bytes"
