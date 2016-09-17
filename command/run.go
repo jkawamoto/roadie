@@ -122,7 +122,7 @@ func CmdRun(c *cli.Context) error {
 	}
 	if c.Bool("follow") {
 		return cmdLog(&logOpt{
-			Config:       *conf,
+			Context:      config.NewContext(context.Background(), conf),
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,

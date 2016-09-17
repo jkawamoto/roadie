@@ -97,7 +97,7 @@ func cmdStatus(conf *config.Config, all bool) error {
 	runnings := make(map[string]bool)
 	requester, _ := log.NewCloudLoggingService(ctx)
 
-	err := log.GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
+	err := log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
 
 		select {
 		case <-ctx.Done():
