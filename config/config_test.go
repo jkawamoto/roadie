@@ -63,16 +63,16 @@ func TestSave(t *testing.T) {
 
 	data := string(raw)
 	t.Log("Saved config:\n", data)
-	if !strings.Contains(data, cfg.Gcp.Project) {
+	if !strings.Contains(data, cfg.Project) {
 		t.Error("Project isn't saved")
 	}
-	if !strings.Contains(data, cfg.Gcp.Bucket) {
+	if !strings.Contains(data, cfg.Bucket) {
 		t.Error("Bucket isn't saved")
 	}
-	if !strings.Contains(data, cfg.Gcp.Zone) {
+	if !strings.Contains(data, cfg.Zone) {
 		t.Error("Zone isn't saved")
 	}
-	if !strings.Contains(data, cfg.Gcp.MachineType) {
+	if !strings.Contains(data, cfg.MachineType) {
 		t.Error("MachineType isn't saved")
 	}
 

@@ -61,12 +61,12 @@ func CmdConfigProjectSet(c *cli.Context) error {
 		fmt.Println(chalk.Red.Color("The given project ID has spaces. They are replaced to '_'."))
 		name = strings.Replace(name, " ", "_", -1)
 	}
-	if conf.Gcp.Project == "" {
+	if conf.Project == "" {
 		fmt.Printf("Set project ID:\n  %s\n", chalk.Green.Color(name))
 	} else {
-		fmt.Printf("Update project ID:\n  %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(name))
+		fmt.Printf("Update project ID:\n  %s -> %s\n", conf.Project, chalk.Green.Color(name))
 	}
-	conf.Gcp.Project = name
+	conf.Project = name
 
 	if err := conf.Save(); err != nil {
 		return cli.NewExitError(err.Error(), 3)
@@ -77,8 +77,8 @@ func CmdConfigProjectSet(c *cli.Context) error {
 // CmdConfigProjectShow prints current project ID.
 func CmdConfigProjectShow(c *cli.Context) error {
 	conf := GetConfig(c)
-	if conf.Gcp.Project != "" {
-		fmt.Println(conf.Gcp.Project)
+	if conf.Project != "" {
+		fmt.Println(conf.Project)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set"))
 	}
@@ -108,10 +108,10 @@ func CmdConfigTypeSet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	v := c.Args()[0]
-	if conf.Gcp.MachineType == "" {
+	if conf.MachineType == "" {
 		fmt.Printf("Set machine type:\n  %s\n", chalk.Green.Color(v))
 	} else {
-		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.Gcp.MachineType, chalk.Green.Color(v))
+		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
@@ -130,7 +130,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given machine type '%s' is available.\n"), v)
 	}
 
-	conf.Gcp.MachineType = v
+	conf.MachineType = v
 	if err = conf.Save(); err != nil {
 		return cli.NewExitError(err.Error(), 3)
 	}
@@ -142,7 +142,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 func CmdConfigTypeList(c *cli.Context) error {
 
 	conf := GetConfig(c)
-	if conf.Gcp.Project == "" {
+	if conf.Project == "" {
 		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
 
@@ -156,7 +156,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 	table := uitable.New()
 	table.AddRow("MACHINE TYPE", "DESCRIPTION")
 	for _, v := range list {
-		if v.Name == conf.Gcp.MachineType {
+		if v.Name == conf.MachineType {
 			table.AddRow(chalk.Green.Color(v.Name)+"*", chalk.Green.Color(v.Description))
 		} else {
 			table.AddRow(chalk.ResetColor.Color(v.Name), v.Description)
@@ -170,8 +170,8 @@ func CmdConfigTypeList(c *cli.Context) error {
 // CmdConfigTypeShow shows current configuration of machine type.
 func CmdConfigTypeShow(c *cli.Context) error {
 	conf := GetConfig(c)
-	if conf.Gcp.MachineType != "" {
-		fmt.Println(conf.Gcp.MachineType)
+	if conf.MachineType != "" {
+		fmt.Println(conf.MachineType)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set") + " - 'n1-standard-1' will be used by default.")
 	}
@@ -202,10 +202,10 @@ func CmdConfigZoneSet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	v := c.Args()[0]
-	if conf.Gcp.Zone == "" {
+	if conf.Zone == "" {
 		fmt.Printf("Set zone:\n  %s\n", chalk.Green.Color(v))
 	} else {
-		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Gcp.Zone, chalk.Green.Color(v))
+		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Zone, chalk.Green.Color(v))
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
@@ -224,7 +224,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given zone '%s' is available.\n"), v)
 	}
 
-	conf.Gcp.Zone = v
+	conf.Zone = v
 	if err = conf.Save(); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -236,7 +236,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 func CmdConfigZoneList(c *cli.Context) error {
 
 	conf := GetConfig(c)
-	if conf.Gcp.Project == "" {
+	if conf.Project == "" {
 		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
 
@@ -250,7 +250,7 @@ func CmdConfigZoneList(c *cli.Context) error {
 	table := uitable.New()
 	table.AddRow(chalk.ResetColor.Color("ZONE"), "STATUS")
 	for _, v := range list {
-		if v.Name == conf.Gcp.Zone {
+		if v.Name == conf.Zone {
 			table.AddRow(chalk.Green.Color(v.Name)+"*", v.Status)
 		} else {
 			table.AddRow(chalk.ResetColor.Color(v.Name), v.Status)
@@ -264,8 +264,8 @@ func CmdConfigZoneList(c *cli.Context) error {
 // CmdConfigZoneShow shows current configuration of zone.
 func CmdConfigZoneShow(c *cli.Context) error {
 	conf := GetConfig(c)
-	if conf.Gcp.Zone != "" {
-		fmt.Println(conf.Gcp.Zone)
+	if conf.Zone != "" {
+		fmt.Println(conf.Zone)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set") + " - 'us-central1-b' will be used by default.")
 	}
@@ -294,13 +294,13 @@ func CmdConfigBucketSet(c *cli.Context) error {
 
 	conf := GetConfig(c)
 	name := c.Args()[0]
-	if conf.Gcp.Bucket == "" {
+	if conf.Bucket == "" {
 		fmt.Printf("Set bucket name:\n  %s\n", chalk.Green.Color(name))
 	} else {
-		fmt.Printf("Update bucket name:\n  %s -> %s\n", conf.Gcp.Bucket, chalk.Green.Color(name))
+		fmt.Printf("Update bucket name:\n  %s -> %s\n", conf.Bucket, chalk.Green.Color(name))
 	}
 
-	conf.Gcp.Bucket = name
+	conf.Bucket = name
 	if err := conf.Save(); err != nil {
 		return cli.NewExitError(err.Error(), 3)
 	}
@@ -315,8 +315,8 @@ func CmdConfigBucketSet(c *cli.Context) error {
 // CmdConfigBucketShow shows current bucket name.
 func CmdConfigBucketShow(c *cli.Context) error {
 	conf := GetConfig(c)
-	if conf.Gcp.Bucket != "" {
-		fmt.Println(conf.Gcp.Bucket)
+	if conf.Bucket != "" {
+		fmt.Println(conf.Bucket)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set"))
 	}

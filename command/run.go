@@ -136,12 +136,12 @@ func CmdRun(c *cli.Context) error {
 // cmdRun implements the main logic of run command.
 func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
-	if conf.Gcp.Project == "" {
+	if conf.Project == "" {
 		return fmt.Errorf("project ID must be given")
 	}
-	if conf.Gcp.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
-		conf.Gcp.Bucket = conf.Gcp.Project
+	if conf.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Project)
+		conf.Bucket = conf.Project
 	}
 
 	script, err := resource.NewScript(opt.ScriptFile, opt.ScriptArgs)
@@ -193,7 +193,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	// Check result section.
 	if script.Body.Result == "" || opt.OverWriteResultSection {
-		location := util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.InstanceName)
+		location := util.CreateURL(conf.Bucket, ResultPrefix, script.InstanceName)
 		script.Body.Result = location.String()
 	} else {
 		fmt.Printf(
@@ -324,7 +324,7 @@ func setLocalSource(ctx context.Context, storage *util.Storage, script *resource
 
 	var location string // URL where the archive is uploaded.
 	if dry {
-		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
+		location = util.CreateURL(conf.Bucket, SourcePrefix, filename).String()
 	} else {
 		location, err = storage.UploadFile(SourcePrefix, filename, uploadingPath)
 		if err != nil {
@@ -341,7 +341,7 @@ func setLocalSource(ctx context.Context, storage *util.Storage, script *resource
 // config. If overwriting source section, it prints warning, too.
 func setSource(conf *config.Config, script *resource.Script, file string) {
 
-	url := util.CreateURL(conf.Gcp.Bucket, SourcePrefix, file).String()
+	url := util.CreateURL(conf.Bucket, SourcePrefix, file).String()
 	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a filename is given.\n"),
@@ -358,19 +358,19 @@ func replaceURLScheme(conf *config.Config, script *resource.Script) error {
 
 	// Replace source section.
 	if strings.HasPrefix(script.Body.Source, RoadieSchemePrefix) {
-		script.Body.Source = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
+		script.Body.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
 	}
 
 	// Replace data section.
 	for i, url := range script.Body.Data {
 		if strings.HasPrefix(url, RoadieSchemePrefix) {
-			script.Body.Data[i] = util.CreateURL(conf.Gcp.Bucket, DataPrefix, url[offset:]).String()
+			script.Body.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
 		}
 	}
 
 	// Replace result section.
 	if strings.HasPrefix(script.Body.Result, RoadieSchemePrefix) {
-		script.Body.Result = util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
+		script.Body.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
 	}
 
 	return nil

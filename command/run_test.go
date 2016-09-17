@@ -81,8 +81,11 @@ func TestSetURLSource(t *testing.T) {
 // are tested in tests for util.Archive.
 func TestSetLocalSource(t *testing.T) {
 
-	conf := &config.Config{}
-	conf.Gcp.Bucket = "somebucket"
+	conf := &config.Config{
+		Gcp: config.Gcp{
+			Bucket: "somebucket",
+		},
+	}
 	ctx := config.NewContext(context.Background(), conf)
 	storage := &util.Storage{}
 
@@ -128,12 +131,14 @@ func TestSetLocalSource(t *testing.T) {
 // TestSetSource checks setSource sets correct url from a given filename.
 func TestSetSource(t *testing.T) {
 
-	conf := config.Config{}
-	conf.Gcp.Bucket = "somebucket"
+	conf := &config.Config{
+		Gcp: config.Gcp{
+			Bucket: "somebucket",
+		},
+	}
+	script := &resource.Script{}
 
-	script := resource.Script{}
-
-	setSource(&conf, &script, "abc.zip")
+	setSource(conf, script, "abc.zip")
 
 	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "abc.zip").String() {
 		t.Errorf("source section is not correct: %s", script.Body.Source)

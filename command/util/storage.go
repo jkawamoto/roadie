@@ -100,7 +100,7 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := CreateURL(cfg.Gcp.Bucket, prefix, name)
+	location := CreateURL(cfg.Bucket, prefix, name)
 
 	info, err := os.Stat(input)
 	if err != nil {

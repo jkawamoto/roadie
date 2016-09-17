@@ -57,10 +57,10 @@ func newMockStorageServicer(t *testing.T, cfg *config.Config) *mockStorageServic
 
 	return &mockStorageServicer{
 		t:        t,
-		bucket:   cfg.Gcp.Bucket,
+		bucket:   cfg.Bucket,
 		prefix:   prefix,
 		filename: filename,
-		location: fmt.Sprintf("gs://%s/%s/%s", cfg.Gcp.Bucket, prefix, filename),
+		location: fmt.Sprintf("gs://%s/%s/%s", cfg.Bucket, prefix, filename),
 	}
 
 }

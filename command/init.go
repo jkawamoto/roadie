@@ -68,21 +68,21 @@ for more detail. Type ctrl-c at anytime to quite.
 	}
 
 	conf := GetConfig(c)
-	conf.Gcp.Project = gcloud.Project
-	conf.Gcp.Zone = gcloud.Zone
+	conf.Project = gcloud.Project
+	conf.Zone = gcloud.Zone
 
 	message := "Please enter project ID"
-	if conf.Gcp.Project == "" {
-		conf.Gcp.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
+	if conf.Project == "" {
+		conf.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
 	} else {
-		conf.Gcp.Project, err = actor.PromptOptionalAndRetry(message, conf.Gcp.Project, checkNotEmpty)
+		conf.Project, err = actor.PromptOptionalAndRetry(message, conf.Project, checkNotEmpty)
 	}
 	if err != nil {
 		return cli.NewExitError(err.Error(), 10)
 	}
 
 	message = "Please enter bucket name"
-	conf.Gcp.Bucket, err = actor.PromptOptionalAndRetry(message, conf.Gcp.Project, checkNotEmpty)
+	conf.Bucket, err = actor.PromptOptionalAndRetry(message, conf.Project, checkNotEmpty)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 10)
 	}
