@@ -31,12 +31,12 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 )
 
 // AddRecorder is a callback to add file information to a table.
-type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
+type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
 func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
@@ -53,7 +53,7 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 		if info.Name != "" {
 			if quiet {
@@ -90,7 +90,7 @@ func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err erro
 	prev := ""
 
 	return printList(ctx, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+		func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 			rel, _ := filepath.Rel(prefix, info.Path)
 			rel = filepath.Dir(rel)
@@ -128,8 +128,8 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	storage := util.NewStorage(ctx)
-	err = storage.ListupFiles(prefix, func(info *util.FileInfo) error {
+	storage := cloud.NewStorage(ctx)
+	err = storage.ListupFiles(prefix, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})

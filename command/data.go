@@ -30,7 +30,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -70,7 +70,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = config.NewContext(ctx, conf)
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 
 	var wg sync.WaitGroup
 	defer wg.Wait()

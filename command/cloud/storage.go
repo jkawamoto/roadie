@@ -36,6 +36,7 @@ import (
 	"github.com/cheggaaa/pb"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -99,7 +100,7 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := CreateURL(cfg.Bucket, prefix, name)
+	location := util.CreateURL(cfg.Bucket, prefix, name)
 
 	info, err := os.Stat(input)
 	if err != nil {

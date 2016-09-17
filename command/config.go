@@ -28,7 +28,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -115,7 +115,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
-	list, err := util.AvailableMachineTypes(ctx)
+	list, err := cloud.AvailableMachineTypes(ctx)
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -147,7 +147,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
-	list, err := util.AvailableMachineTypes(ctx)
+	list, err := cloud.AvailableMachineTypes(ctx)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -209,7 +209,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
-	list, err := util.AvailableZones(ctx)
+	list, err := cloud.AvailableZones(ctx)
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -241,7 +241,7 @@ func CmdConfigZoneList(c *cli.Context) error {
 	}
 
 	ctx := config.NewContext(context.Background(), conf)
-	list, err := util.AvailableZones(ctx)
+	list, err := cloud.AvailableZones(ctx)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
