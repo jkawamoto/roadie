@@ -38,8 +38,11 @@ type Entry struct {
 	Payload   interface{}
 }
 
+// EntryHandler is a function type to handler Entries.
+type EntryHandler func(*Entry) error
+
 // GetEntriesFunc is a helper function to call GetEntries with EntryRequesterFunc.
-func GetEntriesFunc(ctx context.Context, filter string, requester EntryRequesterFunc, handler func(*Entry) error) (err error) {
+func GetEntriesFunc(ctx context.Context, filter string, requester EntryRequesterFunc, handler EntryHandler) (err error) {
 	return GetEntries(ctx, filter, requester, handler)
 }
 
@@ -47,7 +50,7 @@ func GetEntriesFunc(ctx context.Context, filter string, requester EntryRequester
 // Obtained log entries are filtered by a given filter query and will be passed
 // a given handler entry by entry. If the handler returns non nil value,
 // obtaining log entries is canceled immediately.
-func GetEntries(ctx context.Context, filter string, requester EntryRequester, handler func(*Entry) error) (err error) {
+func GetEntries(ctx context.Context, filter string, requester EntryRequester, handler EntryHandler) (err error) {
 
 	cfg, ok := config.FromContext(ctx)
 	if !ok {
@@ -114,9 +117,12 @@ func GetEntries(ctx context.Context, filter string, requester EntryRequester, ha
 
 }
 
+// RoadiePayloadHandler is a function type to handle RoadiePayloads.
+type RoadiePayloadHandler func(time.Time, *RoadiePayload) error
+
 // GetInstanceLogEntriesFunc is a helper function to call GetInstanceLogEntries with LogEntryRequesterFunc.
 func GetInstanceLogEntriesFunc(
-	ctx context.Context, project, instanceName string, start time.Time, requester EntryRequesterFunc, handler func(time.Time, *RoadiePayload) error) (err error) {
+	ctx context.Context, instanceName string, start time.Time, requester EntryRequesterFunc, handler RoadiePayloadHandler) (err error) {
 
 	return GetInstanceLogEntries(ctx, instanceName, start, requester, handler)
 }
@@ -125,7 +131,7 @@ func GetInstanceLogEntriesFunc(
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
 func GetInstanceLogEntries(
-	ctx context.Context, instanceName string, start time.Time, requester EntryRequester, handler func(time.Time, *RoadiePayload) error) (err error) {
+	ctx context.Context, instanceName string, start time.Time, requester EntryRequester, handler RoadiePayloadHandler) (err error) {
 
 	// Instead of logName, which is specified TAG env in roadie-gce,
 	// use instance name to distinguish instances. This update makes all logs
@@ -144,9 +150,11 @@ func GetInstanceLogEntries(
 	})
 }
 
+// ActivityPayloadHandler is a function type to handle ActivityPayloads.
+type ActivityPayloadHandler func(time.Time, *ActivityPayload) error
+
 // GetOperationLogEntriesFunc is a helper function to call GetOperationLogEntries with LogEntryRequesterFunc.
-func GetOperationLogEntriesFunc(ctx context.Context,
-	requester EntryRequesterFunc, handler func(time.Time, *ActivityPayload) error) (err error) {
+func GetOperationLogEntriesFunc(ctx context.Context, requester EntryRequesterFunc, handler ActivityPayloadHandler) (err error) {
 
 	return GetOperationLogEntries(ctx, requester, handler)
 }
@@ -154,8 +162,7 @@ func GetOperationLogEntriesFunc(ctx context.Context,
 // GetOperationLogEntries requests log entries about google cloud platform operations.
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
-func GetOperationLogEntries(ctx context.Context,
-	requester EntryRequester, handler func(time.Time, *ActivityPayload) error) (err error) {
+func GetOperationLogEntries(ctx context.Context, requester EntryRequester, handler ActivityPayloadHandler) (err error) {
 
 	return GetEntries(
 		ctx, "jsonPayload.event_type = \"GCE_OPERATION_DONE\"", requester,
