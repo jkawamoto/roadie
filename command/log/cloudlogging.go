@@ -30,13 +30,23 @@ import (
 // CloudLoggingService implements LogEntryRequester interface.
 // It requests logs to google cloud logging service.
 type CloudLoggingService struct {
-	service *logging.Service
+	// Context for this service.
+	ctx context.Context
 }
 
 // NewCloudLoggingService creates a new CloudLoggingService with a given context.
-func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService, err error) {
+func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService) {
 
-	client, err := google.DefaultClient(ctx, logging.CloudPlatformReadOnlyScope)
+	return &CloudLoggingService{
+		ctx: ctx,
+	}
+
+}
+
+// Do requests a given request with the specified context.
+func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (res *logging.ListLogEntriesResponse, err error) {
+
+	client, err := google.DefaultClient(s.ctx, logging.CloudPlatformReadOnlyScope)
 	if err != nil {
 		return
 	}
@@ -46,13 +56,6 @@ func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService, err 
 		return
 	}
 
-	return &CloudLoggingService{service: service}, nil
-
-}
-
-// Do requests a given request with the specified context.
-func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-
-	return s.service.Entries.List(req).Do()
+	return service.Entries.List(req).Do()
 
 }

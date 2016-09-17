@@ -81,10 +81,7 @@ func cmdLog(opt *logOpt) (err error) {
 		opt.Output = ioutil.Discard
 	}
 	if opt.Requester == nil {
-		opt.Requester, err = log.NewCloudLoggingService(opt.Context)
-		if err != nil {
-			return err
-		}
+		opt.Requester = log.NewCloudLoggingService(opt.Context)
 	}
 
 	// Determine when the newest instance starts.
