@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/ttacon/chalk"
 )
 
@@ -52,7 +51,7 @@ type StartupOpt struct {
 // Startup constructs a startup script by given options.
 func Startup(opt *StartupOpt) (res string, err error) {
 
-	startup, err := util.Asset("assets/startup.sh")
+	startup, err := Asset("assets/startup.sh")
 	if err != nil {
 		fmt.Println(chalk.Red.Color("Startup script was not found."))
 		return

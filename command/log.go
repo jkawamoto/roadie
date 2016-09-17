@@ -47,7 +47,7 @@ func CmdLog(c *cli.Context) error {
 
 	// Run the log command.
 	if err := cmdLog(&logOpt{
-		Config:       *GetConfig(c),
+		Context:      config.NewContext(context.Background(), GetConfig(c)),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
@@ -60,8 +60,8 @@ func CmdLog(c *cli.Context) error {
 
 // logOpt manages arguments for log command.
 type logOpt struct {
-	// Config maintains configurations.
-	Config config.Config
+	// Context, a config must be attached to.
+	Context context.Context
 	// InstanceName of which logs are shown.
 	InstanceName string
 	// If true, timestamp is also printed.
@@ -70,8 +70,6 @@ type logOpt struct {
 	Follow bool
 	// io.Writer to be outputted logs.
 	Output io.Writer
-	// Context, default is context.Background.
-	Context context.Context
 	// Used to obtain log entries.
 	Requester log.EntryRequester
 }
@@ -82,19 +80,13 @@ func cmdLog(opt *logOpt) (err error) {
 	if opt.Output == nil {
 		opt.Output = ioutil.Discard
 	}
-	if opt.Context == nil {
-		opt.Context = context.Background()
-	}
 	if opt.Requester == nil {
-		opt.Requester, err = log.NewCloudLoggingService(opt.Context)
-		if err != nil {
-			return err
-		}
+		opt.Requester = log.NewCloudLoggingService(opt.Context)
 	}
 
 	// Determine when the newest instance starts.
 	var start time.Time
-	if err = log.GetOperationLogEntries(opt.Context, opt.Config.Gcp.Project, opt.Requester, func(timestamp time.Time, payload *log.ActivityPayload) (err error) {
+	if err = log.GetOperationLogEntries(opt.Context, opt.Requester, func(timestamp time.Time, payload *log.ActivityPayload) (err error) {
 		if payload.Resource.Name == opt.InstanceName {
 			if payload.EventSubtype == log.EventSubtypeInsert {
 				start = timestamp
@@ -108,7 +100,7 @@ func cmdLog(opt *logOpt) (err error) {
 	for {
 
 		err = log.GetInstanceLogEntries(
-			opt.Context, opt.Config.Gcp.Project, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *log.RoadiePayload) (err error) {
+			opt.Context, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *log.RoadiePayload) (err error) {
 
 				var msg string
 				if opt.Timestamp {

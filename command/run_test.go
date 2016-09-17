@@ -24,6 +24,9 @@ package command
 import (
 	"testing"
 
+	"golang.org/x/net/context"
+
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -79,8 +82,13 @@ func TestSetURLSource(t *testing.T) {
 // are tested in tests for util.Archive.
 func TestSetLocalSource(t *testing.T) {
 
-	conf := config.Config{}
-	conf.Gcp.Bucket = "somebucket"
+	conf := &config.Config{
+		Gcp: config.Gcp{
+			Bucket: "somebucket",
+		},
+	}
+	ctx := config.NewContext(context.Background(), conf)
+	storage := &cloud.Storage{}
 
 	var script resource.Script
 	var err error
@@ -93,7 +101,7 @@ func TestSetLocalSource(t *testing.T) {
 		}
 
 		t.Logf("Trying target %s", target)
-		if err = setLocalSource(&conf, &script, target, nil, true); err != nil {
+		if err = setLocalSource(ctx, storage, &script, target, nil, true); err != nil {
 			t.Error(err.Error())
 		}
 		if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "test.tar.gz").String() {
@@ -106,7 +114,7 @@ func TestSetLocalSource(t *testing.T) {
 	script = resource.Script{
 		InstanceName: "test",
 	}
-	if err = setLocalSource(&conf, &script, "run.go", nil, true); err != nil {
+	if err = setLocalSource(ctx, storage, &script, "run.go", nil, true); err != nil {
 		t.Error(err.Error())
 	}
 	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "run.go").String() {
@@ -114,7 +122,7 @@ func TestSetLocalSource(t *testing.T) {
 	}
 
 	// Test with unexisting file.
-	if err = setLocalSource(&conf, &script, "abcd.efg", nil, true); err == nil {
+	if err = setLocalSource(ctx, storage, &script, "abcd.efg", nil, true); err == nil {
 		t.Error("Give an unexisting path but no error occurs.")
 	}
 	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())
@@ -124,12 +132,14 @@ func TestSetLocalSource(t *testing.T) {
 // TestSetSource checks setSource sets correct url from a given filename.
 func TestSetSource(t *testing.T) {
 
-	conf := config.Config{}
-	conf.Gcp.Bucket = "somebucket"
+	conf := &config.Config{
+		Gcp: config.Gcp{
+			Bucket: "somebucket",
+		},
+	}
+	script := &resource.Script{}
 
-	script := resource.Script{}
-
-	setSource(&conf, &script, "abc.zip")
+	setSource(conf, script, "abc.zip")
 
 	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "abc.zip").String() {
 		t.Errorf("source section is not correct: %s", script.Body.Source)
@@ -141,13 +151,6 @@ func TestSetSource(t *testing.T) {
 // to "gs://<bucketname>/.roadie/".
 func TestReplaceURLScheme(t *testing.T) {
 
-	type GCP struct {
-		Project     string
-		MachineType string
-		Zone        string
-		Bucket      string
-	}
-
 	type ScriptBody struct {
 		APT    []string `yaml:"apt,omitempty"`
 		Source string   `yaml:"source,omitempty"`
@@ -158,7 +161,7 @@ func TestReplaceURLScheme(t *testing.T) {
 	}
 
 	conf := config.Config{
-		Gcp: GCP{
+		Gcp: config.Gcp{
 			Bucket: "test-bucket",
 		},
 	}

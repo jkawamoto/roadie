@@ -25,9 +25,58 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
+
+// Test saving config.
+func TestSave(t *testing.T) {
+
+	var err error
+
+	dir, err := ioutil.TempDir("", "config-test")
+	if err != nil {
+		t.Fatal("Cannot make a temporal directory:", err.Error())
+	}
+	defer os.RemoveAll(dir)
+
+	cfg := Config{
+		Filename: filepath.Join(dir, "config.toml"),
+		Gcp: Gcp{
+			Project:     "sample-project",
+			Bucket:      "sample-bucket",
+			Zone:        "sample-zone",
+			MachineType: "sample-machine-type",
+		},
+	}
+
+	// Test Save method.
+	if err = cfg.Save(); err != nil {
+		t.Error("Save returns an error:", err.Error())
+	}
+
+	raw, err := ioutil.ReadFile(cfg.Filename)
+	if err != nil {
+		t.Error("Cannot read a saved config file:", err.Error())
+	}
+
+	data := string(raw)
+	t.Log("Saved config:\n", data)
+	if !strings.Contains(data, cfg.Project) {
+		t.Error("Project isn't saved")
+	}
+	if !strings.Contains(data, cfg.Bucket) {
+		t.Error("Bucket isn't saved")
+	}
+	if !strings.Contains(data, cfg.Zone) {
+		t.Error("Zone isn't saved")
+	}
+	if !strings.Contains(data, cfg.MachineType) {
+		t.Error("MachineType isn't saved")
+	}
+
+}
 
 // TestLookup tests lookup function.
 func TestLookup(t *testing.T) {

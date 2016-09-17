@@ -32,8 +32,8 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/log"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -58,6 +58,10 @@ func CmdStatus(c *cli.Context) error {
 // instances of which results are deleted already will be omitted.
 func cmdStatus(conf *config.Config, all bool) error {
 
+	ctx := config.NewContext(context.Background(), conf)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
@@ -66,52 +70,52 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		err := ListupFiles(conf.Gcp.Project, conf.Gcp.Bucket, ResultPrefix,
-			func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
-				defer func() {
-					done <- struct{}{}
-				}()
+		storage := cloud.NewStorage(ctx)
+		if err := storage.ListupFiles(ResultPrefix, func(info *cloud.FileInfo) error {
 
-				for {
-					info := <-file
-					if info == nil {
-						return
-					}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
 
-					rel, _ := filepath.Rel(ResultPrefix, info.Path)
-					rel = filepath.Dir(rel)
-					instances[rel] = struct{}{}
+			default:
+				rel, _ := filepath.Rel(ResultPrefix, info.Path)
+				rel = filepath.Dir(rel)
+				instances[rel] = struct{}{}
+				return nil
+			}
 
-				}
-			})
-
-		if err != nil {
+		}); err != nil {
 			return err
 		}
 
 	}
 
 	runnings := make(map[string]bool)
-	ctx := context.Background()
-	requester, _ := log.NewCloudLoggingService(ctx)
+	requester := log.NewCloudLoggingService(ctx)
 
-	err := log.GetOperationLogEntries(ctx, conf.Gcp.Project, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
+	err := log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
 
-		// If all flag is not set, show only following instances;
-		//  - running instances,
-		//  - ended but results are note deleted instances.
-		switch payload.EventSubtype {
-		case log.EventSubtypeInsert:
-			runnings[payload.Resource.Name] = true
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-		case log.EventSubtypeDelete:
-			runnings[payload.Resource.Name] = false
-			if _, exist := instances[payload.Resource.Name]; !all && !exist {
-				delete(runnings, payload.Resource.Name)
+		default:
+
+			// If all flag is not set, show only following instances;
+			//  - running instances,
+			//  - ended but results are note deleted instances.
+			switch payload.EventSubtype {
+			case log.EventSubtypeInsert:
+				runnings[payload.Resource.Name] = true
+
+			case log.EventSubtypeDelete:
+				runnings[payload.Resource.Name] = false
+				if _, exist := instances[payload.Resource.Name]; !all && !exist {
+					delete(runnings, payload.Resource.Name)
+				}
 			}
+			return
 		}
-
-		return
 
 	})
 	s.Stop()
@@ -152,10 +156,7 @@ func CmdStatusKill(c *cli.Context) error {
 // cmdStatusKill kills a given instance named `instanceName`.
 func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 
-	b, err := util.NewInstanceBuilder(conf.Gcp.Project)
-	if err != nil {
-		return
-	}
+	ctx := config.NewContext(context.Background(), conf)
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
@@ -163,7 +164,7 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 	s.Start()
 	defer s.Stop()
 
-	if err = b.DeleteInstance(instanceName); err != nil {
+	if err = cloud.DeleteInstance(ctx, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())

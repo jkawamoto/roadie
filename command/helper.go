@@ -24,7 +24,10 @@ package command
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -37,25 +40,25 @@ func GetConfig(c *cli.Context) *config.Config {
 
 	conf, _ := c.App.Metadata["config"].(*config.Config)
 
-	if conf.Gcp.Project == "" && c.Command.Name != "init" {
+	if conf.Project == "" && c.Command.Name != "init" {
 		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
 	}
 
 	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Gcp.Project, chalk.Green.Color(v))
-		conf.Gcp.Project = v
+		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
+		conf.Project = v
 	}
 	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.Gcp.MachineType, chalk.Green.Color(v))
-		conf.Gcp.MachineType = v
+		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
+		conf.MachineType = v
 	}
 	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Gcp.Zone, chalk.Green.Color(v))
-		conf.Gcp.Zone = v
+		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
+		conf.Zone = v
 	}
 	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Gcp.Bucket, chalk.Green.Color(v))
-		conf.Gcp.Bucket = v
+		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
+		conf.Bucket = v
 	}
 
 	return conf
@@ -73,8 +76,8 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		err := PrintFileList(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(
+			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -94,9 +97,9 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		err := DownloadFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.String("o"), c.Args())
-		if err != nil {
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage := cloud.NewStorage(ctx)
+		if err := storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
@@ -115,8 +118,9 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		conf := GetConfig(c)
-		if err := DeleteFiles(conf.Gcp.Project, conf.Gcp.Bucket, prefix, c.Args()); err != nil {
+		ctx := config.NewContext(context.Background(), GetConfig(c))
+		storage := cloud.NewStorage(ctx)
+		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil

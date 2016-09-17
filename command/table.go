@@ -27,16 +27,24 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/config"
 )
 
 // AddRecorder is a callback to add file information to a table.
-type AddRecorder func(table *uitable.Table, info *util.FileInfo, quiet bool)
+type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) {
+func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Context doesn't have any Config: %s", ctx)
+	}
 
 	var headers []string
 	if url {
@@ -45,28 +53,31 @@ func PrintFileList(project, bucket, prefix string, url, quiet bool) (err error) 
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(
-		project, bucket, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-			if info.Name != "" {
-				if quiet {
-					table.AddRow(info.Name)
-				} else if url {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", bucket, info.Path))
-				} else {
-					table.AddRow(info.Name, fmt.Sprintf(
-						"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
-				}
+		if info.Name != "" {
+			if quiet {
+				table.AddRow(info.Name)
+			} else if url {
+				table.AddRow(info.Name, fmt.Sprintf(
+					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
+					fmt.Sprintf("gs://%s/%s", cfg.Bucket, info.Path))
+			} else {
+				table.AddRow(info.Name, fmt.Sprintf(
+					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
 			}
+		}
 
-		})
+	})
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
+func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err error) {
+
+	cfg, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Context doesn't have Config: %s", ctx)
+	}
 
 	var headers []string
 	if url {
@@ -78,9 +89,8 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 	// Storing previous folder name.
 	prev := ""
 
-	return printList(
-		project, bucket, prefix, quiet, headers,
-		func(table *uitable.Table, info *util.FileInfo, quiet bool) {
+	return printList(ctx, prefix, quiet, headers,
+		func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 			rel, _ := filepath.Rel(prefix, info.Path)
 			rel = filepath.Dir(rel)
@@ -91,7 +101,7 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 				} else if url {
 					table.AddRow(
 						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", bucket, rel))
+						fmt.Sprintf("gs://%s/%s", cfg.Bucket, rel))
 				} else {
 					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}
@@ -101,12 +111,13 @@ func PrintDirList(project, bucket, prefix string, url, quiet bool) (err error) {
 		})
 }
 
-func printList(project, bucket, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
+func printList(ctx context.Context, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
 	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
+	defer s.Stop()
 
 	table := uitable.New()
 	if !quiet {
@@ -117,24 +128,14 @@ func printList(project, bucket, prefix string, quiet bool, headers []string, add
 		table.AddRow(rawHeaders...)
 	}
 
-	err = ListupFiles(
-		project, bucket, prefix,
-		func(storage *util.Storage, file <-chan *util.FileInfo, done chan<- struct{}) {
+	storage := cloud.NewStorage(ctx)
+	err = storage.ListupFiles(prefix, func(info *cloud.FileInfo) error {
+		addRecorder(table, info, quiet)
+		return nil
+	})
 
-			for {
-				item := <-file
-				if item == nil {
-					done <- struct{}{}
-					return
-				}
-				addRecorder(table, item, quiet)
-			}
-
-		})
-
-	s.Stop()
 	if err == nil {
-		fmt.Println(table.String())
+		s.FinalMSG += table.String()
 	}
 	return
 

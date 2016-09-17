@@ -28,8 +28,11 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -120,7 +123,7 @@ func CmdRun(c *cli.Context) error {
 	}
 	if c.Bool("follow") {
 		return cmdLog(&logOpt{
-			Config:       *conf,
+			Context:      config.NewContext(context.Background(), conf),
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,
@@ -134,12 +137,12 @@ func CmdRun(c *cli.Context) error {
 // cmdRun implements the main logic of run command.
 func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
-	if conf.Gcp.Project == "" {
+	if conf.Project == "" {
 		return fmt.Errorf("project ID must be given")
 	}
-	if conf.Gcp.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Gcp.Project)
-		conf.Gcp.Bucket = conf.Gcp.Project
+	if conf.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Project)
+		conf.Bucket = conf.Project
 	}
 
 	script, err := resource.NewScript(opt.ScriptFile, opt.ScriptArgs)
@@ -155,6 +158,17 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
+	// Prepare a context.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx = config.NewContext(ctx, conf)
+
+	// Check a specified bucket exists and create it if not.
+	storage := cloud.NewStorage(ctx)
+	if err = storage.PrepareBucket(); err != nil {
+		return err
+	}
+
 	// Check source section.
 	switch {
 	case opt.Git != "":
@@ -164,7 +178,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		setURLSource(script, opt.URL)
 
 	case opt.Local != "":
-		if err = setLocalSource(conf, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
+		if err = setLocalSource(ctx, storage, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
 			return
 		}
 
@@ -175,14 +189,9 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
 	}
 
-	// Check bucket is ready.
-	if _, err = util.NewStorage(conf.Gcp.Project, conf.Gcp.Bucket); err != nil {
-		return
-	}
-
 	// Check result section.
 	if script.Body.Result == "" || opt.OverWriteResultSection {
-		location := util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.InstanceName)
+		location := util.CreateURL(conf.Bucket, ResultPrefix, script.InstanceName)
 		script.Body.Result = location.String()
 	} else {
 		fmt.Printf(
@@ -218,33 +227,14 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	} else {
 
-		// Create an instance.
-		var builder *util.InstanceBuilder
-		builder, err = util.NewInstanceBuilder(conf.Gcp.Project)
-		if err != nil {
-			return
-		}
-
-		// Set zone and machine type.
-		if conf.Gcp.Zone == "" {
-			fmt.Printf(chalk.Red.Color("Zone is not set. %s will be used.\n"), builder.Zone)
-		} else {
-			builder.Zone = conf.Gcp.Zone
-		}
-		if conf.Gcp.MachineType == "" {
-			fmt.Printf(chalk.Red.Color("MachineType is not set. %s will be used.\n"), builder.MachineType)
-		} else {
-			builder.MachineType = conf.Gcp.MachineType
-		}
-
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.InstanceName))
 		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
 		s.Start()
 		defer s.Stop()
 
-		err = builder.CreateInstance(script.InstanceName, []*util.MetadataItem{
-			&util.MetadataItem{
+		err = cloud.CreateInstance(ctx, script.InstanceName, []*cloud.MetadataItem{
+			&cloud.MetadataItem{
 				Key:   "startup-script",
 				Value: startup,
 			},
@@ -284,13 +274,18 @@ func setURLSource(script *resource.Script, url string) {
 	script.Body.Source = url
 }
 
-// setLocalSource sets a GCS URL to source section in a given `script`.
+// setLocalSource sets a GCS URL to source section in a given `script` under a given context.
 // It uploads source codes specified by `path` to GCS and set the URL pointing
 // the uploaded files to the source section. If filename patters are given
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
 // If dry is true, it does not upload any files but create a temporary file.
-func setLocalSource(conf *config.Config, script *resource.Script, path string, excludes []string, dry bool) (err error) {
+func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resource.Script, path string, excludes []string, dry bool) (err error) {
+
+	conf, ok := config.FromContext(ctx)
+	if !ok {
+		return fmt.Errorf("Context doesn't have Config: %s", ctx)
+	}
 
 	info, err := os.Stat(path)
 	if err != nil {
@@ -327,9 +322,9 @@ func setLocalSource(conf *config.Config, script *resource.Script, path string, e
 
 	var location string // URL where the archive is uploaded.
 	if dry {
-		location = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, filename).String()
+		location = util.CreateURL(conf.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = UploadToGCS(conf.Gcp.Project, conf.Gcp.Bucket, SourcePrefix, filename, uploadingPath)
+		location, err = storage.UploadFile(SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}
@@ -344,7 +339,7 @@ func setLocalSource(conf *config.Config, script *resource.Script, path string, e
 // config. If overwriting source section, it prints warning, too.
 func setSource(conf *config.Config, script *resource.Script, file string) {
 
-	url := util.CreateURL(conf.Gcp.Bucket, SourcePrefix, file).String()
+	url := util.CreateURL(conf.Bucket, SourcePrefix, file).String()
 	if script.Body.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a filename is given.\n"),
@@ -361,19 +356,19 @@ func replaceURLScheme(conf *config.Config, script *resource.Script) error {
 
 	// Replace source section.
 	if strings.HasPrefix(script.Body.Source, RoadieSchemePrefix) {
-		script.Body.Source = util.CreateURL(conf.Gcp.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
+		script.Body.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
 	}
 
 	// Replace data section.
 	for i, url := range script.Body.Data {
 		if strings.HasPrefix(url, RoadieSchemePrefix) {
-			script.Body.Data[i] = util.CreateURL(conf.Gcp.Bucket, DataPrefix, url[offset:]).String()
+			script.Body.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
 		}
 	}
 
 	// Replace result section.
 	if strings.HasPrefix(script.Body.Result, RoadieSchemePrefix) {
-		script.Body.Result = util.CreateURL(conf.Gcp.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
+		script.Body.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
 	}
 
 	return nil
