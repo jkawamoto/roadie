@@ -32,6 +32,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -163,7 +164,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	ctx = config.NewContext(ctx, conf)
 
 	// Check a specified bucket exists and create it if not.
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 	if err = storage.PrepareBucket(); err != nil {
 		return err
 	}
@@ -232,8 +233,8 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		s.Start()
 		defer s.Stop()
 
-		err = util.CreateInstance(ctx, script.InstanceName, []*util.MetadataItem{
-			&util.MetadataItem{
+		err = cloud.CreateInstance(ctx, script.InstanceName, []*cloud.MetadataItem{
+			&cloud.MetadataItem{
 				Key:   "startup-script",
 				Value: startup,
 			},
@@ -279,7 +280,7 @@ func setURLSource(script *resource.Script, url string) {
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
 // If dry is true, it does not upload any files but create a temporary file.
-func setLocalSource(ctx context.Context, storage *util.Storage, script *resource.Script, path string, excludes []string, dry bool) (err error) {
+func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resource.Script, path string, excludes []string, dry bool) (err error) {
 
 	conf, ok := config.FromContext(ctx)
 	if !ok {

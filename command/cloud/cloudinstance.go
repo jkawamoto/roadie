@@ -1,5 +1,5 @@
 //
-// command/util/cloudinstance.go
+// command/cloud/cloudinstance.go
 //
 // Copyright (c) 2016 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package util
+package cloud
 
 import (
 	"fmt"

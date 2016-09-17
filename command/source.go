@@ -32,6 +32,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
@@ -81,7 +82,7 @@ func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 	url, err := storage.UploadFile(SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return

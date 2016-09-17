@@ -32,8 +32,8 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/log"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -70,8 +70,8 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		storage := util.NewStorage(ctx)
-		if err := storage.ListupFiles(ResultPrefix, func(info *util.FileInfo) error {
+		storage := cloud.NewStorage(ctx)
+		if err := storage.ListupFiles(ResultPrefix, func(info *cloud.FileInfo) error {
 
 			select {
 			case <-ctx.Done():
@@ -164,7 +164,7 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 	s.Start()
 	defer s.Stop()
 
-	if err = util.DeleteInstance(ctx, instanceName); err != nil {
+	if err = cloud.DeleteInstance(ctx, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())

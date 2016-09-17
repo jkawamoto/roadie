@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -98,7 +98,7 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		}
 
 		ctx := config.NewContext(context.Background(), GetConfig(c))
-		storage := util.NewStorage(ctx)
+		storage := cloud.NewStorage(ctx)
 		if err := storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -119,7 +119,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		}
 
 		ctx := config.NewContext(context.Background(), GetConfig(c))
-		storage := util.NewStorage(ctx)
+		storage := cloud.NewStorage(ctx)
 		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}

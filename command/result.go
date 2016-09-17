@@ -30,7 +30,7 @@ import (
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -83,7 +83,7 @@ func CmdResultShow(c *cli.Context) error {
 	var err error
 
 	ctx := config.NewContext(context.Background(), GetConfig(c))
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 
 	switch c.NArg() {
 	case 1:
@@ -117,7 +117,7 @@ func CmdResultGet(c *cli.Context) error {
 	instance := c.Args().First()
 
 	ctx := config.NewContext(context.Background(), GetConfig(c))
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DownloadFiles(path, c.String("o"), c.Args().Tail()); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -156,7 +156,7 @@ func CmdResultDelete(c *cli.Context) error {
 	}
 
 	ctx := config.NewContext(context.Background(), GetConfig(c))
-	storage := util.NewStorage(ctx)
+	storage := cloud.NewStorage(ctx)
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DeleteFiles(path, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)

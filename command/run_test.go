@@ -26,6 +26,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -87,7 +88,7 @@ func TestSetLocalSource(t *testing.T) {
 		},
 	}
 	ctx := config.NewContext(context.Background(), conf)
-	storage := &util.Storage{}
+	storage := &cloud.Storage{}
 
 	var script resource.Script
 	var err error
