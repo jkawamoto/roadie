@@ -70,11 +70,7 @@ func cmdStatus(conf *config.Config, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		storage, err := util.NewStorage(ctx)
-		if err != nil {
-			return err
-		}
-
+		storage := util.NewStorage(ctx)
 		if err := storage.ListupFiles(ResultPrefix, func(info *util.FileInfo) error {
 
 			select {

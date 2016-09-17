@@ -70,11 +70,7 @@ func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = config.NewContext(ctx, conf)
-
-	storage, err := util.NewStorage(ctx)
-	if err != nil {
-		return
-	}
+	storage := util.NewStorage(ctx)
 
 	var wg sync.WaitGroup
 	defer wg.Wait()

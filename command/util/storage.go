@@ -65,14 +65,13 @@ type storageServicer interface {
 
 // NewStorage creates a cloud storage accessor with a given context.
 // The context must have a Config.
-func NewStorage(ctx context.Context) (*Storage, error) {
+func NewStorage(ctx context.Context) *Storage {
 
-	service, err := NewCloudStorageService(ctx)
 	return &Storage{
 		ctx:     ctx,
-		service: service,
+		service: NewCloudStorageService(ctx),
 		Log:     os.Stderr,
-	}, err
+	}
 
 }
 

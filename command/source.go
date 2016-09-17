@@ -81,11 +81,7 @@ func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	storage, err := util.NewStorage(ctx)
-	if err != nil {
-		return
-	}
-
+	storage := util.NewStorage(ctx)
 	url, err := storage.UploadFile(SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return

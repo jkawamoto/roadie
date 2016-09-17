@@ -128,11 +128,7 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	storage, err := util.NewStorage(ctx)
-	if err != nil {
-		return
-	}
-
+	storage := util.NewStorage(ctx)
 	err = storage.ListupFiles(prefix, func(info *util.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil

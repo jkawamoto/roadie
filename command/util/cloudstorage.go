@@ -39,26 +39,17 @@ const gcsScope = storage.DevstorageFullControlScope
 
 // CloudStorageService object.
 type CloudStorageService struct {
-	BucketName string
-	project    string
-	ctx        context.Context
+	// Context must have Config.
+	ctx context.Context
 }
 
 // NewCloudStorageService creates a new storage accessor to a bucket name under the given contest.
 // The context must have a config.
-// If the given bucket does not exsits, it will be created.
-func NewCloudStorageService(ctx context.Context) (*CloudStorageService, error) {
-
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		return nil, fmt.Errorf("Context dosen't have a config: %s", ctx)
-	}
+func NewCloudStorageService(ctx context.Context) *CloudStorageService {
 
 	return &CloudStorageService{
-		BucketName: cfg.Bucket,
-		project:    cfg.Project,
-		ctx:        ctx,
-	}, nil
+		ctx: ctx,
+	}
 
 }
 
@@ -84,8 +75,13 @@ func (s *CloudStorageService) CreateIfNotExists() (err error) {
 		return
 	}
 
-	if _, exist := service.Buckets.Get(s.BucketName).Do(); exist != nil {
-		_, err = service.Buckets.Insert(s.project, &storage.Bucket{Name: s.BucketName}).Do()
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
+	if _, exist := service.Buckets.Get(cfg.Bucket).Do(); exist != nil {
+		_, err = service.Buckets.Insert(cfg.Project, &storage.Bucket{Name: cfg.Bucket}).Do()
 	}
 	return
 
@@ -99,8 +95,13 @@ func (s *CloudStorageService) Upload(in io.Reader, location *url.URL) (err error
 		return
 	}
 
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
 	object := &storage.Object{Name: location.Path[1:]}
-	_, err = service.Objects.Insert(s.BucketName, object).Media(in).Do()
+	_, err = service.Objects.Insert(cfg.Bucket, object).Media(in).Do()
 	return
 
 }
@@ -113,7 +114,12 @@ func (s *CloudStorageService) Download(filename string, out io.Writer) (err erro
 		return
 	}
 
-	res, err := service.Objects.Get(s.BucketName, filename).Download()
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
+	res, err := service.Objects.Get(cfg.Bucket, filename).Download()
 	if err != nil {
 		return
 	}
@@ -133,7 +139,12 @@ func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error
 		return
 	}
 
-	res, err := service.Objects.Get(s.BucketName, filename).Do()
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return nil, fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
+	res, err := service.Objects.Get(cfg.Bucket, filename).Do()
 	if err != nil {
 		return
 	}
@@ -153,10 +164,15 @@ func (s *CloudStorageService) List(prefix string, handler FileInfoHandler) error
 		return err
 	}
 
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
 	var token string
 	for {
 
-		res, err := service.Objects.List(s.BucketName).Prefix(prefix).PageToken(token).Do()
+		res, err := service.Objects.List(cfg.Bucket).Prefix(prefix).PageToken(token).Do()
 		if err != nil {
 			return err
 		}
@@ -190,6 +206,12 @@ func (s *CloudStorageService) Delete(name string) (err error) {
 	if err != nil {
 		return
 	}
-	return service.Objects.Delete(s.BucketName, name).Do()
+
+	cfg, ok := config.FromContext(s.ctx)
+	if !ok {
+		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	}
+
+	return service.Objects.Delete(cfg.Bucket, name).Do()
 
 }

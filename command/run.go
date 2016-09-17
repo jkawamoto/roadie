@@ -163,10 +163,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	ctx = config.NewContext(ctx, conf)
 
 	// Check a specified bucket exists and create it if not.
-	storage, err := util.NewStorage(ctx)
-	if err != nil {
-		return
-	}
+	storage := util.NewStorage(ctx)
 	if err = storage.PrepareBucket(); err != nil {
 		return err
 	}
