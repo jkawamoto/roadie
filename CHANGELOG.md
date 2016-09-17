@@ -1,3 +1,8 @@
+## 0.2.5 (2016-09-17)
+### Added
+- Support parallel uploading data files.
+
+
 ## 0.2.4 (2016-09-14)
 ### Added
 - Support a new URL scheme `roadie://` which is a shortcut to
@@ -6,6 +11,7 @@
 For example, a URL `roadie://sample.dat` in `data` section of your script file,
 will be treated as `gs://<your bucket>/.roadie/data/sample.dat`.
 It will reduce your types to make script files.
+
 
 ## 0.2.3 (2016-09-13)
 ### Fixed
