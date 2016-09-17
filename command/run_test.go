@@ -145,13 +145,6 @@ func TestSetSource(t *testing.T) {
 // to "gs://<bucketname>/.roadie/".
 func TestReplaceURLScheme(t *testing.T) {
 
-	type GCP struct {
-		Project     string
-		MachineType string
-		Zone        string
-		Bucket      string
-	}
-
 	type ScriptBody struct {
 		APT    []string `yaml:"apt,omitempty"`
 		Source string   `yaml:"source,omitempty"`
@@ -162,7 +155,7 @@ func TestReplaceURLScheme(t *testing.T) {
 	}
 
 	conf := config.Config{
-		Gcp: GCP{
+		Gcp: config.Gcp{
 			Bucket: "test-bucket",
 		},
 	}
