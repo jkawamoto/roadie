@@ -131,7 +131,36 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 	return nil
 }
 
+// CmdQueueInstanceAdd creates instances working for a given queue.
 func CmdQueueInstanceAdd(c *cli.Context) error {
+
+	cfg := config.FromCliContext(c)
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
+	defer cancel()
+
+	queue := c.Args().First()
+	startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
+		ProjectID: cfg.Project,
+		Name:      queue,
+		Version:   QueueManagerVersion,
+	})
+	if err != nil {
+		return err
+	}
+
+	instances := c.Int("instances")
+	size := c.Int64("disk-size")
+	for i := 0; i < instances; i++ {
+
+		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
+		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
+		err = createInstance(ctx, name, startup, size, os.Stderr)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 }
 

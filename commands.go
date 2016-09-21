@@ -594,6 +594,18 @@ files belonging to the instance.`,
 						Description: "add a new instance for a queue. Zone and instance type can be set by global flags",
 						ArgsUsage:   "<queue name>",
 						Action:      command.CmdQueueInstanceAdd,
+						Flags: []cli.Flag{
+							cli.IntFlag{
+								Name:  "instances",
+								Usage: "`number` of instance to be created.",
+								Value: 1,
+							},
+							cli.Int64Flag{
+								Name:  "disk-size",
+								Usage: "disk `size` in GB which created instances have.",
+								Value: 9,
+							},
+						},
 					},
 				},
 			},
