@@ -23,7 +23,9 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/command/resource"
@@ -149,15 +151,26 @@ func CmdQueueStop(c *cli.Context) (err error) {
 // Then create instances working for the queue.
 func CmdQueueRestart(c *cli.Context) (err error) {
 
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), config.FromCliContext(c)))
+	queue := c.Args().First()
+	cfg := config.FromCliContext(c)
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
 	defer cancel()
 
-	err = updatePending(ctx, c.Args().First(), false)
+	err = updatePending(ctx, queue, false)
 	if err != nil {
 		return
 	}
 
-	// TODO: Create instances.
+	startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
+		ProjectID: cfg.Project,
+		Name:      queue,
+		Version:   QueueManagerVersion,
+	})
+	if err != nil {
+		return
+	}
+	name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
+	err = createInstance(ctx, name, startup, 0, os.Stderr)
 
 	return
 
