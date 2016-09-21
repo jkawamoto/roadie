@@ -45,7 +45,7 @@ func CmdStatus(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if err := cmdStatus(conf, c.Bool("all")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -145,7 +145,7 @@ func CmdStatusKill(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if err := cmdStatusKill(conf, c.Args()[0]); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}

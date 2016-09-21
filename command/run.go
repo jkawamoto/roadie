@@ -101,7 +101,7 @@ func CmdRun(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	opt := runOpt{
 		Git:                    c.String("git"),
 		URL:                    c.String("url"),
