@@ -139,7 +139,7 @@ var Commands = []cli.Command{
 			},
 			cli.StringFlag{
 				Name:  "queue",
-				Usage: "queue name this script to be enqueued to. If the given queue desn't exist, it'll be created.",
+				Usage: "queue `name` this script to be enqueued to. If the given queue desn't exist, it'll be created.",
 			},
 		},
 	},
@@ -570,11 +570,11 @@ files belonging to the instance.`,
 				Action:      command.CmdQueueList,
 			},
 			{
-				Name:        "status",
+				Name:        "show",
 				Usage:       "show status of a given queue.",
 				Description: "show status of a given queue.",
 				ArgsUsage:   "<queue name>",
-				Action:      command.CmdQueueStatus,
+				Action:      command.CmdQueueShow,
 			},
 			{
 				Name:        "instance",

@@ -21,27 +21,169 @@
 
 package command
 
-import "github.com/urfave/cli"
+import (
+	"fmt"
+
+	"cloud.google.com/go/datastore"
+	"github.com/jkawamoto/roadie/command/resource"
+	"github.com/jkawamoto/roadie/config"
+	"github.com/urfave/cli"
+	"golang.org/x/net/context"
+)
+
+// QueueKind defines kind of entries stored in cloud datastore.
+const QueueKind = "roadie-queue"
+
+// QueueName is a structure to obtaine QueueName attribute from entities
+// in cloud datastore.
+type QueueName struct {
+	// Queue name.
+	QueueName string
+}
 
 // CmdQueueList lists up existing queue information.
 // Each information should have queue name, the number of items in the queue,
 // the number of instances working to the queue.
-func CmdQueueList(c *cli.Context) error {
+func CmdQueueList(c *cli.Context) (err error) {
+
+	config := config.FromCliContext(c)
+	ctx := context.Background()
+
+	client, err := datastore.NewClient(ctx, config.Project)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
+	res := client.Run(ctx, query)
+	for {
+		var name QueueName
+
+		_, err = res.Next(&name)
+		if err == datastore.Done {
+			break
+		} else if err != nil {
+			return err
+		}
+		fmt.Println(name.QueueName)
+
+	}
+
 	return nil
 }
 
-func CmdQueueStatus(c *cli.Context) error {
+// CmdQueueShow prints information about a given queue.
+// It prints how many items in the queue and how many instance working for the queue.
+func CmdQueueShow(c *cli.Context) error {
+
+	config := config.FromCliContext(c)
+	ctx := context.Background()
+
+	client, err := datastore.NewClient(ctx, config.Project)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	name := c.Args().First()
+
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", name)
+	res := client.Run(ctx, query)
+
+	for {
+		var item resource.Task
+		_, err := res.Next(&item)
+		if err == datastore.Done {
+			break
+		} else if err != nil {
+			return err
+		}
+		fmt.Println(item)
+	}
+
 	return nil
 }
+
 func CmdQueueInstanceShow(c *cli.Context) error {
 	return nil
 }
+
 func CmdQueueInstanceAdd(c *cli.Context) error {
 	return nil
 }
-func CmdQueueStop(c *cli.Context) error {
-	return nil
+
+// CmdQueueStop stops executing a queue. In order to stop a queue,
+// It updates pending property of all tasks to true.
+func CmdQueueStop(c *cli.Context) (err error) {
+
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), config.FromCliContext(c)))
+	defer cancel()
+
+	return updatePending(ctx, c.Args().First(), true)
+
 }
-func CmdQueueRestart(c *cli.Context) error {
-	return nil
+
+// CmdQueueRestart restarts executing a queue. In order to restart a queue,
+// It updates pending property of all tasks to false.
+// Then create instances working for the queue.
+func CmdQueueRestart(c *cli.Context) (err error) {
+
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), config.FromCliContext(c)))
+	defer cancel()
+
+	err = updatePending(ctx, c.Args().First(), false)
+	if err != nil {
+		return
+	}
+
+	// TODO: Create instances.
+
+	return
+
+}
+
+// updatePending updates pending attribute of tasks in a given queue.
+func updatePending(ctx context.Context, queue string, pending bool) (err error) {
+
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	client, err := datastore.NewClient(ctx, cfg.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
+	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
+
+		res := client.Run(ctx, query)
+		for {
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+
+			default:
+				var task resource.Task
+				key, err := res.Next(&task)
+				if err == datastore.Done {
+					return nil
+				} else if err != nil {
+					return err
+				}
+
+				task.Pending = pending
+				tx.Put(key, &task)
+
+			}
+
+		}
+
+	})
+
+	return
 }
