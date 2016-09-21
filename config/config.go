@@ -64,8 +64,6 @@ func NewConfig() (cfg *Config, err error) {
 	cfg = &Config{
 		Filename: lookup(),
 	}
-	cfg.Zone = "us-central1-b"
-	cfg.MachineType = "n1-standard-1"
 
 	if _, exist := os.Stat(cfg.Filename); exist == nil {
 
@@ -87,6 +85,13 @@ func NewConfig() (cfg *Config, err error) {
 				cfg.Filename, err.Error())
 		}
 
+	}
+
+	if len(cfg.Zone) == 0 {
+		cfg.Zone = "us-central1-b"
+	}
+	if len(cfg.MachineType) == 0 {
+		cfg.MachineType = "n1-standard-1"
 	}
 
 	return
