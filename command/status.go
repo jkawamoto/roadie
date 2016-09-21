@@ -172,3 +172,33 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 	return
 
 }
+
+// runningInstances retuans a set of instance name which still running.
+// It requires a context which has a config object.
+func runningInstances(ctx context.Context) (instances map[string]struct{}, err error) {
+
+	instances = make(map[string]struct{})
+	requester := log.NewCloudLoggingService(ctx)
+
+	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			switch payload.EventSubtype {
+			case log.EventSubtypeInsert:
+				instances[payload.Resource.Name] = struct{}{}
+
+			case log.EventSubtypeDelete:
+				delete(instances, payload.Resource.Name)
+			}
+			return
+		}
+
+	})
+
+	return
+
+}
