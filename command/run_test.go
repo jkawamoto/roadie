@@ -167,7 +167,7 @@ func TestReplaceURLScheme(t *testing.T) {
 	}
 
 	script := resource.Script{
-		Body: ScriptBody{
+		Body: resource.ScriptBody{
 			Source: "roadie://some-sourcefile",
 			Data: []string{
 				"roadie://some-datafile",

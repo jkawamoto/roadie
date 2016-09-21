@@ -210,29 +210,35 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	// Debugging info.
 	fmt.Printf("Script to be run:\n%s\n", script.String())
 
-	// Prepare startup script.
-	options := " "
-	if opt.NoShutdown {
-		options = "--no-shutdown"
-	}
-	if opt.Retry <= 0 {
-		opt.Retry = 10
-	}
-	startup, err := resource.Startup(&resource.StartupOpt{
-		Name:    script.InstanceName,
-		Script:  script.String(),
-		Options: options,
-		Image:   opt.Image,
-		Retry:   opt.Retry,
-	})
+	if len(opt.Queue) == 0 {
+		// If queue flag is not given, execute the script in one instance.
 
-	if opt.Dry {
+		// Prepare startup script.
+		options := " "
+		if opt.NoShutdown {
+			options = "--no-shutdown"
+		}
+		if opt.Retry <= 0 {
+			opt.Retry = 10
+		}
 
-		// If dry flag is set, just print the startup script.
-		fmt.Printf("Startup script:\n%s\n", startup)
+		var startup string
+		startup, err = resource.Startup(&resource.StartupOpt{
+			Name:    script.InstanceName,
+			Script:  script.String(),
+			Options: options,
+			Image:   opt.Image,
+			Retry:   opt.Retry,
+		})
 
-	} else if len(opt.Queue) > 0 {
+		if opt.Dry {
+			// If dry flag is set, just print the startup script.
+			fmt.Printf("Startup script:\n%s\n", startup)
+		} else {
+			err = createInstance(ctx, script.InstanceName, startup, opt.DiskSize, os.Stderr)
+		}
 
+	} else {
 		// If queue name is given, the script will be enqueued in the queue.
 		// If there are no instances working with the queue,
 		// one instance should be created.
@@ -261,17 +267,21 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 			// If there are no instance working to the queue, creating it.
 			// Name of the new instance must start with queue name and
 			// current UNIX time should follow it.
+			var startup string
+			startup, err = resource.WorkerStartup(&resource.WorkerStartupOpt{
+				ProjectID: conf.Project,
+				Name:      opt.Queue,
+				Version:   QueueManagerVersion,
+			})
+			if err != nil {
+				return err
+			}
 			name := fmt.Sprintf("%s-%d", opt.Queue, time.Now().Unix())
 			err = createInstance(ctx, name, startup, opt.DiskSize, os.Stderr)
 		}
-
-	} else {
-
-		err = createInstance(ctx, script.InstanceName, startup, opt.DiskSize, os.Stderr)
-
 	}
-	return
 
+	return
 }
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
