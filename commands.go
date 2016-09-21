@@ -582,11 +582,11 @@ files belonging to the instance.`,
 				Description: "manage instances associated with a queue.",
 				Subcommands: cli.Commands{
 					{
-						Name:        "show",
-						Usage:       "show statuses of instances working for a queue.",
-						Description: "show statuses of instances working for a queue.",
+						Name:        "list",
+						Usage:       "list up instances working for a queue.",
+						Description: "list up instances working for a queue.",
 						ArgsUsage:   "<queue name>",
-						Action:      command.CmdQueueInstanceShow,
+						Action:      command.CmdQueueInstanceList,
 					},
 					{
 						Name:        "add",

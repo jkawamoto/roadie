@@ -23,6 +23,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/command/resource"
@@ -105,7 +106,26 @@ func CmdQueueShow(c *cli.Context) error {
 	return nil
 }
 
-func CmdQueueInstanceShow(c *cli.Context) error {
+// CmdQueueInstanceList lists up instances working with a given queue.
+func CmdQueueInstanceList(c *cli.Context) (err error) {
+
+	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
+	instances, err := runningInstances(ctx)
+	if err != nil {
+		return
+	}
+
+	queue := c.Args().First()
+	for name := range instances {
+
+		if strings.HasPrefix(name, queue) {
+
+			fmt.Println(name)
+
+		}
+
+	}
+
 	return nil
 }
 
