@@ -610,7 +610,18 @@ files belonging to the instance.`,
 				Description: "restart a stopping queue. By default, one instance will be created to handle the queue.",
 				ArgsUsage:   "<queue name>",
 				Action:      command.CmdQueueRestart,
-				// TODO: optional flag: how many instance will be created
+				Flags: []cli.Flag{
+					cli.IntFlag{
+						Name:  "instances",
+						Usage: "`number` of instance to be created.",
+						Value: 1,
+					},
+					cli.Int64Flag{
+						Name:  "disk-size",
+						Usage: "disk `size` in GB which created instances have.",
+						Value: 9,
+					},
+				},
 			},
 		},
 	},

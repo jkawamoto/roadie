@@ -167,10 +167,21 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 		Version:   QueueManagerVersion,
 	})
 	if err != nil {
-		return
+		return err
 	}
-	name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-	err = createInstance(ctx, name, startup, 0, os.Stderr)
+
+	instances := c.Int("instances")
+	size := c.Int64("disk-size")
+	for i := 0; i < instances; i++ {
+
+		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
+		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
+		err = createInstance(ctx, name, startup, size, os.Stderr)
+		if err != nil {
+			return err
+		}
+
+	}
 
 	return
 
