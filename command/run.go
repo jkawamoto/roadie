@@ -282,9 +282,9 @@ func setURLSource(script *resource.Script, url string) {
 // If dry is true, it does not upload any files but create a temporary file.
 func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resource.Script, path string, excludes []string, dry bool) (err error) {
 
-	conf, ok := config.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("Context doesn't have Config: %s", ctx)
+	conf, err := config.FromContext(ctx)
+	if err != nil {
+		return
 	}
 
 	info, err := os.Stat(path)

@@ -70,9 +70,8 @@ func newComputeService(ctx context.Context) (*compute.Service, error) {
 // AvailableZones returns a slice of zone names.
 func AvailableZones(ctx context.Context) (zones []Zone, err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
 		return
 	}
 
@@ -100,9 +99,8 @@ func AvailableZones(ctx context.Context) (zones []Zone, err error) {
 // AvailableMachineTypes returns a slice of machie type names.
 func AvailableMachineTypes(ctx context.Context) (types []MachineType, err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
 		return
 	}
 
@@ -127,9 +125,8 @@ func AvailableMachineTypes(ctx context.Context) (types []MachineType, err error)
 // CreateInstance creates a new instance based on the bilder's configuration.
 func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, disksize int64) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
 		return
 	}
 
@@ -209,9 +206,8 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 // DeleteInstance deletes a given named instance.
 func DeleteInstance(ctx context.Context, name string) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		err = fmt.Errorf("Given context doesn't have a config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
 		return
 	}
 
