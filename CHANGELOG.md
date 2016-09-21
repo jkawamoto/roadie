@@ -1,3 +1,8 @@
+## 0.2.6 (2016-09-21)
+### Fixed
+- Not specifying default zone and machine type.
+
+
 ## 0.2.5 (2016-09-17)
 ### Added
 - Support parallel uploading data files.
