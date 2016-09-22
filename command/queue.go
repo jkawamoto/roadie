@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
@@ -55,68 +56,40 @@ func CmdQueueList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	config := config.FromCliContext(c)
-	ctx := context.Background()
+	cfg := config.FromCliContext(c)
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
+	defer cancel()
 
-	client, err := datastore.NewClient(ctx, config.Project)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
+	store := cloud.NewDatastore(ctx)
+	err = store.QueueNames(func(name string) error {
+		fmt.Println(name)
+		return nil
+	})
+	return
 
-	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
-	res := client.Run(ctx, query)
-	for {
-		var name QueueName
-
-		_, err = res.Next(&name)
-		if err == datastore.Done {
-			break
-		} else if err != nil {
-			return err
-		}
-		fmt.Println(name.QueueName)
-
-	}
-
-	return nil
 }
 
 // CmdQueueShow prints information about a given queue.
 // It prints how many items in the queue and how many instance working for the queue.
-func CmdQueueShow(c *cli.Context) error {
+func CmdQueueShow(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	config := config.FromCliContext(c)
-	ctx := context.Background()
-
-	client, err := datastore.NewClient(ctx, config.Project)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
+	cfg := config.FromCliContext(c)
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
+	defer cancel()
 
 	name := c.Args().First()
-
-	query := datastore.NewQuery(QueueKind).Filter("QueueName=", name)
-	res := client.Run(ctx, query)
-
-	for {
-		var item resource.Task
-		_, err := res.Next(&item)
-		if err == datastore.Done {
-			break
-		} else if err != nil {
-			return err
-		}
+	store := cloud.NewDatastore(ctx)
+	err = store.FindTasks(name, func(item *resource.Task) error {
 		fmt.Println(item.InstanceName)
-	}
+		return nil
+	})
 
-	return nil
+	return
 }
 
 // CmdQueueInstanceList lists up instances working with a given queue.

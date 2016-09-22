@@ -28,6 +28,16 @@ import (
 	"golang.org/x/net/context"
 )
 
+// QueueKind defines kind of entries stored in cloud datastore.
+const QueueKind = "roadie-queue"
+
+// QueueName is a structure to obtaine QueueName attribute from entities
+// in cloud datastore.
+type QueueName struct {
+	// Queue name.
+	QueueName string
+}
+
 type Datastore struct {
 	ctx context.Context
 }
@@ -66,5 +76,92 @@ func (d *Datastore) Insert(id int64, task *resource.Task) (err error) {
 		trans.Commit()
 	}
 	return
+
+}
+
+// QueueNames lists up queue names. Founded names are passed to a given handler function.
+// If the handler returns non-nil error, listing up will be stopped.
+func (d *Datastore) QueueNames(handler func(string) error) (err error) {
+
+	cfg, err := config.FromContext(d.ctx)
+	if err != nil {
+		return
+	}
+
+	client, err := datastore.NewClient(d.ctx, cfg.Project)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
+	res := client.Run(d.ctx, query)
+	for {
+
+		select {
+		case <-d.ctx.Done():
+			return d.ctx.Err()
+
+		default:
+			var name QueueName
+			_, err = res.Next(&name)
+			if err == datastore.Done {
+				return nil
+			} else if err != nil {
+				return err
+			}
+
+			err = handler(name.QueueName)
+			if err != nil {
+				return err
+			}
+
+		}
+
+	}
+
+}
+
+// FindTasks lists up tasks in a given named queue. Founded tasks will be passed
+// to a given handler function. If the hunder function returns non-nil error,
+// the listing up will be stopped.
+func (d *Datastore) FindTasks(name string, handler func(*resource.Task) error) (err error) {
+
+	cfg, err := config.FromContext(d.ctx)
+	if err != nil {
+		return
+	}
+
+	client, err := datastore.NewClient(d.ctx, cfg.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", name)
+	res := client.Run(d.ctx, query)
+	for {
+
+		select {
+		case <-d.ctx.Done():
+			return d.ctx.Err()
+
+		default:
+			var item resource.Task
+			_, err = res.Next(&item)
+			if err == datastore.Done {
+				return nil
+			} else if err != nil {
+				return
+			}
+
+			err = handler(&item)
+			if err != nil {
+				return
+			}
+
+		}
+
+	}
 
 }
