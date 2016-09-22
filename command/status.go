@@ -45,7 +45,7 @@ func CmdStatus(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if err := cmdStatus(conf, c.Bool("all")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -145,7 +145,7 @@ func CmdStatusKill(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if err := cmdStatusKill(conf, c.Args()[0]); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -169,6 +169,36 @@ func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())
 	}
+	return
+
+}
+
+// runningInstances retuans a set of instance name which still running.
+// It requires a context which has a config object.
+func runningInstances(ctx context.Context) (instances map[string]struct{}, err error) {
+
+	instances = make(map[string]struct{})
+	requester := log.NewCloudLoggingService(ctx)
+
+	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			switch payload.EventSubtype {
+			case log.EventSubtypeInsert:
+				instances[payload.Resource.Name] = struct{}{}
+
+			case log.EventSubtypeDelete:
+				delete(instances, payload.Resource.Name)
+			}
+			return
+		}
+
+	})
+
 	return
 
 }

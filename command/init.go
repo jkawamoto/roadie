@@ -30,6 +30,7 @@ import (
 	"strings"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/config"
 
 	"github.com/deiwin/interact"
 	"github.com/urfave/cli"
@@ -67,7 +68,7 @@ for more detail. Type ctrl-c at anytime to quite.
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	conf.Project = gcloud.Project
 	conf.Zone = gcloud.Zone
 

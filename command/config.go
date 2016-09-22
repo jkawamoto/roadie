@@ -54,7 +54,7 @@ func CmdConfigProjectSet(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	var name string
 	name = c.Args()[0]
 	if strings.Contains(name, " ") {
@@ -76,7 +76,7 @@ func CmdConfigProjectSet(c *cli.Context) error {
 
 // CmdConfigProjectShow prints current project ID.
 func CmdConfigProjectShow(c *cli.Context) error {
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.Project != "" {
 		fmt.Println(conf.Project)
 	} else {
@@ -106,7 +106,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	v := c.Args()[0]
 	if conf.MachineType == "" {
 		fmt.Printf("Set machine type:\n  %s\n", chalk.Green.Color(v))
@@ -141,7 +141,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 // CmdConfigTypeList lists up available machine types for the current project.
 func CmdConfigTypeList(c *cli.Context) error {
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.Project == "" {
 		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
@@ -169,7 +169,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 
 // CmdConfigTypeShow shows current configuration of machine type.
 func CmdConfigTypeShow(c *cli.Context) error {
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.MachineType != "" {
 		fmt.Println(conf.MachineType)
 	} else {
@@ -200,7 +200,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	v := c.Args()[0]
 	if conf.Zone == "" {
 		fmt.Printf("Set zone:\n  %s\n", chalk.Green.Color(v))
@@ -235,7 +235,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 // CmdConfigZoneList lists up available zones for the current project.
 func CmdConfigZoneList(c *cli.Context) error {
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.Project == "" {
 		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
@@ -263,7 +263,7 @@ func CmdConfigZoneList(c *cli.Context) error {
 
 // CmdConfigZoneShow shows current configuration of zone.
 func CmdConfigZoneShow(c *cli.Context) error {
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.Zone != "" {
 		fmt.Println(conf.Zone)
 	} else {
@@ -292,7 +292,7 @@ func CmdConfigBucketSet(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	name := c.Args()[0]
 	if conf.Bucket == "" {
 		fmt.Printf("Set bucket name:\n  %s\n", chalk.Green.Color(name))
@@ -314,7 +314,7 @@ func CmdConfigBucketSet(c *cli.Context) error {
 
 // CmdConfigBucketShow shows current bucket name.
 func CmdConfigBucketShow(c *cli.Context) error {
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if conf.Bucket != "" {
 		fmt.Println(conf.Bucket)
 	} else {

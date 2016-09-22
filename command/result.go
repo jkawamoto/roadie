@@ -56,7 +56,7 @@ func CmdResult(c *cli.Context) error {
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) error {
 
-	ctx := config.NewContext(context.Background(), GetConfig(c))
+	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 
 	var err error
 	switch c.NArg() {
@@ -82,7 +82,7 @@ func CmdResultShow(c *cli.Context) error {
 
 	var err error
 
-	ctx := config.NewContext(context.Background(), GetConfig(c))
+	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 	storage := cloud.NewStorage(ctx)
 
 	switch c.NArg() {
@@ -116,7 +116,7 @@ func CmdResultGet(c *cli.Context) error {
 	}
 	instance := c.Args().First()
 
-	ctx := config.NewContext(context.Background(), GetConfig(c))
+	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 	storage := cloud.NewStorage(ctx)
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DownloadFiles(path, c.String("o"), c.Args().Tail()); err != nil {
@@ -155,7 +155,7 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	ctx := config.NewContext(context.Background(), GetConfig(c))
+	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 	storage := cloud.NewStorage(ctx)
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DeleteFiles(path, patterns); err != nil {

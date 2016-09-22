@@ -34,18 +34,27 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// ScriptBody defines the roadie script body.
+type ScriptBody struct {
+	// List of apt packages to be installed.
+	APT []string `yaml:"apt,omitempty"`
+	// URL to the source code.
+	Source string `yaml:"source,omitempty"`
+	// List of URLs to be downloaded as data files.
+	Data []string `yaml:"data,omitempty"`
+	// List of commands to be run.
+	Run []string `yaml:"run,omitempty"`
+	// URL where the computational results will be stored.
+	Result string `yaml:"result,omitempty"`
+	// List of glob pattern, files matches of one of them are uploaded as resuts.
+	Upload []string `yaml:"upload,omitempty"`
+}
+
 // Script defines a data structure of script file.
 type Script struct {
 	Filename     string
 	InstanceName string
-	Body         struct {
-		APT    []string `yaml:"apt,omitempty"`
-		Source string   `yaml:"source,omitempty"`
-		Data   []string `yaml:"data,omitempty"`
-		Run    []string `yaml:"run,omitempty"`
-		Result string   `yaml:"result,omitempty"`
-		Upload []string `yaml:"upload,omitempty"`
-	}
+	Body         ScriptBody
 }
 
 // NewScript loads a given script file and apply arguments.

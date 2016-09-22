@@ -87,12 +87,12 @@ func (s *Storage) PrepareBucket() error {
 // for the uploaded file with error object.
 func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return "", fmt.Errorf("Config is not attached to the given Context: %s", s.ctx)
+	var err error
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return "", err
 	}
 
-	var err error
 	if err = s.service.CreateIfNotExists(); err != nil {
 		return "", err
 	}

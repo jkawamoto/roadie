@@ -47,7 +47,7 @@ func CmdLog(c *cli.Context) error {
 
 	// Run the log command.
 	if err := cmdLog(&logOpt{
-		Context:      config.NewContext(context.Background(), GetConfig(c)),
+		Context:      config.NewContext(context.Background(), config.FromCliContext(c)),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),

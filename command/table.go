@@ -41,9 +41,9 @@ type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 // PrintFileList prints a list of files having a given prefix.
 func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("Context doesn't have any Config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
 	}
 
 	var headers []string
@@ -74,9 +74,9 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 // PrintDirList prints a list of directoris in a given prefix.
 func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("Context doesn't have Config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
 	}
 
 	var headers []string

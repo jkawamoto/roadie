@@ -52,9 +52,9 @@ func GetEntriesFunc(ctx context.Context, filter string, requester EntryRequester
 // obtaining log entries is canceled immediately.
 func GetEntries(ctx context.Context, filter string, requester EntryRequester, handler EntryHandler) (err error) {
 
-	cfg, ok := config.FromContext(ctx)
-	if !ok {
-		return fmt.Errorf("The given context doesn't have any config: %s", ctx)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
 	}
 
 	// pageToken will be used when logs are divided into several pages.

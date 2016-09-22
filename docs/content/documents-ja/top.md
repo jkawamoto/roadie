@@ -15,6 +15,7 @@ title: ドキュメント
 - [プログラムの実行](documents-ja/execution)
 - [ステータスとログ](documents-ja/logging)
 - [ファイルの管理](documents-ja/data)
+- [タスクキュー](documents-ja/queue)
 
 ### 簡単な使用例
 `roadie` では，[YAML](https://ja.wikipedia.org/wiki/YAML) 形式のスクリプトファイル

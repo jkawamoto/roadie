@@ -21,12 +21,21 @@
 
 package config
 
-import "golang.org/x/net/context"
+import (
+	"fmt"
 
+	"golang.org/x/net/context"
+)
+
+// Key type to attach and obtaine Config from contexts.
 type key int
 
 // ConfigKey is the key used store config into a context.
 const configKey key = 0
+
+// ErrNoConfig defines an error which be raised when a given context doesn't have
+// any Config.
+var ErrNoConfig = fmt.Errorf("Given context doesn't have a config")
 
 // NewContext returns a context a given Config is attached to.
 func NewContext(ctx context.Context, cfg *Config) context.Context {
@@ -34,7 +43,10 @@ func NewContext(ctx context.Context, cfg *Config) context.Context {
 }
 
 // FromContext returns a Config from a given context.
-func FromContext(ctx context.Context) (*Config, bool) {
+func FromContext(ctx context.Context) (cfg *Config, err error) {
 	cfg, ok := ctx.Value(configKey).(*Config)
-	return cfg, ok
+	if !ok {
+		err = ErrNoConfig
+	}
+	return
 }

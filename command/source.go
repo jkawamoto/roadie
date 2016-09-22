@@ -49,7 +49,7 @@ func CmdSourcePut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	if err := cmdSourcePut(conf, c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}

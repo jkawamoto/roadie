@@ -35,36 +35,6 @@ import (
 // PrintTimeFormat defines time format to be used to print logs.
 const PrintTimeFormat = "2006/01/02 15:04:05"
 
-// GetConfig returns a config object from a context.
-func GetConfig(c *cli.Context) *config.Config {
-
-	conf, _ := c.App.Metadata["config"].(*config.Config)
-
-	if conf.Project == "" && c.Command.Name != "init" {
-		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
-	}
-
-	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
-		conf.Project = v
-	}
-	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
-		conf.MachineType = v
-	}
-	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
-		conf.Zone = v
-	}
-	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
-		conf.Bucket = v
-	}
-
-	return conf
-
-}
-
 // GenerateListAction generates an action which prints list of files satisfies a given prefix.
 // If url is true, show urls, too.
 func GenerateListAction(prefix string) func(*cli.Context) error {
@@ -77,7 +47,7 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 		}
 
 		err := PrintFileList(
-			config.NewContext(context.Background(), GetConfig(c)), prefix, c.Bool("url"), c.Bool("quiet"))
+			config.NewContext(context.Background(), config.FromCliContext(c)), prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -97,7 +67,7 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := config.NewContext(context.Background(), GetConfig(c))
+		ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 		storage := cloud.NewStorage(ctx)
 		if err := storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
@@ -118,7 +88,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := config.NewContext(context.Background(), GetConfig(c))
+		ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 		storage := cloud.NewStorage(ctx)
 		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)

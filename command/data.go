@@ -47,7 +47,7 @@ func CmdDataPut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := GetConfig(c)
+	conf := config.FromCliContext(c)
 	filename := c.Args()[0]
 	storedName := ""
 	if n == 2 {

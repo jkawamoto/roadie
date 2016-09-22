@@ -23,7 +23,6 @@ package cloud
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -75,9 +74,9 @@ func (s *CloudStorageService) CreateIfNotExists() (err error) {
 		return
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return
 	}
 
 	if _, exist := service.Buckets.Get(cfg.Bucket).Do(); exist != nil {
@@ -95,9 +94,9 @@ func (s *CloudStorageService) Upload(in io.Reader, location *url.URL) (err error
 		return
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return
 	}
 
 	object := &storage.Object{Name: location.Path[1:]}
@@ -114,9 +113,9 @@ func (s *CloudStorageService) Download(filename string, out io.Writer) (err erro
 		return
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return
 	}
 
 	res, err := service.Objects.Get(cfg.Bucket, filename).Download()
@@ -139,9 +138,9 @@ func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error
 		return
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return nil, fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return
 	}
 
 	res, err := service.Objects.Get(cfg.Bucket, filename).Do()
@@ -164,9 +163,9 @@ func (s *CloudStorageService) List(prefix string, handler FileInfoHandler) error
 		return err
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return err
 	}
 
 	var token string
@@ -207,9 +206,9 @@ func (s *CloudStorageService) Delete(name string) (err error) {
 		return
 	}
 
-	cfg, ok := config.FromContext(s.ctx)
-	if !ok {
-		return fmt.Errorf("Context dosen't have a config: %s", s.ctx)
+	cfg, err := config.FromContext(s.ctx)
+	if err != nil {
+		return
 	}
 
 	return service.Objects.Delete(cfg.Bucket, name).Do()
