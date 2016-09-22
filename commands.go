@@ -137,6 +137,10 @@ var Commands = []cli.Command{
 				Usage: "retry the program a given times when GCP's error happens.",
 				Value: 10,
 			},
+			cli.StringFlag{
+				Name:  "queue",
+				Usage: "queue `name` this script to be enqueued to. If the given queue desn't exist, it'll be created.",
+			},
 		},
 	},
 	{
@@ -547,6 +551,87 @@ files belonging to the instance.`,
 						Name:  "o",
 						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
 						Value: ".",
+					},
+				},
+			},
+		},
+	},
+	{
+		Name:        "queue",
+		Usage:       "manage queues and enqueued jobs.",
+		Description: "",
+		Category:    "Execution",
+		Subcommands: cli.Commands{
+			{
+				Name:        "list",
+				Usage:       "list up queues.",
+				Description: "list up existing queues.",
+				ArgsUsage:   " ",
+				Action:      command.CmdQueueList,
+			},
+			{
+				Name:        "show",
+				Usage:       "show status of a given queue.",
+				Description: "show status of a given queue.",
+				ArgsUsage:   "<queue name>",
+				Action:      command.CmdQueueShow,
+			},
+			{
+				Name:        "instance",
+				Usage:       "manage instances associated with a queue.",
+				Description: "manage instances associated with a queue.",
+				Subcommands: cli.Commands{
+					{
+						Name:        "list",
+						Usage:       "list up instances working for a queue.",
+						Description: "list up instances working for a queue.",
+						ArgsUsage:   "<queue name>",
+						Action:      command.CmdQueueInstanceList,
+					},
+					{
+						Name:        "add",
+						Usage:       "add a new instance for a queue.",
+						Description: "add a new instance for a queue. Zone and instance type can be set by global flags",
+						ArgsUsage:   "<queue name>",
+						Action:      command.CmdQueueInstanceAdd,
+						Flags: []cli.Flag{
+							cli.IntFlag{
+								Name:  "instances",
+								Usage: "`number` of instance to be created.",
+								Value: 1,
+							},
+							cli.Int64Flag{
+								Name:  "disk-size",
+								Usage: "disk `size` in GB which created instances have.",
+								Value: 9,
+							},
+						},
+					},
+				},
+			},
+			{
+				Name:        "stop",
+				Usage:       "stop executing a queue.",
+				Description: "To reduce the number of instances working with a queue, this command helps.",
+				ArgsUsage:   "<queue name>",
+				Action:      command.CmdQueueStop,
+			},
+			{
+				Name:        "restart",
+				Usage:       "restart a stopping queue.",
+				Description: "restart a stopping queue. By default, one instance will be created to handle the queue.",
+				ArgsUsage:   "<queue name>",
+				Action:      command.CmdQueueRestart,
+				Flags: []cli.Flag{
+					cli.IntFlag{
+						Name:  "instances",
+						Usage: "`number` of instance to be created.",
+						Value: 1,
+					},
+					cli.Int64Flag{
+						Name:  "disk-size",
+						Usage: "disk `size` in GB which created instances have.",
+						Value: 9,
 					},
 				},
 			},

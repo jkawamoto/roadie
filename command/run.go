@@ -23,6 +23,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,6 +92,9 @@ type runOpt struct {
 
 	// The number of times retry roadie-gcp container when GCP's error happens.
 	Retry int64
+
+	// Queue name. If specified, the given script will be enqueued to the queue.
+	Queue string
 }
 
 // CmdRun specifies the behavior of `run` command.
@@ -117,6 +121,7 @@ func CmdRun(c *cli.Context) error {
 		NoShutdown:             c.Bool("no-shutdown"),
 		Dry:                    c.Bool("dry"),
 		Retry:                  c.Int64("retry") + 1,
+		Queue:                  c.String("queue"),
 	}
 	if err := cmdRun(conf, &opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -205,49 +210,78 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	// Debugging info.
 	fmt.Printf("Script to be run:\n%s\n", script.String())
 
-	// Prepare startup script.
-	options := " "
-	if opt.NoShutdown {
-		options = "--no-shutdown"
-	}
-	if opt.Retry <= 0 {
-		opt.Retry = 10
-	}
-	startup, err := resource.Startup(&resource.StartupOpt{
-		Name:    script.InstanceName,
-		Script:  script.String(),
-		Options: options,
-		Image:   opt.Image,
-		Retry:   opt.Retry,
-	})
+	if len(opt.Queue) == 0 {
+		// If queue flag is not given, execute the script in one instance.
 
-	if opt.Dry {
-
-		fmt.Printf("Startup script:\n%s\n", startup)
-
-	} else {
-
-		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(script.InstanceName))
-		s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
-		s.Start()
-		defer s.Stop()
-
-		err = cloud.CreateInstance(ctx, script.InstanceName, []*cloud.MetadataItem{
-			&cloud.MetadataItem{
-				Key:   "startup-script",
-				Value: startup,
-			},
-		}, opt.DiskSize)
-
-		if err != nil {
-			s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
-			return
+		// Prepare startup script.
+		options := " "
+		if opt.NoShutdown {
+			options = "--no-shutdown"
+		}
+		if opt.Retry <= 0 {
+			opt.Retry = 10
 		}
 
-	}
-	return nil
+		var startup string
+		startup, err = resource.Startup(&resource.StartupOpt{
+			Name:    script.InstanceName,
+			Script:  script.String(),
+			Options: options,
+			Image:   opt.Image,
+			Retry:   opt.Retry,
+		})
 
+		if opt.Dry {
+			// If dry flag is set, just print the startup script.
+			fmt.Printf("Startup script:\n%s\n", startup)
+		} else {
+			err = createInstance(ctx, script.InstanceName, startup, opt.DiskSize, os.Stderr)
+		}
+
+	} else {
+		// If queue name is given, the script will be enqueued in the queue.
+		// If there are no instances working with the queue,
+		// one instance should be created.
+		task := resource.Task{
+			InstanceName: script.InstanceName,
+			Image:        opt.Image,
+			Body:         script.Body,
+			QueueName:    opt.Queue,
+		}
+
+		store := cloud.NewDatastore(ctx)
+		store.Insert(time.Now().Unix(), &task)
+
+		var worker bool
+		var instances map[string]struct{}
+		instances, err = runningInstances(ctx)
+		if err != nil {
+			return
+		}
+		for name := range instances {
+			if strings.HasPrefix(name, task.QueueName) {
+				worker = true
+			}
+		}
+		if !worker {
+			// If there are no instance working to the queue, creating it.
+			// Name of the new instance must start with queue name and
+			// current UNIX time should follow it.
+			var startup string
+			startup, err = resource.WorkerStartup(&resource.WorkerStartupOpt{
+				ProjectID: conf.Project,
+				Name:      opt.Queue,
+				Version:   QueueManagerVersion,
+			})
+			if err != nil {
+				return err
+			}
+			name := fmt.Sprintf("%s-%d", opt.Queue, time.Now().Unix())
+			err = createInstance(ctx, name, startup, opt.DiskSize, os.Stderr)
+		}
+	}
+
+	return
 }
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
@@ -372,4 +406,31 @@ func replaceURLScheme(conf *config.Config, script *resource.Script) error {
 	}
 
 	return nil
+}
+
+// createInstance creates an instance under a given context.
+// The new instance has a given name and a given startup script.
+// It also has a data disk of which volume size is as same as disk.
+// Output messages will be outputted to a given writer, output.
+func createInstance(ctx context.Context, name, startup string, disk int64, output io.Writer) (err error) {
+
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Writer = output
+	s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(name))
+	s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
+
+	s.Start()
+	defer s.Stop()
+
+	err = cloud.CreateInstance(ctx, name, []*cloud.MetadataItem{
+		&cloud.MetadataItem{
+			Key:   "startup-script",
+			Value: startup,
+		},
+	}, disk)
+	if err != nil {
+		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
+	}
+	return
+
 }
