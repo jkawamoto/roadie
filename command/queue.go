@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
@@ -221,44 +220,14 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 // updatePending updates pending attribute of tasks in a given queue.
 func updatePending(ctx context.Context, queue string, pending bool) (err error) {
 
-	cfg, err := config.FromContext(ctx)
+	store := cloud.NewDatastore(ctx)
 	if err != nil {
 		return
 	}
-
-	client, err := datastore.NewClient(ctx, cfg.Project)
-	if err != nil {
-		return
-	}
-	defer client.Close()
-
-	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
-	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
-
-		res := client.Run(ctx, query)
-		for {
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-
-			default:
-				var task resource.Task
-				key, err := res.Next(&task)
-				if err == datastore.Done {
-					return nil
-				} else if err != nil {
-					return err
-				}
-
-				task.Pending = pending
-				tx.Put(key, &task)
-
-			}
-
-		}
-
+	err = store.UpdateTasks(queue, func(task *resource.Task) (*resource.Task, error) {
+		task.Pending = pending
+		return task, nil
 	})
-
 	return
+
 }

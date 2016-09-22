@@ -165,3 +165,53 @@ func (d *Datastore) FindTasks(name string, handler func(*resource.Task) error) (
 	}
 
 }
+
+// UpdateTasks updates tasks in a given named queue. Each task will be passed to
+// a given handler. The handler should return modified tasks. If the handler
+// returns non-nil error, the update will be stopped.
+func (d *Datastore) UpdateTasks(name string, handler func(*resource.Task) (*resource.Task, error)) (err error) {
+
+	cfg, err := config.FromContext(d.ctx)
+	if err != nil {
+		return
+	}
+
+	client, err := datastore.NewClient(d.ctx, cfg.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	_, err = client.RunInTransaction(d.ctx, func(tx *datastore.Transaction) error {
+
+		query := datastore.NewQuery(QueueKind).Transaction(tx).Filter("QueueName=", name)
+		res := client.Run(d.ctx, query)
+		for {
+
+			select {
+			case <-d.ctx.Done():
+				return d.ctx.Err()
+
+			default:
+				var task resource.Task
+				key, err := res.Next(&task)
+				if err == datastore.Done {
+					return nil
+				} else if err != nil {
+					return err
+				}
+
+				newTask, err := handler(&task)
+				if err != nil {
+					return err
+				}
+				tx.Put(key, newTask)
+
+			}
+
+		}
+
+	})
+	return
+
+}
