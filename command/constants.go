@@ -22,5 +22,6 @@
 package command
 
 const (
-	QueueManagerVersion = "0.1.1"
+	// QueueManagerVersion defines the version of queue manager to be used.
+	QueueManagerVersion = "0.1.2"
 )

@@ -33,5 +33,5 @@ type Task struct {
 	QueueName string `yaml:"queue-name"`
 	// If true, NextQueuedScript will skip this script.
 	// In order to stop a queue, this flag will be used.
-	Pending bool
+	Pending bool `yaml:"pending"`
 }
