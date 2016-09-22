@@ -30,6 +30,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 )
@@ -48,6 +49,11 @@ type QueueName struct {
 // Each information should have queue name, the number of items in the queue,
 // the number of instances working to the queue.
 func CmdQueueList(c *cli.Context) (err error) {
+
+	if c.NArg() != 0 {
+		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	config := config.FromCliContext(c)
 	ctx := context.Background()
@@ -80,6 +86,11 @@ func CmdQueueList(c *cli.Context) (err error) {
 // It prints how many items in the queue and how many instance working for the queue.
 func CmdQueueShow(c *cli.Context) error {
 
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
 	config := config.FromCliContext(c)
 	ctx := context.Background()
 
@@ -102,7 +113,7 @@ func CmdQueueShow(c *cli.Context) error {
 		} else if err != nil {
 			return err
 		}
-		fmt.Println(item)
+		fmt.Println(item.InstanceName)
 	}
 
 	return nil
@@ -110,6 +121,11 @@ func CmdQueueShow(c *cli.Context) error {
 
 // CmdQueueInstanceList lists up instances working with a given queue.
 func CmdQueueInstanceList(c *cli.Context) (err error) {
+
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
 	instances, err := runningInstances(ctx)
@@ -121,9 +137,7 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 	for name := range instances {
 
 		if strings.HasPrefix(name, queue) {
-
 			fmt.Println(name)
-
 		}
 
 	}
@@ -133,6 +147,11 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 
 // CmdQueueInstanceAdd creates instances working for a given queue.
 func CmdQueueInstanceAdd(c *cli.Context) error {
+
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	cfg := config.FromCliContext(c)
 	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
@@ -168,6 +187,11 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 // It updates pending property of all tasks to true.
 func CmdQueueStop(c *cli.Context) (err error) {
 
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
 	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), config.FromCliContext(c)))
 	defer cancel()
 
@@ -179,6 +203,11 @@ func CmdQueueStop(c *cli.Context) (err error) {
 // It updates pending property of all tasks to false.
 // Then create instances working for the queue.
 func CmdQueueRestart(c *cli.Context) (err error) {
+
+	if c.NArg() != 1 {
+		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	queue := c.Args().First()
 	cfg := config.FromCliContext(c)
