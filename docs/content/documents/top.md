@@ -10,6 +10,7 @@ instances, and manage outputs.
 - [Run your program](documents/execution)
 - [Logging](documents/logging)
 - [Data handling](documents/data)
+- [Taks queue](documents/queue)
 
 ### Simple example
 Suppose your are in a directory which has your source codes and `script.yml`,
