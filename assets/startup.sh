@@ -22,14 +22,17 @@
 cd /root
 
 # Start logging.
-for i in `seq 5`
+if [ -n "`docker ps -a | grep fluentd`" ]; then
+  docker rm -f fluentd
+fi
+for i in `seq 10`
 do
-  if [ -n "`docker ps -a | grep fluentd`" ]; then
-    docker rm -f fluentd
-  fi
   docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
-    -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd \
-    || break
+    -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
+  sleep 30s
+  if [ -n "`docker ps -a | grep fluentd`" ]; then
+    break
+  fi
 done
 sleep 30s
 
