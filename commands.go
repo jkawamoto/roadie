@@ -92,7 +92,7 @@ var Commands = []cli.Command{
 			},
 			cli.StringSliceFlag{
 				Name:  "exclude",
-				Usage: "",
+				Usage: "`path` to be excluded to upload as the source files. This flag can be set multiply but only works with --local.",
 			},
 			cli.StringFlag{
 				Name:  "source",
