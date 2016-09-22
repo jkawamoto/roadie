@@ -11,14 +11,14 @@
 
     <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
 
-    <meta property="og:title" content="Contents" />
+    <meta property="og:title" content="キュー" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
     <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
     <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
 
     <base href="https://jkawamoto.github.io/roadie/">
-    <title>Contents</title>
+    <title>キュー</title>
 
     
     <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
@@ -123,64 +123,61 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Contents</h2>
+          <h2 class="section-heading">キュー</h2>
           
 
-<p><code>roadie</code> is a easy way to run your programs on <a href="https://cloud.google.com/">Google Cloud Platform</a>.
-It helps you to upload your source codes to the cloud, create and delete
-instances, and manage outputs.</p>
+<p>Roadie はキューを用いたタスク処理にも対応しています．
+デフォルトでは，キューに入れられたタスクは一つのインタンスによって処理されますが，
+必要に応じてインスタンスを追加することもできます．</p>
 
-<ul>
-<li><a href="documents/installation">Installation</a></li>
-<li><a href="documents/configuration">Configuration</a></li>
-<li><a href="documents/execution">Run your program</a></li>
-<li><a href="documents/logging">Logging</a></li>
-<li><a href="documents/data">Data handling</a></li>
-<li><a href="documents/queue">Taks queue</a></li>
-</ul>
+<h3 id="キューにタスクを追加する:a064e0801a0aed21b8b1af86d077fb3c">キューにタスクを追加する</h3>
 
-<h3 id="simple-example:aeaecdd37942e8924d7f7cb1f903f73d">Simple example</h3>
+<p>タスクの追加は，<code>roadie run</code> コマンドに <code>--queue</code> フラグを追加することで行います．
+<code>--queue</code> フラグには，タスクを追加するキューの名前を指定します．
+存在しないキューの名前を指定した場合は，新しいキューが作成されます．
+キューはタスクがすべて処理されると削除されます．</p>
 
-<p>Suppose your are in a directory which has your source codes and <code>script.yml</code>,
-then run</p>
+<p>また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．</p>
 
-<pre><code class="language-sh">$ roadie run --local . --name analyze-wowah script.yml
+<h4 id="例:a064e0801a0aed21b8b1af86d077fb3c">例</h4>
+
+<pre><code>$ roadie run --local . --name task-1 --queue queue-1 script.yml
 </code></pre>
 
-<p>uploads your source codes in the current directory,
-and run them in such a manner that <code>script.yml</code> specifies.</p>
+<p>上記のコマンドでは，<code>script.yml</code> を <code>queue-1</code> に追加します．
+<code>script.yml</code> を処理するために，カレントディレクトリ以下をアップロードすることなど，
+他のオプションは通常の <code>roadie run</code> コマンドと同様です．</p>
 
-<p>The <code>script.yml</code> is a simple YAML file like</p>
+<p>このスクリプトには，<code>task-1</code> という名前を付けていますので，
+この名前を使って出力の取得やログの閲覧が可能です．</p>
 
-<pre><code class="language-yaml">apt:
-- unrar
-data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
-run:
-- unrar x -r wowah.rar
-- analyze WoWAH
-upload:
-- *.png
-</code></pre>
+<h3 id="キューの管理:a064e0801a0aed21b8b1af86d077fb3c">キューの管理</h3>
 
-<p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
-download a data file from such URL as the preparation. Then, it directs
-to run those two commands; unrar the downloaded file, analyze the obtained
-data files.</p>
+<p><code>roadie queue list</code> コマンドは現在存在しているキューの一覧を表示します．
+また，<code>roadie queue show &lt;queue name&gt;</code> コマンドは，<code>&lt;queue name&gt;</code> キューに
+入っているタスクの名前一覧を表示します．</p>
 
-<p>You can check your program is still running or ends by</p>
+<p>キューの処理を一時停止させるには，<code>roadie queue stop &lt;queue name&gt;</code> コマンドを使用します．
+このコマンドは未実行のスクリプト処理を停止させますが，
+すでに実行中のスクリプトに関しては終了まで実行されます．</p>
 
-<pre><code class="language-sh">$ roadie status
-</code></pre>
+<p>一時停止したキューを再実行するためには，
+<code>roadie queue restart &lt;queue name&gt;</code> コマンドを使用します．
+このコマンドは，キューの実行のために新しいインスタンスを一台作成します．</p>
 
-<p>After the program finishes,
-<code>roadie</code> uploads results of such commands to a cloud storage.
-You can access those results by</p>
+<h3 id="インスタンスの管理:a064e0801a0aed21b8b1af86d077fb3c">インスタンスの管理</h3>
 
-<pre><code class="language-sh">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
-</code></pre>
+<p>デフォルトでは，キューのタスクは一台のインスタンスで処理されます．
+複数のインスタンスで処理したい場合，インスタンスの追加を行う必要があります．</p>
 
-<p><code>roadie</code> will download all result files into <code>./res</code> directory.</p>
+<p><code>roadie queue instance add --instances N &lt;queue name&gt;</code> コマンドは，
+<code>N</code> 台のインスタンスを <code>&lt;queue name&gt;</code> キューの処理のために作成します．
+<code>--instance</code> フラグを省略した場合は一台追加されます．
+このコマンドは <code>--disk-size</code> フラグもサポートしており，
+必要であれば作成されるインスタンスのディスクサイズをカスタマイズできます．</p>
+
+<p>現在，あるキューの処理のために稼働しているインスタンス数を調べる場合，
+<code>roadie queue instance list &lt;queue name&gt;</code> コマンドを使用できます．</p>
 
         </div>
       </div>

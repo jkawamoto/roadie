@@ -11,14 +11,14 @@
 
     <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
 
-    <meta property="og:title" content="Contents" />
+    <meta property="og:title" content="Queue" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
     <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
     <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
 
     <base href="https://jkawamoto.github.io/roadie/">
-    <title>Contents</title>
+    <title>Queue</title>
 
     
     <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
@@ -123,64 +123,58 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Contents</h2>
+          <h2 class="section-heading">Queue</h2>
           
 
-<p><code>roadie</code> is a easy way to run your programs on <a href="https://cloud.google.com/">Google Cloud Platform</a>.
-It helps you to upload your source codes to the cloud, create and delete
-instances, and manage outputs.</p>
+<p>Roadie supports queue to keep a bunch of script.
+Enqueued scripts are run sequentially by default,
+but you can add instances working with the queue.</p>
 
-<ul>
-<li><a href="documents/installation">Installation</a></li>
-<li><a href="documents/configuration">Configuration</a></li>
-<li><a href="documents/execution">Run your program</a></li>
-<li><a href="documents/logging">Logging</a></li>
-<li><a href="documents/data">Data handling</a></li>
-<li><a href="documents/queue">Taks queue</a></li>
-</ul>
+<h3 id="add-new-script-to-a-queue:a064e0801a0aed21b8b1af86d077fb3c">Add new script to a queue</h3>
 
-<h3 id="simple-example:aeaecdd37942e8924d7f7cb1f903f73d">Simple example</h3>
+<p>Enqueue a script to a queue, use <code>roadie run</code> command with <code>--queue</code> flag.
+The <code>--queue</code> flag takes a queue name and the given script will be enqueued
+the queue.
+If there are such queues, it will be created.
+If there are no instances working with the queue, one instance will be created.
+The other flags in <code>roadie run</code> command are as same as the case of starting
+script without queue.</p>
 
-<p>Suppose your are in a directory which has your source codes and <code>script.yml</code>,
-then run</p>
+<h4 id="example:a064e0801a0aed21b8b1af86d077fb3c">example</h4>
 
-<pre><code class="language-sh">$ roadie run --local . --name analyze-wowah script.yml
+<pre><code>$ roadie run --local . --name instance-1 --queue queue-1 script.yml
 </code></pre>
 
-<p>uploads your source codes in the current directory,
-and run them in such a manner that <code>script.yml</code> specifies.</p>
+<p>The above command enqueues <code>script.yml</code> to a queue <code>queue-1</code>.
+The script is named <code>instance-1</code> so that you can refer results and logs with the
+name.</p>
 
-<p>The <code>script.yml</code> is a simple YAML file like</p>
+<p>If there are no instances working with the queue, one instance will be created.</p>
 
-<pre><code class="language-yaml">apt:
-- unrar
-data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
-run:
-- unrar x -r wowah.rar
-- analyze WoWAH
-upload:
-- *.png
-</code></pre>
+<h3 id="queue-management:a064e0801a0aed21b8b1af86d077fb3c">Queue management</h3>
 
-<p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
-download a data file from such URL as the preparation. Then, it directs
-to run those two commands; unrar the downloaded file, analyze the obtained
-data files.</p>
+<p>To find existing queues, use <code>roadie queue list</code> command.
+On the other hand, to find enqueued scripts in a queue,
+use <code>roadie queue show &lt;queue name&gt;</code>.</p>
 
-<p>You can check your program is still running or ends by</p>
+<p>If you want to stop executing a queue, <code>roadie queue stop &lt;queue name&gt;</code> do it.
+But scripts already running won&rsquo;t be stopped.
+To restart stopped queue, use <code>roadie queue restart &lt;queue name&gt;</code>.
+It restarts the queue and creates one instance to handle scripts.</p>
 
-<pre><code class="language-sh">$ roadie status
-</code></pre>
+<h3 id="instance-management:a064e0801a0aed21b8b1af86d077fb3c">Instance management</h3>
 
-<p>After the program finishes,
-<code>roadie</code> uploads results of such commands to a cloud storage.
-You can access those results by</p>
+<p>By default, scripts in a queue are handled by one instance.
+You can add other instances to handle any queue.</p>
 
-<pre><code class="language-sh">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
-</code></pre>
+<p><code>roadie queue instance add --instances N &lt;queue name&gt;</code> command adds <code>N</code>
+instances to the given named queue. If you omit <code>--instances</code> flag,
+just one instance will be added.
+This command also support <code>--disk-size</code> flag as same as <code>roadie run</code> command.
+You can modify disk size of instances according to your script.</p>
 
-<p><code>roadie</code> will download all result files into <code>./res</code> directory.</p>
+<p><code>roadie queue instance list &lt;queue name&gt;</code> shows instances working with the given
+named queue.</p>
 
         </div>
       </div>

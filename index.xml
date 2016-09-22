@@ -19,7 +19,7 @@
 &lt;p&gt;&lt;a href=&#34;https://www.gnu.org/copyleft/gpl.html&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/license-GPLv3-blue.svg&#34; alt=&#34;GPLv3&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://travis-ci.org/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://travis-ci.org/jkawamoto/roadie.svg?branch=master&#34; alt=&#34;Build Status&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://codeclimate.com/github/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg&#34; alt=&#34;Code Climate&#34; /&gt;&lt;/a&gt;
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.2.7&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.2.7-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.0&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.0-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;http://qiita.com/jkawamoto/items/751558536a597a33ae2a&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg&#34; alt=&#34;Japanese&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;h2 id=&#34;description:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Description&lt;/h2&gt;
@@ -204,6 +204,7 @@ instances, and manage outputs.&lt;/p&gt;
 &lt;li&gt;&lt;a href=&#34;documents/execution&#34;&gt;Run your program&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;documents/logging&#34;&gt;Logging&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;documents/data&#34;&gt;Data handling&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents/queue&#34;&gt;Taks queue&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h3 id=&#34;simple-example:aeaecdd37942e8924d7f7cb1f903f73d&#34;&gt;Simple example&lt;/h3&gt;
@@ -711,6 +712,66 @@ If &lt;code&gt;--follow&lt;/code&gt; flag is set, roadie will not end and keep w
     </item>
     
     <item>
+      <title>Queue</title>
+      <link>https://jkawamoto.github.io/roadie/documents/queue/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/queue/</guid>
+      <description>
+
+&lt;p&gt;Roadie supports queue to keep a bunch of script.
+Enqueued scripts are run sequentially by default,
+but you can add instances working with the queue.&lt;/p&gt;
+
+&lt;h3 id=&#34;add-new-script-to-a-queue:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;Add new script to a queue&lt;/h3&gt;
+
+&lt;p&gt;Enqueue a script to a queue, use &lt;code&gt;roadie run&lt;/code&gt; command with &lt;code&gt;--queue&lt;/code&gt; flag.
+The &lt;code&gt;--queue&lt;/code&gt; flag takes a queue name and the given script will be enqueued
+the queue.
+If there are such queues, it will be created.
+If there are no instances working with the queue, one instance will be created.
+The other flags in &lt;code&gt;roadie run&lt;/code&gt; command are as same as the case of starting
+script without queue.&lt;/p&gt;
+
+&lt;h4 id=&#34;example:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;example&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;$ roadie run --local . --name instance-1 --queue queue-1 script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The above command enqueues &lt;code&gt;script.yml&lt;/code&gt; to a queue &lt;code&gt;queue-1&lt;/code&gt;.
+The script is named &lt;code&gt;instance-1&lt;/code&gt; so that you can refer results and logs with the
+name.&lt;/p&gt;
+
+&lt;p&gt;If there are no instances working with the queue, one instance will be created.&lt;/p&gt;
+
+&lt;h3 id=&#34;queue-management:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;Queue management&lt;/h3&gt;
+
+&lt;p&gt;To find existing queues, use &lt;code&gt;roadie queue list&lt;/code&gt; command.
+On the other hand, to find enqueued scripts in a queue,
+use &lt;code&gt;roadie queue show &amp;lt;queue name&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you want to stop executing a queue, &lt;code&gt;roadie queue stop &amp;lt;queue name&amp;gt;&lt;/code&gt; do it.
+But scripts already running won&amp;rsquo;t be stopped.
+To restart stopped queue, use &lt;code&gt;roadie queue restart &amp;lt;queue name&amp;gt;&lt;/code&gt;.
+It restarts the queue and creates one instance to handle scripts.&lt;/p&gt;
+
+&lt;h3 id=&#34;instance-management:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;Instance management&lt;/h3&gt;
+
+&lt;p&gt;By default, scripts in a queue are handled by one instance.
+You can add other instances to handle any queue.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;roadie queue instance add --instances N &amp;lt;queue name&amp;gt;&lt;/code&gt; command adds &lt;code&gt;N&lt;/code&gt;
+instances to the given named queue. If you omit &lt;code&gt;--instances&lt;/code&gt; flag,
+just one instance will be added.
+This command also support &lt;code&gt;--disk-size&lt;/code&gt; flag as same as &lt;code&gt;roadie run&lt;/code&gt; command.
+You can modify disk size of instances according to your script.&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;roadie queue instance list &amp;lt;queue name&amp;gt;&lt;/code&gt; shows instances working with the given
+named queue.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>インストールと初期設定</title>
       <link>https://jkawamoto.github.io/roadie/documents-ja/installation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -771,6 +832,69 @@ $ brew install roadie
 テキスト形式なので後から編集できます．
 また，&lt;code&gt;roadie config&lt;/code&gt; コマンドで対話的に変更することもできます．
 詳しくは &lt;a href=&#34;documents-ja/configuration&#34;&gt;設定について&lt;/a&gt; のページをご覧ください．&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>キュー</title>
+      <link>https://jkawamoto.github.io/roadie/documents-ja/queue/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents-ja/queue/</guid>
+      <description>
+
+&lt;p&gt;Roadie はキューを用いたタスク処理にも対応しています．
+デフォルトでは，キューに入れられたタスクは一つのインタンスによって処理されますが，
+必要に応じてインスタンスを追加することもできます．&lt;/p&gt;
+
+&lt;h3 id=&#34;キューにタスクを追加する:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;キューにタスクを追加する&lt;/h3&gt;
+
+&lt;p&gt;タスクの追加は，&lt;code&gt;roadie run&lt;/code&gt; コマンドに &lt;code&gt;--queue&lt;/code&gt; フラグを追加することで行います．
+&lt;code&gt;--queue&lt;/code&gt; フラグには，タスクを追加するキューの名前を指定します．
+存在しないキューの名前を指定した場合は，新しいキューが作成されます．
+キューはタスクがすべて処理されると削除されます．&lt;/p&gt;
+
+&lt;p&gt;また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．&lt;/p&gt;
+
+&lt;h4 id=&#34;例:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;例&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;$ roadie run --local . --name task-1 --queue queue-1 script.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上記のコマンドでは，&lt;code&gt;script.yml&lt;/code&gt; を &lt;code&gt;queue-1&lt;/code&gt; に追加します．
+&lt;code&gt;script.yml&lt;/code&gt; を処理するために，カレントディレクトリ以下をアップロードすることなど，
+他のオプションは通常の &lt;code&gt;roadie run&lt;/code&gt; コマンドと同様です．&lt;/p&gt;
+
+&lt;p&gt;このスクリプトには，&lt;code&gt;task-1&lt;/code&gt; という名前を付けていますので，
+この名前を使って出力の取得やログの閲覧が可能です．&lt;/p&gt;
+
+&lt;h3 id=&#34;キューの管理:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;キューの管理&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;roadie queue list&lt;/code&gt; コマンドは現在存在しているキューの一覧を表示します．
+また，&lt;code&gt;roadie queue show &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドは，&lt;code&gt;&amp;lt;queue name&amp;gt;&lt;/code&gt; キューに
+入っているタスクの名前一覧を表示します．&lt;/p&gt;
+
+&lt;p&gt;キューの処理を一時停止させるには，&lt;code&gt;roadie queue stop &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドを使用します．
+このコマンドは未実行のスクリプト処理を停止させますが，
+すでに実行中のスクリプトに関しては終了まで実行されます．&lt;/p&gt;
+
+&lt;p&gt;一時停止したキューを再実行するためには，
+&lt;code&gt;roadie queue restart &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドを使用します．
+このコマンドは，キューの実行のために新しいインスタンスを一台作成します．&lt;/p&gt;
+
+&lt;h3 id=&#34;インスタンスの管理:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;インスタンスの管理&lt;/h3&gt;
+
+&lt;p&gt;デフォルトでは，キューのタスクは一台のインスタンスで処理されます．
+複数のインスタンスで処理したい場合，インスタンスの追加を行う必要があります．&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;roadie queue instance add --instances N &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドは，
+&lt;code&gt;N&lt;/code&gt; 台のインスタンスを &lt;code&gt;&amp;lt;queue name&amp;gt;&lt;/code&gt; キューの処理のために作成します．
+&lt;code&gt;--instance&lt;/code&gt; フラグを省略した場合は一台追加されます．
+このコマンドは &lt;code&gt;--disk-size&lt;/code&gt; フラグもサポートしており，
+必要であれば作成されるインスタンスのディスクサイズをカスタマイズできます．&lt;/p&gt;
+
+&lt;p&gt;現在，あるキューの処理のために稼働しているインスタンス数を調べる場合，
+&lt;code&gt;roadie queue instance list &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドを使用できます．&lt;/p&gt;
 </description>
     </item>
     
@@ -873,6 +997,7 @@ $ brew install roadie
 &lt;li&gt;&lt;a href=&#34;documents-ja/execution&#34;&gt;プログラムの実行&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;documents-ja/logging&#34;&gt;ステータスとログ&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;documents-ja/data&#34;&gt;ファイルの管理&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;documents-ja/queue&#34;&gt;タスクキュー&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h3 id=&#34;簡単な使用例:aeaecdd37942e8924d7f7cb1f903f73d&#34;&gt;簡単な使用例&lt;/h3&gt;
