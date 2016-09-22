@@ -184,7 +184,7 @@ func (d *Datastore) UpdateTasks(name string, handler func(*resource.Task) (*reso
 
 	_, err = client.RunInTransaction(d.ctx, func(tx *datastore.Transaction) error {
 
-		query := datastore.NewQuery(QueueKind).Transaction(tx).Filter("QueueName=", name)
+		query := datastore.NewQuery(QueueKind).Filter("QueueName=", name)
 		res := client.Run(d.ctx, query)
 		for {
 
