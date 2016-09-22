@@ -22,20 +22,23 @@
 cd /root
 
 # Start logging.
-for i in `seq 5`
+if [ -n "`docker ps -a | grep fluentd`" ]; then
+  docker rm -f fluentd
+fi
+for i in `seq 10`
 do
-  if [ -n "`docker ps -a | grep fluentd`" ]; then
-    docker rm -f fluentd
-  fi
   docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
-    -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd \
-    || break
+    -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
+  sleep 30s
+  if [ -n "`docker ps -a | grep fluentd`" ]; then
+    break
+  fi
 done
 sleep 30s
 
 # Prepare Roadie Queue Manager.
 FILENAME=roadie-queue-manager_{{.Version}}_linux_amd64
-wget https://github.com/jkawamoto/roadie-queue-manager/releases/download/v0.1.1/${FILENAME}.tar.gz
+wget https://github.com/jkawamoto/roadie-queue-manager/releases/download/v{{.Version}}/${FILENAME}.tar.gz
 tar -zxvf ${FILENAME}.tar.gz
 cd ${FILENAME}
 
@@ -43,4 +46,4 @@ cd ${FILENAME}
 ./roadie-queue-manager {{.ProjectID}} {{.Name}}
 
 # Shutdown
-docker run -it jkawamoto/roadie-gcp shutdown
+docker run -i jkawamoto/roadie-gcp shutdown
