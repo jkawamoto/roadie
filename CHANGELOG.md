@@ -1,3 +1,7 @@
+## 0.2.7 (2016-09-22)
+### Update
+- Startup script waits until fluentd is ready.
+
 ## 0.2.6 (2016-09-21)
 ### Fixed
 - Not specifying default zone and machine type.
