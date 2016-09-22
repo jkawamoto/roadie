@@ -216,7 +216,7 @@ func DeleteInstance(ctx context.Context, name string) (err error) {
 		return
 	}
 
-	res, err := service.Instances.Stop(cfg.Project, cfg.Zone, name).Do()
+	res, err := service.Instances.Delete(cfg.Project, cfg.Zone, name).Do()
 	if err == nil {
 		if res.StatusMessage != "" {
 			fmt.Println(res.StatusMessage)
