@@ -29,6 +29,24 @@
     </item>
     
     <item>
+      <title>Version 0.3.2</title>
+      <link>https://jkawamoto.github.io/roadie/release/v0.3.2/</link>
+      <pubDate>Tue, 11 Oct 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/release/v0.3.2/</guid>
+      <description>
+
+&lt;h3 id=&#34;fixed:3529b2e3c50c23e0e7c8936aa5266511&#34;&gt;Fixed&lt;/h3&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;roadie result show&lt;/code&gt; command won&amp;rsquo;t output escape sequences.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.3.2&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Version 0.2.7</title>
       <link>https://jkawamoto.github.io/roadie/release/v0.2.7/</link>
       <pubDate>Thu, 22 Sep 2016 00:00:00 +0000</pubDate>
@@ -287,18 +305,6 @@ From this version, in windows, such escape sequences are not used.&lt;/p&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.1.1&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Version 0.1.0</title>
-      <link>https://jkawamoto.github.io/roadie/release/v0.1.0/</link>
-      <pubDate>Fri, 08 Jul 2016 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/release/v0.1.0/</guid>
-      <description>&lt;p&gt;Initial release&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.1.0&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
