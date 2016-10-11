@@ -1,3 +1,9 @@
+## 0.3.1 (2016-10-11)
+### Added
+- Creating instance function waits until operation done message appears in log.
+- Logs from worker instances have the instance name instead of the queue name.
+
+
 ## 0.3.0 (2016-09-22)
 ### Added
 - Support queue based task management.
@@ -90,5 +96,4 @@ From this version, in windows, such escape sequences are not used.
 
 
 ## 0.1.0 (2016-07-08)
-
 Initial release
