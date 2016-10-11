@@ -23,6 +23,9 @@
                 {{ with .Site.Params.Docs_Ja }}
                 <li><a class="page-scroll" href="{{ . }}">ドキュメント</a></li>
                 {{ end }}
+                {{ with .Site.Params.Release }}
+                <li><a class="page-scroll" href="{{ . }}">Release</a></li>
+                {{ end }}
                 <li>
                   <a class="page-scroll" href={{ .Site.Params.AuthorURL }}>{{.Site.Params.AuthorName}}</a>
                 </li>

@@ -30,3 +30,4 @@ theme = "github-project-landing-page"
 
   Docs = "./documents/top/"
   Docs_Ja = "./documents-ja/top/"
+  Release = "./release/"
