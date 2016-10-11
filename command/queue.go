@@ -130,21 +130,23 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	defer cancel()
 
 	queue := c.Args().First()
-	startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-		ProjectID: cfg.Project,
-		Name:      queue,
-		Version:   QueueManagerVersion,
-	})
-	if err != nil {
-		return err
-	}
-
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
 	for i := 0; i < instances; i++ {
 
 		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
 		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
+
+		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
+			ProjectID:    cfg.Project,
+			InstanceName: name,
+			Name:         queue,
+			Version:      QueueManagerVersion,
+		})
+		if err != nil {
+			return err
+		}
+
 		err = createInstance(ctx, name, startup, size, os.Stderr)
 		if err != nil {
 			return err
@@ -191,21 +193,22 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 		return
 	}
 
-	startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-		ProjectID: cfg.Project,
-		Name:      queue,
-		Version:   QueueManagerVersion,
-	})
-	if err != nil {
-		return err
-	}
-
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
 	for i := 0; i < instances; i++ {
 
 		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
 		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
+		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
+			ProjectID:    cfg.Project,
+			InstanceName: name,
+			Name:         queue,
+			Version:      QueueManagerVersion,
+		})
+		if err != nil {
+			return err
+		}
+
 		err = createInstance(ctx, name, startup, size, os.Stderr)
 		if err != nil {
 			return err

@@ -25,7 +25,7 @@ package main
 const Name string = "roadie"
 
 // Version defines current version number.
-const Version string = "0.3.0"
+const Version string = "0.3.1"
 
 // Author defines the author of this program.
 const Author string = "Junpei Kawamoto"
