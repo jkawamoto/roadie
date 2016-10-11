@@ -32,6 +32,8 @@ type WorkerStartupOpt struct {
 	ProjectID string
 	// Queue name.
 	Name string
+	// Instance name.
+	InstanceName string
 	// Version of Roadie queue manager. The format is x.y.z.
 	Version string
 }

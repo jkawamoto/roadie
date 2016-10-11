@@ -27,7 +27,7 @@ if [ -n "`docker ps -a | grep fluentd`" ]; then
 fi
 for i in `seq 10`
 do
-  docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
+  docker run -d --name fluentd -e "INSTANCE={{.InstanceName}}" -e "USERNAME=roadie" \
     -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
   sleep 30s
   if [ -n "`docker ps -a | grep fluentd`" ]; then

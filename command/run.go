@@ -268,16 +268,17 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 			// Name of the new instance must start with queue name and
 			// current UNIX time should follow it.
 			var startup string
+			instanceName := fmt.Sprintf("%s-%d", opt.Queue, time.Now().Unix())
 			startup, err = resource.WorkerStartup(&resource.WorkerStartupOpt{
-				ProjectID: conf.Project,
-				Name:      opt.Queue,
-				Version:   QueueManagerVersion,
+				ProjectID:    conf.Project,
+				Name:         opt.Queue,
+				InstanceName: instanceName,
+				Version:      QueueManagerVersion,
 			})
 			if err != nil {
 				return err
 			}
-			name := fmt.Sprintf("%s-%d", opt.Queue, time.Now().Unix())
-			err = createInstance(ctx, name, startup, opt.DiskSize, os.Stderr)
+			err = createInstance(ctx, instanceName, startup, opt.DiskSize, os.Stderr)
 		}
 	}
 

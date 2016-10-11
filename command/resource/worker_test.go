@@ -31,9 +31,10 @@ import (
 func TestWorkerStartup(t *testing.T) {
 
 	opt := WorkerStartupOpt{
-		ProjectID: "sample-project",
-		Name:      "sample-queue-1",
-		Version:   "1.0.0",
+		ProjectID:    "sample-project",
+		InstanceName: "sample-instance",
+		Name:         "sample-queue-1",
+		Version:      "1.0.0",
 	}
 
 	res, err := WorkerStartup(&opt)
@@ -41,6 +42,10 @@ func TestWorkerStartup(t *testing.T) {
 		t.Error("WorkerStartup returns an error:", err.Error())
 	}
 
+	t.Log(res)
+	if !strings.Contains(res, fmt.Sprintf("INSTANCE=%s", opt.InstanceName)) {
+		t.Error("Generated script doesn't have an instane name:", res)
+	}
 	if !strings.Contains(res, fmt.Sprintf(
 		"roadie-queue-manager_%s_linux_amd64", opt.Version)) {
 
