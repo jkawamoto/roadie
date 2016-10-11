@@ -24,8 +24,10 @@ package cloud
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/config"
 
 	"golang.org/x/net/context"
@@ -33,7 +35,15 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
-const gceScope = compute.CloudPlatformScope
+const (
+	// GCP's scope.
+	gceScope = compute.CloudPlatformScope
+)
+
+var (
+	// Token for specifying a target instance has been started.
+	instanceStarted = fmt.Errorf("Target instance has been started.")
+)
 
 // MetadataItem has Key and Value properties.
 type MetadataItem struct {
@@ -191,15 +201,50 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 	}
 
 	res, err := service.Instances.Insert(cfg.Project, cfg.Zone, &bluepring).Do()
-	if err == nil {
-		if res.StatusMessage != "" {
-			fmt.Println(res.StatusMessage)
-		}
-		for _, v := range res.Warnings {
-			fmt.Println(chalk.Red.Color(v.Message))
-		}
+	if err != nil {
+		return
 	}
-	return
+	if res.StatusMessage != "" {
+		fmt.Println(res.StatusMessage)
+	}
+	for _, v := range res.Warnings {
+		fmt.Println(chalk.Red.Color(v.Message))
+	}
+
+	logService := log.NewCloudLoggingService(ctx)
+	filter := fmt.Sprintf(
+		"jsonPayload.event_type = \"GCE_OPERATION_DONE\" AND timestamp > \"%s\"",
+		time.Now().In(time.UTC).Format(log.TimeFormat))
+
+	for {
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		case <-wait(10 * time.Second):
+			err := log.GetEntries(ctx, filter, logService, func(entry *log.Entry) (err error) {
+				payload, err := log.NewActivityPayload(entry)
+				if err != nil {
+					return
+				}
+				if payload.EventSubtype == log.EventSubtypeInsert && payload.Resource.Name == bluepring.Name {
+					return instanceStarted
+				}
+				return
+			})
+
+			switch err {
+			case instanceStarted:
+				return nil
+			case nil:
+				continue
+			default:
+				return err
+			}
+		}
+
+	}
 
 }
 
@@ -236,4 +281,14 @@ func normalizedZone(gcp config.Gcp) string {
 // normalizedMachineType returns the normalized instance type of MachineType property.
 func normalizedMachineType(gcp config.Gcp) string {
 	return normalizedZone(gcp) + "/machineTypes/" + gcp.MachineType
+}
+
+// Wait a given duration.
+func wait(d time.Duration) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		time.Sleep(d)
+		ch <- struct{}{}
+	}()
+	return ch
 }

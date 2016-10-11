@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jkawamoto/roadie/command/cloud"
@@ -132,6 +133,8 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	queue := c.Args().First()
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
+
+	var wg sync.WaitGroup
 	for i := 0; i < instances; i++ {
 
 		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
@@ -147,13 +150,15 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 			return err
 		}
 
-		err = createInstance(ctx, name, startup, size, os.Stderr)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
+		go func(name, startup string) {
+			defer wg.Done()
+			createInstance(ctx, name, startup, size, os.Stderr)
+		}(name, startup)
 
 	}
 
+	wg.Wait()
 	return nil
 }
 
