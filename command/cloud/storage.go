@@ -273,7 +273,7 @@ func (s *Storage) PrintFileBody(prefix, query string, output io.Writer, header b
 		default:
 			if info.Name != "" && strings.HasPrefix(info.Name, query) {
 				if header {
-					fmt.Fprintf(output, chalk.Bold.TextStyle("*** %s ***\n"), info.Name)
+					fmt.Fprintf(output, "*** %s ***\n", info.Name)
 				}
 				return s.service.Download(info.Path, output)
 			}
