@@ -11,14 +11,14 @@
 
     <link rel="shortcut icon" href="https://jkawamoto.github.io/roadie//img/favicon.ico">
 
-    <meta property="og:title" content="Configuration" />
+    <meta property="og:title" content="Version 0.3.1" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://jkawamoto.github.io/roadie/" />
     <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png" />
     <meta property="og:description" content="A easy way to run your programs on Google Cloud Platform." />
 
     <base href="https://jkawamoto.github.io/roadie/">
-    <title>Configuration</title>
+    <title>Version 0.3.1</title>
 
     
     <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet">
@@ -126,106 +126,17 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Configuration</h2>
+          <h2 class="section-heading">Version 0.3.1</h2>
           
 
-<p>To update configuration of roadie, use <code>roadie config</code> command.
-It provides four sub commands:</p>
+<h3 id="added:6022f483dfe2c1a0a74ee56dd54173b9">Added</h3>
 
 <ul>
-<li><strong>project</strong> shows and updates project ID of Google Cloud Platform,</li>
-<li><strong>zone</strong> shows and updates zone used to run scripts,</li>
-<li><strong>type</strong> shows and updates machine type used to run scripts,</li>
-<li><strong>bucket</strong> shows and updates bucket name used to store related files.</li>
+<li>Creating instance function waits until operation done message appears in log.</li>
+<li>Logs from worker instances have the instance name instead of the queue name.</li>
 </ul>
 
-<p>Note that every configurations are stored to &lsquo;.roadie&rsquo;
-in the current working directory.
-You can also update configurations without this command by editing that file.</p>
-
-<h3 id="project:a66b35d20295cb764719ac8bd35837ec">project</h3>
-
-<p>Project ID is an ID registered in Google Cloud Platform.
-You can find your project ID <a href="https://console.cloud.google.com/project">here</a>.</p>
-
-<p>To check the project ID currently set to roadie, run</p>
-
-<pre><code class="language-sh">$ roadie config project
-</code></pre>
-
-<p>and to set another project ID <code>PROJECT</code>, run</p>
-
-<pre><code class="language-sh">$ roadie config project set PROJECT
-</code></pre>
-
-<p>Valid project ID is required to access Google Cloud Platform.
-If you set correct project ID but any commands such as
-<code>roadie config type list</code> fail,
-make sure you have authenticated your computer by checking <code>gcloud auth list</code>
-shows your account is credentialed.</p>
-
-<h3 id="zone:a66b35d20295cb764719ac8bd35837ec">zone</h3>
-
-<p>In Google Cloud Platform, the platform is divided into several zones
-based on actual locations where virtual machine will run.
-You can find current available zones by running</p>
-
-<pre><code class="language-sh">$ roadie config zone list
-</code></pre>
-
-<p>By default, <code>us-central1-b</code> is chosen.
-To check current zone, run</p>
-
-<pre><code class="language-sh">$ roadie config zone
-</code></pre>
-
-<p>and to set another <code>ZONE</code>, run</p>
-
-<pre><code class="language-sh">$ roadie config zone set ZONE
-</code></pre>
-
-<h3 id="type:a66b35d20295cb764719ac8bd35837ec">type</h3>
-
-<p>There are some options about machine type on which your program runs.
-Each machine type has different number of virtual CPUs and RAM.
-You can find available machine types by running</p>
-
-<pre><code class="language-sh">$ roadie config type list
-</code></pre>
-
-<p>and <a href="https://cloud.google.com/compute/pricing">here</a> is more information about
-machine types and their pricing.
-Available machine types might be depended to which zone you choose.
-You should set zone before checking machine types.</p>
-
-<p>By default, <code>n1-standard-1</code>, which has 1 vCPU and 3.75 GB RAM, is selected.
-To check current machine type, run</p>
-
-<pre><code class="language-sh">$ roadie config type
-</code></pre>
-
-<p>and to set another <code>TYPE</code>, run</p>
-
-<pre><code class="language-sh">$ roadie config type set TYPE
-</code></pre>
-
-<h3 id="bucket:a66b35d20295cb764719ac8bd35837ec">bucket</h3>
-
-<p>Bucket is a place to store any data including source codes and outputs from
-your program.
-Each bucket is identified by bucket name and it must be unique in the world.
-You can choose any name but it is recommended to use same name as your project ID.
-Actually, by default, roadie sets the project ID to the bucket name.</p>
-
-<p>To check current bucket name, run</p>
-
-<pre><code class="language-sh">$ roadie config bucket
-</code></pre>
-
-<p>and to set another bucket name <code>NAME</code>, run</p>
-
-<pre><code class="language-sh">$ roadie config bucket set NAME
-</code></pre>
+<p><a href="https://github.com/jkawamoto/roadie/releases/v0.3.1">Download</a></p>
 
         </div>
       </div>

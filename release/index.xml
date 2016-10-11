@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Roadie</title>
-    <link>https://jkawamoto.github.io/roadie/</link>
-    <description>Recent content on Roadie</description>
+    <title>Releases on Roadie</title>
+    <link>https://jkawamoto.github.io/roadie/release/</link>
+    <description>Recent content in Releases on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 11 Oct 2016 00:00:00 +0000</lastBuildDate>
-    <atom:link href="https://jkawamoto.github.io/roadie/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://jkawamoto.github.io/roadie/release/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Version 0.3.1</title>
