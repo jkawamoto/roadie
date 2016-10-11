@@ -1,3 +1,8 @@
+## 0.3.2 (2016-10-11)
+### Fixed
+- `roadie result show` command won't output escape sequences.
+
+
 ## 0.3.1 (2016-10-11)
 ### Added
 - Creating instance function waits until operation done message appears in log.
