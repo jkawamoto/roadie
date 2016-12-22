@@ -3,8 +3,18 @@
   
   <url>
     <loc>https://jkawamoto.github.io/roadie/</loc>
-    <lastmod>2016-10-11T00:00:00+00:00</lastmod>
+    <lastmod>2016-12-21T00:00:00+00:00</lastmod>
     <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/info/licenses/</loc>
+    <lastmod>2016-12-21T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/description/</loc>
+    <lastmod>2016-12-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -85,10 +95,6 @@
   <url>
     <loc>https://jkawamoto.github.io/roadie/release/v0.1.0/</loc>
     <lastmod>2016-07-08T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://jkawamoto.github.io/roadie/README/</loc>
   </url>
   
   <url>

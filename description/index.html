@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Version 0.3.0: A easy way to run your programs on Google Cloud Platform.</title>
+  <title>Description: A easy way to run your programs on Google Cloud Platform.</title>
   
 
   
@@ -22,7 +22,7 @@
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Version 0.3.0: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:title" content="Description: A easy way to run your programs on Google Cloud Platform."/>
   
 
   
@@ -142,16 +142,66 @@ body {
             <div>
               <hr class="section-heading-spacer">
               <div class="clearfix"></div>
-              <h2 class="section-heading">Version 0.3.0</h2>
+              <h2 class="section-heading">Description</h2>
               
 
-<h3 id="added:c5eec36ccef092f447a72957698738ae">Added</h3>
+<p><a href="https://www.gnu.org/copyleft/gpl.html"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="GPLv3" /></a>
+<a href="https://travis-ci.org/jkawamoto/roadie"><img src="https://travis-ci.org/jkawamoto/roadie.svg?branch=master" alt="Build Status" /></a>
+<a href="https://codeclimate.com/github/jkawamoto/roadie"><img src="https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg" alt="Code Climate" /></a>
+<a href="https://github.com/jkawamoto/roadie/releases/tag/v0.3.2"><img src="https://img.shields.io/badge/release-0.3.2-brightgreen.svg" alt="Release" /></a>
+<a href="http://qiita.com/jkawamoto/items/751558536a597a33ae2a"><img src="https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg" alt="Japanese" /></a></p>
 
-<ul>
-<li>Support queue based task management.</li>
-</ul>
+<p><code>roadie</code> helps you to upload your source codes to the cloud, create and delete
+instances, and manage outputs.</p>
 
-<p><a href="https://github.com/jkawamoto/roadie/releases/v0.3.0">Download</a></p>
+<p>For example,</p>
+
+<pre><code class="language-sh">$ roadie run --local . --name analyze-wowah script.yml
+</code></pre>
+
+<p>uploads your source codes in current directory, and run them in such a manner
+that <code>script.yml</code> specifies. The <code>script.yml</code> is a simple YAML file like</p>
+
+<pre><code class="language-yaml">apt:
+- unrar
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- analyze WoWAH
+</code></pre>
+
+<p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
+download a data file from such URL as the preparation. Then, it directs
+to run those two commands; unrar the downloaded file, analyze the obtained
+data files.</p>
+
+<p><code>roadie</code> uploads results of such commands to a cloud storage after they finish.
+You can access those results by</p>
+
+<pre><code class="language-sh">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
+</code></pre>
+
+<p>Then, <code>roadie</code> downloads all result files into <code>./res</code> directory.</p>
+
+<h2 id="install:04c6e90faac2675aa89e2176d2eec7d8">Install</h2>
+
+<p>Compiled binary files for some platforms are uploaded in <a href="https://github.com/jkawamoto/roadie/releases">release page</a>.
+To install in other platforms following the go manner, use <code>go get</code>:</p>
+
+<pre><code class="language-sh">$ go get github.com/jkawamoto/roadie
+</code></pre>
+
+<p>For mac user, <code>roadie</code> is available in <a href="http://brew.sh/">Homebrew</a>.</p>
+
+<pre><code class="language-sh">$ brew tap jkawamoto/roadie
+$ brew install roadie
+</code></pre>
+
+<h2 id="license:04c6e90faac2675aa89e2176d2eec7d8">License</h2>
+
+<p>This software except files in <code>docker</code> folder is released under The GNU General Public License Version 3,
+see <a href="info/licenses/">LICENSES</a> for more detail.</p>
 
             </div>
           </div>
