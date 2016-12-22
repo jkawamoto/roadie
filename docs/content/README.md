@@ -1,10 +1,18 @@
+---
+title: Description
+description: >-
+  roadie helps you to upload your source codes to the cloud, create and delete
+  instances, and manage outputs.
+date: 2016-12-20
+slug: description
+---
+
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
 [![Build Status](https://travis-ci.org/jkawamoto/roadie.svg?branch=master)](https://travis-ci.org/jkawamoto/roadie)
 [![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
 [![Release](https://img.shields.io/badge/release-0.3.2-brightgreen.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.3.2)
 [![Japanese](https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg)](http://qiita.com/jkawamoto/items/751558536a597a33ae2a)
 
-## Description
 `roadie` helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.
 
@@ -58,4 +66,4 @@ $ brew install roadie
 
 ## License
 This software except files in `docker` folder is released under The GNU General Public License Version 3,
-see [COPYING](https://github.com/jkawamoto/roadie/blob/master/COPYING) for more detail.
+see [LICENSES](info/licenses/) for more detail.

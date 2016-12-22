@@ -4,11 +4,13 @@ title = "Roadie"
 theme = "github-project-landing-page"
 
 [params]
+  SubTitle = "A easy way to run your programs on Google Cloud Platform."
   Description = "A easy way to run your programs on Google Cloud Platform."
   AuthorName = "Junpei Kawamoto"
   AuthorURL = "https://www.jkawamoto.info/"
   GithubURL = "https://github.com/jkawamoto/roadie"
   ProfilePicture = "img/icon.png"
+  Twitter = "@junkawamoto"
 
   GithubRepo = "roadie"
   GithubOrg = "jkawamoto"
