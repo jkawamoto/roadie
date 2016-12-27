@@ -26,6 +26,7 @@ import (
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
 	"golang.org/x/net/context"
+	"google.golang.org/api/iterator"
 )
 
 // QueueKind defines kind of entries stored in cloud datastore.
@@ -38,6 +39,8 @@ type QueueName struct {
 	QueueName string
 }
 
+// Datastore structure provides methods to access Google Cloud Datastore.
+// It mainly has a context for the network communication.
 type Datastore struct {
 	ctx context.Context
 }
@@ -50,6 +53,7 @@ func NewDatastore(ctx context.Context) *Datastore {
 	}
 }
 
+// Insert method inserts a task with a given id to the cloud datastore.
 func (d *Datastore) Insert(id int64, task *resource.Task) (err error) {
 
 	cfg, err := config.FromContext(d.ctx)
@@ -63,7 +67,7 @@ func (d *Datastore) Insert(id int64, task *resource.Task) (err error) {
 	}
 	defer client.Close()
 
-	key := datastore.NewKey(d.ctx, "roadie-queue", "", id, nil)
+	key := datastore.IDKey(QueueKind, id, nil)
 	trans, err := client.NewTransaction(d.ctx)
 	if err != nil {
 		return
@@ -105,7 +109,7 @@ func (d *Datastore) QueueNames(handler func(string) error) (err error) {
 		default:
 			var name QueueName
 			_, err = res.Next(&name)
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil
 			} else if err != nil {
 				return err
@@ -149,7 +153,7 @@ func (d *Datastore) FindTasks(name string, handler func(*resource.Task) error) (
 		default:
 			var item resource.Task
 			_, err = res.Next(&item)
-			if err == datastore.Done {
+			if err == iterator.Done {
 				return nil
 			} else if err != nil {
 				return
@@ -195,7 +199,7 @@ func (d *Datastore) UpdateTasks(name string, handler func(*resource.Task) (*reso
 			default:
 				var task resource.Task
 				key, err := res.Next(&task)
-				if err == datastore.Done {
+				if err == iterator.Done {
 					return nil
 				} else if err != nil {
 					return err
