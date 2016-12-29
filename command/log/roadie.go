@@ -22,9 +22,10 @@
 package log
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/golang/protobuf/ptypes/struct"
 )
 
 // RoadiePayload defines the payload structure of instance logs.
@@ -32,18 +33,23 @@ type RoadiePayload struct {
 	Username     string
 	Stream       string
 	Log          string
-	ContainerID  string `mapstructure:"container_id"`
-	InstanceName string `mapstructure:"instance_name"`
+	ContainerID  string `structpb:"container_id"`
+	InstanceName string `structpb:"instance_name"`
 }
 
 // NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func NewRoadiePayload(entry *Entry) (*RoadiePayload, error) {
+func NewRoadiePayload(payload interface{}) (res *RoadiePayload, err error) {
 
-	var res RoadiePayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
+	switch s := payload.(type) {
+	case *RoadiePayload:
+		res = s
+	case *structpb.Struct:
+		res = &RoadiePayload{}
+		ConvertStructPB(s, res)
+	default:
+		return nil, fmt.Errorf("Given payload is not an instance of *structpb.Struct: %v", payload)
 	}
-	res.Log = strings.TrimRight(res.Log, "\n")
 
-	return &res, nil
+	res.Log = strings.TrimRight(res.Log, "\n")
+	return
 }

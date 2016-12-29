@@ -21,20 +21,18 @@
 
 package log
 
-import logging "google.golang.org/api/logging/v2beta1"
-
 // EntryRequester is an interface used in GetLogEntries.
 // This interface requests supplying Do method which process a request of
 // obtaining log entries.
 type EntryRequester interface {
-	Do(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
+	Entries(string, string, EntryHandler) error
 }
 
 // EntryRequesterFunc will be used to implement EntryRequester interface
 // on functions.
-type EntryRequesterFunc func(*logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error)
+type EntryRequesterFunc func(string, string, EntryHandler) error
 
-// Do implements EntryRequester interface.
-func (f EntryRequesterFunc) Do(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
-	return f(req)
+// Entries implements EntryRequester interface.
+func (f EntryRequesterFunc) Entries(project, filter string, handler EntryHandler) error {
+	return f(project, filter, handler)
 }

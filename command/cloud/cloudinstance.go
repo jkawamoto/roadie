@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/logging"
+
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/config"
@@ -223,8 +225,8 @@ func CreateInstance(ctx context.Context, name string, metadata []*MetadataItem, 
 			return ctx.Err()
 
 		case <-wait(10 * time.Second):
-			err := log.GetEntries(ctx, filter, logService, func(entry *log.Entry) (err error) {
-				payload, err := log.NewActivityPayload(entry)
+			err := log.GetEntries(ctx, filter, logService, func(entry *logging.Entry) (err error) {
+				payload, err := log.NewActivityPayload(entry.Payload)
 				if err != nil {
 					return
 				}

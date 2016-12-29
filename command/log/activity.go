@@ -21,13 +21,17 @@
 
 package log
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"fmt"
+
+	"github.com/golang/protobuf/ptypes/struct"
+)
 
 // ActivityPayload defines the payload structure of activity log.
 type ActivityPayload struct {
-	EventTimestampUs string `mapstructure:"event_timestamp_us"`
-	EventType        string `mapstructure:"vent_type"`
-	TraceID          string `mapstructure:"trace_id"`
+	EventTimestampUs string `structpb:"event_timestamp_us"`
+	EventType        string `structpb:"vent_type"`
+	TraceID          string `structpb:"trace_id"`
 	Actor            struct {
 		User string
 	}
@@ -38,7 +42,7 @@ type ActivityPayload struct {
 		Name string
 	}
 	Version      string
-	EventSubtype string `mapstructure:"event_subtype"`
+	EventSubtype string `structpb:"event_subtype"`
 	Operation    struct {
 		Zone string
 		Type string
@@ -48,10 +52,17 @@ type ActivityPayload struct {
 }
 
 // NewActivityPayload converts LogEntry's payload to a ActivityPayload.
-func NewActivityPayload(entry *Entry) (*ActivityPayload, error) {
-	var res ActivityPayload
-	if err := mapstructure.Decode(entry.Payload, &res); err != nil {
-		return nil, err
+func NewActivityPayload(payload interface{}) (res *ActivityPayload, err error) {
+
+	switch s := payload.(type) {
+	case *ActivityPayload:
+		res = s
+	case *structpb.Struct:
+		res = &ActivityPayload{}
+		ConvertStructPB(s, res)
+	default:
+		return nil, fmt.Errorf("Given payload is not an instance of *structpb.Struct: %v", payload)
 	}
-	return &res, nil
+
+	return
 }
