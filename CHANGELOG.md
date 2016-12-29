@@ -1,3 +1,12 @@
+## 0.3.3 (2016-12-29)
+### Fixed
+- Cloud datastore access according to the new API.
+- Stackdriver Logging client to use the new [logadmin](https://godoc.org/cloud.google.com/go/logging/logadmin) package.
+
+### Added
+- `assets.go` to compile roadie without go-bindata command.
+
+
 ## 0.3.2 (2016-10-11)
 ### Fixed
 - `roadie result show` command won't output escape sequences.
