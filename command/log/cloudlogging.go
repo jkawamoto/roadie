@@ -22,9 +22,9 @@
 package log
 
 import (
+	"cloud.google.com/go/logging/logadmin"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
-	logging "google.golang.org/api/logging/v2beta1"
+	"google.golang.org/api/iterator"
 )
 
 // CloudLoggingService implements LogEntryRequester interface.
@@ -43,19 +43,33 @@ func NewCloudLoggingService(ctx context.Context) (res *CloudLoggingService) {
 
 }
 
-// Do requests a given request with the specified context.
-func (s *CloudLoggingService) Do(req *logging.ListLogEntriesRequest) (res *logging.ListLogEntriesResponse, err error) {
+// Entries get log entries matching with a given filter from given project logs.
+// Found log entries will be passed a given handler one by one.
+// If the handler returns non-nil value as an error, this function will end.
+func (s *CloudLoggingService) Entries(project, filter string, handler EntryHandler) (err error) {
 
-	client, err := google.DefaultClient(s.ctx, logging.CloudPlatformReadOnlyScope)
+	client, err := logadmin.NewClient(s.ctx, project)
 	if err != nil {
 		return
 	}
+	defer client.Close()
 
-	service, err := logging.New(client)
-	if err != nil {
-		return
+	iter := client.Entries(s.ctx, logadmin.Filter(filter))
+	for {
+		select {
+		case <-s.ctx.Done():
+			return s.ctx.Err()
+
+		default:
+			e, err := iter.Next()
+			if err == iterator.Done {
+				return nil
+			} else if err != nil {
+				return err
+			}
+			if err := handler(e); err != nil {
+				return err
+			}
+		}
 	}
-
-	return service.Entries.List(req).Do()
-
 }

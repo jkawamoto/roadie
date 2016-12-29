@@ -26,13 +26,13 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/logging"
 	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/config"
-
-	logging "google.golang.org/api/logging/v2beta1"
 )
 
 // resource a structure used in ActivityPayload.Resource.
@@ -57,43 +57,40 @@ func TestCmdLog(t *testing.T) {
 
 	var requester log.EntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
-	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+	requester = func(project, filter string, handler log.EntryHandler) error {
 
-		if strings.Contains(req.Filter, "GCE_OPERATION_DONE") {
+		if strings.Contains(filter, "GCE_OPERATION_DONE") {
 			// If the request is for operation logs,
 			// returns a dummy log of starting an instance.
-			return &logging.ListLogEntriesResponse{
-				Entries: []*logging.LogEntry{
-					&logging.LogEntry{
-						JsonPayload: log.ActivityPayload{
-							EventType: "GCE_OPERATION_DONE",
-							Resource: PayloadResource{
-								Name: instance,
-							},
-							EventSubtype: log.EventSubtypeInsert,
-						},
-						Timestamp: "2006-01-02T15:04:05Z",
+
+			return handler(&logging.Entry{
+				Timestamp: time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+				Payload: &log.ActivityPayload{
+					EventType: "GCE_OPERATION_DONE",
+					Resource: PayloadResource{
+						Name: instance,
 					},
-				}}, nil
+					EventSubtype: log.EventSubtypeInsert,
+				},
+			})
 
 		}
 
 		// Otherwise, requests must be for instance logs.
-		if !strings.Contains(req.Filter, instance) {
+		if !strings.Contains(filter, instance) {
 			t.Error("Filter doesn't have the given instance name")
 		}
 
-		return &logging.ListLogEntriesResponse{
-			Entries: []*logging.LogEntry{
-				&logging.LogEntry{
-					JsonPayload: samplePayload,
-					Timestamp:   "2006-01-02T15:04:05Z",
-				},
-				&logging.LogEntry{
-					JsonPayload: samplePayload,
-					Timestamp:   "2006-01-02T15:04:05.12345Z",
-				},
-			}}, nil
+		handler(&logging.Entry{
+			Timestamp: time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+			Payload:   &samplePayload,
+		})
+		handler(&logging.Entry{
+			Timestamp: time.Date(2006, 1, 2, 15, 4, 5, 12345, time.UTC),
+			Payload:   &samplePayload,
+		})
+		return nil
+
 	}
 
 	// Start tests.
@@ -155,69 +152,71 @@ func TestCmdLogWithReusedInstanceName(t *testing.T) {
 
 	var requester log.EntryRequesterFunc
 	// Make a mock requester which doesn't requests but returns pre-defined log entries.
-	requester = func(req *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+	requester = func(project, filter string, handler log.EntryHandler) error {
 
-		if strings.Contains(req.Filter, "GCE_OPERATION_DONE") {
+		if strings.Contains(filter, "GCE_OPERATION_DONE") {
 			// If the request is for operation logs,
 			// returns a dummy log of starting an instance.
-			return &logging.ListLogEntriesResponse{
-				Entries: []*logging.LogEntry{
-					// Start an old instance.
-					&logging.LogEntry{
-						JsonPayload: log.ActivityPayload{
-							EventType: "GCE_OPERATION_DONE",
-							Resource: PayloadResource{
-								Name: instance,
-							},
-							EventSubtype: log.EventSubtypeInsert,
-						},
-						Timestamp: "2006-01-02T15:04:05Z",
+
+			// Start an old instance.
+			handler(&logging.Entry{
+				Timestamp: time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC),
+				Payload: &log.ActivityPayload{
+					EventType: "GCE_OPERATION_DONE",
+					Resource: PayloadResource{
+						Name: instance,
 					},
-					// Stop the old instance.
-					&logging.LogEntry{
-						JsonPayload: log.ActivityPayload{
-							EventType: "GCE_OPERATION_DONE",
-							Resource: PayloadResource{
-								Name: instance,
-							},
-							EventSubtype: log.EventSubtypeDelete,
-						},
-						Timestamp: "2006-02-02T15:04:05Z",
+					EventSubtype: log.EventSubtypeInsert,
+				},
+			})
+
+			// Stop the old instance.
+			handler(&logging.Entry{
+				Timestamp: time.Date(2006, 2, 2, 15, 4, 5, 0, time.UTC),
+				Payload: &log.ActivityPayload{
+					EventType: "GCE_OPERATION_DONE",
+					Resource: PayloadResource{
+						Name: instance,
 					},
-					// Start a new instance.
-					&logging.LogEntry{
-						JsonPayload: log.ActivityPayload{
-							EventType: "GCE_OPERATION_DONE",
-							Resource: PayloadResource{
-								Name: instance,
-							},
-							EventSubtype: log.EventSubtypeInsert,
-						},
-						Timestamp: "2006-03-02T15:04:05Z",
+					EventSubtype: log.EventSubtypeDelete,
+				},
+			})
+
+			// Start a new instance.
+			handler(&logging.Entry{
+				Timestamp: time.Date(2006, 3, 2, 15, 4, 5, 0, time.UTC),
+				Payload: &log.ActivityPayload{
+					EventType: "GCE_OPERATION_DONE",
+					Resource: PayloadResource{
+						Name: instance,
 					},
-				}}, nil
+					EventSubtype: log.EventSubtypeInsert,
+				},
+			})
+
+			return nil
 
 		}
 
 		// Otherwise, requests must be for instance logs.
-		if !strings.Contains(req.Filter, instance) {
-			t.Error("Filter doesn't have the given instance name:", req.Filter)
+		if !strings.Contains(filter, instance) {
+			t.Error("Filter doesn't have the given instance name:", filter)
 		}
-		if !strings.Contains(req.Filter, "timestamp > \"2006-03-02T15:04:05Z\"") {
-			t.Error("Filter doesn't request newer log entries after the newest instance created:", req.Filter)
+		if !strings.Contains(filter, "timestamp > \"2006-03-02T15:04:05Z\"") {
+			t.Error("Filter doesn't request newer log entries after the newest instance created:", filter)
 		}
 
-		return &logging.ListLogEntriesResponse{
-			Entries: []*logging.LogEntry{
-				&logging.LogEntry{
-					JsonPayload: newPayload,
-					Timestamp:   "2006-04-02T15:04:05Z",
-				},
-				&logging.LogEntry{
-					JsonPayload: newPayload,
-					Timestamp:   "2006-04-02T15:04:05.12345Z",
-				},
-			}}, nil
+		handler(&logging.Entry{
+			Timestamp: time.Date(2006, 4, 2, 15, 4, 5, 0, time.UTC),
+			Payload:   &newPayload,
+		})
+		handler(&logging.Entry{
+			Timestamp: time.Date(2006, 4, 2, 15, 4, 5, 12345, time.UTC),
+			Payload:   &newPayload,
+		})
+
+		return nil
+
 	}
 
 	// Send a request.
