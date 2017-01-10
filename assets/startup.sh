@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# startup script
+# startup script.
 #
-# Copyright (c) 2016 Junpei Kawamoto
+# Copyright (c) 2016-2017 Junpei Kawamoto
 #
 # This file is part of Roadie.
 #
@@ -19,18 +19,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+# This script starts both fluentd and a given program.
+#
 cd /root
 
 # Start logging.
-if [ -n "`docker ps -a | grep fluentd`" ]; then
+if [[ -n $(docker ps -a | grep fluentd) ]]; then
   docker rm -f fluentd
 fi
-for i in `seq 10`
-do
-  docker run -d --name fluentd -e "INSTANCE={{.Name}}" -e "USERNAME=roadie" \
+for i in $(seq 10); do
+  docker run -d --name fluentd -e 'INSTANCE={{.Name}}' -e 'USERNAME=roadie' \
     -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
   sleep 30s
-  if [ -n "`docker ps -a | grep fluentd`" ]; then
+  if [[ -n $(docker ps -a | grep fluentd) ]]; then
     break
   fi
 done
@@ -41,9 +43,8 @@ cat <<EOF > run.yml
 {{.Script}}
 EOF
 
-for i in `seq {{.Retry}}`
-do
-  if [ -n "`docker ps -a | grep {{.Name}}`" ]; then
+for i in $(seq {{.Retry}}); do
+  if [[ -n $(docker ps -a | grep {{.Name}}) ]]; then
     docker rm -f {{.Name}}
   fi
   docker run -i --name {{.Name}} {{.Image}} {{.Options}} < run.yml || break
