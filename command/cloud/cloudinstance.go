@@ -1,7 +1,7 @@
 //
 // command/cloud/cloudinstance.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,6 +22,7 @@
 package cloud
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -32,7 +33,6 @@ import (
 	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/config"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 )

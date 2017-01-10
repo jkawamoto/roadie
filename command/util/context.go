@@ -1,5 +1,5 @@
 //
-// config/clid.go
+// command/util/context.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package config
+package util
 
 import (
 	"context"
@@ -27,9 +27,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-// FromCliContext returns a config object from a context of cli.
-func FromCliContext(c *cli.Context) (conf *Config) {
+// GetContext returns a context from cli.Context.
+func GetContext(c *cli.Context) context.Context {
 	ctx, _ := c.App.Metadata["context"].(context.Context)
-	conf, _ = FromContext(ctx)
-	return conf
+	return ctx
 }

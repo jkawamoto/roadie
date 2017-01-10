@@ -1,7 +1,7 @@
 //
 // command/log/entry_test.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,12 +22,12 @@
 package log
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jkawamoto/roadie/config"
 
 	"cloud.google.com/go/logging"
-	"golang.org/x/net/context"
 )
 
 // Test for GetLogEntries method.

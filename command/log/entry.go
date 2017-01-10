@@ -1,7 +1,7 @@
 //
 // command/log/entry.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,13 +22,13 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"cloud.google.com/go/logging"
 
 	"github.com/jkawamoto/roadie/config"
-	"golang.org/x/net/context"
 )
 
 // EntryHandler is a function type to handler Entries.

@@ -1,7 +1,7 @@
 //
 // command/table.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,12 +22,11 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"

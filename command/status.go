@@ -1,7 +1,7 @@
 //
 // command/status.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,19 +22,18 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/log"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -45,8 +44,7 @@ func CmdStatus(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	if err := cmdStatus(conf, c.Bool("all")); err != nil {
+	if err := cmdStatus(util.GetContext(c), c.Bool("all")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -56,11 +54,7 @@ func CmdStatus(c *cli.Context) error {
 // cmdStatus shows instance information. To obtain such information, `conf` is
 // required. If all is true, print all instances otherwise information of
 // instances of which results are deleted already will be omitted.
-func cmdStatus(conf *config.Config, all bool) error {
-
-	ctx := config.NewContext(context.Background(), conf)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func cmdStatus(ctx context.Context, all bool) error {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -145,8 +139,7 @@ func CmdStatusKill(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	if err := cmdStatusKill(conf, c.Args()[0]); err != nil {
+	if err := cmdStatusKill(util.GetContext(c), c.Args()[0]); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -154,9 +147,7 @@ func CmdStatusKill(c *cli.Context) error {
 }
 
 // cmdStatusKill kills a given instance named `instanceName`.
-func cmdStatusKill(conf *config.Config, instanceName string) (err error) {
-
-	ctx := config.NewContext(context.Background(), conf)
+func cmdStatusKill(ctx context.Context, instanceName string) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)

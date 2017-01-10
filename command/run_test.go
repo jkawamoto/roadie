@@ -1,7 +1,7 @@
 //
 // command/run_test.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,9 +22,8 @@
 package command
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"

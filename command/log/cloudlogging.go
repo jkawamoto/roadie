@@ -1,7 +1,7 @@
 //
 // command/log/cloudlogging.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,8 +22,9 @@
 package log
 
 import (
+	"context"
+
 	"cloud.google.com/go/logging/logadmin"
-	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 )
 

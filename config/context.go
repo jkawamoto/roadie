@@ -1,7 +1,7 @@
 //
 // config/context.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,9 +22,8 @@
 package config
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 )
 
 // Key type to attach and obtaine Config from contexts.

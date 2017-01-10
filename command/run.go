@@ -1,7 +1,7 @@
 //
 // command/run.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,14 +22,13 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
@@ -128,7 +127,7 @@ func CmdRun(c *cli.Context) error {
 	}
 	if c.Bool("follow") {
 		return cmdLog(&logOpt{
-			Context:      config.NewContext(context.Background(), conf),
+			Context:      util.GetContext(c),
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,

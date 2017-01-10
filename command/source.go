@@ -1,7 +1,7 @@
 //
 // command/source.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,19 +22,17 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -49,8 +47,7 @@ func CmdSourcePut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	if err := cmdSourcePut(conf, c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
+	if err := cmdSourcePut(util.GetContext(c), c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -60,11 +57,7 @@ func CmdSourcePut(c *cli.Context) error {
 // cmdSourcePut uploads a directory `root` after making archive file named `name`.
 // If `excludes` are given, any files match such exclude patters are omitted from
 // the archive file.
-func cmdSourcePut(conf *config.Config, root, name string, excludes []string) (err error) {
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ctx = config.NewContext(ctx, conf)
+func cmdSourcePut(ctx context.Context, root, name string, excludes []string) (err error) {
 
 	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
 	uploadingPath := filepath.Join(os.TempDir(), filename)

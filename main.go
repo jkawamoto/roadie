@@ -29,12 +29,11 @@ import (
 	"syscall"
 
 	"github.com/jkawamoto/roadie/config"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
 func main() {
-
-	// TODO: Construct a context at here and watch signals to cancel it when interrupted.
 
 	app := cli.NewApp()
 	app.Name = Name
@@ -64,6 +63,8 @@ information.
 
 	// Prepare to be canceled.
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill, syscall.SIGQUIT)
 	go func() {
@@ -74,7 +75,31 @@ information.
 	// Set up metadata.
 	app.Metadata = map[string]interface{}{
 		"config":  conf,
-		"context": ctx,
+		"context": config.NewContext(ctx, conf),
+	}
+
+	// Set up configs before running commands.
+	app.Before = func(c *cli.Context) (err error) {
+		if conf.Project == "" && c.Command.Name != "init" {
+			fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
+		}
+		if v := c.GlobalString("project"); v != "" {
+			fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
+			conf.Project = v
+		}
+		if v := c.GlobalString("type"); v != "" {
+			fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
+			conf.MachineType = v
+		}
+		if v := c.GlobalString("zone"); v != "" {
+			fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
+			conf.Zone = v
+		}
+		if v := c.GlobalString("bucket"); v != "" {
+			fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
+			conf.Bucket = v
+		}
+		return
 	}
 
 	app.Run(os.Args)

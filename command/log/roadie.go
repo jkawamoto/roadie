@@ -1,7 +1,7 @@
 //
 // command/log/roadie.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/struct"
+	"github.com/jkawamoto/structpbconv"
 )
 
 // RoadiePayload defines the payload structure of instance logs.
@@ -45,7 +46,7 @@ func NewRoadiePayload(payload interface{}) (res *RoadiePayload, err error) {
 		res = s
 	case *structpb.Struct:
 		res = &RoadiePayload{}
-		ConvertStructPB(s, res)
+		structpbconv.Convert(s, res)
 	default:
 		return nil, fmt.Errorf("Given payload is not an instance of *structpb.Struct: %v", payload)
 	}

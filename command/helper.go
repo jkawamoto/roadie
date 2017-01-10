@@ -1,7 +1,7 @@
 //
 // command/helper.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -24,11 +24,9 @@ package command
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/cloud"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -46,8 +44,7 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		err := PrintFileList(
-			config.NewContext(context.Background(), config.FromCliContext(c)), prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(util.GetContext(c), prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -67,8 +64,7 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-		storage := cloud.NewStorage(ctx)
+		storage := cloud.NewStorage(util.GetContext(c))
 		if err := storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -88,8 +84,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-		storage := cloud.NewStorage(ctx)
+		storage := cloud.NewStorage(util.GetContext(c))
 		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}

@@ -1,7 +1,7 @@
 //
 // command/queue.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,6 +22,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -30,10 +31,10 @@ import (
 
 	"github.com/jkawamoto/roadie/command/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
-	"golang.org/x/net/context"
 )
 
 // QueueKind defines kind of entries stored in cloud datastore.
@@ -56,11 +57,7 @@ func CmdQueueList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	cfg := config.FromCliContext(c)
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
-	defer cancel()
-
-	store := cloud.NewDatastore(ctx)
+	store := cloud.NewDatastore(util.GetContext(c))
 	err = store.QueueNames(func(name string) error {
 		fmt.Println(name)
 		return nil
@@ -78,12 +75,8 @@ func CmdQueueShow(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	cfg := config.FromCliContext(c)
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
-	defer cancel()
-
 	name := c.Args().First()
-	store := cloud.NewDatastore(ctx)
+	store := cloud.NewDatastore(util.GetContext(c))
 	err = store.FindTasks(name, func(item *resource.Task) error {
 		fmt.Println(item.InstanceName)
 		return nil
@@ -100,8 +93,7 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-	instances, err := runningInstances(ctx)
+	instances, err := runningInstances(util.GetContext(c))
 	if err != nil {
 		return
 	}
@@ -127,8 +119,7 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	}
 
 	cfg := config.FromCliContext(c)
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
-	defer cancel()
+	ctx := util.GetContext(c)
 
 	queue := c.Args().First()
 	instances := c.Int("instances")
@@ -170,11 +161,7 @@ func CmdQueueStop(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), config.FromCliContext(c)))
-	defer cancel()
-
-	return updatePending(ctx, c.Args().First(), true)
+	return updatePending(util.GetContext(c), c.Args().First(), true)
 
 }
 
@@ -190,9 +177,7 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 
 	queue := c.Args().First()
 	cfg := config.FromCliContext(c)
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
-	defer cancel()
-
+	ctx := util.GetContext(c)
 	err = updatePending(ctx, queue, false)
 	if err != nil {
 		return

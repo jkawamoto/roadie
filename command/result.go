@@ -1,7 +1,7 @@
 //
 // command/result.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -26,12 +26,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"golang.org/x/net/context"
-
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/cloud"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -54,11 +52,9 @@ func CmdResult(c *cli.Context) error {
 }
 
 // CmdResultList shows a list of instance names or result files belonging to an instance.
-func CmdResultList(c *cli.Context) error {
+func CmdResultList(c *cli.Context) (err error) {
 
-	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-
-	var err error
+	ctx := util.GetContext(c)
 	switch c.NArg() {
 	case 0:
 		err = PrintDirList(ctx, ResultPrefix, c.Bool("url"), c.Bool("quiet"))
@@ -73,18 +69,14 @@ func CmdResultList(c *cli.Context) error {
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
-	return nil
+	return
 
 }
 
 // CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
-func CmdResultShow(c *cli.Context) error {
+func CmdResultShow(c *cli.Context) (err error) {
 
-	var err error
-
-	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-	storage := cloud.NewStorage(ctx)
-
+	storage := cloud.NewStorage(util.GetContext(c))
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
@@ -114,10 +106,9 @@ func CmdResultGet(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-	instance := c.Args().First()
 
-	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-	storage := cloud.NewStorage(ctx)
+	instance := c.Args().First()
+	storage := cloud.NewStorage(util.GetContext(c))
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DownloadFiles(path, c.String("o"), c.Args().Tail()); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -155,8 +146,7 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	ctx := config.NewContext(context.Background(), config.FromCliContext(c))
-	storage := cloud.NewStorage(ctx)
+	storage := cloud.NewStorage(util.GetContext(c))
 	path := filepath.Join(ResultPrefix, instance)
 	if err := storage.DeleteFiles(path, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)
