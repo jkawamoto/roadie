@@ -1,7 +1,7 @@
 //
 // main.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,14 +22,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
 func main() {
+
+	// TODO: Construct a context at here and watch signals to cancel it when interrupted.
 
 	app := cli.NewApp()
 	app.Name = Name
@@ -45,7 +50,11 @@ func main() {
 	app.Copyright = `roadie  Copyright (C) 2016  Junpei Kawamoto
 This program comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
-under certain conditions.`
+under certain conditions.
+
+See https://jkawamoto.github.io/roadie/info/licenses/ for more
+information.
+`
 
 	conf, err := config.NewConfig()
 	if err != nil {
@@ -53,8 +62,19 @@ under certain conditions.`
 		os.Exit(1)
 	}
 
+	// Prepare to be canceled.
+	ctx, cancel := context.WithCancel(context.Background())
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, os.Kill, syscall.SIGQUIT)
+	go func() {
+		<-sig
+		cancel()
+	}()
+
+	// Set up metadata.
 	app.Metadata = map[string]interface{}{
-		"config": conf,
+		"config":  conf,
+		"context": ctx,
 	}
 
 	app.Run(os.Args)
