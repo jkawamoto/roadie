@@ -1,7 +1,7 @@
 //
 // command/cloud/fileinfo.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -21,31 +21,16 @@
 
 package cloud
 
-import (
-	"strings"
-	"time"
-
-	storage "google.golang.org/api/storage/v1"
-)
+import "time"
 
 // FileInfo defines file information structure.
 type FileInfo struct {
-	Name        string
-	Path        string
+	// Name of the file, which means the base name.
+	Name string
+	// Path of the file.
+	Path string
+	// TimeCreated is the time when the file was created.
 	TimeCreated time.Time
-	Size        uint64
-}
-
-// NewFileInfo creates a file info from an object.
-func NewFileInfo(f *storage.Object) *FileInfo {
-
-	splitedName := strings.Split(f.Name, "/")
-	t, _ := time.Parse("2006-01-02T15:04:05", strings.Split(f.TimeCreated, ".")[0])
-
-	return &FileInfo{
-		Name:        splitedName[len(splitedName)-1],
-		Path:        f.Name,
-		TimeCreated: t.In(time.Local),
-		Size:        f.Size,
-	}
+	// Size of the file.
+	Size int64
 }

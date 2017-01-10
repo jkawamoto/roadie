@@ -1,7 +1,7 @@
 //
 // command/cloud/storage.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -23,6 +23,7 @@ package cloud
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -30,8 +31,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"github.com/cheggaaa/pb"
 

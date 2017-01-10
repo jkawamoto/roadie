@@ -1,7 +1,7 @@
 //
 // command/cloud/storage_test.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -23,6 +23,7 @@ package cloud
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,8 +34,6 @@ import (
 	"testing"
 
 	"github.com/jkawamoto/roadie/config"
-
-	"golang.org/x/net/context"
 )
 
 type mockStorageServicer struct {
@@ -125,7 +124,7 @@ func (s *mockStorageServicer) List(prefix string, handler FileInfoHandler) error
 	if err := handler(&FileInfo{
 		Name: s.filename,
 		Path: s.filename,
-		Size: uint64(info.Size()),
+		Size: info.Size(),
 	}); err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func (s *mockStorageServicer) List(prefix string, handler FileInfoHandler) error
 	if err := handler(&FileInfo{
 		Name: fmt.Sprintf("%s-%d", prefix, 1),
 		Path: s.filename,
-		Size: uint64(info.Size()),
+		Size: info.Size(),
 	}); err != nil {
 		return err
 	}
