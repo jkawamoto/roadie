@@ -5,9 +5,11 @@
 [![Release](https://img.shields.io/badge/release-0.3.3-brightgreen.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.3.3)
 [![Japanese](https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg)](http://qiita.com/jkawamoto/items/751558536a597a33ae2a)
 
+[![Logo](https://jkawamoto.github.io/roadie/img/banner.png)](https://jkawamoto.github.io/roadie/)
+
 A easy way to run your programs on
 [Google Cloud Platform](https://cloud.google.com/).
-See [documents](https://github.com/jkawamoto/roadie/wiki) for more information.
+See [documents](https://jkawamoto.github.io/roadie/) for more information.
 
 ## Description
 `roadie` helps you to upload your source codes to the cloud, create and delete
