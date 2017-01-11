@@ -26,9 +26,9 @@ import (
 	"testing"
 
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 )
 
 func TestCmdRun(t *testing.T) {

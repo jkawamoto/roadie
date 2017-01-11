@@ -30,9 +30,9 @@ import (
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )

@@ -33,9 +33,9 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 	"github.com/urfave/cli"
 )
 

@@ -25,8 +25,8 @@ import (
 	"context"
 
 	"cloud.google.com/go/datastore"
-	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 	"google.golang.org/api/iterator"
 )
 
