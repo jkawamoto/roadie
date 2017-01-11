@@ -93,7 +93,7 @@ func TestSetLocalSource(t *testing.T) {
 	var err error
 
 	// Test with directories.
-	for _, target := range []string{".", "../command", ".."} {
+	for _, target := range []string{".", "../command"} {
 
 		script = resource.Script{
 			InstanceName: "test",
