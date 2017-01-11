@@ -1,7 +1,7 @@
 //
 // command/constants.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -23,5 +23,5 @@ package command
 
 const (
 	// QueueManagerVersion defines the version of queue manager to be used.
-	QueueManagerVersion = "0.1.2"
+	QueueManagerVersion = "0.1.3"
 )
