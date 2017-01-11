@@ -44,54 +44,39 @@ const RoadieSchemePrefix = "roadie://"
 
 // runOpt manages all arguments and flags defined in run command.
 type runOpt struct {
-
 	// Git repository URL which will be cloned as source codes.
 	Git string
-
 	// URL where source codes are stored.
 	URL string
-
 	// Directory or file path which will be used as source codes.
 	Local string
-
 	// File patterns which will be excluded from source codes in a given
 	// directory. This flag will only work when `local` flag is given with
 	// a directory.
 	Exclude []string
-
 	// Filename in source directory in GCS.
 	Source string
-
 	// Path for the script file to be run.
 	ScriptFile string
-
 	// Arguments for the script.
 	ScriptArgs []string
-
 	// Instance name. If not set, named by script file name and current time.
 	InstanceName string
-
 	// Base docker image name.
 	Image string
-
 	// Specify disk size of new instance.
 	DiskSize int64
-
 	// If true, result section will be overwritten so that roadie can manage
 	// result data. Otherwise, users require to manage them by their self.
 	OverWriteResultSection bool
-
 	// If true, created instance will not shutdown automatically. So, users
 	// require to do it by their self. This flag can be useful for debugging.
 	NoShutdown bool
-
 	// If true, do not create any instances but show startup script.
 	// This flag is for debugging.
 	Dry bool
-
 	// The number of times retry roadie-gcp container when GCP's error happens.
 	Retry int64
-
 	// Queue name. If specified, the given script will be enqueued to the queue.
 	Queue string
 }
@@ -189,17 +174,17 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	case opt.Source != "":
 		setSource(conf, script, opt.Source)
 
-	case script.Body.Source == "":
+	case script.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
 	}
 
 	// Check result section.
-	if script.Body.Result == "" || opt.OverWriteResultSection {
+	if script.Result == "" || opt.OverWriteResultSection {
 		location := util.CreateURL(conf.Bucket, ResultPrefix, script.InstanceName)
-		script.Body.Result = location.String()
+		script.Result = location.String()
 	} else {
 		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.Filename, script.Body.Result)
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.Filename, script.Result)
 		fmt.Println(
 			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
 		fmt.Println(
@@ -244,7 +229,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		task := resource.Task{
 			InstanceName: script.InstanceName,
 			Image:        opt.Image,
-			Body:         script.Body,
+			Body:         script.ScriptBody,
 			QueueName:    opt.Queue,
 		}
 
@@ -287,12 +272,12 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
 // If overwriting source section, it prints warning, too.
 func setGitSource(script *resource.Script, repo string) {
-	if script.Body.Source != "" {
+	if script.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
 			script.Filename, repo)
 	}
-	script.Body.Source = repo
+	script.Source = repo
 }
 
 // setURLSource sets a `url` to source section in a given `script`.
@@ -300,12 +285,12 @@ func setGitSource(script *resource.Script, repo string) {
 // The file pointed by the URL must be either executable, zipped, or tarballed
 // file. If overwriting source section, it prints warning, too.
 func setURLSource(script *resource.Script, url string) {
-	if script.Body.Source != "" {
+	if script.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
 			script.Filename, url)
 	}
-	script.Body.Source = url
+	script.Source = url
 }
 
 // setLocalSource sets a GCS URL to source section in a given `script` under a given context.
@@ -363,7 +348,7 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 			return
 		}
 	}
-	script.Body.Source = location
+	script.Source = location
 	return nil
 
 }
@@ -374,12 +359,12 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 func setSource(conf *config.Config, script *resource.Script, file string) {
 
 	url := util.CreateURL(conf.Bucket, SourcePrefix, file).String()
-	if script.Body.Source != "" {
+	if script.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a filename is given.\n"),
 			script.Filename, url)
 	}
-	script.Body.Source = url
+	script.Source = url
 }
 
 // replaceURLScheme replaced URLs which start with "roadie://".
@@ -389,20 +374,20 @@ func replaceURLScheme(conf *config.Config, script *resource.Script) error {
 	offset := len(RoadieSchemePrefix)
 
 	// Replace source section.
-	if strings.HasPrefix(script.Body.Source, RoadieSchemePrefix) {
-		script.Body.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
+	if strings.HasPrefix(script.Source, RoadieSchemePrefix) {
+		script.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Source[offset:]).String()
 	}
 
 	// Replace data section.
-	for i, url := range script.Body.Data {
+	for i, url := range script.Data {
 		if strings.HasPrefix(url, RoadieSchemePrefix) {
-			script.Body.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
+			script.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
 		}
 	}
 
 	// Replace result section.
-	if strings.HasPrefix(script.Body.Result, RoadieSchemePrefix) {
-		script.Body.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
+	if strings.HasPrefix(script.Result, RoadieSchemePrefix) {
+		script.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Result[offset:]).String()
 	}
 
 	return nil
