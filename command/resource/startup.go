@@ -1,7 +1,7 @@
 //
 // command/resource/startup.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -31,19 +31,14 @@ import (
 
 // StartupOpt defines variables used in startup template.
 type StartupOpt struct {
-
 	// Name of container.
 	Name string
-
 	// Body of script file.
 	Script string
-
 	// Options
 	Options string
-
 	// Container image.
 	Image string
-
 	// Number of retry.
 	Retry int64
 }
@@ -66,6 +61,7 @@ func Startup(opt *StartupOpt) (res string, err error) {
 		return
 	}
 
-	return buf.String(), nil
+	res = buf.String()
+	return
 
 }
