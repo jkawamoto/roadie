@@ -25,7 +25,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"

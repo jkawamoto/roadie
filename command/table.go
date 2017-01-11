@@ -30,7 +30,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/config"
 )
 

@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"

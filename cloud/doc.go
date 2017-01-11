@@ -1,5 +1,5 @@
 //
-// command/cloud/fileinfo.go
+// cloud/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,18 +19,6 @@
 // along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+// Package cloud wraps Google Cloud Platform APIs and provides functions
+// to use it.
 package cloud
-
-import "time"
-
-// FileInfo defines file information structure.
-type FileInfo struct {
-	// Name of the file, which means the base name.
-	Name string
-	// Path of the file.
-	Path string
-	// TimeCreated is the time when the file was created.
-	TimeCreated time.Time
-	// Size of the file.
-	Size int64
-}

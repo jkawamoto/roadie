@@ -1,5 +1,5 @@
 //
-// command/cloud/cloudinstance.go
+// cloud/cloudinstance.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //

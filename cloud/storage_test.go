@@ -1,5 +1,5 @@
 //
-// command/cloud/storage_test.go
+// cloud/storage_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //

@@ -1,5 +1,5 @@
 //
-// command/cloud/datastore.go
+// cloud/datastore.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //

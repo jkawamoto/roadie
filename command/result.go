@@ -28,7 +28,7 @@ import (
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
