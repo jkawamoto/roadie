@@ -115,7 +115,7 @@ func CmdResultGet(c *cli.Context) error {
 		pattern = append(pattern, "*")
 	}
 
-	if err := storage.DownloadFiles(path, c.String("o"), pattern); err != nil {
+	if err := storage.DownloadFiles(path, filepath.ToSlash(c.String("o")), pattern); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
