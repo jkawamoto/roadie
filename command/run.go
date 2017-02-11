@@ -162,12 +162,22 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	// Check source section.
 	switch {
 	case opt.Git != "":
+		if script.Source != "" {
+			fmt.Printf(
+				chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
+				script.Filename, opt.Git)
+		}
 		if err = setGitSource(script, opt.Git); err != nil {
 			return
 		}
 
 	case opt.URL != "":
-		setURLSource(script, opt.URL)
+		if script.Source != "" {
+			fmt.Printf(
+				chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
+				script.Filename, opt.URL)
+		}
+		script.Source = opt.URL
 
 	case opt.Local != "":
 		if err = setLocalSource(ctx, storage, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
@@ -276,12 +286,6 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 // If overwriting source section, it prints warning, too.
 func setGitSource(script *resource.Script, repo string) (err error) {
 
-	if script.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
-			script.Filename, repo)
-	}
-
 	if strings.HasPrefix(repo, "git@") {
 		sp := strings.SplitN(repo[len("git@"):], ":", 2)
 		if len(sp) != 2 {
@@ -304,19 +308,6 @@ func setGitSource(script *resource.Script, repo string) (err error) {
 	}
 	return
 
-}
-
-// setURLSource sets a `url` to source section in a given `script`.
-// Source codes will be downloaded from the URL.
-// The file pointed by the URL must be either executable, zipped, or tarballed
-// file. If overwriting source section, it prints warning, too.
-func setURLSource(script *resource.Script, url string) {
-	if script.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
-			script.Filename, url)
-	}
-	script.Source = url
 }
 
 // setLocalSource sets a GCS URL to source section in a given `script` under a given context.
