@@ -1,7 +1,7 @@
 //
 // command/util/path.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -42,7 +42,7 @@ func CreateURL(bucket, group, name string) *url.URL {
 	return &url.URL{
 		Scheme: "gs",
 		Host:   bucket,
-		Path:   filepath.ToSlash(filepath.Join("/", group, name)),
+		Path:   filepath.Join("/", group, name),
 	}
 
 }
