@@ -153,8 +153,11 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 		}
 	}
 
-	fmt.Fprintln(s.Log, "Downloading...")
-	pool, _ := pb.StartPool()
+	fmt.Fprintln(s.Log, "")
+	pool, err := pb.StartPool()
+	if err != nil {
+		return
+	}
 	defer pool.Stop()
 
 	var wg sync.WaitGroup
@@ -180,7 +183,6 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 
 				wg.Add(1)
 				go func(info *FileInfo, bar *pb.ProgressBar) {
-
 					defer wg.Done()
 
 					filename := filepath.Join(dir, info.Name)
@@ -191,9 +193,7 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 					}
 					defer f.Close()
 
-					buf := bufio.NewWriter(io.MultiWriter(f, bar))
-					defer buf.Flush()
-
+					buf := io.MultiWriter(bufio.NewWriter(f), bar)
 					if err := s.service.Download(info.Path, buf); err != nil {
 						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, err.Error()))
 					} else {
