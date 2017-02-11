@@ -143,19 +143,19 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Update instance name.
+	// If an instance name is not given, use the default name.
 	if opt.InstanceName != "" {
 		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
 	// Prepare a context.
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), conf))
 	defer cancel()
-	ctx = config.NewContext(ctx, conf)
 
 	// Check a specified bucket exists and create it if not.
 	storage := cloud.NewStorage(ctx)
 	if err = storage.PrepareBucket(); err != nil {
-		return err
+		return
 	}
 
 	// Check source section.
