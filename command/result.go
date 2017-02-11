@@ -102,15 +102,20 @@ func CmdResultShow(c *cli.Context) (err error) {
 // CmdResultGet downloads results for a given instance and file names are matched to queries.
 func CmdResultGet(c *cli.Context) error {
 
-	if c.NArg() < 2 {
-		fmt.Printf(chalk.Red.Color("expected at least 2 argument. (%d given)\n"), c.NArg())
+	if c.NArg() == 0 {
+		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
 	instance := c.Args().First()
 	storage := cloud.NewStorage(util.GetContext(c))
 	path := filepath.Join(ResultPrefix, instance)
-	if err := storage.DownloadFiles(path, c.String("o"), c.Args().Tail()); err != nil {
+	pattern := c.Args().Tail()
+	if len(pattern) == 0 {
+		pattern = append(pattern, "*")
+	}
+
+	if err := storage.DownloadFiles(path, c.String("o"), pattern); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
