@@ -32,7 +32,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cheggaaa/pb"
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
