@@ -55,9 +55,22 @@ func TestCmdRun(t *testing.T) {
 // TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
 
-	script := resource.Script{}
-	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
+	var script resource.Script
 
+	script = resource.Script{}
+	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
+	if script.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", script.Source)
+	}
+
+	script = resource.Script{}
+	setGitSource(&script, "git@github.com:jkawamoto/roadie.git")
+	if script.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", script.Source)
+	}
+
+	script = resource.Script{}
+	setGitSource(&script, "github.com/jkawamoto/roadie")
 	if script.Source != "https://github.com/jkawamoto/roadie.git" {
 		t.Errorf("source section is not correct: %s", script.Source)
 	}

@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,7 +162,9 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	// Check source section.
 	switch {
 	case opt.Git != "":
-		setGitSource(script, opt.Git)
+		if err = setGitSource(script, opt.Git); err != nil {
+			return
+		}
 
 	case opt.URL != "":
 		setURLSource(script, opt.URL)
@@ -271,13 +274,36 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
 // If overwriting source section, it prints warning, too.
-func setGitSource(script *resource.Script, repo string) {
+func setGitSource(script *resource.Script, repo string) (err error) {
+
 	if script.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
 			script.Filename, repo)
 	}
-	script.Source = repo
+
+	if strings.HasPrefix(repo, "git@") {
+		sp := strings.SplitN(repo[len("git@"):], ":", 2)
+		if len(sp) != 2 {
+			return fmt.Errorf("Given git repository URL is invalid: %s", repo)
+		}
+		script.Source = fmt.Sprintf("https://%s/%s", sp[0], sp[1])
+	} else {
+		u, err := url.Parse(repo)
+		if err != nil {
+			return err
+		}
+		if !u.IsAbs() {
+			u.Scheme = "https"
+		}
+		if !strings.HasSuffix(u.Path, ".git") {
+			u.Path += ".git"
+		}
+		script.Source = u.String()
+
+	}
+	return
+
 }
 
 // setURLSource sets a `url` to source section in a given `script`.
