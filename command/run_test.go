@@ -77,18 +77,6 @@ func TestSetGitSource(t *testing.T) {
 
 }
 
-// TestSetURLSource checks setURLSource sets correct url.
-func TestSetURLSource(t *testing.T) {
-
-	script := resource.Script{}
-	setURLSource(&script, "https://github.com/jkawamoto/roadie")
-
-	if script.Source != "https://github.com/jkawamoto/roadie" {
-		t.Errorf("source section is not correct: %s", script.Source)
-	}
-
-}
-
 // TestSetLocalSource checks setLocalSource sets correct url with any directories,
 // and file paths. This test doesn't check excludes parameters since those parameters
 // are tested in tests for util.Archive.
@@ -142,18 +130,26 @@ func TestSetLocalSource(t *testing.T) {
 }
 
 // TestSetSource checks setSource sets correct url from a given filename.
+// Since all source files are archived by tar.gz, if the given filename doesn't
+// have extension .tar.gz, it should be added.
 func TestSetSource(t *testing.T) {
 
+	var script resource.Script
 	conf := &config.Config{
 		Gcp: config.Gcp{
 			Bucket: "somebucket",
 		},
 	}
-	script := &resource.Script{}
 
-	setSource(conf, script, "abc.zip")
+	script = resource.Script{}
+	setSource(conf, &script, "abc.tar.gz")
+	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
+		t.Errorf("source section is not correct: %s", script.Source)
+	}
 
-	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.zip").String() {
+	script = resource.Script{}
+	setSource(conf, &script, "abc")
+	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
 		t.Errorf("source section is not correct: %s", script.Source)
 	}
 

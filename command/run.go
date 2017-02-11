@@ -375,6 +375,10 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 // config. If overwriting source section, it prints warning, too.
 func setSource(conf *config.Config, script *resource.Script, file string) {
 
+	if !strings.HasSuffix(file, ".tar.gz") {
+		file += ".tar.gz"
+	}
+
 	url := util.CreateURL(conf.Bucket, SourcePrefix, file).String()
 	if script.Source != "" {
 		fmt.Printf(
