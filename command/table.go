@@ -25,7 +25,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -114,7 +113,6 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
 	defer s.Stop()
 
@@ -134,7 +132,7 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 	})
 
 	if err == nil {
-		s.FinalMSG += table.String()
+		s.FinalMSG += table.String() + "\n"
 	}
 	return
 
