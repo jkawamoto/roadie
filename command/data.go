@@ -26,7 +26,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
@@ -66,41 +67,42 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 		return
 	}
 
-	storage := cloud.NewStorage(ctx)
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	wg, ctx := errgroup.WithContext(ctx)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
 
+	storage := cloud.NewStorage(ctx)
 	for _, target := range filenames {
 
-		wg.Add(1)
-		go func(target string) {
-			defer wg.Done()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-			semaphore <- struct{}{}
-			defer func() {
-				<-semaphore
-			}()
+		case semaphore <- struct{}{}:
+			func(target string) {
+				wg.Go(func() (err error) {
+					defer func() { <-semaphore }()
 
-			var output string
-			if storedName != "" && len(filenames) == 1 {
-				output = storedName
-			} else {
-				output = filepath.Base(target)
-			}
+					var output string
+					if storedName != "" && len(filenames) == 1 {
+						output = storedName
+					} else {
+						output = filepath.Base(target)
+					}
 
-			var location string
-			location, err = storage.UploadFile(DataPrefix, output, target)
-			if err != nil {
-				// TODO: Show warning.
-			}
-			fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					var location string
+					location, err = storage.UploadFile(DataPrefix, output, target)
+					if err != nil {
+						return
+					}
+					fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					return
 
-		}(target)
+				})
 
+			}(target)
+		}
 	}
 
-	return nil
+	return wg.Wait()
 
 }

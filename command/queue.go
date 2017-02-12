@@ -16,7 +16,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
@@ -26,8 +26,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
+
+	pb "gopkg.in/cheggaaa/pb.v1"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
@@ -125,12 +128,17 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
 
-	var wg sync.WaitGroup
+	fmt.Fprintln(opt.Log, "Creating instances")
+	bar := pb.New(instances)
+	bar.Output = os.Stderr
+	bar.Prefix("Instance")
+	bar.Start()
+	defer bar.Finish()
+
+	wg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < instances; i++ {
 
-		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
 		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-
 		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
 			ProjectID:    cfg.Project,
 			InstanceName: name,
@@ -141,16 +149,23 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 			return err
 		}
 
-		wg.Add(1)
-		go func(name, startup string) {
-			defer wg.Done()
-			createInstance(ctx, name, startup, size, os.Stderr)
-		}(name, startup)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			func(name, startup string) {
+				wg.Go(func() error {
+					defer bar.Increment()
+					return createInstance(ctx, name, startup, size, os.Stderr)
+				})
+			}(name, startup)
+		}
 
 	}
 
-	wg.Wait()
-	return nil
+	return wg.Wait()
+
 }
 
 // CmdQueueStop stops executing a queue. In order to stop a queue,
@@ -185,9 +200,17 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
+
+	fmt.Fprintln(opt.Log, "Creating instances")
+	bar := pb.New(instances)
+	bar.Output = os.Stderr
+	bar.Prefix("Instance")
+	bar.Start()
+	defer bar.Finish()
+
+	wg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < instances; i++ {
 
-		fmt.Fprintf(os.Stderr, "Creating an instance (%d/%d)\n", i+1, instances)
 		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
 		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
 			ProjectID:    cfg.Project,
@@ -199,14 +222,22 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 			return err
 		}
 
-		err = createInstance(ctx, name, startup, size, os.Stderr)
-		if err != nil {
-			return err
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			func(name, startup string) {
+				wg.Go(func() error {
+					defer bar.Increment()
+					return createInstance(ctx, name, startup, size, os.Stderr)
+				})
+			}(name, startup)
 		}
 
 	}
 
-	return
+	return wg.Wait()
 
 }
 
@@ -214,13 +245,9 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 func updatePending(ctx context.Context, queue string, pending bool) (err error) {
 
 	store := cloud.NewDatastore(ctx)
-	if err != nil {
-		return
-	}
-	err = store.UpdateTasks(queue, func(task *resource.Task) (*resource.Task, error) {
+	return store.UpdateTasks(queue, func(task *resource.Task) (*resource.Task, error) {
 		task.Pending = pending
 		return task, nil
 	})
-	return
 
 }
