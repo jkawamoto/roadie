@@ -128,7 +128,7 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
 
-	fmt.Fprintln(opt.Log, "Creating instances")
+	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
 	bar.Output = os.Stderr
 	bar.Prefix("Instance")
@@ -201,7 +201,7 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	instances := c.Int("instances")
 	size := c.Int64("disk-size")
 
-	fmt.Fprintln(opt.Log, "Creating instances")
+	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
 	bar.Output = os.Stderr
 	bar.Prefix("Instance")
