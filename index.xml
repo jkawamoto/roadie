@@ -19,7 +19,7 @@
 
 &lt;p&gt;This software is released under the GPLv3.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;Copyright (C) 2016  Junpei Kawamoto
+&lt;pre&gt;&lt;code&gt;Copyright (C) 2016-2017 Junpei Kawamoto
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -245,7 +245,7 @@ limitations under the License.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.gnu.org/copyleft/gpl.html&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/license-GPLv3-blue.svg&#34; alt=&#34;GPLv3&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://travis-ci.org/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://travis-ci.org/jkawamoto/roadie.svg?branch=master&#34; alt=&#34;Build Status&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://codeclimate.com/github/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg&#34; alt=&#34;Code Climate&#34; /&gt;&lt;/a&gt;
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.3&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.3-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.4&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.4-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;http://qiita.com/jkawamoto/items/751558536a597a33ae2a&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg&#34; alt=&#34;Japanese&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; helps you to upload your source codes to the cloud, create and delete
