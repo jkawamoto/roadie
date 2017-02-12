@@ -1,3 +1,15 @@
+## 0.3.4 (2017-02-11)
+### Updated
+- Switch to use Google Cloud for Go instead of Google APIs Client Library for
+  Go to access storages,
+- Use https URLs for git repositories even if ssh URLs.
+
+### Fixed
+- Broken tables to print download status,
+- Complete a wild card if any glob pattern is not given in result get command,
+- Complete missing .tar.gz in source flag of run command.
+
+
 ## 0.3.3 (2016-12-29)
 ### Fixed
 - Cloud datastore access according to the new API.
