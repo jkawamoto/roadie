@@ -1,5 +1,5 @@
 //
-// command/config_test.go
+// cloud/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,10 +19,6 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
-
-import "testing"
-
-func TestCmdConfig(t *testing.T) {
-	// Write your code here
-}
+// Package cloud wraps Google Cloud Platform APIs and provides functions
+// to use it.
+package cloud

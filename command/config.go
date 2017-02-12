@@ -1,7 +1,7 @@
 //
 // command/config.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,7 +16,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
@@ -25,10 +25,9 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/net/context"
-
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -114,8 +113,7 @@ func CmdConfigTypeSet(c *cli.Context) error {
 		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
 	}
 
-	ctx := config.NewContext(context.Background(), conf)
-	list, err := cloud.AvailableMachineTypes(ctx)
+	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -146,8 +144,7 @@ func CmdConfigTypeList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
 
-	ctx := config.NewContext(context.Background(), conf)
-	list, err := cloud.AvailableMachineTypes(ctx)
+	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -208,8 +205,7 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Zone, chalk.Green.Color(v))
 	}
 
-	ctx := config.NewContext(context.Background(), conf)
-	list, err := cloud.AvailableZones(ctx)
+	list, err := cloud.AvailableZones(util.GetContext(c))
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -240,8 +236,7 @@ func CmdConfigZoneList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
 
-	ctx := config.NewContext(context.Background(), conf)
-	list, err := cloud.AvailableZones(ctx)
+	list, err := cloud.AvailableZones(util.GetContext(c))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}

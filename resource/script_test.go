@@ -1,7 +1,7 @@
 //
-// command/resource/script_test.go
+// resource/script_test.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,7 +16,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package resource
@@ -98,28 +98,28 @@ func TestLoadScript(t *testing.T) {
 		t.Errorf("Instance name %s has dots.", script.InstanceName)
 	}
 
-	if len(script.Body.APT) != 1 || script.Body.APT[0] != "python-numpy" {
-		t.Errorf("apt section is not correct: %s", script.Body.APT)
+	if len(script.APT) != 1 || script.APT[0] != "python-numpy" {
+		t.Errorf("apt section is not correct: %s", script.APT)
 	}
 
-	if script.Body.Source != "https://github.com/jkawamoto/roadie" {
-		t.Errorf("source section is not correct: %s", script.Body.Source)
+	if script.Source != "https://github.com/jkawamoto/roadie" {
+		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
-	if len(script.Body.Data) != 1 || script.Body.Data[0] != "gs://somebucket/somedata" {
-		t.Errorf("data section is not correct: %s", script.Body.Data)
+	if len(script.Data) != 1 || script.Data[0] != "gs://somebucket/somedata" {
+		t.Errorf("data section is not correct: %s", script.Data)
 	}
 
-	if len(script.Body.Run) != 1 || script.Body.Run[0] != "abc def" {
-		t.Errorf("run section is not correct: %s", script.Body.Run)
+	if len(script.Run) != 1 || script.Run[0] != "abc def" {
+		t.Errorf("run section is not correct: %s", script.Run)
 	}
 
-	if script.Body.Result != "gs://somebucket/result" {
-		t.Errorf("result section is not correct: %s", script.Body.Result)
+	if script.Result != "gs://somebucket/result" {
+		t.Errorf("result section is not correct: %s", script.Result)
 	}
 
-	if len(script.Body.Upload) != 1 || script.Body.Upload[0] != "xyz" {
-		t.Errorf("upload section is not correct: %s", script.Body.Upload)
+	if len(script.Upload) != 1 || script.Upload[0] != "xyz" {
+		t.Errorf("upload section is not correct: %s", script.Upload)
 	}
 
 }
@@ -152,8 +152,8 @@ func TestLoadScriptWithPlaceholders(t *testing.T) {
 	}
 
 	// Tests
-	if len(script.Body.Run) != 1 || script.Body.Run[0] != "abc xyz" {
-		t.Errorf("run section is not correct: %s", script.Body.Run)
+	if len(script.Run) != 1 || script.Run[0] != "abc xyz" {
+		t.Errorf("run section is not correct: %s", script.Run)
 	}
 
 	// Loading without parameters test.

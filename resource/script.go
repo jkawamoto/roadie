@@ -1,7 +1,7 @@
 //
-// command/resource/script.go
+// resource/script.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,7 +16,7 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package resource
@@ -52,9 +52,12 @@ type ScriptBody struct {
 
 // Script defines a data structure of script file.
 type Script struct {
-	Filename     string
+	// ScriptBody.
+	ScriptBody
+	// Filename of the script.
+	Filename string
+	// InstanceName to run the script.
 	InstanceName string
-	Body         ScriptBody
 }
 
 // NewScript loads a given script file and apply arguments.
@@ -103,7 +106,7 @@ func NewScript(filename string, args []string) (res *Script, err error) {
 	}
 
 	// Unmarshal YAML file.
-	if err = yaml.Unmarshal(buf.Bytes(), &res.Body); err != nil {
+	if err = yaml.Unmarshal(buf.Bytes(), &res.ScriptBody); err != nil {
 		return
 	}
 	return
@@ -111,6 +114,6 @@ func NewScript(filename string, args []string) (res *Script, err error) {
 
 // String converts this script to a string.
 func (s *Script) String() string {
-	res, _ := yaml.Marshal(s.Body)
+	res, _ := yaml.Marshal(s.ScriptBody)
 	return string(res)
 }

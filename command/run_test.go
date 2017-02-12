@@ -1,7 +1,7 @@
 //
 // command/run_test.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,20 +16,19 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
 
 import (
+	"context"
 	"testing"
 
-	"golang.org/x/net/context"
-
-	"github.com/jkawamoto/roadie/command/cloud"
-	"github.com/jkawamoto/roadie/command/resource"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 )
 
 func TestCmdRun(t *testing.T) {
@@ -56,23 +55,24 @@ func TestCmdRun(t *testing.T) {
 // TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
 
-	script := resource.Script{}
-	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
+	var script resource.Script
 
-	if script.Body.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", script.Body.Source)
+	script = resource.Script{}
+	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
+	if script.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
-}
+	script = resource.Script{}
+	setGitSource(&script, "git@github.com:jkawamoto/roadie.git")
+	if script.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", script.Source)
+	}
 
-// TestSetURLSource checks setURLSource sets correct url.
-func TestSetURLSource(t *testing.T) {
-
-	script := resource.Script{}
-	setURLSource(&script, "https://github.com/jkawamoto/roadie")
-
-	if script.Body.Source != "https://github.com/jkawamoto/roadie" {
-		t.Errorf("source section is not correct: %s", script.Body.Source)
+	script = resource.Script{}
+	setGitSource(&script, "github.com/jkawamoto/roadie")
+	if script.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
 }
@@ -94,7 +94,7 @@ func TestSetLocalSource(t *testing.T) {
 	var err error
 
 	// Test with directories.
-	for _, target := range []string{".", "../command", ".."} {
+	for _, target := range []string{".", "../command"} {
 
 		script = resource.Script{
 			InstanceName: "test",
@@ -104,8 +104,8 @@ func TestSetLocalSource(t *testing.T) {
 		if err = setLocalSource(ctx, storage, &script, target, nil, true); err != nil {
 			t.Error(err.Error())
 		}
-		if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "test.tar.gz").String() {
-			t.Errorf("source section is not correct: %s", script.Body.Source)
+		if script.Source != util.CreateURL("somebucket", SourcePrefix, "test.tar.gz").String() {
+			t.Errorf("source section is not correct: %s", script.Source)
 		}
 
 	}
@@ -117,8 +117,8 @@ func TestSetLocalSource(t *testing.T) {
 	if err = setLocalSource(ctx, storage, &script, "run.go", nil, true); err != nil {
 		t.Error(err.Error())
 	}
-	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "run.go").String() {
-		t.Errorf("source section is not correct: %s", script.Body.Source)
+	if script.Source != util.CreateURL("somebucket", SourcePrefix, "run.go").String() {
+		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
 	// Test with unexisting file.
@@ -130,19 +130,27 @@ func TestSetLocalSource(t *testing.T) {
 }
 
 // TestSetSource checks setSource sets correct url from a given filename.
+// Since all source files are archived by tar.gz, if the given filename doesn't
+// have extension .tar.gz, it should be added.
 func TestSetSource(t *testing.T) {
 
+	var script resource.Script
 	conf := &config.Config{
 		Gcp: config.Gcp{
 			Bucket: "somebucket",
 		},
 	}
-	script := &resource.Script{}
 
-	setSource(conf, script, "abc.zip")
+	script = resource.Script{}
+	setSource(conf, &script, "abc.tar.gz")
+	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
+		t.Errorf("source section is not correct: %s", script.Source)
+	}
 
-	if script.Body.Source != util.CreateURL("somebucket", SourcePrefix, "abc.zip").String() {
-		t.Errorf("source section is not correct: %s", script.Body.Source)
+	script = resource.Script{}
+	setSource(conf, &script, "abc")
+	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
+		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
 }
@@ -167,7 +175,7 @@ func TestReplaceURLScheme(t *testing.T) {
 	}
 
 	script := resource.Script{
-		Body: resource.ScriptBody{
+		ScriptBody: resource.ScriptBody{
 			Source: "roadie://some-sourcefile",
 			Data: []string{
 				"roadie://some-datafile",
@@ -182,14 +190,14 @@ func TestReplaceURLScheme(t *testing.T) {
 	}
 
 	// Check results.
-	if script.Body.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
-		t.Error("source section is not correct:", script.Body.Source)
+	if script.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
+		t.Error("source section is not correct:", script.Source)
 	}
-	if script.Body.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
-		t.Error("data section is not correct:", script.Body.Data)
+	if script.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
+		t.Error("data section is not correct:", script.Data)
 	}
-	if script.Body.Result != "gs://test-bucket/.roadie/result/result-file" {
-		t.Error("result section is not correct:", script.Body.Result)
+	if script.Result != "gs://test-bucket/.roadie/result/result-file" {
+		t.Error("result section is not correct:", script.Result)
 	}
 
 }

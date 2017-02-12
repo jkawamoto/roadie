@@ -1,7 +1,7 @@
 //
 // config/clid.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,44 +16,20 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package config
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
 // FromCliContext returns a config object from a context of cli.
 func FromCliContext(c *cli.Context) (conf *Config) {
-
-	conf, _ = c.App.Metadata["config"].(*Config)
-
-	if conf.Project == "" && c.Command.Name != "init" {
-		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
-	}
-
-	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
-		conf.Project = v
-	}
-	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
-		conf.MachineType = v
-	}
-	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
-		conf.Zone = v
-	}
-	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
-		conf.Bucket = v
-	}
-
-	return
-
+	ctx, _ := c.App.Metadata["context"].(context.Context)
+	conf, _ = FromContext(ctx)
+	return conf
 }

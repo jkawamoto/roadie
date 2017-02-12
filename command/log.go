@@ -1,7 +1,7 @@
 //
 // command/log.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,23 +16,22 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/log"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -47,7 +46,7 @@ func CmdLog(c *cli.Context) error {
 
 	// Run the log command.
 	if err := cmdLog(&logOpt{
-		Context:      config.NewContext(context.Background(), config.FromCliContext(c)),
+		Context:      util.GetContext(c),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),

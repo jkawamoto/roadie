@@ -1,7 +1,7 @@
 //
 // command/data.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,22 +16,22 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"runtime"
-	"sync"
 
-	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/cloud"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
 
@@ -47,64 +47,62 @@ func CmdDataPut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
 	filename := c.Args()[0]
 	storedName := ""
 	if n == 2 {
 		storedName = c.Args()[1]
 	}
-	if err := cmdDataPut(conf, filename, storedName); err != nil {
+
+	if err := cmdDataPut(util.GetContext(c), filename, storedName); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
 
 }
 
-func cmdDataPut(conf *config.Config, filename, storedName string) (err error) {
+func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 
 	filenames, err := filepath.Glob(filename)
 	if err != nil {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ctx = config.NewContext(ctx, conf)
-	storage := cloud.NewStorage(ctx)
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	wg, ctx := errgroup.WithContext(ctx)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
 
+	storage := cloud.NewStorage(ctx)
 	for _, target := range filenames {
 
-		wg.Add(1)
-		go func(target string) {
-			defer wg.Done()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-			semaphore <- struct{}{}
-			defer func() {
-				<-semaphore
-			}()
+		case semaphore <- struct{}{}:
+			func(target string) {
+				wg.Go(func() (err error) {
+					defer func() { <-semaphore }()
 
-			var output string
-			if storedName != "" && len(filenames) == 1 {
-				output = storedName
-			} else {
-				output = filepath.Base(target)
-			}
+					var output string
+					if storedName != "" && len(filenames) == 1 {
+						output = storedName
+					} else {
+						output = filepath.Base(target)
+					}
 
-			var location string
-			location, err = storage.UploadFile(DataPrefix, output, target)
-			if err != nil {
-				// TODO: Show warning.
-			}
-			fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					var location string
+					location, err = storage.UploadFile(DataPrefix, output, target)
+					if err != nil {
+						return
+					}
+					fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					return
 
-		}(target)
+				})
 
+			}(target)
+		}
 	}
 
-	return nil
+	return wg.Wait()
 
 }

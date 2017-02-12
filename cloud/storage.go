@@ -1,7 +1,7 @@
 //
-// command/cloud/storage.go
+// cloud/storage.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,13 +16,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package cloud
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -31,9 +32,7 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/context"
-
-	"github.com/cheggaaa/pb"
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command/util"
@@ -154,8 +153,11 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 		}
 	}
 
-	fmt.Fprintln(s.Log, "Downloading...")
-	pool, _ := pb.StartPool()
+	fmt.Fprintln(s.Log, "")
+	pool, err := pb.StartPool()
+	if err != nil {
+		return
+	}
 	defer pool.Stop()
 
 	var wg sync.WaitGroup
@@ -181,7 +183,6 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 
 				wg.Add(1)
 				go func(info *FileInfo, bar *pb.ProgressBar) {
-
 					defer wg.Done()
 
 					filename := filepath.Join(dir, info.Name)
@@ -192,9 +193,7 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 					}
 					defer f.Close()
 
-					buf := bufio.NewWriter(io.MultiWriter(f, bar))
-					defer buf.Flush()
-
+					buf := io.MultiWriter(bufio.NewWriter(f), bar)
 					if err := s.service.Download(info.Path, buf); err != nil {
 						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, err.Error()))
 					} else {

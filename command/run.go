@@ -1,7 +1,7 @@
 //
 // command/run.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -22,21 +22,21 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/cloud"
-	"github.com/jkawamoto/roadie/command/resource"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/resource"
 	"github.com/urfave/cli"
 )
 
@@ -45,54 +45,39 @@ const RoadieSchemePrefix = "roadie://"
 
 // runOpt manages all arguments and flags defined in run command.
 type runOpt struct {
-
 	// Git repository URL which will be cloned as source codes.
 	Git string
-
 	// URL where source codes are stored.
 	URL string
-
 	// Directory or file path which will be used as source codes.
 	Local string
-
 	// File patterns which will be excluded from source codes in a given
 	// directory. This flag will only work when `local` flag is given with
 	// a directory.
 	Exclude []string
-
 	// Filename in source directory in GCS.
 	Source string
-
 	// Path for the script file to be run.
 	ScriptFile string
-
 	// Arguments for the script.
 	ScriptArgs []string
-
 	// Instance name. If not set, named by script file name and current time.
 	InstanceName string
-
 	// Base docker image name.
 	Image string
-
 	// Specify disk size of new instance.
 	DiskSize int64
-
 	// If true, result section will be overwritten so that roadie can manage
 	// result data. Otherwise, users require to manage them by their self.
 	OverWriteResultSection bool
-
 	// If true, created instance will not shutdown automatically. So, users
 	// require to do it by their self. This flag can be useful for debugging.
 	NoShutdown bool
-
 	// If true, do not create any instances but show startup script.
 	// This flag is for debugging.
 	Dry bool
-
 	// The number of times retry roadie-gcp container when GCP's error happens.
 	Retry int64
-
 	// Queue name. If specified, the given script will be enqueued to the queue.
 	Queue string
 }
@@ -128,7 +113,7 @@ func CmdRun(c *cli.Context) error {
 	}
 	if c.Bool("follow") {
 		return cmdLog(&logOpt{
-			Context:      config.NewContext(context.Background(), conf),
+			Context:      util.GetContext(c),
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,
@@ -159,28 +144,40 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Update instance name.
+	// If an instance name is not given, use the default name.
 	if opt.InstanceName != "" {
 		script.InstanceName = strings.ToLower(opt.InstanceName)
 	}
 
 	// Prepare a context.
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), conf))
 	defer cancel()
-	ctx = config.NewContext(ctx, conf)
 
 	// Check a specified bucket exists and create it if not.
 	storage := cloud.NewStorage(ctx)
 	if err = storage.PrepareBucket(); err != nil {
-		return err
+		return
 	}
 
 	// Check source section.
 	switch {
 	case opt.Git != "":
-		setGitSource(script, opt.Git)
+		if script.Source != "" {
+			fmt.Printf(
+				chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
+				script.Filename, opt.Git)
+		}
+		if err = setGitSource(script, opt.Git); err != nil {
+			return
+		}
 
 	case opt.URL != "":
-		setURLSource(script, opt.URL)
+		if script.Source != "" {
+			fmt.Printf(
+				chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
+				script.Filename, opt.URL)
+		}
+		script.Source = opt.URL
 
 	case opt.Local != "":
 		if err = setLocalSource(ctx, storage, script, opt.Local, opt.Exclude, opt.Dry); err != nil {
@@ -190,17 +187,17 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	case opt.Source != "":
 		setSource(conf, script, opt.Source)
 
-	case script.Body.Source == "":
+	case script.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
 	}
 
 	// Check result section.
-	if script.Body.Result == "" || opt.OverWriteResultSection {
+	if script.Result == "" || opt.OverWriteResultSection {
 		location := util.CreateURL(conf.Bucket, ResultPrefix, script.InstanceName)
-		script.Body.Result = location.String()
+		script.Result = location.String()
 	} else {
 		fmt.Printf(
-			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.Filename, script.Body.Result)
+			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), script.Filename, script.Result)
 		fmt.Println(
 			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
 		fmt.Println(
@@ -245,7 +242,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		task := resource.Task{
 			InstanceName: script.InstanceName,
 			Image:        opt.Image,
-			Body:         script.Body,
+			Body:         script.ScriptBody,
 			QueueName:    opt.Queue,
 		}
 
@@ -287,26 +284,30 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.
 // If overwriting source section, it prints warning, too.
-func setGitSource(script *resource.Script, repo string) {
-	if script.Body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a Git repository is given.\n"),
-			script.Filename, repo)
-	}
-	script.Body.Source = repo
-}
+func setGitSource(script *resource.Script, repo string) (err error) {
 
-// setURLSource sets a `url` to source section in a given `script`.
-// Source codes will be downloaded from the URL.
-// The file pointed by the URL must be either executable, zipped, or tarballed
-// file. If overwriting source section, it prints warning, too.
-func setURLSource(script *resource.Script, url string) {
-	if script.Body.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a repository URL is given.\n"),
-			script.Filename, url)
+	if strings.HasPrefix(repo, "git@") {
+		sp := strings.SplitN(repo[len("git@"):], ":", 2)
+		if len(sp) != 2 {
+			return fmt.Errorf("Given git repository URL is invalid: %s", repo)
+		}
+		script.Source = fmt.Sprintf("https://%s/%s", sp[0], sp[1])
+	} else {
+		u, err := url.Parse(repo)
+		if err != nil {
+			return err
+		}
+		if !u.IsAbs() {
+			u.Scheme = "https"
+		}
+		if !strings.HasSuffix(u.Path, ".git") {
+			u.Path += ".git"
+		}
+		script.Source = u.String()
+
 	}
-	script.Body.Source = url
+	return
+
 }
 
 // setLocalSource sets a GCS URL to source section in a given `script` under a given context.
@@ -364,7 +365,7 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 			return
 		}
 	}
-	script.Body.Source = location
+	script.Source = location
 	return nil
 
 }
@@ -374,13 +375,17 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 // config. If overwriting source section, it prints warning, too.
 func setSource(conf *config.Config, script *resource.Script, file string) {
 
+	if !strings.HasSuffix(file, ".tar.gz") {
+		file += ".tar.gz"
+	}
+
 	url := util.CreateURL(conf.Bucket, SourcePrefix, file).String()
-	if script.Body.Source != "" {
+	if script.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("The source section of %s will be overwritten to '%s' since a filename is given.\n"),
 			script.Filename, url)
 	}
-	script.Body.Source = url
+	script.Source = url
 }
 
 // replaceURLScheme replaced URLs which start with "roadie://".
@@ -390,20 +395,20 @@ func replaceURLScheme(conf *config.Config, script *resource.Script) error {
 	offset := len(RoadieSchemePrefix)
 
 	// Replace source section.
-	if strings.HasPrefix(script.Body.Source, RoadieSchemePrefix) {
-		script.Body.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Body.Source[offset:]).String()
+	if strings.HasPrefix(script.Source, RoadieSchemePrefix) {
+		script.Source = util.CreateURL(conf.Bucket, SourcePrefix, script.Source[offset:]).String()
 	}
 
 	// Replace data section.
-	for i, url := range script.Body.Data {
+	for i, url := range script.Data {
 		if strings.HasPrefix(url, RoadieSchemePrefix) {
-			script.Body.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
+			script.Data[i] = util.CreateURL(conf.Bucket, DataPrefix, url[offset:]).String()
 		}
 	}
 
 	// Replace result section.
-	if strings.HasPrefix(script.Body.Result, RoadieSchemePrefix) {
-		script.Body.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Body.Result[offset:]).String()
+	if strings.HasPrefix(script.Result, RoadieSchemePrefix) {
+		script.Result = util.CreateURL(conf.Bucket, ResultPrefix, script.Result[offset:]).String()
 	}
 
 	return nil

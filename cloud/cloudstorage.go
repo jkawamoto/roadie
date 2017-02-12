@@ -1,7 +1,7 @@
 //
-// command/cloud/cloudstorage.go
+// cloud/cloudstorage.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,25 +16,24 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package cloud
 
 import (
-	"bufio"
+	"context"
+	"fmt"
 	"io"
-	"net/http"
 	"net/url"
+	"path/filepath"
+
+	"google.golang.org/api/iterator"
 
 	"github.com/jkawamoto/roadie/config"
 
-	"golang.org/x/net/context"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/storage/v1"
+	"cloud.google.com/go/storage"
 )
-
-const gcsScope = storage.DevstorageFullControlScope
 
 // CloudStorageService object.
 type CloudStorageService struct {
@@ -52,55 +51,68 @@ func NewCloudStorageService(ctx context.Context) *CloudStorageService {
 
 }
 
-// newService creates a new service object.
-func (s *CloudStorageService) newService() (service *storage.Service, err error) {
-
-	var client *http.Client
-	// Create a client.
-	client, err = google.DefaultClient(s.ctx, gcsScope)
-	if err != nil {
-		return
-	}
-	// Create a servicer.
-	return storage.New(client)
-
-}
-
 // CreateIfNotExists creates the bucket if not exists.
 func (s *CloudStorageService) CreateIfNotExists() (err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
 		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
 		return
 	}
 
-	if _, exist := service.Buckets.Get(cfg.Bucket).Do(); exist != nil {
-		_, err = service.Buckets.Insert(cfg.Project, &storage.Bucket{Name: cfg.Bucket}).Do()
+	iter := cli.Buckets(s.ctx, cfg.Project)
+	for {
+		e, err := iter.Next()
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			return err
+		}
+		if e.Name == cfg.Bucket {
+			return nil
+		}
 	}
-	return
+
+	return cli.Bucket(cfg.Bucket).Create(s.ctx, cfg.Project, nil)
 
 }
 
 // Upload a file to a location.
 func (s *CloudStorageService) Upload(in io.Reader, location *url.URL) (err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
 		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
 		return
 	}
 
-	object := &storage.Object{Name: location.Path[1:]}
-	_, err = service.Objects.Insert(cfg.Bucket, object).Media(in).Do()
+	obj := cli.Bucket(cfg.Bucket).Object(location.Path[1:])
+
+	writer := obj.NewWriter(s.ctx)
+	size, err := io.Copy(writer, in)
+	writer.Close()
+	if err != nil {
+		return
+	}
+
+	info, err := obj.Attrs(s.ctx)
+	if err != nil {
+		return
+	} else if info.Size != size {
+		obj.Delete(s.ctx)
+		return fmt.Errorf("Faild to upload object %v", location)
+	}
+
 	return
 
 }
@@ -108,24 +120,34 @@ func (s *CloudStorageService) Upload(in io.Reader, location *url.URL) (err error
 // Download downloads a file and write it to a given writer.
 func (s *CloudStorageService) Download(filename string, out io.Writer) (err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
 		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
 		return
 	}
 
-	res, err := service.Objects.Get(cfg.Bucket, filename).Download()
+	obj := cli.Bucket(cfg.Bucket).Object(filename)
+
+	info, err := obj.Attrs(s.ctx)
 	if err != nil {
 		return
 	}
-	defer res.Body.Close()
 
-	reader := bufio.NewReader(res.Body)
-	_, err = reader.WriteTo(out)
+	reader, err := obj.NewReader(s.ctx)
+	if err != nil {
+		return
+	}
+	defer reader.Close()
+
+	size, err := io.Copy(out, reader)
+	if size != info.Size {
+		return fmt.Errorf("Faild to download object %v", filename)
+	}
 	return
 
 }
@@ -133,21 +155,28 @@ func (s *CloudStorageService) Download(filename string, out io.Writer) (err erro
 // Status returns a file status of an object.
 func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
 		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
 		return
 	}
 
-	res, err := service.Objects.Get(cfg.Bucket, filename).Do()
+	attrs, err := cli.Bucket(cfg.Bucket).Object(filename).Attrs(s.ctx)
 	if err != nil {
 		return
 	}
-	info = NewFileInfo(res)
+
+	info = &FileInfo{
+		Name:        filepath.Base(attrs.Name),
+		Path:        attrs.Name,
+		TimeCreated: attrs.Created,
+		Size:        attrs.Size,
+	}
 	return
 
 }
@@ -156,61 +185,59 @@ func (s *CloudStorageService) Status(filename string) (info *FileInfo, err error
 // Found items will be passed to a given handler item by item.
 // If the handler returns a non nil value, listing up will be canceled.
 // In that case, this function will also return the given value.
-func (s *CloudStorageService) List(prefix string, handler FileInfoHandler) error {
+func (s *CloudStorageService) List(prefix string, handler FileInfoHandler) (err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
-		return err
+		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
-		return err
+		return
 	}
 
-	var token string
+	iter := cli.Bucket(cfg.Bucket).Objects(s.ctx, &storage.Query{
+		Prefix: prefix,
+	})
 	for {
-
-		res, err := service.Objects.List(cfg.Bucket).Prefix(prefix).PageToken(token).Do()
-		if err != nil {
+		attrs, err := iter.Next()
+		if err == iterator.Done {
+			break
+		} else if err != nil {
 			return err
 		}
 
-		for _, item := range res.Items {
-
-			select {
-			case <-s.ctx.Done():
-				return s.ctx.Err()
-			default:
-				if err := handler(NewFileInfo(item)); err != nil {
-					return err
-				}
-			}
-
+		err = handler(&FileInfo{
+			Name:        filepath.Base(attrs.Name),
+			Path:        attrs.Name,
+			TimeCreated: attrs.Created,
+			Size:        attrs.Size,
+		})
+		if err != nil {
+			return err
 		}
-
-		if res.NextPageToken == "" {
-			return nil
-		}
-		token = res.NextPageToken
-
 	}
+
+	return
 
 }
 
 // Delete deletes a given file.
 func (s *CloudStorageService) Delete(name string) (err error) {
 
-	service, err := s.newService()
+	cli, err := storage.NewClient(s.ctx)
 	if err != nil {
 		return
 	}
+	defer cli.Close()
 
 	cfg, err := config.FromContext(s.ctx)
 	if err != nil {
 		return
 	}
 
-	return service.Objects.Delete(cfg.Bucket, name).Do()
+	return cli.Bucket(cfg.Bucket).Object(name).Delete(s.ctx)
 
 }

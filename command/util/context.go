@@ -1,5 +1,5 @@
 //
-// command/config_test.go
+// command/util/context.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,10 +19,16 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package util
 
-import "testing"
+import (
+	"context"
 
-func TestCmdConfig(t *testing.T) {
-	// Write your code here
+	"github.com/urfave/cli"
+)
+
+// GetContext returns a context from cli.Context.
+func GetContext(c *cli.Context) context.Context {
+	ctx, _ := c.App.Metadata["context"].(context.Context)
+	return ctx
 }

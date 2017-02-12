@@ -1,7 +1,7 @@
 //
-// command/cloud/datastore.go
+// cloud/datastore.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,16 +16,17 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package cloud
 
 import (
+	"context"
+
 	"cloud.google.com/go/datastore"
-	"github.com/jkawamoto/roadie/command/resource"
 	"github.com/jkawamoto/roadie/config"
-	"golang.org/x/net/context"
+	"github.com/jkawamoto/roadie/resource"
 	"google.golang.org/api/iterator"
 )
 

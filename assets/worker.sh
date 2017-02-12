@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# startup script for queue worker
+# startup script for queue worker.
 #
-# Copyright (c) 2016 Junpei Kawamoto
+# Copyright (c) 2016-2017 Junpei Kawamoto
 #
 # This file is part of Roadie.
 #
@@ -17,27 +17,31 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+# This script starts fluentd for logging, and then starts queue-manager.
+# After the manager finishes tasks, this script shutdowns the VM.
 #
 cd /root
 
 # Start logging.
-if [ -n "`docker ps -a | grep fluentd`" ]; then
+if [[ -n $(docker ps -a | grep fluentd) ]]; then
   docker rm -f fluentd
 fi
-for i in `seq 10`
-do
-  docker run -d --name fluentd -e "INSTANCE={{.InstanceName}}" -e "USERNAME=roadie" \
+for i in $(seq 10); do
+  docker run -d --name fluentd \
+    -e 'INSTANCE={{.InstanceName}}' -e 'USERNAME=roadie' \
     -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd
   sleep 30s
-  if [ -n "`docker ps -a | grep fluentd`" ]; then
+  if [[ -n $(docker ps -a | grep fluentd) ]]; then
     break
   fi
 done
 sleep 30s
 
 # Prepare Roadie Queue Manager.
-FILENAME=roadie-queue-manager_{{.Version}}_linux_amd64
+readonly FILENAME='roadie-queue-manager_{{.Version}}_linux_amd64'
 wget https://github.com/jkawamoto/roadie-queue-manager/releases/download/v{{.Version}}/${FILENAME}.tar.gz
 tar -zxvf ${FILENAME}.tar.gz
 cd ${FILENAME}

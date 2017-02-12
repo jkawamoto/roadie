@@ -1,7 +1,7 @@
 //
 // command/table.go
 //
-// Copyright (c) 2016 Junpei Kawamoto
+// Copyright (c) 2016-2017 Junpei Kawamoto
 //
 // This file is part of Roadie.
 //
@@ -16,22 +16,20 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 package command
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/command/cloud"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/config"
 )
 
@@ -115,7 +113,6 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
 	s.Start()
 	defer s.Stop()
 
@@ -135,7 +132,7 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 	})
 
 	if err == nil {
-		s.FinalMSG += table.String()
+		s.FinalMSG += table.String() + "\n"
 	}
 	return
 
