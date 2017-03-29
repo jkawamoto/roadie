@@ -30,6 +30,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
 )
 
@@ -125,8 +126,17 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	storage := cloud.NewStorage(ctx)
-	err = storage.ListupFiles(prefix, func(info *cloud.FileInfo) error {
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+	if err != nil {
+		return err
+	}
+	storage := cloud.NewStorage(service, nil)
+
+	err = storage.ListupFiles(ctx, prefix, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})

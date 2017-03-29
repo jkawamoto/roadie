@@ -34,6 +34,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/resource"
@@ -154,10 +155,11 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	defer cancel()
 
 	// Check a specified bucket exists and create it if not.
-	storage := cloud.NewStorage(ctx)
-	if err = storage.PrepareBucket(); err != nil {
-		return
+	service, err := gce.NewStorageService(ctx, conf.Project, conf.Bucket)
+	if err != nil {
+		return err
 	}
+	storage := cloud.NewStorage(service, nil)
 
 	// Check source section.
 	switch {
@@ -360,7 +362,7 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, script *resourc
 	if dry {
 		location = util.CreateURL(conf.Bucket, SourcePrefix, filename).String()
 	} else {
-		location, err = storage.UploadFile(SourcePrefix, filename, uploadingPath)
+		location, err = storage.UploadFile(ctx, SourcePrefix, filename, uploadingPath)
 		if err != nil {
 			return
 		}

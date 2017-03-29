@@ -32,7 +32,9 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -75,8 +77,17 @@ func cmdSourcePut(ctx context.Context, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	storage := cloud.NewStorage(ctx)
-	url, err := storage.UploadFile(SourcePrefix, filename, uploadingPath)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+	if err != nil {
+		return err
+	}
+	storage := cloud.NewStorage(service, nil)
+
+	url, err := storage.UploadFile(ctx, SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return
 	}

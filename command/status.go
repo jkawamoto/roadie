@@ -32,8 +32,10 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -64,8 +66,17 @@ func cmdStatus(ctx context.Context, all bool) error {
 	instances := make(map[string]struct{})
 	if !all {
 
-		storage := cloud.NewStorage(ctx)
-		if err := storage.ListupFiles(ResultPrefix, func(info *cloud.FileInfo) error {
+		cfg, err := config.FromContext(ctx)
+		if err != nil {
+			return err
+		}
+		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+		if err != nil {
+			return err
+		}
+		storage := cloud.NewStorage(service, nil)
+
+		if err := storage.ListupFiles(ctx, ResultPrefix, func(info *cloud.FileInfo) error {
 
 			select {
 			case <-ctx.Done():

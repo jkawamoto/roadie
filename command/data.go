@@ -31,7 +31,9 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -67,10 +69,19 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 		return
 	}
 
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, nil)
+
 	wg, ctx := errgroup.WithContext(ctx)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
 
-	storage := cloud.NewStorage(ctx)
 	for _, target := range filenames {
 
 		select {
@@ -90,7 +101,7 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 					}
 
 					var location string
-					location, err = storage.UploadFile(DataPrefix, output, target)
+					location, err = storage.UploadFile(ctx, DataPrefix, output, target)
 					if err != nil {
 						return
 					}

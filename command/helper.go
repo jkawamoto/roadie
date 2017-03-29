@@ -26,7 +26,9 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -64,8 +66,17 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		storage := cloud.NewStorage(util.GetContext(c))
-		if err := storage.DownloadFiles(prefix, c.String("o"), c.Args()); err != nil {
+		ctx := util.GetContext(c)
+		cfg, err := config.FromContext(ctx)
+		if err != nil {
+			return err
+		}
+		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+		if err != nil {
+			return err
+		}
+		storage := cloud.NewStorage(service, nil)
+		if err := storage.DownloadFiles(ctx, prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
@@ -84,8 +95,17 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		storage := cloud.NewStorage(util.GetContext(c))
-		if err := storage.DeleteFiles(prefix, c.Args()); err != nil {
+		ctx := util.GetContext(c)
+		cfg, err := config.FromContext(ctx)
+		if err != nil {
+			return err
+		}
+		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+		if err != nil {
+			return err
+		}
+		storage := cloud.NewStorage(service, nil)
+		if err := storage.DeleteFiles(ctx, prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 		return nil
