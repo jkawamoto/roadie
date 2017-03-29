@@ -1,5 +1,5 @@
 //
-// cloud/cloudinstance_test.go
+// cloud/gce/instance_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,23 +19,23 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package cloud
+package gce
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
-
-	"github.com/jkawamoto/roadie/config"
 )
 
 func TestNormalizedZone(t *testing.T) {
 
-	gcp := config.Gcp{
-		Project: "sample-project",
-		Zone:    "us-central1-c",
-	}
+	project := "sample-project"
+	region := "us-central1-c"
+	machine := "n1-standard-2"
+	service := NewComputeService(project, region, machine, ioutil.Discard)
 
-	if res := normalizedZone(gcp); res != fmt.Sprintf("projects/%s/zones/%s", gcp.Project, gcp.Zone) {
+	res := service.normalizedZone()
+	if res != fmt.Sprintf("projects/%s/zones/%s", project, region) {
 		t.Error("Normalized zone isn's correct:", res)
 	}
 
@@ -43,13 +43,13 @@ func TestNormalizedZone(t *testing.T) {
 
 func TestNormalizedMachineType(t *testing.T) {
 
-	gcp := config.Gcp{
-		Project:     "sample-project",
-		Zone:        "us-central1-c",
-		MachineType: "n1-standard-2",
-	}
-	if res := normalizedMachineType(gcp); res != fmt.Sprintf("projects/%s/zones/%s/machineTypes/%s", gcp.Project, gcp.Zone, gcp.MachineType) {
+	project := "sample-project"
+	region := "us-central1-c"
+	machine := "n1-standard-2"
+	service := NewComputeService(project, region, machine, ioutil.Discard)
 
+	res := service.normalizedMachineType()
+	if res != fmt.Sprintf("projects/%s/zones/%s/machineTypes/%s", project, region, machine) {
 		t.Error("Normalized machine type isn't correct:", res)
 	}
 

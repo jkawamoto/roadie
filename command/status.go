@@ -166,41 +166,17 @@ func cmdStatusKill(ctx context.Context, instanceName string) (err error) {
 	s.Start()
 	defer s.Stop()
 
-	if err = cloud.DeleteInstance(ctx, instanceName); err != nil {
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	compute := gce.NewComputeService(cfg.Project, cfg.Zone, cfg.MachineType, nil)
+
+	if err = compute.DeleteInstance(ctx, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())
 	}
-	return
-
-}
-
-// runningInstances retuans a set of instance name which still running.
-// It requires a context which has a config object.
-func runningInstances(ctx context.Context) (instances map[string]struct{}, err error) {
-
-	instances = make(map[string]struct{})
-	requester := log.NewCloudLoggingService(ctx)
-
-	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			switch payload.EventSubtype {
-			case log.EventSubtypeInsert:
-				instances[payload.Resource.Name] = struct{}{}
-
-			case log.EventSubtypeDelete:
-				delete(instances, payload.Resource.Name)
-			}
-			return
-		}
-
-	})
-
 	return
 
 }

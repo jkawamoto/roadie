@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
@@ -113,7 +113,8 @@ func CmdConfigTypeSet(c *cli.Context) error {
 		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
 	}
 
-	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
+	s := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
+	list, err := s.AvailableMachineTypes(util.GetContext(c))
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -144,7 +145,8 @@ func CmdConfigTypeList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available machine types.", 2)
 	}
 
-	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
+	s := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
+	list, err := s.AvailableMachineTypes(util.GetContext(c))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}
@@ -205,7 +207,8 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Zone, chalk.Green.Color(v))
 	}
 
-	list, err := cloud.AvailableZones(util.GetContext(c))
+	s := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
+	list, err := s.AvailableRegions(util.GetContext(c))
 	if err == nil {
 		available := false
 		for _, item := range list {
@@ -236,7 +239,8 @@ func CmdConfigZoneList(c *cli.Context) error {
 		return cli.NewExitError("project ID is required to receive available zones.", 2)
 	}
 
-	list, err := cloud.AvailableZones(util.GetContext(c))
+	s := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
+	list, err := s.AvailableRegions(util.GetContext(c))
 	if err != nil {
 		return cli.NewExitError(err.Error(), 1)
 	}

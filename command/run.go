@@ -251,9 +251,11 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		store := cloud.NewDatastore(ctx)
 		store.Insert(time.Now().Unix(), &task)
 
+		compute := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
+
 		var worker bool
 		var instances map[string]struct{}
-		instances, err = runningInstances(ctx)
+		instances, err = compute.Instances(ctx)
 		if err != nil {
 			return
 		}
@@ -430,7 +432,13 @@ func createInstance(ctx context.Context, name, startup string, disk int64, outpu
 	s.Start()
 	defer s.Stop()
 
-	err = cloud.CreateInstance(ctx, name, []*cloud.MetadataItem{
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	service := gce.NewComputeService(cfg.Project, cfg.Zone, cfg.MachineType, nil)
+
+	err = service.CreateInstance(ctx, name, []*cloud.MetadataItem{
 		&cloud.MetadataItem{
 			Key:   "startup-script",
 			Value: startup,

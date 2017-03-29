@@ -24,22 +24,34 @@ package command
 import (
 	"context"
 	"testing"
+
+	"github.com/jkawamoto/roadie/config"
 )
 
 // TestCmdDataPut checks if wrong patterns are given, cmdDataPut returns error,
 // and if empty pattern is given, it do nothing.
 func TestCmdDataPut(t *testing.T) {
 
+	cfg := &config.Config{
+		Gcp: config.Gcp{
+			Project: "test-project",
+			Zone:    "test-zone",
+		},
+	}
+	ctx := config.NewContext(context.Background(), cfg)
+
 	// Test for wrong pattern.
-	if err := cmdDataPut(context.Background(), "[b-a", ""); err == nil {
+	if err := cmdDataPut(ctx, "[b-a", ""); err == nil {
 		t.Error("Give a wrong pattern but no errors occur.")
 	} else {
-		t.Logf("Wrong patter makes an error: %s", err.Error())
+		t.Logf("Wrong pattern makes an error: %s", err.Error())
 	}
 
 	// Test for empty pattern.
-	if err := cmdDataPut(context.Background(), "", ""); err != nil {
-		t.Errorf(err.Error())
+	err := cmdDataPut(ctx, "", "")
+	if err == nil {
+		t.Error("Give a wrong pattern but no errors occur.")
 	}
+	t.Log(err.Error())
 
 }

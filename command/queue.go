@@ -33,6 +33,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/resource"
@@ -96,7 +97,14 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	instances, err := runningInstances(util.GetContext(c))
+	ctx := util.GetContext(c)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+
+	s := gce.NewComputeService(cfg.Project, cfg.Zone, cfg.MachineType, nil)
+	instances, err := s.Instances(ctx)
 	if err != nil {
 		return
 	}
