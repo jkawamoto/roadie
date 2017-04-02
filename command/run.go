@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -126,21 +127,21 @@ func CmdRun(c *cli.Context) error {
 }
 
 // cmdRun implements the main logic of run command.
-func cmdRun(conf *config.Config, opt *runOpt) (err error) {
+func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
 
-	if conf.Project == "" {
+	if cfg.Project == "" {
 		return fmt.Errorf("project ID must be given")
 	}
-	if conf.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), conf.Project)
-		conf.Bucket = conf.Project
+	if cfg.Bucket == "" {
+		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), cfg.Project)
+		cfg.Bucket = cfg.Project
 	}
 
 	script, err := resource.NewScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return
 	}
-	if err = replaceURLScheme(conf, script); err != nil {
+	if err = replaceURLScheme(cfg, script); err != nil {
 		return
 	}
 
@@ -151,11 +152,11 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Prepare a context.
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), conf))
+	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
 	defer cancel()
 
 	// Check a specified bucket exists and create it if not.
-	service, err := gce.NewStorageService(ctx, conf.Project, conf.Bucket)
+	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
 	if err != nil {
 		return err
 	}
@@ -187,7 +188,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		}
 
 	case opt.Source != "":
-		setSource(conf, script, opt.Source)
+		setSource(cfg, script, opt.Source)
 
 	case script.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
@@ -195,7 +196,7 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 
 	// Check result section.
 	if script.Result == "" || opt.OverWriteResultSection {
-		location := util.CreateURL(conf.Bucket, ResultPrefix, script.InstanceName)
+		location := util.CreateURL(cfg.Bucket, ResultPrefix, script.InstanceName)
 		script.Result = location.String()
 	} else {
 		fmt.Printf(
@@ -238,52 +239,50 @@ func cmdRun(conf *config.Config, opt *runOpt) (err error) {
 		}
 
 	} else {
-		// If queue name is given, the script will be enqueued in the queue.
-		// If there are no instances working with the queue,
-		// one instance should be created.
-		task := resource.Task{
-			InstanceName: script.InstanceName,
-			Image:        opt.Image,
-			Body:         script.ScriptBody,
-			QueueName:    opt.Queue,
-		}
+		// // If queue name is given, the script will be enqueued in the queue.
+		// // If there are no instances working with the queue,
+		// // one instance should be created.
+		// task := resource.Task{
+		// 	InstanceName: script.InstanceName,
+		// 	Image:        opt.Image,
+		// 	Body:         script.ScriptBody,
+		// 	QueueName:    opt.Queue,
+		// }
 
-		store := cloud.NewDatastore(ctx)
-		store.Insert(time.Now().Unix(), &task)
-
-		compute := gce.NewComputeService(conf.Project, conf.Zone, conf.MachineType, nil)
-
-		var worker bool
-		var instances map[string]struct{}
-		instances, err = compute.Instances(ctx)
+		var queueManager *gce.QueueService
+		queueManager, err = gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, ioutil.Discard)
 		if err != nil {
 			return
 		}
-		for name := range instances {
-			if strings.HasPrefix(name, task.QueueName) {
-				worker = true
-			}
+		defer queueManager.Close()
+
+		err = queueManager.Enqueue(ctx, opt.Queue, &script.ScriptBody)
+		if err != nil {
+			return
 		}
-		if !worker {
-			// If there are no instance working to the queue, creating it.
-			// Name of the new instance must start with queue name and
-			// current UNIX time should follow it.
-			var startup string
-			instanceName := fmt.Sprintf("%s-%d", opt.Queue, time.Now().Unix())
-			startup, err = resource.WorkerStartup(&resource.WorkerStartupOpt{
-				ProjectID:    conf.Project,
-				Name:         opt.Queue,
-				InstanceName: instanceName,
-				Version:      QueueManagerVersion,
+
+		var workerExist bool
+		err = queueManager.Workers(ctx, opt.Queue, func(name string) error {
+			workerExist = true
+			return nil
+		})
+		if err != nil {
+			return
+		}
+
+		if !workerExist {
+			err = queueManager.CreateWorkers(ctx, opt.Queue, opt.DiskSize, 1, func(name string) error {
+				return nil
 			})
 			if err != nil {
-				return err
+				return
 			}
-			err = createInstance(ctx, instanceName, startup, opt.DiskSize, os.Stderr)
 		}
+
 	}
 
 	return
+
 }
 
 // setGitSource sets a Git repository `repo` to source section in a given `script`.

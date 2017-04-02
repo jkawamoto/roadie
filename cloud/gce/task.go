@@ -1,5 +1,5 @@
 //
-// resource/task.go
+// cloud/gce/task.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,9 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package resource
+package gce
+
+import "github.com/jkawamoto/roadie/resource"
 
 // Task defines a data structure of enqueued script file.
 type Task struct {
@@ -28,7 +30,7 @@ type Task struct {
 	// Image name to be used to create the instance.
 	Image string `yaml:"image,omitempty"`
 	// The script body.
-	Body ScriptBody `yaml:"body,omitempty"`
+	Body *resource.ScriptBody `yaml:"body,omitempty"`
 	// Queue name.
 	QueueName string `yaml:"queue-name"`
 	// If true, NextQueuedScript will skip this script.

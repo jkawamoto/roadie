@@ -1,5 +1,5 @@
 //
-// resource/woker.go
+// cloud/gce/woker.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,11 +19,13 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package resource
+package gce
 
 import (
 	"bytes"
 	"html/template"
+
+	"github.com/jkawamoto/roadie/assets"
 )
 
 // WorkerStartupOpt defines variables for startup script of queue worker instance.
@@ -41,7 +43,7 @@ type WorkerStartupOpt struct {
 // WorkerStartup returns a startup script for worker instances.
 func WorkerStartup(opt *WorkerStartupOpt) (res string, err error) {
 
-	startup, err := Asset("assets/worker.sh")
+	startup, err := assets.Asset("assets/worker.sh")
 	if err != nil {
 		return
 	}

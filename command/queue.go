@@ -22,17 +22,13 @@
 package command
 
 import (
-	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
-	"strings"
-	"time"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
@@ -61,12 +57,28 @@ func CmdQueueList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	store := cloud.NewDatastore(util.GetContext(c))
-	err = store.QueueNames(func(name string) error {
-		fmt.Println(name)
-		return nil
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
+
+	ctx := util.GetContext(c)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	if err != nil {
+		return
+	}
+	defer queueManager.Close()
+
+	return queueManager.Queues(ctx, func(name string) error {
+		_, err := fmt.Println(name)
+		return err
 	})
-	return
 
 }
 
@@ -80,13 +92,30 @@ func CmdQueueShow(c *cli.Context) (err error) {
 	}
 
 	name := c.Args().First()
-	store := cloud.NewDatastore(util.GetContext(c))
-	err = store.FindTasks(name, func(item *resource.Task) error {
-		fmt.Println(item.InstanceName)
+
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
+
+	ctx := util.GetContext(c)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	if err != nil {
+		return
+	}
+	defer queueManager.Close()
+
+	return queueManager.Tasks(ctx, name, func(item *resource.ScriptBody) error {
+		// TODO: Print task information here.
 		return nil
 	})
 
-	return
 }
 
 // CmdQueueInstanceList lists up instances working with a given queue.
@@ -96,45 +125,62 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+	queue := c.Args().First()
+
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
 
 	ctx := util.GetContext(c)
 	cfg, err := config.FromContext(ctx)
 	if err != nil {
 		return
 	}
-
-	s := gce.NewComputeService(cfg.Project, cfg.Zone, cfg.MachineType, nil)
-	instances, err := s.Instances(ctx)
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
 	if err != nil {
 		return
 	}
+	defer queueManager.Close()
 
-	queue := c.Args().First()
-	for name := range instances {
+	return queueManager.Workers(ctx, queue, func(name string) error {
+		_, err := fmt.Println(name)
+		return err
+	})
 
-		if strings.HasPrefix(name, queue) {
-			fmt.Println(name)
-		}
-
-	}
-
-	return nil
 }
 
 // CmdQueueInstanceAdd creates instances working for a given queue.
-func CmdQueueInstanceAdd(c *cli.Context) error {
+func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	cfg := config.FromCliContext(c)
-	ctx := util.GetContext(c)
-
 	queue := c.Args().First()
 	instances := c.Int("instances")
-	size := c.Int64("disk-size")
+	diskSize := c.Int64("disk-size")
+
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
+
+	ctx := util.GetContext(c)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	if err != nil {
+		return
+	}
+	defer queueManager.Close()
 
 	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
@@ -143,36 +189,10 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	bar.Start()
 	defer bar.Finish()
 
-	wg, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < instances; i++ {
-
-		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-			ProjectID:    cfg.Project,
-			InstanceName: name,
-			Name:         queue,
-			Version:      QueueManagerVersion,
-		})
-		if err != nil {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			func(name, startup string) {
-				wg.Go(func() error {
-					defer bar.Increment()
-					return createInstance(ctx, name, startup, size, os.Stderr)
-				})
-			}(name, startup)
-		}
-
-	}
-
-	return wg.Wait()
+	return queueManager.CreateWorkers(ctx, queue, diskSize, instances, func(name string) error {
+		bar.Increment()
+		return nil
+	})
 
 }
 
@@ -184,7 +204,27 @@ func CmdQueueStop(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-	return updatePending(util.GetContext(c), c.Args().First(), true)
+	queue := c.Args().First()
+
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
+
+	ctx := util.GetContext(c)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	if err != nil {
+		return
+	}
+	defer queueManager.Close()
+
+	return queueManager.Stop(ctx, queue)
 
 }
 
@@ -197,17 +237,33 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-
 	queue := c.Args().First()
-	cfg := config.FromCliContext(c)
+
+	var log io.Writer
+	if c.Bool("verbose") {
+		log = os.Stderr
+	} else {
+		log = ioutil.Discard
+	}
+
 	ctx := util.GetContext(c)
-	err = updatePending(ctx, queue, false)
+	cfg, err := config.FromContext(ctx)
+	if err != nil {
+		return
+	}
+	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	if err != nil {
+		return
+	}
+	defer queueManager.Close()
+
+	err = queueManager.Restart(ctx, queue)
 	if err != nil {
 		return
 	}
 
 	instances := c.Int("instances")
-	size := c.Int64("disk-size")
+	diskSize := c.Int64("disk-size")
 
 	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
@@ -216,46 +272,9 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	bar.Start()
 	defer bar.Finish()
 
-	wg, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < instances; i++ {
-
-		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-			ProjectID:    cfg.Project,
-			InstanceName: name,
-			Name:         queue,
-			Version:      QueueManagerVersion,
-		})
-		if err != nil {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			func(name, startup string) {
-				wg.Go(func() error {
-					defer bar.Increment()
-					return createInstance(ctx, name, startup, size, os.Stderr)
-				})
-			}(name, startup)
-		}
-
-	}
-
-	return wg.Wait()
-
-}
-
-// updatePending updates pending attribute of tasks in a given queue.
-func updatePending(ctx context.Context, queue string, pending bool) (err error) {
-
-	store := cloud.NewDatastore(ctx)
-	return store.UpdateTasks(queue, func(task *resource.Task) (*resource.Task, error) {
-		task.Pending = pending
-		return task, nil
+	return queueManager.CreateWorkers(ctx, queue, diskSize, instances, func(name string) error {
+		bar.Increment()
+		return nil
 	})
 
 }
