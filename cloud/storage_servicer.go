@@ -46,9 +46,6 @@ type StorageServicer interface {
 
 	// Delete a given file.
 	Delete(ctx context.Context, filename string) error
-
-	// Close this service.
-	Close() error
 }
 
 // FileInfoHandler is a handler to recieve a file info.

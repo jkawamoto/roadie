@@ -60,7 +60,7 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 			} else if url {
 				table.AddRow(info.Name, fmt.Sprintf(
 					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-					fmt.Sprintf("gs://%s/%s", cfg.Bucket, info.Path))
+					fmt.Sprintf("gs://%s/%s", cfg.GcpConfig.Bucket, info.Path))
 			} else {
 				table.AddRow(info.Name, fmt.Sprintf(
 					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
@@ -100,7 +100,7 @@ func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err erro
 				} else if url {
 					table.AddRow(
 						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", cfg.Bucket, rel))
+						fmt.Sprintf("gs://%s/%s", cfg.GcpConfig.Bucket, rel))
 				} else {
 					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 				}
@@ -130,17 +130,18 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 	if err != nil {
 		return err
 	}
-	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+
+	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 	if err != nil {
 		return err
 	}
-	storage := cloud.NewStorage(service, nil)
+	defer service.Close()
 
+	storage := cloud.NewStorage(service, nil)
 	err = storage.ListupFiles(ctx, prefix, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})
-
 	if err == nil {
 		s.FinalMSG += table.String() + "\n"
 	}

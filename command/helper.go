@@ -71,14 +71,18 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		if err != nil {
 			return err
 		}
-		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+
+		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 		if err != nil {
 			return err
 		}
+		defer service.Close()
+
 		storage := cloud.NewStorage(service, nil)
 		if err := storage.DownloadFiles(ctx, prefix, c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
+
 		return nil
 
 	}
@@ -100,14 +104,18 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		if err != nil {
 			return err
 		}
-		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+
+		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 		if err != nil {
 			return err
 		}
+		defer service.Close()
+
 		storage := cloud.NewStorage(service, nil)
 		if err := storage.DeleteFiles(ctx, prefix, c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
+
 		return nil
 
 	}

@@ -1,5 +1,5 @@
 //
-// resource/doc.go
+// cloud/gce/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,6 +19,18 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// Package resource defines structures about resource files and provides
-// functions to handle them.
-package resource
+package gce
+
+import compute "google.golang.org/api/compute/v1"
+
+const (
+	// GCP's scope.
+	gceScope = compute.CloudPlatformScope
+	// StoragePrefix is a prefix used to store related data into the cloud
+	// storage.
+	StoragePrefix = ".roadie"
+	// DefaultZone defines the default zone.
+	DefaultZone = "us-central1-b"
+	// DefaultMachineType defines the default machine type.
+	DefaultMachineType = "n1-standard-1"
+)

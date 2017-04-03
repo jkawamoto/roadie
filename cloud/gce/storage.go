@@ -27,6 +27,7 @@ import (
 	"io"
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	"google.golang.org/api/iterator"
 
@@ -38,17 +39,15 @@ import (
 // StorageService implements cloud.StorageServicer interface for accessing GCE's
 // cloud storage.
 type StorageService struct {
-
-	// Bucket name this storage service is connected.
-	Bucket string
-
 	// Client of the GCE's storage service.
 	client *storage.Client
+	// Config is a reference for a configuration of GCP.
+	Config *GcpConfig
 }
 
-// NewStorageService creates a new storage accessor to a bucket name under the given contest.
-// The context must have a config.
-func NewStorageService(ctx context.Context, project, bucket string) (s *StorageService, err error) {
+// NewStorageService creates a new storage accessor to a bucket specified in a
+// given configuration.
+func NewStorageService(ctx context.Context, cfg *GcpConfig) (s *StorageService, err error) {
 
 	cli, err := storage.NewClient(ctx)
 	if err != nil {
@@ -56,12 +55,12 @@ func NewStorageService(ctx context.Context, project, bucket string) (s *StorageS
 	}
 	s = &StorageService{
 		client: cli,
-		Bucket: bucket,
+		Config: cfg,
 	}
 
 	// Check the given project has the given bucket; if not, create a new bucket.
 	var attrs *storage.BucketAttrs
-	iter := cli.Buckets(ctx, project)
+	iter := cli.Buckets(ctx, cfg.Project)
 	for {
 		attrs, err = iter.Next()
 		if err == iterator.Done {
@@ -69,12 +68,12 @@ func NewStorageService(ctx context.Context, project, bucket string) (s *StorageS
 		} else if err != nil {
 			return
 		}
-		if attrs.Name == bucket {
+		if attrs.Name == cfg.Bucket {
 			return
 		}
 	}
 
-	err = cli.Bucket(bucket).Create(ctx, project, nil)
+	err = cli.Bucket(cfg.Bucket).Create(ctx, cfg.Project, nil)
 	return
 
 }
@@ -82,7 +81,7 @@ func NewStorageService(ctx context.Context, project, bucket string) (s *StorageS
 // Upload a file to a location.
 func (s *StorageService) Upload(ctx context.Context, filename string, in io.Reader) (uri string, err error) {
 
-	obj := s.client.Bucket(s.Bucket).Object(filename)
+	obj := s.client.Bucket(s.Config.Bucket).Object(filename)
 	writer := obj.NewWriter(ctx)
 	size, err := io.Copy(writer, in)
 	writer.Close()
@@ -100,8 +99,8 @@ func (s *StorageService) Upload(ctx context.Context, filename string, in io.Read
 
 	u := url.URL{
 		Scheme: "gs",
-		Host:   s.Bucket,
-		Path:   filename,
+		Host:   s.Config.Bucket,
+		Path:   filepath.Join(StoragePrefix, filename),
 	}
 	uri = u.String()
 	return
@@ -111,7 +110,7 @@ func (s *StorageService) Upload(ctx context.Context, filename string, in io.Read
 // Download downloads a file and write it to a given writer.
 func (s *StorageService) Download(ctx context.Context, filename string, out io.Writer) (err error) {
 
-	obj := s.client.Bucket(s.Bucket).Object(filename)
+	obj := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, filename))
 	info, err := obj.Attrs(ctx)
 	if err != nil {
 		return
@@ -134,7 +133,7 @@ func (s *StorageService) Download(ctx context.Context, filename string, out io.W
 // GetFileInfo returns a file status of an object.
 func (s *StorageService) GetFileInfo(ctx context.Context, filename string) (info *cloud.FileInfo, err error) {
 
-	attrs, err := s.client.Bucket(s.Bucket).Object(filename).Attrs(ctx)
+	attrs, err := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, filename)).Attrs(ctx)
 	if err != nil {
 		return
 	}
@@ -155,8 +154,8 @@ func (s *StorageService) GetFileInfo(ctx context.Context, filename string) (info
 // In that case, this function will also return the given value.
 func (s *StorageService) List(ctx context.Context, prefix string, handler cloud.FileInfoHandler) (err error) {
 
-	iter := s.client.Bucket(s.Bucket).Objects(ctx, &storage.Query{
-		Prefix: prefix,
+	iter := s.client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
+		Prefix: filepath.Join(StoragePrefix, prefix),
 	})
 	for {
 		attrs, err := iter.Next()
@@ -166,8 +165,14 @@ func (s *StorageService) List(ctx context.Context, prefix string, handler cloud.
 			return err
 		}
 
+		var base string
+		if strings.HasSuffix(attrs.Name, "/") {
+			base = ""
+		} else {
+			base = filepath.Base(attrs.Name)
+		}
 		err = handler(&cloud.FileInfo{
-			Name:        filepath.Base(attrs.Name),
+			Name:        base,
 			Path:        attrs.Name,
 			TimeCreated: attrs.Created,
 			Size:        attrs.Size,
@@ -183,7 +188,10 @@ func (s *StorageService) List(ctx context.Context, prefix string, handler cloud.
 
 // Delete deletes a given file.
 func (s *StorageService) Delete(ctx context.Context, filename string) (err error) {
-	return s.client.Bucket(s.Bucket).Object(filename).Delete(ctx)
+	return s.client.
+		Bucket(s.Config.Bucket).
+		Object(filepath.Join(StoragePrefix, filename)).
+		Delete(ctx)
 }
 
 // Close the connection to a GCE's storage server.

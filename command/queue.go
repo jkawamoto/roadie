@@ -32,7 +32,7 @@ import (
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/jkawamoto/roadie/resource"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -69,7 +69,7 @@ func CmdQueueList(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}
@@ -105,15 +105,15 @@ func CmdQueueShow(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}
 	defer queueManager.Close()
 
-	return queueManager.Tasks(ctx, name, func(item *resource.ScriptBody) error {
-		// TODO: Print task information here.
-		return nil
+	return queueManager.Tasks(ctx, name, func(item *script.Script) error {
+		_, err := fmt.Println(item.InstanceName)
+		return err
 	})
 
 }
@@ -139,7 +139,7 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}
@@ -176,7 +176,7 @@ func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}
@@ -218,7 +218,7 @@ func CmdQueueStop(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}
@@ -251,7 +251,7 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, cfg.Project, cfg.Zone, cfg.MachineType, log)
+	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
 	if err != nil {
 		return
 	}

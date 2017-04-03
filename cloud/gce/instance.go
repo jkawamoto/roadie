@@ -25,7 +25,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
+	"net/url"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,14 +37,10 @@ import (
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/log"
+	"github.com/jkawamoto/roadie/script"
 
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
-)
-
-const (
-	// GCP's scope.
-	gceScope = compute.CloudPlatformScope
 )
 
 var (
@@ -49,24 +48,23 @@ var (
 	instanceStarted = fmt.Errorf("Target instance has been started.")
 )
 
+// ComputeService implements cloud.InstanceManager based on Google Cloud
+// Platform.
 type ComputeService struct {
-	Project     string
-	Region      string
-	MachineType string
-	Log         io.Writer
+	Config *GcpConfig
+	Log    io.Writer
 }
 
-func NewComputeService(project, region, machine string, log io.Writer) *ComputeService {
+// NewComputeService creates a new compute service client.
+func NewComputeService(cfg *GcpConfig, log io.Writer) *ComputeService {
 
 	if log == nil {
-		log = os.Stderr
+		log = ioutil.Discard
 	}
 
 	return &ComputeService{
-		Project:     project,
-		Region:      region,
-		MachineType: machine,
-		Log:         log,
+		Config: cfg,
+		Log:    log,
 	}
 }
 
@@ -92,7 +90,7 @@ func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.
 		return
 	}
 
-	res, err := service.Zones.List(s.Project).Do()
+	res, err := service.Zones.List(s.Config.Project).Do()
 	if err != nil {
 		return
 	}
@@ -116,7 +114,7 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 		return
 	}
 
-	res, err := service.MachineTypes.List(s.Project, s.Region).Do()
+	res, err := service.MachineTypes.List(s.Config.Project, s.Config.Zone).Do()
 	if err != nil {
 		return
 	}
@@ -132,26 +130,87 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 
 }
 
-// CreateInstance creates a new instance based on the bilder's configuration.
-func (s *ComputeService) CreateInstance(ctx context.Context, name string, metadata []*cloud.MetadataItem, disksize int64) (err error) {
+// CreateInstance creates a new instance based on the builder's configuration.
+func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *script.Script, disksize int64) (err error) {
+
+	// Update URLs of which scheme is `roadie://` to `gs://`.
+	s.replaceURLScheme(task)
+
+	startup, err := s.createStartupScript(name, task)
+	if err != nil {
+		return
+	}
+	return s.createInstance(ctx, name, startup, disksize)
+
+}
+
+// DeleteInstance deletes a given named instance.
+func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err error) {
 
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
 	}
 
-	matadataItems := make([]*compute.MetadataItems, len(metadata))
-	for i, v := range metadata {
-		matadataItems[i] = &compute.MetadataItems{
-			Key:   v.Key,
-			Value: &v.Value,
+	res, err := service.Instances.Delete(s.Config.Project, s.Config.Zone, name).Do()
+	if err == nil {
+		if res.StatusMessage != "" {
+			fmt.Fprintln(s.Log, res.StatusMessage)
 		}
+		for _, v := range res.Warnings {
+			fmt.Fprintln(s.Log, chalk.Red.Color(v.Message))
+		}
+	}
+	return
+}
+
+// Instances returns a list of running instances
+func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
+
+	instances = make(map[string]struct{})
+	requester := log.NewCloudLoggingService(ctx)
+
+	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) error {
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		switch payload.EventSubtype {
+		case log.EventSubtypeInsert:
+			instances[payload.Resource.Name] = struct{}{}
+
+		case log.EventSubtypeDelete:
+			delete(instances, payload.Resource.Name)
+		}
+		return nil
+
+	})
+
+	return
+}
+
+// CreateInstance creates a new instance based on the builder's configuration.
+func (s *ComputeService) createInstance(ctx context.Context, name string, startup string, disksize int64) (err error) {
+
+	service, err := s.newService(ctx)
+	if err != nil {
+		return
+	}
+
+	matadataItems := []*compute.MetadataItems{
+		&compute.MetadataItems{
+			Key:   "startup-script",
+			Value: &startup,
+		},
 	}
 
 	blueprint := compute.Instance{
 		Name:        strings.ToLower(name),
-		Zone:        s.normalizedZone(),
-		MachineType: s.normalizedMachineType(),
+		Zone:        s.Config.normalizedZone(),
+		MachineType: s.Config.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
 			&compute.AttachedDisk{
 				Type:       "PERSISTENT",
@@ -160,7 +219,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
-					DiskType:    s.normalizedZone() + "/diskTypes/pd-standard",
+					DiskType:    s.Config.diskType(),
 					DiskSizeGb:  disksize,
 				},
 			},
@@ -168,7 +227,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 		CanIpForward: false,
 		NetworkInterfaces: []*compute.NetworkInterface{
 			&compute.NetworkInterface{
-				Network: "projects/" + s.Project + "/global/networks/default",
+				Network: s.Config.network(),
 				AccessConfigs: []*compute.AccessConfig{
 					&compute.AccessConfig{
 						Name: "External NAT",
@@ -195,7 +254,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 		},
 	}
 
-	res, err := service.Instances.Insert(s.Project, s.Region, &blueprint).Do()
+	res, err := service.Instances.Insert(s.Config.Project, s.Config.Zone, &blueprint).Do()
 	if err != nil {
 		return
 	}
@@ -243,62 +302,71 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 
 }
 
-// DeleteInstance deletes a given named instance.
-func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err error) {
+// replaceURLScheme replaced URLs which start with "roadie://".
+// Those URLs are modified to "gs://<bucketname>/.roadie/".
+func (s *ComputeService) replaceURLScheme(task *script.Script) {
 
-	service, err := s.newService(ctx)
-	if err != nil {
-		return
+	offset := len(script.RoadieSchemePrefix)
+
+	// Replace source section.
+	if strings.HasPrefix(task.Source, script.RoadieSchemePrefix) {
+		task.Source = s.createURL(script.SourcePrefix, task.Source[offset:])
 	}
 
-	res, err := service.Instances.Delete(s.Project, s.Region, name).Do()
-	if err == nil {
-		if res.StatusMessage != "" {
-			fmt.Fprintln(s.Log, res.StatusMessage)
-		}
-		for _, v := range res.Warnings {
-			fmt.Fprintln(s.Log, chalk.Red.Color(v.Message))
+	// Replace data section.
+	for i, url := range task.Data {
+		if strings.HasPrefix(url, script.RoadieSchemePrefix) {
+			task.Data[i] = s.createURL(script.DataPrefix, url[offset:])
 		}
 	}
-	return
+
+	// Replace result section.
+	if strings.HasPrefix(task.Result, script.RoadieSchemePrefix) {
+		task.Result = s.createURL(script.ResultPrefix, task.Result[offset:])
+	}
+
 }
 
-// Instances returns a list of running instances
-func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
+// createURL creates a valid URL for uploaing object.
+func (s *ComputeService) createURL(group, name string) string {
 
-	instances = make(map[string]struct{})
-	requester := log.NewCloudLoggingService(ctx)
+	u := url.URL{
+		Scheme: "gs",
+		Host:   s.Config.Bucket,
+		Path:   filepath.Join("/", StoragePrefix, group, name),
+	}
+	return u.String()
 
-	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) error {
+}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
+// createStartupScript creates a start up script with a given name and task.
+func (s *ComputeService) createStartupScript(name string, task *script.Script) (startup string, err error) {
+
+	retry := 10
+	options := ""
+	for _, v := range task.Options {
+		switch {
+		case strings.HasPrefix(v, "retry:"):
+			retry, err = strconv.Atoi(v[len("retry:"):])
+			if err != nil {
+				retry = 10
+			}
+
 		default:
+			options += "--" + v
+
 		}
+	}
 
-		switch payload.EventSubtype {
-		case log.EventSubtypeInsert:
-			instances[payload.Resource.Name] = struct{}{}
-
-		case log.EventSubtypeDelete:
-			delete(instances, payload.Resource.Name)
-		}
-		return nil
-
+	startup, err = Startup(&StartupOpt{
+		Name:    name,
+		Script:  task.String(),
+		Options: options,
+		Image:   task.Image,
+		Retry:   retry,
 	})
-
 	return
-}
 
-// normalizedZone returns the normalized zone string of Zone property.
-func (s *ComputeService) normalizedZone() string {
-	return "projects/" + s.Project + "/zones/" + s.Region
-}
-
-// normalizedMachineType returns the normalized instance type of MachineType property.
-func (s *ComputeService) normalizedMachineType() string {
-	return s.normalizedZone() + "/machineTypes/" + s.MachineType
 }
 
 // Wait a given duration.
@@ -306,7 +374,7 @@ func wait(d time.Duration) <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
 		time.Sleep(d)
-		ch <- struct{}{}
+		close(ch)
 	}()
 	return ch
 }

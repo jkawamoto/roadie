@@ -138,10 +138,6 @@ func (s *MockStorageService) Delete(ctx context.Context, filename string) error 
 	return nil
 }
 
-func (s *MockStorageService) Close() error {
-	return nil
-}
-
 // Test uploading a file.
 func TestUploadFile(t *testing.T) {
 
@@ -151,7 +147,6 @@ func TestUploadFile(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	_, err := s.UploadFile(ctx, prefix, filename, filename)
 	if err != nil {
@@ -180,7 +175,6 @@ func TestUploadFileWithoutName(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	// Omit to give a file name to be used to store the file.
 	_, err := s.UploadFile(ctx, prefix, "", filename)
@@ -209,7 +203,6 @@ func TestUploadInvalidFile(t *testing.T) {
 
 	ctx := context.Background()
 	s := NewStorage(NewMockStorageService(), ioutil.Discard)
-	defer s.Close()
 
 	_, err := s.UploadFile(ctx, prefix, "", filename)
 	if err == nil {
@@ -229,7 +222,6 @@ func TestUploadWithServiceFailuer(t *testing.T) {
 	service.failure = true
 
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	_, err := s.UploadFile(ctx, prefix, "", filename)
 	if err == nil {
@@ -247,7 +239,6 @@ func TestCancelUpload(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	s := NewStorage(NewMockStorageService(), ioutil.Discard)
-	defer s.Close()
 
 	cancel()
 
@@ -265,7 +256,6 @@ func TestListupFiles(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/a"] = "a"
@@ -300,7 +290,6 @@ func TestListupFilesWithServiceFailuer(t *testing.T) {
 	service.storage["test2/d"] = "d"
 
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	err := s.ListupFiles(ctx, "test1", func(info *FileInfo) error {
 		return nil
@@ -319,7 +308,6 @@ func TestDownloadFiles(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	temp, err := ioutil.TempDir("", "TestDownloadFiles")
 	if err != nil {
@@ -369,7 +357,6 @@ func TestDownloadFilesToNotExistingDir(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	temp := filepath.Join(os.TempDir(), "TestDownloadFilesToNotExistingDir")
 	defer os.RemoveAll(temp)
@@ -418,7 +405,6 @@ func TestDownloadFilesWithServicerFailure(t *testing.T) {
 	service.failure = true
 
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	temp, err := ioutil.TempDir("", "TestDownloadFiles")
 	if err != nil {
@@ -446,7 +432,6 @@ func TestCancelDownloadFiles(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	temp, err := ioutil.TempDir("", "TestDownloadFiles")
 	if err != nil {
@@ -474,7 +459,6 @@ func TestDeleteFiles(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"
@@ -505,7 +489,6 @@ func TestDeleteFilesWithServicerFailure(t *testing.T) {
 	service.failure = true
 
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"
@@ -528,7 +511,6 @@ func TestCancelDeleteFiles(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"
@@ -552,7 +534,6 @@ func TestPrintFileBody(t *testing.T) {
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"
@@ -586,7 +567,6 @@ func TestPrintFileBodyWithServicerFailure(t *testing.T) {
 	service.failure = true
 
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"
@@ -609,7 +589,6 @@ func TestCancelPrintFileBody(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
-	defer s.Close()
 
 	prefix := "test1"
 	service.storage["test1/aaa.log"] = "a"

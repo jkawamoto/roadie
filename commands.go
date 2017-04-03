@@ -27,6 +27,7 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
@@ -52,6 +53,7 @@ var GlobalFlags = []cli.Flag{
 
 // Commands manage sub commands.
 var Commands = []cli.Command{
+	// TODO: run command should be splited to run and queue commands.
 	{
 		Name:  "init",
 		Usage: "initialize roadie.",
@@ -436,7 +438,7 @@ files belonging to the instance.`,
 					"To reuse them, use URL like 'gs://<bucket name>/.roadie/source/<filename>'. " +
 					"Otherwise, those files are not used automatically. To reduce storage size, use delete command.",
 				ArgsUsage: " ",
-				Action:    command.GenerateListAction(command.SourcePrefix),
+				Action:    command.GenerateListAction(script.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -454,7 +456,7 @@ files belonging to the instance.`,
 				Description: "delete source files which match given file names. " +
 					"File names accept wild card characters. ",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateDeleteAction(command.SourcePrefix),
+				Action:    command.GenerateDeleteAction(script.SourcePrefix),
 			},
 			{
 				Name:  "get",
@@ -466,7 +468,7 @@ files belonging to the instance.`,
 					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateGetAction(command.SourcePrefix),
+				Action:    command.GenerateGetAction(script.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
@@ -504,7 +506,7 @@ files belonging to the instance.`,
 				Usage:       "show lists of data.",
 				Description: "List up data files. This command does not take any arguments.",
 				ArgsUsage:   " ",
-				Action:      command.GenerateListAction(command.DataPrefix),
+				Action:      command.GenerateListAction(script.DataPrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -533,7 +535,7 @@ files belonging to the instance.`,
 				Description: "delete data files which match given file names. " +
 					"File names accept wild card characters. ",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateDeleteAction(command.DataPrefix),
+				Action:    command.GenerateDeleteAction(script.DataPrefix),
 			},
 			{
 				Name:  "get",
@@ -545,7 +547,7 @@ files belonging to the instance.`,
 					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateGetAction(command.DataPrefix),
+				Action:    command.GenerateGetAction(script.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",

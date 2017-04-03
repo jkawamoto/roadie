@@ -1,5 +1,5 @@
 //
-// cloud/gce/task.go
+// script/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,21 +19,5 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
-
-import "github.com/jkawamoto/roadie/script"
-
-// Task defines a data structure of enqueued script file.
-type Task struct {
-	// Name of this task.
-	Name string `yaml:"name,omitempty"`
-	// Image name to be used to create the instance.
-	Image string `yaml:"image,omitempty"`
-	// The script body.
-	Script *script.Script `yaml:"script,omitempty"`
-	// Queue name.
-	QueueName string `yaml:"queue-name"`
-	// If true, NextQueuedScript will skip this script.
-	// In order to stop a queue, this flag will be used.
-	Pending bool `yaml:"pending"`
-}
+// Package script defines the structure of script files.
+package script

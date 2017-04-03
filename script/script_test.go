@@ -1,5 +1,5 @@
 //
-// resource/script_test.go
+// script/script_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package resource
+package script
 
 import (
 	"os"
@@ -86,10 +86,6 @@ func TestLoadScript(t *testing.T) {
 	}
 
 	// Tests
-	if script.Filename != filename {
-		t.Errorf("Filename %s is not equal to %s.", script.Filename, filename)
-	}
-
 	if script.InstanceName != strings.ToLower(script.InstanceName) {
 		t.Errorf("Instance name %s has upper cases.", script.InstanceName)
 	}

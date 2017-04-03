@@ -34,11 +34,9 @@ import (
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
-
-// DataPrefix defines a prefix to store data files.
-const DataPrefix = ".roadie/data"
 
 // CmdDataPut uploads a given file.
 func CmdDataPut(c *cli.Context) error {
@@ -73,10 +71,11 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 	if err != nil {
 		return
 	}
-	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 	if err != nil {
 		return
 	}
+	defer service.Close()
 	storage := cloud.NewStorage(service, nil)
 
 	wg, ctx := errgroup.WithContext(ctx)
@@ -101,7 +100,7 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 					}
 
 					var location string
-					location, err = storage.UploadFile(ctx, DataPrefix, output, target)
+					location, err = storage.UploadFile(ctx, script.DataPrefix, output, target)
 					if err != nil {
 						return
 					}

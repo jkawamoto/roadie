@@ -1,5 +1,5 @@
 //
-// resource/script.go
+// script/script.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package resource
+package script
 
 import (
 	"bytes"
@@ -31,11 +31,23 @@ import (
 	"time"
 
 	"github.com/jkawamoto/roadie/command/util"
+
 	"gopkg.in/yaml.v2"
 )
 
-// ScriptBody defines the roadie script body.
-type ScriptBody struct {
+const (
+	// RoadieSchemePrefix is the prefix of roadie scheme URLs.
+	RoadieSchemePrefix = "roadie://"
+	// SourcePrefix defines a prefix to store source files.
+	SourcePrefix = "source"
+	// DataPrefix defines a prefix to store data files.
+	DataPrefix = "data"
+	// ResultPrefix defines a prefix to store result files.
+	ResultPrefix = "result"
+)
+
+// Script defines roadie's script format.
+type Script struct {
 	// List of apt packages to be installed.
 	APT []string `yaml:"apt,omitempty"`
 	// URL to the source code.
@@ -48,16 +60,14 @@ type ScriptBody struct {
 	Result string `yaml:"result,omitempty"`
 	// List of glob pattern, files matches of one of them are uploaded as resuts.
 	Upload []string `yaml:"upload,omitempty"`
-}
+	// List of option flags.
+	Options []string `yaml:"options,omitempty"`
 
-// Script defines a data structure of script file.
-type Script struct {
-	// ScriptBody.
-	ScriptBody
-	// Filename of the script.
-	Filename string
+	// ** Following attributes are given by roadie. **
 	// InstanceName to run the script.
-	InstanceName string
+	InstanceName string `yaml:"instance_name,omitempty"`
+	// Image is a docker image name used to run this script.
+	Image string
 }
 
 // NewScript loads a given script file and apply arguments.
@@ -92,28 +102,27 @@ func NewScript(filename string, args []string) (res *Script, err error) {
 	}
 
 	// Construct a script object.
+	res = &Script{}
+
+	// Unmarshal YAML file.
+	if err = yaml.Unmarshal(buf.Bytes(), res); err != nil {
+		return
+	}
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "localhost"
 	} else if strings.Contains(hostname, ".") {
 		hostname = strings.Split(hostname, ".")[0]
 	}
-
-	res = &Script{
-		Filename: filename,
-		InstanceName: strings.ToLower(fmt.Sprintf(
-			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405"))),
-	}
-
-	// Unmarshal YAML file.
-	if err = yaml.Unmarshal(buf.Bytes(), &res.ScriptBody); err != nil {
-		return
-	}
+	res.InstanceName = strings.ToLower(fmt.Sprintf(
+		"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")))
 	return
+
 }
 
 // String converts this script to a string.
 func (s *Script) String() string {
-	res, _ := yaml.Marshal(s.ScriptBody)
+	res, _ := yaml.Marshal(s)
 	return string(res)
 }

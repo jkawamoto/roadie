@@ -1,5 +1,5 @@
 //
-// resource/startup.go
+// cloud/gce/startup.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,14 +19,13 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package resource
+package gce
 
 import (
 	"bytes"
-	"fmt"
 	"text/template"
 
-	"github.com/ttacon/chalk"
+	"github.com/jkawamoto/roadie/assets"
 )
 
 // StartupOpt defines variables used in startup template.
@@ -40,15 +39,14 @@ type StartupOpt struct {
 	// Container image.
 	Image string
 	// Number of retry.
-	Retry int64
+	Retry int
 }
 
 // Startup constructs a startup script by given options.
 func Startup(opt *StartupOpt) (res string, err error) {
 
-	startup, err := Asset("assets/startup.sh")
+	startup, err := assets.Asset("assets/startup.sh")
 	if err != nil {
-		fmt.Println(chalk.Red.Color("Startup script was not found."))
 		return
 	}
 

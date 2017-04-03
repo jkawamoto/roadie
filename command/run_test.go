@@ -23,56 +23,68 @@ package command
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/jkawamoto/roadie/resource"
+	"github.com/jkawamoto/roadie/script"
 )
 
-func TestCmdRun(t *testing.T) {
-	// t.Error("Test is not implemented.")
+type MockStorageServicer struct{}
 
-	// With instance name/without instance name
+// Upload a given stream with a given file name; returned string represents
+// a URI assosiated with the uploaded file.
+func (s *MockStorageServicer) Upload(ctx context.Context, filename string, in io.Reader) (string, error) {
+	return script.RoadieSchemePrefix + filename, nil
+}
 
-	// with correct script / no script
+// Download a file associated with a given file name and write it to a given
+// writer.
+func (s *MockStorageServicer) Download(ctx context.Context, filename string, out io.Writer) error {
+	return nil
+}
 
-	// Get flag.
+// GetFileInfo gets file information of a given filename.
+func (s *MockStorageServicer) GetFileInfo(ctx context.Context, filename string) (*cloud.FileInfo, error) {
+	return nil, nil
+}
 
-	// URL flag.
+// List up files matching a given prefix.
+// It takes a handler; information of found files are sent to it.
+func (s *MockStorageServicer) List(ctx context.Context, prefix string, handler cloud.FileInfoHandler) error {
+	return nil
+}
 
-	// Local flag.
-
-	// Source flag.
-
-	// OverWriteResultSection
-
-	// shutdown option
-
+// Delete a given file.
+func (s *MockStorageServicer) Delete(ctx context.Context, filename string) error {
+	return nil
 }
 
 // TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
 
-	var script resource.Script
+	var s script.Script
 
-	script = resource.Script{}
-	setGitSource(&script, "https://github.com/jkawamoto/roadie.git")
-	if script.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", script.Source)
+	s = script.Script{}
+	setGitSource(&s, "https://github.com/jkawamoto/roadie.git")
+	if s.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
-	script = resource.Script{}
-	setGitSource(&script, "git@github.com:jkawamoto/roadie.git")
-	if script.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", script.Source)
+	s = script.Script{}
+	setGitSource(&s, "git@github.com:jkawamoto/roadie.git")
+	if s.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
-	script = resource.Script{}
-	setGitSource(&script, "github.com/jkawamoto/roadie")
-	if script.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", script.Source)
+	s = script.Script{}
+	setGitSource(&s, "github.com/jkawamoto/roadie")
+	if s.Source != "https://github.com/jkawamoto/roadie.git" {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
 }
@@ -83,46 +95,46 @@ func TestSetGitSource(t *testing.T) {
 func TestSetLocalSource(t *testing.T) {
 
 	conf := &config.Config{
-		Gcp: config.Gcp{
+		GcpConfig: gce.GcpConfig{
 			Bucket: "somebucket",
 		},
 	}
 	ctx := config.NewContext(context.Background(), conf)
-	storage := &cloud.Storage{}
+	storage := cloud.NewStorage(&MockStorageServicer{}, ioutil.Discard)
 
-	var script resource.Script
+	var s script.Script
 	var err error
 
 	// Test with directories.
 	for _, target := range []string{".", "../command"} {
 
-		script = resource.Script{
+		s = script.Script{
 			InstanceName: "test",
 		}
 
 		t.Logf("Trying target %s", target)
-		if err = setLocalSource(ctx, storage, &script, target, nil, true); err != nil {
+		if err = setLocalSource(ctx, storage, &s, target, nil, true); err != nil {
 			t.Error(err.Error())
 		}
-		if script.Source != util.CreateURL("somebucket", SourcePrefix, "test.tar.gz").String() {
-			t.Errorf("source section is not correct: %s", script.Source)
+		if !strings.HasSuffix(s.Source, "test.tar.gz") {
+			t.Errorf("source section is not correct: %s", s.Source)
 		}
 
 	}
 
 	// Test with a file.
-	script = resource.Script{
+	s = script.Script{
 		InstanceName: "test",
 	}
-	if err = setLocalSource(ctx, storage, &script, "run.go", nil, true); err != nil {
+	if err = setLocalSource(ctx, storage, &s, "run.go", nil, true); err != nil {
 		t.Error(err.Error())
 	}
-	if script.Source != util.CreateURL("somebucket", SourcePrefix, "run.go").String() {
-		t.Errorf("source section is not correct: %s", script.Source)
+	if !strings.HasSuffix(s.Source, "run.go") {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
 	// Test with unexisting file.
-	if err = setLocalSource(ctx, storage, &script, "abcd.efg", nil, true); err == nil {
+	if err = setLocalSource(ctx, storage, &s, "abcd.efg", nil, true); err == nil {
 		t.Error("Give an unexisting path but no error occurs.")
 	}
 	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())
@@ -134,70 +146,23 @@ func TestSetLocalSource(t *testing.T) {
 // have extension .tar.gz, it should be added.
 func TestSetSource(t *testing.T) {
 
-	var script resource.Script
+	var s script.Script
 	conf := &config.Config{
-		Gcp: config.Gcp{
+		GcpConfig: gce.GcpConfig{
 			Bucket: "somebucket",
 		},
 	}
 
-	script = resource.Script{}
-	setSource(conf, &script, "abc.tar.gz")
-	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
-		t.Errorf("source section is not correct: %s", script.Source)
+	s = script.Script{}
+	setSource(conf, &s, "abc.tar.gz")
+	if s.Source != script.RoadieSchemePrefix+"abc.tar.gz" {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
-	script = resource.Script{}
-	setSource(conf, &script, "abc")
-	if script.Source != util.CreateURL("somebucket", SourcePrefix, "abc.tar.gz").String() {
-		t.Errorf("source section is not correct: %s", script.Source)
-	}
-
-}
-
-// TestReplaceURLScheme checks that function replaces URLs which start with "roadie://".
-// to "gs://<bucketname>/.roadie/".
-func TestReplaceURLScheme(t *testing.T) {
-
-	type ScriptBody struct {
-		APT    []string `yaml:"apt,omitempty"`
-		Source string   `yaml:"source,omitempty"`
-		Data   []string `yaml:"data,omitempty"`
-		Run    []string `yaml:"run,omitempty"`
-		Result string   `yaml:"result,omitempty"`
-		Upload []string `yaml:"upload,omitempty"`
-	}
-
-	conf := config.Config{
-		Gcp: config.Gcp{
-			Bucket: "test-bucket",
-		},
-	}
-
-	script := resource.Script{
-		ScriptBody: resource.ScriptBody{
-			Source: "roadie://some-sourcefile",
-			Data: []string{
-				"roadie://some-datafile",
-			},
-			Result: "roadie://result-file",
-		},
-	}
-
-	// Run.
-	if err := replaceURLScheme(&conf, &script); err != nil {
-		t.Fatal("replaceURLScheme returns an error:", err.Error())
-	}
-
-	// Check results.
-	if script.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
-		t.Error("source section is not correct:", script.Source)
-	}
-	if script.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
-		t.Error("data section is not correct:", script.Data)
-	}
-	if script.Result != "gs://test-bucket/.roadie/result/result-file" {
-		t.Error("result section is not correct:", script.Result)
+	s = script.Script{}
+	setSource(conf, &s, "abc")
+	if s.Source != script.RoadieSchemePrefix+"abc.tar.gz" {
+		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
 }

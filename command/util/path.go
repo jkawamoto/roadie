@@ -22,7 +22,6 @@
 package util
 
 import (
-	"net/url"
 	"path/filepath"
 )
 
@@ -33,16 +32,5 @@ func Basename(filename string) string {
 	bodySize := len(filename) - len(ext)
 
 	return filepath.Base(filename[:bodySize])
-
-}
-
-// CreateURL creates a valid URL for uploaing object.
-func CreateURL(bucket, group, name string) *url.URL {
-
-	return &url.URL{
-		Scheme: "gs",
-		Host:   bucket,
-		Path:   filepath.Join("/", group, name),
-	}
 
 }

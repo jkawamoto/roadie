@@ -41,24 +41,24 @@ func PrepareCommand(c *cli.Context) (err error) {
 	}
 
 	// Update configuration.
-	if conf.Project == "" && c.Command.Name != "init" {
+	if conf.GcpConfig.Project == "" && c.Command.Name != "init" {
 		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
 	}
 	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
-		conf.Project = v
+		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.GcpConfig.Project, chalk.Green.Color(v))
+		conf.GcpConfig.Project = v
 	}
 	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
-		conf.MachineType = v
+		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.GcpConfig.MachineType, chalk.Green.Color(v))
+		conf.GcpConfig.MachineType = v
 	}
 	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
-		conf.Zone = v
+		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.GcpConfig.Zone, chalk.Green.Color(v))
+		conf.GcpConfig.Zone = v
 	}
 	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
-		conf.Bucket = v
+		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.GcpConfig.Bucket, chalk.Green.Color(v))
+		conf.GcpConfig.Bucket = v
 	}
 
 	// Append the config to the context.

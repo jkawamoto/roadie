@@ -34,7 +34,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/resource"
+	"github.com/jkawamoto/roadie/script"
 	"google.golang.org/api/iterator"
 )
 
@@ -55,40 +55,36 @@ type QueueName struct {
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
 type QueueService struct {
-	client      *datastore.Client
-	Project     string
-	Region      string
-	MachineType string
-	Logger      *log.Logger
-	logWriter   io.Writer
+	client    *datastore.Client
+	Config    *GcpConfig
+	Logger    *log.Logger
+	logWriter io.Writer
 }
 
 // NewQueueService creates an interace for a queue service based on Google
 // Cloud Datastore.
-func NewQueueService(ctx context.Context, project, region, machine string, out io.Writer) (*QueueService, error) {
+func NewQueueService(ctx context.Context, cfg *GcpConfig, out io.Writer) (*QueueService, error) {
 
 	if out == nil {
 		out = ioutil.Discard
 	}
 
-	client, err := datastore.NewClient(ctx, project)
+	client, err := datastore.NewClient(ctx, cfg.Project)
 	if err != nil {
 		return nil, err
 	}
 
 	return &QueueService{
-		client:      client,
-		Project:     project,
-		Region:      region,
-		MachineType: machine,
-		Logger:      log.New(out, "", log.LstdFlags),
-		logWriter:   out,
+		client:    client,
+		Config:    cfg,
+		Logger:    log.New(out, "", log.LstdFlags),
+		logWriter: out,
 	}, nil
 
 }
 
 // Enqueue add a given script to a given named queue.
-func (s *QueueService) Enqueue(ctx context.Context, queue string, script *resource.ScriptBody) (err error) {
+func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.Script) (err error) {
 
 	s.Logger.Println("Enqueuing a task to queue", queue)
 	id := time.Now().Unix()
@@ -96,8 +92,10 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, script *resour
 
 	_, err = s.client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 		_, err = tx.Put(key, &Task{
+			Name:      task.InstanceName,
+			Image:     task.Image,
 			QueueName: queue,
-			Body:      script,
+			Script:    task,
 			Pending:   false,
 		})
 		return err
@@ -113,13 +111,13 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, script *resour
 }
 
 // Tasks retrieves tasks in a given names queue.
-func (s *QueueService) Tasks(ctx context.Context, queue string, handler func(*resource.ScriptBody) error) (err error) {
+func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.QueueManagerTaskHandler) (err error) {
 
 	s.Logger.Println("Retrieving tasks in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
 	res := s.client.Run(ctx, query)
 
-	var item resource.ScriptBody
+	var task script.Script
 	for {
 
 		select {
@@ -130,20 +128,17 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler func(*re
 		default:
 		}
 
-		_, err = res.Next(&item)
+		_, err = res.Next(&task)
 		if err == iterator.Done {
 			s.Logger.Println("Retrieved tasks in queue", queue)
 			return nil
-
 		} else if err != nil {
 			break
-
 		}
 
-		err = handler(&item)
+		err = handler(&task)
 		if err != nil {
 			break
-
 		}
 
 	}
@@ -175,16 +170,13 @@ func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueManagerNam
 		if err == iterator.Done {
 			s.Logger.Println("Retrieved queue names")
 			return nil
-
 		} else if err != nil {
 			break
-
 		}
 
 		err = handler(name.QueueName)
 		if err != nil {
 			break
-
 		}
 
 	}
@@ -262,7 +254,7 @@ func (s *QueueService) Restart(ctx context.Context, queue string) error {
 func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize int64, n int, handler cloud.QueueManagerNameHandler) error {
 
 	s.Logger.Println("Creating worker instances for queue", queue)
-	compute := NewComputeService(s.Project, s.Region, s.MachineType, s.logWriter)
+	compute := NewComputeService(s.Config, s.logWriter)
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < n; i++ {
 
@@ -271,7 +263,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 			var err error
 			name := fmt.Sprintf("%s-%d%d", queue, time.Now().Unix(), i)
 			startup, err := WorkerStartup(&WorkerStartupOpt{
-				ProjectID:    s.Project,
+				ProjectID:    s.Config.Project,
 				InstanceName: name,
 				Name:         queue,
 				Version:      QueueManagerVersion,
@@ -280,11 +272,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 				return err
 			}
 
-			err = compute.CreateInstance(ctx, name, []*cloud.MetadataItem{
-				&cloud.MetadataItem{
-					Key:   "startup-script",
-					Value: startup,
-				}}, diskSize)
+			err = compute.createInstance(ctx, name, startup, diskSize)
 			if err == nil {
 				err = handler(name)
 			}
@@ -307,7 +295,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 // Workers retrieves worker instance names for a given queue.
 func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.QueueManagerNameHandler) error {
 
-	compute := NewComputeService(s.Project, s.Region, s.MachineType, s.logWriter)
+	compute := NewComputeService(s.Config, s.logWriter)
 	instances, err := compute.Instances(ctx)
 	if err != nil {
 		return err

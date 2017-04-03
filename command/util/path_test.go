@@ -38,18 +38,3 @@ func TestBasename(t *testing.T) {
 	}
 
 }
-
-func TestCreateURL(t *testing.T) {
-
-	u := CreateURL("bucket_name", "source", "/path/to/file")
-	if u.Scheme != "gs" {
-		t.Errorf("Scheme is not correct: %s", u.Scheme)
-	}
-	if u.Host != "bucket_name" {
-		t.Errorf("Host name is not correct: %s", u.Host)
-	}
-	if u.Path != "/source/path/to/file" {
-		t.Errorf("Path is not correct: %s", u.Path)
-	}
-
-}

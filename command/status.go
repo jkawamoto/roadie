@@ -36,6 +36,7 @@ import (
 	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
@@ -70,20 +71,23 @@ func cmdStatus(ctx context.Context, all bool) error {
 		if err != nil {
 			return err
 		}
-		service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+
+		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 		if err != nil {
 			return err
 		}
+		defer service.Close()
+
 		storage := cloud.NewStorage(service, nil)
 
-		if err := storage.ListupFiles(ctx, ResultPrefix, func(info *cloud.FileInfo) error {
+		if err := storage.ListupFiles(ctx, script.ResultPrefix, func(info *cloud.FileInfo) error {
 
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 
 			default:
-				rel, _ := filepath.Rel(ResultPrefix, info.Path)
+				rel, _ := filepath.Rel(script.ResultPrefix, info.Path)
 				rel = filepath.Dir(rel)
 				instances[rel] = struct{}{}
 				return nil
@@ -170,7 +174,7 @@ func cmdStatusKill(ctx context.Context, instanceName string) (err error) {
 	if err != nil {
 		return
 	}
-	compute := gce.NewComputeService(cfg.Project, cfg.Zone, cfg.MachineType, nil)
+	compute := gce.NewComputeService(&cfg.GcpConfig, nil)
 
 	if err = compute.DeleteInstance(ctx, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(

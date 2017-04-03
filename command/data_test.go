@@ -25,6 +25,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
 )
 
@@ -33,7 +34,7 @@ import (
 func TestCmdDataPut(t *testing.T) {
 
 	cfg := &config.Config{
-		Gcp: config.Gcp{
+		GcpConfig: gce.GcpConfig{
 			Project: "test-project",
 			Zone:    "test-zone",
 		},

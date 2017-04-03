@@ -27,8 +27,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/logging"
-
-	"github.com/jkawamoto/roadie/config"
 )
 
 // EntryHandler is a function type to handler Entries.
@@ -45,11 +43,13 @@ func GetEntriesFunc(ctx context.Context, filter string, requester EntryRequester
 // obtaining log entries is canceled immediately.
 func GetEntries(ctx context.Context, filter string, requester EntryRequester, handler EntryHandler) (err error) {
 
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
-	return requester.Entries(cfg.Project, filter, handler)
+	// TODO: fix it
+	// cfg, err := config.FromContext(ctx)
+	// if err != nil {
+	// 	return
+	// }
+	// return requester.Entries(cfg.Project, filter, handler)
+	return nil
 
 }
 

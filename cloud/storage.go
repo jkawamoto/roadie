@@ -280,11 +280,6 @@ func (s *Storage) PrintFileBody(ctx context.Context, prefix, query string, outpu
 
 }
 
-// Close this storage.
-func (s *Storage) Close() error {
-	return s.service.Close()
-}
-
 // match returns true if there are at least one pattern matching to name.
 func match(patterns []string, name string) bool {
 	for _, pat := range patterns {

@@ -35,11 +35,9 @@ import (
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
-
-// SourcePrefix defines a prefix to store source files.
-const SourcePrefix = ".roadie/source"
 
 // CmdSourcePut archives a given folder and uploads it as a given named file.
 func CmdSourcePut(c *cli.Context) error {
@@ -81,13 +79,16 @@ func cmdSourcePut(ctx context.Context, root, name string, excludes []string) (er
 	if err != nil {
 		return err
 	}
-	service, err := gce.NewStorageService(ctx, cfg.Project, cfg.Bucket)
+
+	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 	if err != nil {
 		return err
 	}
+	defer service.Close()
+
 	storage := cloud.NewStorage(service, nil)
 
-	url, err := storage.UploadFile(ctx, SourcePrefix, filename, uploadingPath)
+	url, err := storage.UploadFile(ctx, script.SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return
 	}
