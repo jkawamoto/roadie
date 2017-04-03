@@ -1,3 +1,4 @@
+// +build remote
 //
 // cloud/gce/queue_test.go
 //
