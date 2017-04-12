@@ -27,11 +27,6 @@ import (
 	"time"
 )
 
-const (
-	// ComputeServiceResourceGroupName defines the default resource name.
-	ComputeServiceResourceGroupName = "roadie"
-)
-
 // toPtr returns a pointer of a copy of a given string.
 func toPtr(s string) *string {
 	return &s

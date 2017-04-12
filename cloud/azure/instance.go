@@ -42,11 +42,6 @@ import (
 const (
 	// ComputeAPIVersion defines API version of compute service.
 	ComputeAPIVersion = "2016-04-30-preview"
-	// ComputeServiceDefaultMachineType defines the default machine type.
-	ComputeServiceDefaultMachineType = models.HardwareProfileVMSizeStandardDS1V2
-	// ComputeServiceCustomScriptExtension defines the name of custom script
-	// extention.
-	ComputeServiceCustomScriptExtension = "CustomScriptForLinux"
 )
 
 // ComputeService provides an interface for Azure's compute service.
