@@ -45,6 +45,7 @@ type AzureConfig struct {
 	ResourceGroupName string `yaml:"resource_group_name,omitempty"`
 	MachineType       string `yaml:"machine_type,omitempty"`
 	StorageAccount    string `yaml:"storage_account,omitempty"`
+	BatchAccount      string `yaml:"batch_account,omitempty"`
 	OS                OSInformation
 	Token             auth.Token
 }
@@ -56,6 +57,7 @@ func NewAzureConfig() *AzureConfig {
 		ResourceGroupName: ComputeServiceResourceGroupName,
 		MachineType:       ComputeServiceDefaultMachineType,
 		StorageAccount:    DefaultStorageAccount,
+		BatchAccount:      DefaultBatchAccount,
 		OS: OSInformation{
 			PublisherName: DefaultOSPublisherName,
 			Offer:         DefaultOSOffer,
@@ -86,12 +88,15 @@ func NewAzureConfigFromFile(filename string) (cfg *AzureConfig, err error) {
 	if cfg.StorageAccount == "" {
 		cfg.StorageAccount = DefaultStorageAccount
 	}
+	if cfg.BatchAccount == "" {
+		cfg.BatchAccount = DefaultBatchAccount
+	}
 
 	return
 
 }
 
-// WriteFilr writes this configuration to a file.
+// WriteFile writes this configuration to a file.
 func (cfg *AzureConfig) WriteFile(filename string) (err error) {
 
 	data, err := yaml.Marshal(cfg)
@@ -125,6 +130,7 @@ func (cfg *AzureConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 		ResourceGroupName string `yaml:"resource_group_name,omitempty"`
 		MachineType       string `yaml:"machine_type,omitempty"`
 		StorageAccount    string `yaml:"storage_account,omitempty"`
+		BatchAccount      string `yaml:"batch_account,omitempty"`
 		OS                OSInformation
 		Token             auth.Token
 	}
