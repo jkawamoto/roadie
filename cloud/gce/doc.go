@@ -21,3 +21,5 @@
 
 // Package gce provides implementations of interfaces defined in cloud package.
 package gce
+
+// TODO: Eash service should have a logger.

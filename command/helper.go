@@ -56,8 +56,9 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 
 }
 
-// GenerateGetAction generates an action which downloads files from a given prefix.
-func GenerateGetAction(prefix string) func(*cli.Context) error {
+// GenerateGetAction generates an action which downloads files from a given
+// container.
+func GenerateGetAction(container string) func(*cli.Context) error {
 
 	return func(c *cli.Context) error {
 
@@ -79,7 +80,7 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 		defer service.Close()
 
 		storage := cloud.NewStorage(service, nil)
-		if err := storage.DownloadFiles(ctx, prefix, c.String("o"), c.Args()); err != nil {
+		if err := storage.DownloadFiles(ctx, container, "", c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 
@@ -89,8 +90,9 @@ func GenerateGetAction(prefix string) func(*cli.Context) error {
 
 }
 
-// GenerateDeleteAction generates an action which deletes files from a given prefix.
-func GenerateDeleteAction(prefix string) func(*cli.Context) error {
+// GenerateDeleteAction generates an action which deletes files from a given
+// container.
+func GenerateDeleteAction(container string) func(*cli.Context) error {
 
 	return func(c *cli.Context) error {
 
@@ -112,7 +114,7 @@ func GenerateDeleteAction(prefix string) func(*cli.Context) error {
 		defer service.Close()
 
 		storage := cloud.NewStorage(service, nil)
-		if err := storage.DeleteFiles(ctx, prefix, c.Args()); err != nil {
+		if err := storage.DeleteFiles(ctx, container, "", c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 

@@ -93,12 +93,12 @@ func CmdResultShow(c *cli.Context) (err error) {
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		err = storage.PrintFileBody(ctx, filepath.Join(script.ResultPrefix, instance), StdoutFilePrefix, os.Stdout, true)
+		err = storage.PrintFileBody(ctx, script.ResultPrefix, instance, StdoutFilePrefix, os.Stdout, true)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = storage.PrintFileBody(ctx, filepath.Join(script.ResultPrefix, instance), filePrefix, os.Stdout, false)
+		err = storage.PrintFileBody(ctx, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
@@ -135,16 +135,14 @@ func CmdResultGet(c *cli.Context) error {
 	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
-
-	path := filepath.Join(script.ResultPrefix, instance)
 	pattern := c.Args().Tail()
 	if len(pattern) == 0 {
 		pattern = append(pattern, "*")
 	}
-
-	if err := storage.DownloadFiles(ctx, path, filepath.ToSlash(c.String("o")), pattern); err != nil {
+	if err := storage.DownloadFiles(ctx, script.ResultPrefix, instance, filepath.ToSlash(c.String("o")), pattern); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
+
 	return nil
 
 }
@@ -191,9 +189,7 @@ func CmdResultDelete(c *cli.Context) error {
 	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
-
-	path := filepath.Join(script.ResultPrefix, instance)
-	if err := storage.DeleteFiles(ctx, path, patterns); err != nil {
+	if err := storage.DeleteFiles(ctx, script.ResultPrefix, instance, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil

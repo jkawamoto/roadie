@@ -80,7 +80,7 @@ func cmdStatus(ctx context.Context, all bool) error {
 
 		storage := cloud.NewStorage(service, nil)
 
-		if err := storage.ListupFiles(ctx, script.ResultPrefix, func(info *cloud.FileInfo) error {
+		if err := storage.ListupFiles(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
 
 			select {
 			case <-ctx.Done():

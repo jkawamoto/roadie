@@ -51,7 +51,7 @@ func NewMockStorageService() *MockStorageService {
 }
 
 // Upload is a mock function to check uploaded file is correct or not.
-func (s *MockStorageService) Upload(ctx context.Context, filename string, in io.Reader) (uri string, err error) {
+func (s *MockStorageService) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
 
 	if s.failure {
 		err = ErrServiceFailure
@@ -67,7 +67,7 @@ func (s *MockStorageService) Upload(ctx context.Context, filename string, in io.
 
 }
 
-func (s *MockStorageService) Download(ctx context.Context, filename string, out io.Writer) error {
+func (s *MockStorageService) Download(ctx context.Context, container, filename string, out io.Writer) error {
 
 	if s.failure {
 		return ErrServiceFailure
@@ -82,12 +82,12 @@ func (s *MockStorageService) Download(ctx context.Context, filename string, out 
 
 }
 
-func (s *MockStorageService) GetFileInfo(ctx context.Context, filename string) (*FileInfo, error) {
+func (s *MockStorageService) GetFileInfo(ctx context.Context, container, filename string) (*FileInfo, error) {
 	return nil, nil
 }
 
 // List is a mock function of List.
-func (s *MockStorageService) List(ctx context.Context, prefix string, handler FileInfoHandler) error {
+func (s *MockStorageService) List(ctx context.Context, container, prefix string, handler FileInfoHandler) error {
 
 	// Represent a directory.
 	err := handler(&FileInfo{
@@ -124,7 +124,7 @@ func (s *MockStorageService) List(ctx context.Context, prefix string, handler Fi
 	return nil
 }
 
-func (s *MockStorageService) Delete(ctx context.Context, filename string) error {
+func (s *MockStorageService) Delete(ctx context.Context, container, filename string) error {
 
 	if s.failure {
 		return ErrServiceFailure
@@ -141,14 +141,14 @@ func (s *MockStorageService) Delete(ctx context.Context, filename string) error 
 // Test uploading a file.
 func TestUploadFile(t *testing.T) {
 
-	prefix := "test"
+	container := "test"
 	filename := "storage_test.go" // This file.
 
 	ctx := context.Background()
 	service := NewMockStorageService()
 	s := NewStorage(service, ioutil.Discard)
 
-	_, err := s.UploadFile(ctx, prefix, filename, filename)
+	_, err := s.UploadFile(ctx, container, filename, filename)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -158,7 +158,7 @@ func TestUploadFile(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	if elem, ok := service.storage[filepath.Join(prefix, filename)]; !ok {
+	if elem, ok := service.storage[filename]; !ok {
 		t.Error("Cannot find the uploaded file")
 	} else if elem != string(body) {
 		t.Error("Uploaded file don't match the expected file")
@@ -169,7 +169,7 @@ func TestUploadFile(t *testing.T) {
 // Test uploading a file without specifying name.
 func TestUploadFileWithoutName(t *testing.T) {
 
-	prefix := "test"
+	container := "test"
 	filename := "storage_test.go" // This file.
 
 	ctx := context.Background()
@@ -177,7 +177,7 @@ func TestUploadFileWithoutName(t *testing.T) {
 	s := NewStorage(service, ioutil.Discard)
 
 	// Omit to give a file name to be used to store the file.
-	_, err := s.UploadFile(ctx, prefix, "", filename)
+	_, err := s.UploadFile(ctx, container, "", filename)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -187,7 +187,7 @@ func TestUploadFileWithoutName(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	if elem, ok := service.storage[filepath.Join(prefix, filename)]; !ok {
+	if elem, ok := service.storage[filename]; !ok {
 		t.Error("Cannot find the uploaded file")
 	} else if elem != string(body) {
 		t.Error("Uploaded file don't match the expected file")
@@ -263,7 +263,7 @@ func TestListupFiles(t *testing.T) {
 	service.storage["test2/c"] = "c"
 	service.storage["test2/d"] = "d"
 
-	err := s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	err := s.ListupFiles(ctx, "", prefix, func(info *FileInfo) error {
 		if info.Name == "" {
 			return nil
 		}
@@ -291,7 +291,7 @@ func TestListupFilesWithServiceFailuer(t *testing.T) {
 
 	s := NewStorage(service, ioutil.Discard)
 
-	err := s.ListupFiles(ctx, "test1", func(info *FileInfo) error {
+	err := s.ListupFiles(ctx, "", "test1", func(info *FileInfo) error {
 		return nil
 	})
 	if err == nil {
@@ -321,7 +321,7 @@ func TestDownloadFiles(t *testing.T) {
 	service.storage["test1/caa.txt"] = "c"
 	service.storage["test2/ddd.log"] = "d"
 
-	if err = s.DownloadFiles(ctx, prefix, temp, []string{"*.log"}); err != nil {
+	if err = s.DownloadFiles(ctx, "", prefix, temp, []string{"*.log"}); err != nil {
 		t.Fatal("DownloadFiiles returns an error:", err.Error())
 	}
 
@@ -367,7 +367,7 @@ func TestDownloadFilesToNotExistingDir(t *testing.T) {
 	service.storage["test1/caa.txt"] = "c"
 	service.storage["test2/ddd.log"] = "d"
 
-	if err = s.DownloadFiles(ctx, prefix, temp, []string{"*.log"}); err != nil {
+	if err = s.DownloadFiles(ctx, "", prefix, temp, []string{"*.log"}); err != nil {
 		t.Fatal("DownloadFiiles returns an error:", err.Error())
 	}
 
@@ -418,7 +418,7 @@ func TestDownloadFilesWithServicerFailure(t *testing.T) {
 	service.storage["test1/caa.txt"] = "c"
 	service.storage["test2/ddd.log"] = "d"
 
-	if err = s.DownloadFiles(ctx, prefix, temp, []string{"*.log"}); err == nil {
+	if err = s.DownloadFiles(ctx, "", prefix, temp, []string{"*.log"}); err == nil {
 		t.Error("Download files from a out-of-service servicer but no error occurred")
 	}
 	t.Log("Received error message:", err.Error())
@@ -446,7 +446,7 @@ func TestCancelDownloadFiles(t *testing.T) {
 	service.storage["test2/ddd.log"] = "d"
 
 	cancel()
-	if err = s.DownloadFiles(ctx, prefix, temp, []string{"*.log"}); err == nil {
+	if err = s.DownloadFiles(ctx, "", prefix, temp, []string{"*.log"}); err == nil {
 		t.Error("Download files is canceled but no error occurred")
 	}
 	t.Log("Received error message:", err.Error())
@@ -466,7 +466,7 @@ func TestDeleteFiles(t *testing.T) {
 	service.storage["test1/caa.txt"] = "c"
 	service.storage["test2/ddd.log"] = "d"
 
-	if err := s.DeleteFiles(ctx, prefix, []string{"*.log"}); err != nil {
+	if err := s.DeleteFiles(ctx, "", prefix, []string{"*.log"}); err != nil {
 		t.Error("DownloadFiiles returns an error:", err.Error())
 	}
 
@@ -496,7 +496,7 @@ func TestDeleteFilesWithServicerFailure(t *testing.T) {
 	service.storage["test1/caa.txt"] = "c"
 	service.storage["test2/ddd.log"] = "d"
 
-	err = s.DeleteFiles(ctx, prefix, []string{"*.log"})
+	err = s.DeleteFiles(ctx, "", prefix, []string{"*.log"})
 	if err == nil {
 		t.Error("Delete files from a out-of-service servicer but no error occurred")
 	}
@@ -520,7 +520,7 @@ func TestCancelDeleteFiles(t *testing.T) {
 
 	cancel()
 
-	err = s.DeleteFiles(ctx, prefix, []string{"*.log"})
+	err = s.DeleteFiles(ctx, "", prefix, []string{"*.log"})
 	if err == nil {
 		t.Error("Delete files has been canceled but no error occurred")
 	}
@@ -542,7 +542,7 @@ func TestPrintFileBody(t *testing.T) {
 	service.storage["test2/ddd.log"] = "d"
 
 	output := &bytes.Buffer{}
-	if err = s.PrintFileBody(ctx, prefix, "aaa.log", output, false); err != nil {
+	if err = s.PrintFileBody(ctx, "", prefix, "aaa.log", output, false); err != nil {
 		t.Error("PrintFileBody returns an error:", err.Error())
 	}
 	if output.String() != "a" {
@@ -550,7 +550,7 @@ func TestPrintFileBody(t *testing.T) {
 	}
 
 	output.Reset()
-	if err = s.PrintFileBody(ctx, prefix, "aaa.log", output, true); err != nil {
+	if err = s.PrintFileBody(ctx, "", prefix, "aaa.log", output, true); err != nil {
 		t.Error("PrintFileBody returns an error:", err.Error())
 	}
 	if !strings.HasSuffix(output.String(), "a") {
@@ -575,7 +575,7 @@ func TestPrintFileBodyWithServicerFailure(t *testing.T) {
 	service.storage["test2/ddd.log"] = "d"
 
 	output := &bytes.Buffer{}
-	err = s.PrintFileBody(ctx, prefix, "aaa.log", output, false)
+	err = s.PrintFileBody(ctx, "", prefix, "aaa.log", output, false)
 	if err == nil {
 		t.Error("Request sent to a out-of-service servicer but no error occurred")
 	}
@@ -599,7 +599,7 @@ func TestCancelPrintFileBody(t *testing.T) {
 	cancel()
 
 	output := &bytes.Buffer{}
-	err = s.PrintFileBody(ctx, prefix, "aaa.log", output, false)
+	err = s.PrintFileBody(ctx, "", prefix, "aaa.log", output, false)
 	if err == nil {
 		t.Error("Print file body has been canceled but no error occurred")
 	}

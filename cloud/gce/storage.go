@@ -79,9 +79,10 @@ func NewStorageService(ctx context.Context, cfg *GcpConfig) (s *StorageService, 
 }
 
 // Upload a file to a location.
-func (s *StorageService) Upload(ctx context.Context, filename string, in io.Reader) (uri string, err error) {
+func (s *StorageService) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
 
-	obj := s.client.Bucket(s.Config.Bucket).Object(filename)
+	path := filepath.Join(container, filename)
+	obj := s.client.Bucket(s.Config.Bucket).Object(path)
 	writer := obj.NewWriter(ctx)
 	size, err := io.Copy(writer, in)
 	writer.Close()
@@ -94,13 +95,13 @@ func (s *StorageService) Upload(ctx context.Context, filename string, in io.Read
 		return
 	} else if info.Size != size {
 		obj.Delete(ctx)
-		return "", fmt.Errorf("Faild to upload object %v", filename)
+		return "", fmt.Errorf("Faild to upload object %v", path)
 	}
 
 	u := url.URL{
 		Scheme: "gs",
 		Host:   s.Config.Bucket,
-		Path:   filepath.Join(StoragePrefix, filename),
+		Path:   filepath.Join(StoragePrefix, path),
 	}
 	uri = u.String()
 	return
@@ -108,9 +109,9 @@ func (s *StorageService) Upload(ctx context.Context, filename string, in io.Read
 }
 
 // Download downloads a file and write it to a given writer.
-func (s *StorageService) Download(ctx context.Context, filename string, out io.Writer) (err error) {
+func (s *StorageService) Download(ctx context.Context, container, filename string, out io.Writer) (err error) {
 
-	obj := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, filename))
+	obj := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename))
 	info, err := obj.Attrs(ctx)
 	if err != nil {
 		return
@@ -131,9 +132,9 @@ func (s *StorageService) Download(ctx context.Context, filename string, out io.W
 }
 
 // GetFileInfo returns a file status of an object.
-func (s *StorageService) GetFileInfo(ctx context.Context, filename string) (info *cloud.FileInfo, err error) {
+func (s *StorageService) GetFileInfo(ctx context.Context, container, filename string) (info *cloud.FileInfo, err error) {
 
-	attrs, err := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, filename)).Attrs(ctx)
+	attrs, err := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename)).Attrs(ctx)
 	if err != nil {
 		return
 	}
@@ -152,10 +153,10 @@ func (s *StorageService) GetFileInfo(ctx context.Context, filename string) (info
 // Found items will be passed to a given handler item by item.
 // If the handler returns a non nil value, listing up will be canceled.
 // In that case, this function will also return the given value.
-func (s *StorageService) List(ctx context.Context, prefix string, handler cloud.FileInfoHandler) (err error) {
+func (s *StorageService) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) (err error) {
 
 	iter := s.client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
-		Prefix: filepath.Join(StoragePrefix, prefix),
+		Prefix: filepath.Join(StoragePrefix, container, prefix),
 	})
 	for {
 		attrs, err := iter.Next()
@@ -187,10 +188,10 @@ func (s *StorageService) List(ctx context.Context, prefix string, handler cloud.
 }
 
 // Delete deletes a given file.
-func (s *StorageService) Delete(ctx context.Context, filename string) (err error) {
+func (s *StorageService) Delete(ctx context.Context, container, filename string) (err error) {
 	return s.client.
 		Bucket(s.Config.Bucket).
-		Object(filepath.Join(StoragePrefix, filename)).
+		Object(filepath.Join(StoragePrefix, container, filename)).
 		Delete(ctx)
 }
 

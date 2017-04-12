@@ -138,7 +138,7 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
-	err = storage.ListupFiles(ctx, prefix, func(info *cloud.FileInfo) error {
+	err = storage.ListupFiles(ctx, prefix, "", func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})

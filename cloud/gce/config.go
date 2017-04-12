@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 )
 
+// TODO: Rename to "Config".
 // GcpConfig defines information to access Google Cloud Platform.
 type GcpConfig struct {
 	// Project name.

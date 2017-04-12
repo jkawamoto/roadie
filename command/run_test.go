@@ -25,6 +25,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -38,29 +39,29 @@ type MockStorageServicer struct{}
 
 // Upload a given stream with a given file name; returned string represents
 // a URI assosiated with the uploaded file.
-func (s *MockStorageServicer) Upload(ctx context.Context, filename string, in io.Reader) (string, error) {
-	return script.RoadieSchemePrefix + filename, nil
+func (s *MockStorageServicer) Upload(ctx context.Context, container, filename string, in io.Reader) (string, error) {
+	return filepath.Join(script.RoadieSchemePrefix, container, filename), nil
 }
 
 // Download a file associated with a given file name and write it to a given
 // writer.
-func (s *MockStorageServicer) Download(ctx context.Context, filename string, out io.Writer) error {
+func (s *MockStorageServicer) Download(ctx context.Context, conatiner, filename string, out io.Writer) error {
 	return nil
 }
 
 // GetFileInfo gets file information of a given filename.
-func (s *MockStorageServicer) GetFileInfo(ctx context.Context, filename string) (*cloud.FileInfo, error) {
+func (s *MockStorageServicer) GetFileInfo(ctx context.Context, container, filename string) (*cloud.FileInfo, error) {
 	return nil, nil
 }
 
 // List up files matching a given prefix.
 // It takes a handler; information of found files are sent to it.
-func (s *MockStorageServicer) List(ctx context.Context, prefix string, handler cloud.FileInfoHandler) error {
+func (s *MockStorageServicer) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) error {
 	return nil
 }
 
 // Delete a given file.
-func (s *MockStorageServicer) Delete(ctx context.Context, filename string) error {
+func (s *MockStorageServicer) Delete(ctx context.Context, container, filename string) error {
 	return nil
 }
 

@@ -65,12 +65,11 @@ func NewStorage(servicer StorageServicer, log io.Writer) (s *Storage) {
 // UploadFile uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (uri string, err error) {
+func (s *Storage) UploadFile(ctx context.Context, container, name, input string) (uri string, err error) {
 
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := filepath.Join(prefix, name)
 
 	file, err := os.Open(input)
 	if err != nil {
@@ -96,7 +95,7 @@ func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (u
 	bar.Start()
 	defer bar.Finish()
 
-	if uri, err = s.service.Upload(ctx, location, bar.NewProxyReader(file)); err != nil {
+	if uri, err = s.service.Upload(ctx, container, name, bar.NewProxyReader(file)); err != nil {
 		return "", cli.NewExitError(err.Error(), 2)
 	}
 	return
@@ -107,16 +106,16 @@ func (s *Storage) UploadFile(ctx context.Context, prefix, name, input string) (u
 // have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func (s *Storage) ListupFiles(ctx context.Context, prefix string, handler FileInfoHandler) (err error) {
+func (s *Storage) ListupFiles(ctx context.Context, container, prefix string, handler FileInfoHandler) (err error) {
 
-	return s.service.List(ctx, prefix, handler)
+	return s.service.List(ctx, container, prefix, handler)
 
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
-func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries []string) (err error) {
+func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir string, queries []string) (err error) {
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -143,7 +142,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
-	err = s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -176,7 +175,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries
 				writer := bufio.NewWriter(f)
 				defer writer.Flush()
 
-				goerr = s.service.Download(ctx, info.Path, io.MultiWriter(writer, bar))
+				goerr = s.service.Download(ctx, container, info.Path, io.MultiWriter(writer, bar))
 				if goerr != nil {
 					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, goerr.Error()))
 				} else {
@@ -199,7 +198,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix, dir string, queries
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []string) error {
+func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, queries []string) error {
 
 	fmt.Fprintln(s.Log, "Deleting...")
 	pool, err := pb.StartPool()
@@ -214,7 +213,7 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []stri
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
-	err = s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -236,7 +235,7 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []stri
 
 			eg.Go(func() error {
 				defer bar.Add64(int64(info.Size))
-				goerr := s.service.Delete(ctx, info.Path)
+				goerr := s.service.Delete(ctx, container, info.Path)
 				if goerr != nil {
 					fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, goerr.Error())
 				}
@@ -257,9 +256,9 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix string, queries []stri
 
 // PrintFileBody prints file bodies which has a prefix and satisfies query under a context.
 // If header is ture, additional messages well be printed.
-func (s *Storage) PrintFileBody(ctx context.Context, prefix, query string, output io.Writer, header bool) error {
+func (s *Storage) PrintFileBody(ctx context.Context, container, prefix, query string, output io.Writer, header bool) error {
 
-	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
+	return s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -270,7 +269,7 @@ func (s *Storage) PrintFileBody(ctx context.Context, prefix, query string, outpu
 				if header {
 					fmt.Fprintf(output, "*** %s ***\n", info.Name)
 				}
-				return s.service.Download(ctx, info.Path, output)
+				return s.service.Download(ctx, container, info.Path, output)
 			}
 
 			return nil

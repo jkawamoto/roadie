@@ -29,23 +29,23 @@ import (
 // StorageServicer defines API which a storage service provider must have.
 type StorageServicer interface {
 
-	// Upload a given stream with a given file name; returned string represents
-	// a URI assosiated with the uploaded file.
-	Upload(ctx context.Context, filename string, in io.Reader) (string, error)
+	// Upload a given stream with a given container and file name; returned string
+	// represents a URI assosiated with the uploaded file.
+	Upload(ctx context.Context, container, filename string, in io.Reader) (string, error)
 
-	// Download a file associated with a given file name and write it to a given
-	// writer.
-	Download(ctx context.Context, filename string, out io.Writer) error
+	// Download a file associated with a given container and file name and write
+	// it to a given writer.
+	Download(ctx context.Context, container, filename string, out io.Writer) error
 
-	// GetFileInfo gets file information of a given filename.
-	GetFileInfo(ctx context.Context, filename string) (*FileInfo, error)
+	// GetFileInfo gets file information of a given container and filename.
+	GetFileInfo(ctx context.Context, container, filename string) (*FileInfo, error)
 
-	// List up files matching a given prefix.
+	// List up files matching a given prefix in a given container.
 	// It takes a handler; information of found files are sent to it.
-	List(ctx context.Context, prefix string, handler FileInfoHandler) error
+	List(ctx context.Context, container, prefix string, handler FileInfoHandler) error
 
-	// Delete a given file.
-	Delete(ctx context.Context, filename string) error
+	// Delete a given file in a given container.
+	Delete(ctx context.Context, container, filename string) error
 }
 
 // FileInfoHandler is a handler to recieve a file info.
