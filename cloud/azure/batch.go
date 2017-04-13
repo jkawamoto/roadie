@@ -49,7 +49,9 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/azure/batch/client"
 	"github.com/jkawamoto/roadie/cloud/azure/batch/client/accounts"
+	"github.com/jkawamoto/roadie/cloud/azure/batch/client/compute_nodes"
 	"github.com/jkawamoto/roadie/cloud/azure/batch/client/jobs"
+	"github.com/jkawamoto/roadie/cloud/azure/batch/client/pools"
 	"github.com/jkawamoto/roadie/cloud/azure/batch/client/tasks"
 	"github.com/jkawamoto/roadie/cloud/azure/batch/models"
 	"github.com/jkawamoto/roadie/script"
@@ -283,9 +285,75 @@ func NewBatchService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) 
 
 }
 
+// Nodes retrieves information of compute nodes in a given named pool.
+func (s *BatchService) Nodes(ctx context.Context, pool string) (nodes []*models.ComputeNode, err error) {
+
+	s.Logger.Println("Retrieving compute nodes in pool", pool)
+	res, err := s.client.ComputeNodes.ComputeNodeList(
+		compute_nodes.NewComputeNodeListParamsWithContext(ctx).
+			WithAPIVersion(BatchAPIVersion).
+			WithClientRequestID(&s.Config.ClientID).
+			WithPoolID(pool).
+			WithOcpDate(s.getOcpDate()))
+	if err != nil {
+		return
+	}
+	nodes = res.Payload.Value
+
+	s.Logger.Println("Finished retrieving compute nodes in pool", pool)
+	return
+
+}
+
+// GetPoolInfo retrieves information of a given named pool.
+func (s *BatchService) GetPoolInfo(ctx context.Context, name string) (info *models.CloudPool, err error) {
+
+	s.Logger.Println("Retrieving information of pool", name)
+	res, err := s.client.Pools.PoolGet(
+		pools.NewPoolGetParamsWithContext(ctx).
+			WithAPIVersion(BatchAPIVersion).
+			WithClientRequestID(&s.Config.ClientID).
+			WithPoolID(name).
+			WithOcpDate(s.getOcpDate()))
+	if err != nil {
+		return
+	}
+
+	info = res.Payload
+	s.Logger.Println("Finished retrieving information of pool", name)
+	return
+
+}
+
+// UpdatePoolSize requests updating the size of the given named pool to size.
+// Note that: resizing pool size is an asynchronous operation.
+func (s *BatchService) UpdatePoolSize(ctx context.Context, name string, size int32) (err error) {
+
+	s.Logger.Println("Updating the size of pool", name)
+	_, err = s.client.Pools.PoolResize(
+		pools.NewPoolResizeParamsWithContext(ctx).
+			WithAPIVersion(BatchAPIVersion).
+			WithClientRequestID(&s.Config.ClientID).
+			WithPoolID(name).
+			WithOcpDate(s.getOcpDate()).
+			WithPoolResizeParameter(&models.PoolResizeParameter{
+				TargetDedicated: &size,
+			}))
+	if err != nil {
+		return
+	}
+	s.Logger.Println("The update request is accepted")
+	return
+
+}
+
 // CreateJob creates a job which has a given name.
 func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 
+	// TODO:
+	// 1. Check metadata, if error returns, it means no app exists, then upload.
+	// 2. If version metadata is old or snapshot, upload new version.
+	// 3. otherwise create url and use it.
 	var execURL string
 	expired := true
 
@@ -523,6 +591,26 @@ func (s *BatchService) DeleteJob(ctx context.Context, name string) (err error) {
 	}
 
 	s.Logger.Println("Cannot delete job", name, ":", err.Error())
+	return
+
+}
+
+// GetJobInfo retrives the information of the given named job.
+func (s *BatchService) GetJobInfo(ctx context.Context, job string) (info *models.CloudJob, err error) {
+
+	s.Logger.Println("Retrieving information of job", job)
+	res, err := s.client.Jobs.JobGet(
+		jobs.NewJobGetParamsWithContext(ctx).
+			WithAPIVersion(BatchAPIVersion).
+			WithClientRequestID(&s.Config.ClientID).
+			WithJobID(job).
+			WithOcpDate(s.getOcpDate()))
+	if err != nil {
+		return
+	}
+
+	info = res.Payload
+	s.Logger.Println("Finished retrieving information of job", job)
 	return
 
 }
