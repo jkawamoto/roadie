@@ -46,7 +46,7 @@ type QueueManager interface {
 	// Restart executing tasks in a given names queue.
 	Restart(ctx context.Context, queue string) error
 	// CreateWorkers creates worker instances working for a given named queue.
-	CreateWorkers(ctx context.Context, queue string, diskSize int64, n int, handler QueueManagerNameHandler) error
+	CreateWorkers(ctx context.Context, queue string, n int, handler QueueManagerNameHandler) error
 	// Workers retrieves worker instance names for a given queue.
 	Workers(ctx context.Context, queue string, handler QueueManagerNameHandler) error
 }

@@ -33,6 +33,8 @@ const (
 	DefaultZone = "us-central1-b"
 	// DefaultMachineType defines the default machine type.
 	DefaultMachineType = "n1-standard-1"
+	// DefaultDiskSize defines the default disk size.
+	DefaultDiskSize = 10
 
 	// LogTimeFormat defines time format of Google Logging.
 	LogTimeFormat = "2006-01-02T15:04:05Z"

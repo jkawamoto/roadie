@@ -267,7 +267,7 @@ func (s *QueueService) Restart(ctx context.Context, queue string) error {
 }
 
 // CreateWorkers creates worker instances working for a given named queue.
-func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize int64, n int, handler cloud.QueueManagerNameHandler) error {
+func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, handler cloud.QueueManagerNameHandler) error {
 
 	s.Logger.Println("Creating worker instances for queue", queue)
 	compute := NewComputeService(s.Config, s.Logger)
@@ -288,7 +288,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 				return err
 			}
 
-			err = compute.createInstance(ctx, name, startup, diskSize)
+			err = compute.createInstance(ctx, name, startup)
 			if err == nil {
 				err = handler(name)
 			}

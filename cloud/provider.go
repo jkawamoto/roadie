@@ -25,7 +25,7 @@ import "context"
 
 // Provider is an interface of cloud service provider.
 type Provider interface {
-	// InstanManager returns an instance manager interface.
+	// InstanceManager returns an instance manager interface.
 	InstanceManager(context.Context) (InstanceManager, error)
 	// QueueManager returns a queue manager interface.
 	QueueManager(context.Context) (QueueManager, error)

@@ -36,6 +36,8 @@ type GcpConfig struct {
 	Zone string `yaml:"zone"`
 	// Default machine type of new instances.
 	MachineType string `yaml:"machine_type"`
+	// Instance disk size.
+	DiskSize int64 `yaml:"disk_size,omitempty"`
 }
 
 // UnmarshalYAML helps to unmarshal GcpConfig objects.
@@ -46,6 +48,7 @@ func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err erro
 		Bucket      string `yaml:"bucket"`
 		Zone        string `yaml:"zone"`
 		MachineType string `yaml:"machine_type"`
+		DiskSize    int64  `yaml:"disk_size,omitempty"`
 	}
 
 	aux := AuxGcpConfig{}
@@ -67,6 +70,12 @@ func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err erro
 		cfg.MachineType = aux.MachineType
 	} else {
 		cfg.MachineType = DefaultMachineType
+	}
+
+	if aux.DiskSize != 0 {
+		cfg.DiskSize = aux.DiskSize
+	} else {
+		cfg.DiskSize = DefaultDiskSize
 	}
 
 	return

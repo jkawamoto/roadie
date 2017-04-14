@@ -31,7 +31,7 @@ import (
 type InstanceManager interface {
 
 	// CreateInstance creates an instance which has a given name.
-	CreateInstance(ctx context.Context, name string, script *script.Script, disksize int64) error
+	CreateInstance(ctx context.Context, name string, script *script.Script) error
 
 	// DeleteInstance deletes the given named instance.
 	DeleteInstance(ctx context.Context, name string) error

@@ -136,7 +136,7 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 }
 
 // CreateInstance creates a new instance based on the builder's configuration.
-func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *script.Script, disksize int64) (err error) {
+func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *script.Script) (err error) {
 
 	s.Logger.Println("Creating instance", name)
 
@@ -148,7 +148,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *
 	if err != nil {
 		return
 	}
-	err = s.createInstance(ctx, name, startup, disksize)
+	err = s.createInstance(ctx, name, startup)
 	if err != nil {
 		return
 	}
@@ -214,7 +214,7 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 }
 
 // CreateInstance creates a new instance based on the builder's configuration.
-func (s *ComputeService) createInstance(ctx context.Context, name string, startup string, disksize int64) (err error) {
+func (s *ComputeService) createInstance(ctx context.Context, name string, startup string) (err error) {
 
 	service, err := s.newService(ctx)
 	if err != nil {
@@ -241,7 +241,7 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
 					DiskType:    s.Config.diskType(),
-					DiskSizeGb:  disksize,
+					DiskSizeGb:  s.Config.DiskSize,
 				},
 			},
 		},
