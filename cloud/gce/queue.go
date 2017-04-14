@@ -256,13 +256,27 @@ func (s *QueueService) Stop(ctx context.Context, queue string) error {
 }
 
 // Restart executing tasks in a queue which has a given name.
-func (s *QueueService) Restart(ctx context.Context, queue string) error {
+func (s *QueueService) Restart(ctx context.Context, queue string) (err error) {
 
-	// TODO: Start one instance.
-	return s.UpdateTask(ctx, queue, func(task *Task) *Task {
+	s.Logger.Println("Restarting queue", queue)
+	err = s.UpdateTask(ctx, queue, func(task *Task) *Task {
 		task.Pending = false
 		return task
 	})
+	if err != nil {
+		return
+	}
+
+	err = s.CreateWorkers(ctx, queue, 1, func(name string) error {
+		s.Logger.Printf("New instance %v has started\n", name)
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished restarting queue", queue)
+	return
 
 }
 
