@@ -54,7 +54,6 @@ type QueueName struct {
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
 type QueueService struct {
-	client *datastore.Client
 	Config *GcpConfig
 	Logger *log.Logger
 }
@@ -67,13 +66,7 @@ func NewQueueService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) (*
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
-	client, err := datastore.NewClient(ctx, cfg.Project)
-	if err != nil {
-		return nil, err
-	}
-
 	return &QueueService{
-		client: client,
 		Config: cfg,
 		Logger: logger,
 	}, nil
@@ -87,7 +80,13 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	id := time.Now().Unix()
 	key := datastore.IDKey(QueueKind, id, nil)
 
-	_, err = s.client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 		_, err = tx.Put(key, &Task{
 			Name:      task.InstanceName,
 			Image:     task.Image,
@@ -112,8 +111,14 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 
 	s.Logger.Println("Retrieving tasks in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
-	res := s.client.Run(ctx, query)
 
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	res := client.Run(ctx, query)
 	var task script.Script
 	for {
 
@@ -150,8 +155,14 @@ func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueManagerNam
 
 	s.Logger.Println("Retrieving queue names")
 	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
-	res := s.client.Run(ctx, query)
 
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	res := client.Run(ctx, query)
 	var name QueueName
 	for {
 
@@ -188,11 +199,18 @@ func (s *QueueService) UpdateTask(ctx context.Context, queue string, modifier fu
 
 	s.Logger.Println("Updating tasks' status in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
-	_, err = s.client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
+
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 
 		var task Task
 		var key *datastore.Key
-		res := s.client.Run(ctx, query)
+		res := client.Run(ctx, query)
 		for {
 
 			select {
@@ -240,6 +258,7 @@ func (s *QueueService) Stop(ctx context.Context, queue string) error {
 // Restart executing tasks in a queue which has a given name.
 func (s *QueueService) Restart(ctx context.Context, queue string) error {
 
+	// TODO: Start one instance.
 	return s.UpdateTask(ctx, queue, func(task *Task) *Task {
 		task.Pending = false
 		return task
@@ -292,6 +311,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 // Workers retrieves worker instance names for a given queue.
 func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.QueueManagerNameHandler) error {
 
+	s.Logger.Println("Retrieving workers in queue", queue)
 	compute := NewComputeService(s.Config, s.Logger)
 	instances, err := compute.Instances(ctx)
 	if err != nil {
@@ -306,11 +326,8 @@ func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.
 			}
 		}
 	}
+
+	s.Logger.Println("Finishes retrieving workers in queue", queue)
 	return nil
 
-}
-
-// Close the client which this datastore service has.
-func (s *QueueService) Close() error {
-	return s.client.Close()
 }

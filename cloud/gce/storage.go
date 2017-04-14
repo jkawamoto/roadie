@@ -25,6 +25,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -39,23 +41,27 @@ import (
 // StorageService implements cloud.StorageServicer interface for accessing GCE's
 // cloud storage.
 type StorageService struct {
-	// Client of the GCE's storage service.
-	client *storage.Client
 	// Config is a reference for a configuration of GCP.
 	Config *GcpConfig
+	// Logger
+	Logger *log.Logger
 }
 
 // NewStorageService creates a new storage accessor to a bucket specified in a
 // given configuration.
-func NewStorageService(ctx context.Context, cfg *GcpConfig) (s *StorageService, err error) {
+func NewStorageService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) (s *StorageService, err error) {
+
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+	}
 
 	cli, err := storage.NewClient(ctx)
 	if err != nil {
 		return
 	}
 	s = &StorageService{
-		client: cli,
 		Config: cfg,
+		Logger: logger,
 	}
 
 	// Check the given project has the given bucket; if not, create a new bucket.
@@ -81,8 +87,15 @@ func NewStorageService(ctx context.Context, cfg *GcpConfig) (s *StorageService, 
 // Upload a file to a location.
 func (s *StorageService) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
 
+	s.Logger.Println("Uploading file", filename)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
 	path := filepath.Join(container, filename)
-	obj := s.client.Bucket(s.Config.Bucket).Object(path)
+	obj := client.Bucket(s.Config.Bucket).Object(path)
 	writer := obj.NewWriter(ctx)
 	size, err := io.Copy(writer, in)
 	writer.Close()
@@ -104,6 +117,7 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 		Path:   filepath.Join(StoragePrefix, path),
 	}
 	uri = u.String()
+	s.Logger.Println("Finished uploading the file to", uri)
 	return
 
 }
@@ -111,7 +125,14 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 // Download downloads a file and write it to a given writer.
 func (s *StorageService) Download(ctx context.Context, container, filename string, out io.Writer) (err error) {
 
-	obj := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename))
+	s.Logger.Println("Downloading file", filename)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	obj := client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename))
 	info, err := obj.Attrs(ctx)
 	if err != nil {
 		return
@@ -127,6 +148,8 @@ func (s *StorageService) Download(ctx context.Context, container, filename strin
 	if size != info.Size {
 		return fmt.Errorf("Faild to download object %v", filename)
 	}
+
+	s.Logger.Println("Finished downloading the file")
 	return
 
 }
@@ -134,7 +157,14 @@ func (s *StorageService) Download(ctx context.Context, container, filename strin
 // GetFileInfo returns a file status of an object.
 func (s *StorageService) GetFileInfo(ctx context.Context, container, filename string) (info *cloud.FileInfo, err error) {
 
-	attrs, err := s.client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename)).Attrs(ctx)
+	s.Logger.Println("Retrieving information of file", filename)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	attrs, err := client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename)).Attrs(ctx)
 	if err != nil {
 		return
 	}
@@ -145,6 +175,8 @@ func (s *StorageService) GetFileInfo(ctx context.Context, container, filename st
 		TimeCreated: attrs.Created,
 		Size:        attrs.Size,
 	}
+
+	s.Logger.Println("Finished retrieving the file information")
 	return
 
 }
@@ -155,7 +187,14 @@ func (s *StorageService) GetFileInfo(ctx context.Context, container, filename st
 // In that case, this function will also return the given value.
 func (s *StorageService) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) (err error) {
 
-	iter := s.client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
+	s.Logger.Println("Retrieving the list of files matching to", prefix)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	iter := client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
 		Prefix: filepath.Join(StoragePrefix, container, prefix),
 	})
 	for {
@@ -183,19 +222,29 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 		}
 	}
 
+	s.Logger.Println("Finished retrieving the file list")
 	return
 
 }
 
 // Delete deletes a given file.
 func (s *StorageService) Delete(ctx context.Context, container, filename string) (err error) {
-	return s.client.
-		Bucket(s.Config.Bucket).
+
+	s.Logger.Println("Deleting file", filename)
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	err = client.Bucket(s.Config.Bucket).
 		Object(filepath.Join(StoragePrefix, container, filename)).
 		Delete(ctx)
-}
+	if err != nil {
+		return
+	}
 
-// Close the connection to a GCE's storage server.
-func (s *StorageService) Close() error {
-	return s.client.Close()
+	s.Logger.Println("Finished deleting file", filename)
+	return
+
 }

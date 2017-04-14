@@ -28,11 +28,13 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 )
 
+// Provider defines information for the service provider for GCP.
 type Provider struct {
 	Config *GcpConfig
 	Logger *log.Logger
 }
 
+// NewProvider creates a new provider for GCP service.
 func NewProvider(cfg *GcpConfig, logger *log.Logger) *Provider {
 
 	return &Provider{
@@ -59,7 +61,7 @@ func (p *Provider) QueueManager(ctx context.Context) (cloud.QueueManager, error)
 // StorageManager returns a storage manager interface.
 func (p *Provider) StorageManager(ctx context.Context) (cloud.StorageManager, error) {
 
-	return NewStorageService(ctx, p.Config)
+	return NewStorageService(ctx, p.Config, p.Logger)
 
 }
 
