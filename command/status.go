@@ -24,7 +24,9 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -33,7 +35,6 @@ import (
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
@@ -57,20 +58,32 @@ func CmdStatus(c *cli.Context) error {
 // cmdStatus shows instance information. To obtain such information, `conf` is
 // required. If all is true, print all instances otherwise information of
 // instances of which results are deleted already will be omitted.
-func cmdStatus(ctx context.Context, all bool) error {
+func cmdStatus(ctx context.Context, all bool) (err error) {
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
-	s.Start()
+	var runningInstances []string
+	var terminatedInstances []string
 
-	instances := make(map[string]struct{})
-	if !all {
+	err = func() (err error) {
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Prefix = "Loading information..."
+		s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
+		s.Start()
+		defer s.Stop()
 
 		cfg, err := config.FromContext(ctx)
 		if err != nil {
 			return err
 		}
+
+		compute := gce.NewComputeService(&cfg.GcpConfig, os.Stderr)
+		instances, err := compute.Instances(ctx)
+		if err != nil {
+			return err
+		}
+		for name := range instances {
+			runningInstances = append(runningInstances, name)
+		}
+		sort.Strings(runningInstances)
 
 		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
 		if err != nil {
@@ -79,67 +92,35 @@ func cmdStatus(ctx context.Context, all bool) error {
 		defer service.Close()
 
 		storage := cloud.NewStorage(service, nil)
-
-		if err := storage.ListupFiles(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
-
+		err = storage.ListupFiles(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-
 			default:
-				rel, _ := filepath.Rel(script.ResultPrefix, info.Path)
-				rel = filepath.Dir(rel)
-				instances[rel] = struct{}{}
-				return nil
 			}
 
-		}); err != nil {
+			rel, _ := filepath.Rel(script.ResultPrefix, info.Path)
+			rel = filepath.Dir(rel)
+			terminatedInstances = append(terminatedInstances, rel)
+			return nil
+		})
+		if err != nil {
 			return err
 		}
-
-	}
-
-	runnings := make(map[string]bool)
-	requester := log.NewCloudLoggingService(ctx)
-
-	err := log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) (err error) {
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-
-			// If all flag is not set, show only following instances;
-			//  - running instances,
-			//  - ended but results are note deleted instances.
-			switch payload.EventSubtype {
-			case log.EventSubtypeInsert:
-				runnings[payload.Resource.Name] = true
-
-			case log.EventSubtypeDelete:
-				runnings[payload.Resource.Name] = false
-				if _, exist := instances[payload.Resource.Name]; !all && !exist {
-					delete(runnings, payload.Resource.Name)
-				}
-			}
-			return
-		}
-
-	})
-	s.Stop()
+		sort.Strings(terminatedInstances)
+		return
+	}()
 	if err != nil {
 		return err
 	}
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
-	for name, status := range runnings {
-		if status {
-			table.AddRow(name, "running")
-		} else {
-			table.AddRow(name, "end")
-		}
+	for _, name := range runningInstances {
+		table.AddRow(name, "running")
+	}
+	for _, name := range terminatedInstances {
+		table.AddRow(name, "terminated")
 	}
 	fmt.Println(table)
 

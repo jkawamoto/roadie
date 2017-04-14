@@ -36,7 +36,6 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/log"
 	"github.com/jkawamoto/roadie/script"
 
 	"golang.org/x/oauth2/google"
@@ -51,8 +50,9 @@ var (
 // ComputeService implements cloud.InstanceManager based on Google Cloud
 // Platform.
 type ComputeService struct {
-	Config *GcpConfig
-	Log    io.Writer
+	Config    *GcpConfig
+	Log       io.Writer
+	SleepTime time.Duration
 }
 
 // NewComputeService creates a new compute service client.
@@ -63,8 +63,9 @@ func NewComputeService(cfg *GcpConfig, log io.Writer) *ComputeService {
 	}
 
 	return &ComputeService{
-		Config: cfg,
-		Log:    log,
+		Config:    cfg,
+		Log:       log,
+		SleepTime: 10 * time.Second,
 	}
 }
 
@@ -168,9 +169,8 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
 
 	instances = make(map[string]struct{})
-	requester := log.NewCloudLoggingService(ctx)
-
-	err = log.GetOperationLogEntries(ctx, requester, func(_ time.Time, payload *log.ActivityPayload) error {
+	log := NewLogManager(s.Config)
+	err = log.OperationLogEntries(ctx, func(_ time.Time, payload *ActivityPayload) error {
 
 		select {
 		case <-ctx.Done():
@@ -179,10 +179,10 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 		}
 
 		switch payload.EventSubtype {
-		case log.EventSubtypeInsert:
+		case LogEventSubtypeInsert:
 			instances[payload.Resource.Name] = struct{}{}
 
-		case log.EventSubtypeDelete:
+		case LogEventSubtypeDelete:
 			delete(instances, payload.Resource.Name)
 		}
 		return nil
@@ -265,37 +265,37 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 		fmt.Fprintln(s.Log, chalk.Red.Color(v.Message))
 	}
 
-	logService := log.NewCloudLoggingService(ctx)
+	log := NewLogManager(s.Config)
 	filter := fmt.Sprintf(
-		"jsonPayload.event_type = \"GCE_OPERATION_DONE\" AND timestamp > \"%s\"",
-		time.Now().In(time.UTC).Format(log.TimeFormat))
+		`jsonPayload.event_type = "GCE_OPERATION_DONE" AND timestamp > "%s"`,
+		time.Now().In(time.UTC).Format(LogTimeFormat))
 
 	for {
 
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-
 		case <-wait(10 * time.Second):
-			err := log.GetEntries(ctx, filter, logService, func(entry *logging.Entry) (err error) {
-				payload, err := log.NewActivityPayload(entry.Payload)
-				if err != nil {
-					return
-				}
-				if payload.EventSubtype == log.EventSubtypeInsert && payload.Resource.Name == blueprint.Name {
-					return instanceStarted
-				}
-				return
-			})
+		}
 
-			switch err {
-			case instanceStarted:
-				return nil
-			case nil:
-				continue
-			default:
-				return err
+		err := log.Entries(ctx, filter, func(entry *logging.Entry) (err error) {
+			payload, err := NewActivityPayload(entry.Payload)
+			if err != nil {
+				return
 			}
+			if payload.EventSubtype == LogEventSubtypeInsert && payload.Resource.Name == blueprint.Name {
+				return instanceStarted
+			}
+			return
+		})
+
+		switch err {
+		case instanceStarted:
+			return nil
+		case nil:
+			continue
+		default:
+			return err
 		}
 
 	}

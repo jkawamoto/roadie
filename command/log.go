@@ -30,8 +30,9 @@ import (
 	"time"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/log"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -51,6 +52,7 @@ func CmdLog(c *cli.Context) error {
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
 		Output:       os.Stdout,
+		Config:       config.FromCliContext(c),
 	}); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -69,8 +71,8 @@ type logOpt struct {
 	Follow bool
 	// io.Writer to be outputted logs.
 	Output io.Writer
-	// Used to obtain log entries.
-	Requester log.EntryRequester
+	// Config.
+	Config *config.Config
 }
 
 func cmdLog(opt *logOpt) (err error) {
@@ -79,47 +81,33 @@ func cmdLog(opt *logOpt) (err error) {
 	if opt.Output == nil {
 		opt.Output = ioutil.Discard
 	}
-	if opt.Requester == nil {
-		opt.Requester = log.NewCloudLoggingService(opt.Context)
-	}
 
-	// Determine when the newest instance starts.
-	var start time.Time
-	if err = log.GetOperationLogEntries(opt.Context, opt.Requester, func(timestamp time.Time, payload *log.ActivityPayload) (err error) {
-		if payload.Resource.Name == opt.InstanceName {
-			if payload.EventSubtype == log.EventSubtypeInsert {
-				start = timestamp
-			}
-		}
-		return
-	}); err != nil {
-		return
-	}
+	var from time.Time
+	log := gce.NewLogManager(&opt.Config.GcpConfig)
 
 	for {
 
-		err = log.GetInstanceLogEntries(
-			opt.Context, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *log.RoadiePayload) (err error) {
+		err = log.Get(opt.Context, opt.InstanceName, from, func(timestamp time.Time, line string, stderr bool) error {
 
-				var msg string
-				if opt.Timestamp {
-					msg = fmt.Sprintf("%v: %s", timestamp.Format(PrintTimeFormat), payload.Log)
-				} else {
-					msg = fmt.Sprintf("%s", payload.Log)
-				}
+			var msg string
+			if opt.Timestamp {
+				msg = fmt.Sprintf("%v: %s", timestamp.Format(PrintTimeFormat), line)
+			} else {
+				msg = fmt.Sprintf("%s", line)
+			}
 
-				if payload.Stream == "stdout" {
-					fmt.Fprintln(opt.Output, msg)
-				} else {
-					fmt.Fprintln(os.Stderr, msg)
-				}
+			if !stderr {
+				fmt.Fprintln(opt.Output, msg)
+			} else {
+				fmt.Fprintln(os.Stderr, msg)
+			}
 
-				start = timestamp
-				return
+			from = timestamp
+			return nil
 
-			})
+		})
 		if err != nil {
-			break
+			return
 		}
 
 		if !opt.Follow {

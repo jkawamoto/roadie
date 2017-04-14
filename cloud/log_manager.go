@@ -1,5 +1,5 @@
 //
-// command/log/const.go
+// cloud/log_manager.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,15 +19,17 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package log
+package cloud
 
-const (
-	// TimeFormat defines time format of Google Logging.
-	TimeFormat = "2006-01-02T15:04:05Z"
-
-	// EventSubtypeInsert means this event is creating an instance.
-	EventSubtypeInsert = "compute.instances.insert"
-
-	// EventSubtypeDelete means this event is deleting an instance.
-	EventSubtypeDelete = "compute.instances.delete"
+import (
+	"context"
+	"time"
 )
+
+// LogHandler defines a hanler function for log entries.
+type LogHandler func(timestamp time.Time, line string, stderr bool) error
+
+// LogManager defines a service interface for obtaining log entries.
+type LogManager interface {
+	Get(ctx context.Context, instanceName string, from time.Time, handler LogHandler) error
+}

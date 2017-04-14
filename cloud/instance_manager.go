@@ -40,7 +40,7 @@ type InstanceManager interface {
 	Instances(context.Context) (instances map[string]struct{}, err error)
 
 	// AvailableRegions returns a list of available regions.
-	AvailableRegions(context.Context) (zones []Region, err error)
+	AvailableRegions(context.Context) (regions []Region, err error)
 
 	// AvailableMachineTypes returns a list of available machine types.
 	AvailableMachineTypes(context.Context) (types []MachineType, err error)

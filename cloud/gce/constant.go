@@ -33,4 +33,11 @@ const (
 	DefaultZone = "us-central1-b"
 	// DefaultMachineType defines the default machine type.
 	DefaultMachineType = "n1-standard-1"
+
+	// LogTimeFormat defines time format of Google Logging.
+	LogTimeFormat = "2006-01-02T15:04:05Z"
+	// LogEventSubtypeInsert means this event is creating an instance.
+	LogEventSubtypeInsert = "compute.instances.insert"
+	// LogEventSubtypeDelete means this event is deleting an instance.
+	LogEventSubtypeDelete = "compute.instances.delete"
 )
