@@ -1,5 +1,5 @@
 //
-// cloud/storage_servicer.go
+// cloud/storage_manager.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -26,8 +26,8 @@ import (
 	"io"
 )
 
-// StorageServicer defines API which a storage service provider must have.
-type StorageServicer interface {
+// StorageManager defines API which a storage service provider must have.
+type StorageManager interface {
 
 	// Upload a given stream with a given container and file name; returned string
 	// represents a URI assosiated with the uploaded file.

@@ -42,13 +42,13 @@ import (
 // Storage provides APIs to access a cloud storage.
 type Storage struct {
 	// Servicer.
-	service StorageServicer
+	service StorageManager
 	// Writer logs to be printed.
 	Log io.Writer
 }
 
 // NewStorage creates a cloud storage accessor with a given context.
-func NewStorage(servicer StorageServicer, log io.Writer) (s *Storage) {
+func NewStorage(servicer StorageManager, log io.Writer) (s *Storage) {
 
 	if log == nil {
 		log = os.Stderr

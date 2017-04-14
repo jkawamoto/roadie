@@ -24,8 +24,8 @@ package gce
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strconv"
@@ -34,7 +34,6 @@ import (
 
 	"cloud.google.com/go/logging"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 
@@ -51,20 +50,19 @@ var (
 // Platform.
 type ComputeService struct {
 	Config    *GcpConfig
-	Log       io.Writer
+	Logger    *log.Logger
 	SleepTime time.Duration
 }
 
 // NewComputeService creates a new compute service client.
-func NewComputeService(cfg *GcpConfig, log io.Writer) *ComputeService {
+func NewComputeService(cfg *GcpConfig, logger *log.Logger) *ComputeService {
 
-	if log == nil {
-		log = ioutil.Discard
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
-
 	return &ComputeService{
 		Config:    cfg,
-		Log:       log,
+		Logger:    logger,
 		SleepTime: 10 * time.Second,
 	}
 }
@@ -86,6 +84,7 @@ func (s *ComputeService) newService(ctx context.Context) (*compute.Service, erro
 // AvailableRegions returns a slice of region information.
 func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.Region, err error) {
 
+	s.Logger.Println("Retrieving available regions")
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
@@ -103,6 +102,8 @@ func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.
 			Status: v.Status,
 		}
 	}
+
+	s.Logger.Println("Finished retrieving available regions")
 	return
 
 }
@@ -110,6 +111,7 @@ func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.
 // AvailableMachineTypes returns a slice of machie type names.
 func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []cloud.MachineType, err error) {
 
+	s.Logger.Println("Retrieving available machine types")
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
@@ -127,6 +129,8 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 			Description: v.Description,
 		}
 	}
+
+	s.Logger.Println("Finished retrieving available machine types")
 	return
 
 }
@@ -134,20 +138,30 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 // CreateInstance creates a new instance based on the builder's configuration.
 func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *script.Script, disksize int64) (err error) {
 
+	s.Logger.Println("Creating instance", name)
+
 	// Update URLs of which scheme is `roadie://` to `gs://`.
 	s.replaceURLScheme(task)
 
+	// Create a startup script.
 	startup, err := s.createStartupScript(name, task)
 	if err != nil {
 		return
 	}
-	return s.createInstance(ctx, name, startup, disksize)
+	err = s.createInstance(ctx, name, startup, disksize)
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished creating instance", name)
+	return
 
 }
 
 // DeleteInstance deletes a given named instance.
 func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err error) {
 
+	s.Logger.Println("Deleting instance", name)
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
@@ -155,11 +169,12 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 
 	res, err := service.Instances.Delete(s.Config.Project, s.Config.Zone, name).Do()
 	if err == nil {
+		s.Logger.Println("Finished deleting instance")
 		if res.StatusMessage != "" {
-			fmt.Fprintln(s.Log, res.StatusMessage)
+			s.Logger.Println("*", res.StatusMessage)
 		}
 		for _, v := range res.Warnings {
-			fmt.Fprintln(s.Log, chalk.Red.Color(v.Message))
+			s.Logger.Println("*", v.Message)
 		}
 	}
 	return
@@ -168,6 +183,7 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 // Instances returns a list of running instances
 func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
 
+	s.Logger.Println("Retrieving running instances")
 	instances = make(map[string]struct{})
 	log := NewLogManager(s.Config)
 	err = log.OperationLogEntries(ctx, func(_ time.Time, payload *ActivityPayload) error {
@@ -189,6 +205,11 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 
 	})
 
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished retrieving running instances")
 	return
 }
 
@@ -259,10 +280,10 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 		return
 	}
 	if res.StatusMessage != "" {
-		fmt.Fprintln(s.Log, res.StatusMessage)
+		s.Logger.Println(res.StatusMessage)
 	}
 	for _, v := range res.Warnings {
-		fmt.Fprintln(s.Log, chalk.Red.Color(v.Message))
+		s.Logger.Println("*", v.Message)
 	}
 
 	log := NewLogManager(s.Config)

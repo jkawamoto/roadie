@@ -24,7 +24,6 @@ package gce
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -55,18 +54,17 @@ type QueueName struct {
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
 type QueueService struct {
-	client    *datastore.Client
-	Config    *GcpConfig
-	Logger    *log.Logger
-	logWriter io.Writer
+	client *datastore.Client
+	Config *GcpConfig
+	Logger *log.Logger
 }
 
 // NewQueueService creates an interace for a queue service based on Google
 // Cloud Datastore.
-func NewQueueService(ctx context.Context, cfg *GcpConfig, out io.Writer) (*QueueService, error) {
+func NewQueueService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) (*QueueService, error) {
 
-	if out == nil {
-		out = ioutil.Discard
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
 	client, err := datastore.NewClient(ctx, cfg.Project)
@@ -75,10 +73,9 @@ func NewQueueService(ctx context.Context, cfg *GcpConfig, out io.Writer) (*Queue
 	}
 
 	return &QueueService{
-		client:    client,
-		Config:    cfg,
-		Logger:    log.New(out, "", log.LstdFlags),
-		logWriter: out,
+		client: client,
+		Config: cfg,
+		Logger: logger,
 	}, nil
 
 }
@@ -254,7 +251,7 @@ func (s *QueueService) Restart(ctx context.Context, queue string) error {
 func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize int64, n int, handler cloud.QueueManagerNameHandler) error {
 
 	s.Logger.Println("Creating worker instances for queue", queue)
-	compute := NewComputeService(s.Config, s.logWriter)
+	compute := NewComputeService(s.Config, s.Logger)
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < n; i++ {
 
@@ -295,7 +292,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, diskSize
 // Workers retrieves worker instance names for a given queue.
 func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.QueueManagerNameHandler) error {
 
-	compute := NewComputeService(s.Config, s.logWriter)
+	compute := NewComputeService(s.Config, s.Logger)
 	instances, err := compute.Instances(ctx)
 	if err != nil {
 		return err

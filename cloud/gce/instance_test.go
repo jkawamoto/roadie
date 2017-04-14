@@ -53,7 +53,7 @@ func TestNewComputeService(t *testing.T) {
 		t.Error("Machine type doesn't match:", s.Config.MachineType)
 	}
 
-	if s.Log == nil {
+	if s.Logger == nil {
 		t.Error("Logger is nil")
 	}
 
