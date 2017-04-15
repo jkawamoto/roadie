@@ -58,7 +58,11 @@ func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err erro
 	}
 
 	cfg.Project = aux.Project
-	cfg.Bucket = aux.Bucket
+	if aux.Bucket != "" {
+		cfg.Bucket = aux.Bucket
+	} else {
+		cfg.Bucket = cfg.Project
+	}
 
 	if aux.Zone != "" {
 		cfg.Zone = aux.Zone

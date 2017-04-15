@@ -79,9 +79,10 @@ func TestCreateStartupScript(t *testing.T) {
 	name := "test-name"
 
 	task = script.Script{
-		Options: []string{},
+		Options:      []string{},
+		InstanceName: name,
 	}
-	startup, err = service.createStartupScript(name, &task)
+	startup, err = service.createStartupScript(&task)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -95,7 +96,7 @@ func TestCreateStartupScript(t *testing.T) {
 			"retry:15",
 		},
 	}
-	startup, err = service.createStartupScript(name, &task)
+	startup, err = service.createStartupScript(&task)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -111,7 +112,7 @@ func TestCreateStartupScript(t *testing.T) {
 			"retry:?",
 		},
 	}
-	startup, err = service.createStartupScript(name, &task)
+	startup, err = service.createStartupScript(&task)
 	if err != nil {
 		t.Error(err.Error())
 	}

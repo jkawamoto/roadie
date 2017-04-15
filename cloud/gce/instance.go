@@ -136,24 +136,24 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 }
 
 // CreateInstance creates a new instance based on the builder's configuration.
-func (s *ComputeService) CreateInstance(ctx context.Context, name string, task *script.Script) (err error) {
+func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script) (err error) {
 
-	s.Logger.Println("Creating instance", name)
+	s.Logger.Println("Creating instance", task.InstanceName)
 
 	// Update URLs of which scheme is `roadie://` to `gs://`.
 	s.replaceURLScheme(task)
 
 	// Create a startup script.
-	startup, err := s.createStartupScript(name, task)
+	startup, err := s.createStartupScript(task)
 	if err != nil {
 		return
 	}
-	err = s.createInstance(ctx, name, startup)
+	err = s.createInstance(ctx, task.InstanceName, startup)
 	if err != nil {
 		return
 	}
 
-	s.Logger.Println("Finished creating instance", name)
+	s.Logger.Println("Finished creating instance", task.InstanceName)
 	return
 
 }
@@ -361,7 +361,7 @@ func (s *ComputeService) createURL(group, name string) string {
 }
 
 // createStartupScript creates a start up script with a given name and task.
-func (s *ComputeService) createStartupScript(name string, task *script.Script) (startup string, err error) {
+func (s *ComputeService) createStartupScript(task *script.Script) (startup string, err error) {
 
 	retry := 10
 	options := ""
@@ -380,7 +380,7 @@ func (s *ComputeService) createStartupScript(name string, task *script.Script) (
 	}
 
 	startup, err = Startup(&StartupOpt{
-		Name:    name,
+		Name:    task.InstanceName,
 		Script:  task.String(),
 		Options: options,
 		Image:   task.Image,
