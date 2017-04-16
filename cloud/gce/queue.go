@@ -97,6 +97,16 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 		return err
 	})
 
+	// If there are no workers, create one worker.
+	if exist, err := s.workerExists(ctx, queue); err != nil {
+		return err
+	} else if !exist {
+		s.CreateWorkers(ctx, queue, 1, func(name string) error {
+			s.Logger.Printf("New instance %v has started\n", name)
+			return nil
+		})
+	}
+
 	if err != nil {
 		s.Logger.Println("Cannot enqueue the task to queue", queue, ":", err.Error())
 	} else {
@@ -267,12 +277,16 @@ func (s *QueueService) Restart(ctx context.Context, queue string) (err error) {
 		return
 	}
 
-	err = s.CreateWorkers(ctx, queue, 1, func(name string) error {
-		s.Logger.Printf("New instance %v has started\n", name)
-		return nil
-	})
-	if err != nil {
-		return
+	if exist, err := s.workerExists(ctx, queue); err != nil {
+		return err
+	} else if !exist {
+		err = s.CreateWorkers(ctx, queue, 1, func(name string) error {
+			s.Logger.Printf("New instance %v has started\n", name)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	s.Logger.Println("Finished restarting queue", queue)
@@ -343,5 +357,21 @@ func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.
 
 	s.Logger.Println("Finishes retrieving workers in queue", queue)
 	return nil
+
+}
+
+// workerExists returns true if there is at lease one worker is working for the
+// given named queue.
+func (s *QueueService) workerExists(ctx context.Context, queue string) (exist bool, err error) {
+
+	done := fmt.Errorf("Iteration done")
+	err = s.Workers(ctx, queue, func(name string) error {
+		exist = true
+		return done
+	})
+	if err == done {
+		err = nil
+	}
+	return
 
 }
