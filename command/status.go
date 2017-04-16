@@ -22,9 +22,7 @@
 package command
 
 import (
-	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -34,9 +32,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
@@ -48,17 +43,17 @@ func CmdStatus(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	if err := cmdStatus(util.GetContext(c), c.Bool("all")); err != nil {
+	m := getMetadata(c)
+	if err := cmdStatus(m, c.Bool("all")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
 
 }
 
-// cmdStatus shows instance information. To obtain such information, `conf` is
-// required. If all is true, print all instances otherwise information of
+// cmdStatus shows instance information. If all is true, print all instances otherwise information of
 // instances of which results are deleted already will be omitted.
-func cmdStatus(ctx context.Context, all bool) (err error) {
+func cmdStatus(m *Metadata, all bool) (err error) {
 
 	var runningInstances []string
 	var terminatedInstances []string
@@ -70,13 +65,11 @@ func cmdStatus(ctx context.Context, all bool) (err error) {
 		s.Start()
 		defer s.Stop()
 
-		cfg, err := config.FromContext(ctx)
+		compute, err := m.InstanceManager()
 		if err != nil {
-			return err
+			return
 		}
-
-		compute := gce.NewComputeService(&cfg.GcpConfig, os.Stderr)
-		instances, err := compute.Instances(ctx)
+		instances, err := compute.Instances(m.Context)
 		if err != nil {
 			return err
 		}
@@ -85,17 +78,16 @@ func cmdStatus(ctx context.Context, all bool) (err error) {
 		}
 		sort.Strings(runningInstances)
 
-		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
+		service, err := m.StorageManager()
 		if err != nil {
 			return err
 		}
-		defer service.Close()
-
 		storage := cloud.NewStorage(service, nil)
-		err = storage.ListupFiles(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
+
+		err = storage.ListupFiles(m.Context, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
 			select {
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-m.Context.Done():
+				return m.Context.Err()
 			default:
 			}
 
@@ -135,7 +127,8 @@ func CmdStatusKill(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	if err := cmdStatusKill(util.GetContext(c), c.Args()[0]); err != nil {
+	m := getMetadata(c)
+	if err := cmdStatusKill(m, c.Args().First()); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -143,7 +136,7 @@ func CmdStatusKill(c *cli.Context) error {
 }
 
 // cmdStatusKill kills a given instance named `instanceName`.
-func cmdStatusKill(ctx context.Context, instanceName string) (err error) {
+func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
@@ -151,13 +144,12 @@ func cmdStatusKill(ctx context.Context, instanceName string) (err error) {
 	s.Start()
 	defer s.Stop()
 
-	cfg, err := config.FromContext(ctx)
+	compute, err := m.InstanceManager()
 	if err != nil {
 		return
 	}
-	compute := gce.NewComputeService(&cfg.GcpConfig, nil)
 
-	if err = compute.DeleteInstance(ctx, instanceName); err != nil {
+	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
 		s.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
 			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())

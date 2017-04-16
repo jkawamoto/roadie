@@ -23,15 +23,10 @@ package command
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -57,26 +52,14 @@ func CmdQueueList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	m := getMetadata(c)
+	queue, err := m.QueueManager()
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
 
-	return queueManager.Queues(ctx, func(name string) error {
-		_, err := fmt.Println(name)
+	return queue.Queues(m.Context, func(name string) (err error) {
+		_, err = fmt.Println(name)
 		return err
 	})
 
@@ -91,28 +74,15 @@ func CmdQueueShow(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m := getMetadata(c)
 	name := c.Args().First()
-
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	queue, err := m.QueueManager()
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
 
-	return queueManager.Tasks(ctx, name, func(item *script.Script) error {
-		_, err := fmt.Println(item.InstanceName)
+	return queue.Tasks(m.Context, name, func(item *script.Script) (err error) {
+		_, err = fmt.Println(item.InstanceName)
 		return err
 	})
 
@@ -125,28 +95,16 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	m := getMetadata(c)
+	queueManager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
 	queue := c.Args().First()
 
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
-
-	return queueManager.Workers(ctx, queue, func(name string) error {
-		_, err := fmt.Println(name)
+	return queueManager.Workers(m.Context, queue, func(name string) (err error) {
+		_, err = fmt.Println(name)
 		return err
 	})
 
@@ -160,27 +118,13 @@ func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m := getMetadata(c)
 	queue := c.Args().First()
 	instances := c.Int("instances")
-	diskSize := c.Int64("disk-size")
-
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
 
 	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
@@ -189,7 +133,7 @@ func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 	bar.Start()
 	defer bar.Finish()
 
-	return queueManager.CreateWorkers(ctx, queue, diskSize, instances, func(name string) error {
+	return queueManager.CreateWorkers(m.Context, queue, instances, func(name string) error {
 		bar.Increment()
 		return nil
 	})
@@ -204,27 +148,15 @@ func CmdQueueStop(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
+	m := getMetadata(c)
 	queue := c.Args().First()
-
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
 	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
 
-	return queueManager.Stop(ctx, queue)
+	return queueManager.Stop(m.Context, queue)
 
 }
 
@@ -237,44 +169,14 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
+
 	queue := c.Args().First()
-
-	var log io.Writer
-	if c.Bool("verbose") {
-		log = os.Stderr
-	} else {
-		log = ioutil.Discard
-	}
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
-	queueManager, err := gce.NewQueueService(ctx, &cfg.GcpConfig, log)
-	if err != nil {
-		return
-	}
-	defer queueManager.Close()
-
-	err = queueManager.Restart(ctx, queue)
+	m := getMetadata(c)
+	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
 	}
 
-	instances := c.Int("instances")
-	diskSize := c.Int64("disk-size")
-
-	fmt.Fprintln(os.Stderr, "Creating instances")
-	bar := pb.New(instances)
-	bar.Output = os.Stderr
-	bar.Prefix("Instance")
-	bar.Start()
-	defer bar.Finish()
-
-	return queueManager.CreateWorkers(ctx, queue, diskSize, instances, func(name string) error {
-		bar.Increment()
-		return nil
-	})
+	return queueManager.Restart(m.Context, queue)
 
 }

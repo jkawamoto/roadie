@@ -24,49 +24,111 @@ package command
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
+
+// Metadata is a set of data used for any commands.
+type Metadata struct {
+	Context  context.Context
+	Config   *config.Config
+	provider cloud.Provider
+	Logger   *log.Logger
+}
+
+// InstanceManager returns an instance manager interface.
+func (m *Metadata) InstanceManager() (cloud.InstanceManager, error) {
+	return m.provider.InstanceManager(m.Context)
+}
+
+// QueueManager returns a queue manager interface.
+func (m *Metadata) QueueManager() (cloud.QueueManager, error) {
+	return m.provider.QueueManager(m.Context)
+}
+
+// StorageManager returns a storage manager interface.
+func (m *Metadata) StorageManager() (cloud.StorageManager, error) {
+	return m.provider.StorageManager(m.Context)
+}
+
+// LogManager returns a log manager interface.
+func (m *Metadata) LogManager() (cloud.LogManager, error) {
+	return m.provider.LogManager(m.Context)
+}
+
+// getMetadata gets metadata from a cli context.
+func getMetadata(c *cli.Context) *Metadata {
+
+	rawCtx, _ := c.App.Metadata["context"]
+	ctx, _ := rawCtx.(context.Context)
+
+	rawCfg, _ := c.App.Metadata["config"]
+	cfg, _ := rawCfg.(*config.Config)
+
+	rawProvier, _ := c.App.Metadata["provider"]
+	provider, _ := rawProvier.(cloud.Provider)
+
+	rawLogger, _ := c.App.Metadata["logger"]
+	logger, _ := rawLogger.(*log.Logger)
+
+	return &Metadata{
+		Context:  ctx,
+		Config:   cfg,
+		provider: provider,
+		Logger:   logger,
+	}
+
+}
 
 // PrepareCommand prepares executing any command; it loads the configuratio file,
 // checkes global flags.
 func PrepareCommand(c *cli.Context) (err error) {
 
 	// Load the configuration file.
-	conf, err := config.NewConfig()
-	if err != nil {
-		return
-	}
+	var cfg *config.Config
+	if conf := c.GlobalString("config"); conf != "" {
 
-	// Update configuration.
-	if conf.GcpConfig.Project == "" && c.Command.Name != "init" {
-		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
-	}
-	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.GcpConfig.Project, chalk.Green.Color(v))
-		conf.GcpConfig.Project = v
-	}
-	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.GcpConfig.MachineType, chalk.Green.Color(v))
-		conf.GcpConfig.MachineType = v
-	}
-	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.GcpConfig.Zone, chalk.Green.Color(v))
-		conf.GcpConfig.Zone = v
-	}
-	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.GcpConfig.Bucket, chalk.Green.Color(v))
-		conf.GcpConfig.Bucket = v
-	}
+		cfg = &config.Config{
+			FileName: conf,
+		}
+		err = cfg.Load()
+		if err != nil {
+			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+		}
 
-	// Append the config to the context.
-	ctx, ok := c.App.Metadata["context"].(context.Context)
-	if !ok {
-		return fmt.Errorf("Context is broken: %v", c.App.Metadata)
+	} else {
+
+		cfg, err = config.NewConfig()
+		if err != nil {
+			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+		}
+
 	}
-	c.App.Metadata["context"] = config.NewContext(ctx, conf)
+	c.App.Metadata["config"] = cfg
+
+	// Prepare a logger.
+	var logger *log.Logger
+	if c.Bool("verbose") {
+		logger = log.New(os.Stderr, "", log.LstdFlags)
+	} else {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+	}
+	c.App.Metadata["logger"] = logger
+
+	// Prepare a service provider.
+	switch {
+	case cfg.GcpConfig.Project != "":
+		c.App.Metadata["provider"] = gce.NewProvider(&cfg.GcpConfig, logger)
+	default:
+		// TODO: Return an error.
+		return fmt.Errorf("")
+	}
 
 	return
 

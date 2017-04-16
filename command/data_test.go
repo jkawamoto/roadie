@@ -25,7 +25,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jkawamoto/roadie/cloud/gce"
+	"github.com/jkawamoto/roadie/cloud/mock"
 	"github.com/jkawamoto/roadie/config"
 )
 
@@ -33,26 +33,31 @@ import (
 // and if empty pattern is given, it do nothing.
 func TestCmdDataPut(t *testing.T) {
 
-	cfg := &config.Config{
-		GcpConfig: gce.GcpConfig{
-			Project: "test-project",
-			Zone:    "test-zone",
+	var err error
+	opt := optDataPut{
+		Metadata: &Metadata{
+			Config:   &config.Config{},
+			Context:  context.Background(),
+			provider: mock.NewMockProvider(),
 		},
 	}
-	ctx := config.NewContext(context.Background(), cfg)
 
 	// Test for wrong pattern.
-	if err := cmdDataPut(ctx, "[b-a", ""); err == nil {
+	opt.Filename = "[b-a"
+	opt.StoredName = ""
+	if err = opt.run(); err == nil {
 		t.Error("Give a wrong pattern but no errors occur.")
 	} else {
 		t.Logf("Wrong pattern makes an error: %s", err.Error())
 	}
 
 	// Test for empty pattern.
-	err := cmdDataPut(ctx, "", "")
-	if err == nil {
-		t.Error("Give a wrong pattern but no errors occur.")
+	opt.Filename = ""
+	opt.StoredName = ""
+	if err = opt.run(); err == nil {
+		t.Error("Give empty pattern but no errors occur.")
+	} else {
+		t.Logf("Empty pattern makes an error: %s", err.Error())
 	}
-	t.Log(err.Error())
 
 }

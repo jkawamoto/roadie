@@ -22,7 +22,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,9 +31,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
@@ -47,7 +44,8 @@ func CmdSourcePut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	if err := cmdSourcePut(util.GetContext(c), c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
+	m := getMetadata(c)
+	if err := cmdSourcePut(m, c.Args()[0], c.Args()[1], c.StringSlice("exclude")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
@@ -57,7 +55,7 @@ func CmdSourcePut(c *cli.Context) error {
 // cmdSourcePut uploads a directory `root` after making archive file named `name`.
 // If `excludes` are given, any files match such exclude patters are omitted from
 // the archive file.
-func cmdSourcePut(ctx context.Context, root, name string, excludes []string) (err error) {
+func cmdSourcePut(m *Metadata, root, name string, excludes []string) (err error) {
 
 	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
 	uploadingPath := filepath.Join(os.TempDir(), filename)
@@ -75,20 +73,13 @@ func cmdSourcePut(ctx context.Context, root, name string, excludes []string) (er
 	s.Stop()
 	defer os.Remove(uploadingPath)
 
-	cfg, err := config.FromContext(ctx)
+	service, err := m.StorageManager()
 	if err != nil {
 		return err
 	}
-
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-	if err != nil {
-		return err
-	}
-	defer service.Close()
-
 	storage := cloud.NewStorage(service, nil)
 
-	url, err := storage.UploadFile(ctx, script.SourcePrefix, filename, uploadingPath)
+	url, err := storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingPath)
 	if err != nil {
 		return
 	}

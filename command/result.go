@@ -29,9 +29,6 @@ import (
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
@@ -55,13 +52,13 @@ func CmdResult(c *cli.Context) error {
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) (err error) {
 
-	ctx := util.GetContext(c)
+	m := getMetadata(c)
 	switch c.NArg() {
 	case 0:
-		err = PrintDirList(ctx, script.ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(m, script.ResultPrefix, c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileList(ctx, filepath.Join(script.ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		err = PrintFileList(m, filepath.Join(script.ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
@@ -77,28 +74,22 @@ func CmdResultList(c *cli.Context) (err error) {
 // CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
 func CmdResultShow(c *cli.Context) (err error) {
 
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	m := getMetadata(c)
+	service, err := m.StorageManager()
 	if err != nil {
 		return err
 	}
-
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-	if err != nil {
-		return err
-	}
-	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
 	switch c.NArg() {
 	case 1:
 		instance := c.Args().First()
-		err = storage.PrintFileBody(ctx, script.ResultPrefix, instance, StdoutFilePrefix, os.Stdout, true)
+		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, StdoutFilePrefix, os.Stdout, true)
 
 	case 2:
 		instance := c.Args().First()
 		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = storage.PrintFileBody(ctx, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
+		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
 
 	default:
 		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
@@ -121,25 +112,18 @@ func CmdResultGet(c *cli.Context) error {
 	}
 
 	instance := c.Args().First()
-
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	m := getMetadata(c)
+	service, err := m.StorageManager()
 	if err != nil {
 		return err
 	}
-
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-	if err != nil {
-		return err
-	}
-	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
 	pattern := c.Args().Tail()
 	if len(pattern) == 0 {
 		pattern = append(pattern, "*")
 	}
-	if err := storage.DownloadFiles(ctx, script.ResultPrefix, instance, filepath.ToSlash(c.String("o")), pattern); err != nil {
+	if err := storage.DownloadFiles(m.Context, script.ResultPrefix, instance, filepath.ToSlash(c.String("o")), pattern); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
@@ -176,20 +160,14 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	ctx := util.GetContext(c)
-	cfg, err := config.FromContext(ctx)
+	m := getMetadata(c)
+	service, err := m.StorageManager()
 	if err != nil {
 		return err
 	}
-
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-	if err != nil {
-		return err
-	}
-	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
-	if err := storage.DeleteFiles(ctx, script.ResultPrefix, instance, patterns); err != nil {
+	if err := storage.DeleteFiles(m.Context, script.ResultPrefix, instance, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil

@@ -22,7 +22,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -30,20 +29,13 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/config"
 )
 
 // AddRecorder is a callback to add file information to a table.
 type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
-
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
+func PrintFileList(m *Metadata, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -52,15 +44,14 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
+	return printList(m, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 		if info.Name != "" {
 			if quiet {
 				table.AddRow(info.Name)
 			} else if url {
 				table.AddRow(info.Name, fmt.Sprintf(
-					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-					fmt.Sprintf("gs://%s/%s", cfg.GcpConfig.Bucket, info.Path))
+					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat), info.Path)
 			} else {
 				table.AddRow(info.Name, fmt.Sprintf(
 					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
@@ -71,12 +62,7 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err error) {
-
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
+func PrintDirList(m *Metadata, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -88,29 +74,26 @@ func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err erro
 	// Storing previous folder name.
 	prev := ""
 
-	return printList(ctx, prefix, quiet, headers,
-		func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
+	return printList(m, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-			rel, _ := filepath.Rel(prefix, info.Path)
-			rel = filepath.Dir(rel)
+		rel, _ := filepath.Rel(prefix, info.Path)
+		rel = filepath.Dir(rel)
 
-			if rel != "." && rel != prev {
-				if quiet {
-					table.AddRow(rel)
-				} else if url {
-					table.AddRow(
-						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", cfg.GcpConfig.Bucket, rel))
-				} else {
-					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
-				}
-				prev = rel
+		if rel != "." && rel != prev {
+			if quiet {
+				table.AddRow(rel)
+			} else if url {
+				table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat), rel)
+			} else {
+				table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
 			}
+			prev = rel
+		}
 
-		})
+	})
 }
 
-func printList(ctx context.Context, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
+func printList(m *Metadata, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -126,19 +109,13 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	cfg, err := config.FromContext(ctx)
+	service, err := m.StorageManager()
 	if err != nil {
 		return err
 	}
-
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-	if err != nil {
-		return err
-	}
-	defer service.Close()
 
 	storage := cloud.NewStorage(service, nil)
-	err = storage.ListupFiles(ctx, prefix, "", func(info *cloud.FileInfo) error {
+	err = storage.ListupFiles(m.Context, prefix, "", func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})

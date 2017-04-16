@@ -148,21 +148,16 @@ func TestSetLocalSource(t *testing.T) {
 func TestSetSource(t *testing.T) {
 
 	var s script.Script
-	conf := &config.Config{
-		GcpConfig: gce.GcpConfig{
-			Bucket: "somebucket",
-		},
-	}
 
 	s = script.Script{}
-	setSource(conf, &s, "abc.tar.gz")
-	if s.Source != script.RoadieSchemePrefix+"abc.tar.gz" {
+	setSource(&s, "abc.tar.gz")
+	if s.Source != script.RoadieSchemePrefix+"source/abc.tar.gz" {
 		t.Errorf("source section is not correct: %s", s.Source)
 	}
 
 	s = script.Script{}
-	setSource(conf, &s, "abc")
-	if s.Source != script.RoadieSchemePrefix+"abc.tar.gz" {
+	setSource(&s, "abc")
+	if s.Source != script.RoadieSchemePrefix+"source/abc.tar.gz" {
 		t.Errorf("source section is not correct: %s", s.Source)
 	}
 

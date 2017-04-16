@@ -26,9 +26,6 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
@@ -46,7 +43,8 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		err := PrintFileList(util.GetContext(c), prefix, c.Bool("url"), c.Bool("quiet"))
+		m := getMetadata(c)
+		err := PrintFileList(m, prefix, c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -67,20 +65,14 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := util.GetContext(c)
-		cfg, err := config.FromContext(ctx)
+		m := getMetadata(c)
+		service, err := m.StorageManager()
 		if err != nil {
 			return err
 		}
-
-		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-		if err != nil {
-			return err
-		}
-		defer service.Close()
-
 		storage := cloud.NewStorage(service, nil)
-		if err := storage.DownloadFiles(ctx, container, "", c.String("o"), c.Args()); err != nil {
+
+		if err := storage.DownloadFiles(m.Context, container, "", c.String("o"), c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 
@@ -101,20 +93,14 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		ctx := util.GetContext(c)
-		cfg, err := config.FromContext(ctx)
+		m := getMetadata(c)
+		service, err := m.StorageManager()
 		if err != nil {
 			return err
 		}
-
-		service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
-		if err != nil {
-			return err
-		}
-		defer service.Close()
-
 		storage := cloud.NewStorage(service, nil)
-		if err := storage.DeleteFiles(ctx, container, "", c.Args()); err != nil {
+
+		if err := storage.DeleteFiles(m.Context, container, "", c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 

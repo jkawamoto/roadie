@@ -22,19 +22,26 @@
 package command
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
+
+// optLog defines arguments of log command.
+type optLog struct {
+	*Metadata
+	// InstanceName of which logs are shown.
+	InstanceName string
+	// If true, timestamp is also printed.
+	Timestamp bool
+	// If true, keep waiting new logs.
+	Follow bool
+	// SleepTime defines sleep time.
+	SleepTime time.Duration
+}
 
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
@@ -46,45 +53,26 @@ func CmdLog(c *cli.Context) error {
 	}
 
 	// Run the log command.
-	if err := cmdLog(&logOpt{
-		Context:      util.GetContext(c),
+	if err := cmdLog(&optLog{
+		Metadata:     getMetadata(c),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
-		Output:       os.Stdout,
-		Config:       config.FromCliContext(c),
+		SleepTime:    DefaultSleepTime,
 	}); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
 }
 
-// logOpt manages arguments for log command.
-type logOpt struct {
-	// Context, a config must be attached to.
-	Context context.Context
-	// InstanceName of which logs are shown.
-	InstanceName string
-	// If true, timestamp is also printed.
-	Timestamp bool
-	// If true, keep waiting new logs.
-	Follow bool
-	// io.Writer to be outputted logs.
-	Output io.Writer
-	// Config.
-	Config *config.Config
-}
+func cmdLog(opt *optLog) (err error) {
 
-func cmdLog(opt *logOpt) (err error) {
-
-	// Validate option.
-	if opt.Output == nil {
-		opt.Output = ioutil.Discard
+	log, err := opt.LogManager()
+	if err != nil {
+		return
 	}
 
 	var from time.Time
-	log := gce.NewLogManager(&opt.Config.GcpConfig)
-
 	for {
 
 		err = log.Get(opt.Context, opt.InstanceName, from, func(timestamp time.Time, line string, stderr bool) error {
@@ -97,7 +85,7 @@ func cmdLog(opt *logOpt) (err error) {
 			}
 
 			if !stderr {
-				fmt.Fprintln(opt.Output, msg)
+				fmt.Fprintln(os.Stdout, msg)
 			} else {
 				fmt.Fprintln(os.Stderr, msg)
 			}
@@ -113,9 +101,24 @@ func cmdLog(opt *logOpt) (err error) {
 		if !opt.Follow {
 			break
 		}
-		time.Sleep(30 * time.Second)
+
+		select {
+		case <-opt.Context.Done():
+			return opt.Context.Err()
+		case <-wait(opt.SleepTime):
+		}
 
 	}
 	return
 
+}
+
+// Wait a given duration.
+func wait(d time.Duration) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		time.Sleep(d)
+		close(ch)
+	}()
+	return ch
 }

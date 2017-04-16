@@ -25,7 +25,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -35,15 +34,15 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
 // runOpt manages all arguments and flags defined in run command.
 type runOpt struct {
+	*Metadata
+
 	// Git repository URL which will be cloned as source codes.
 	Git string
 	// URL where source codes are stored.
@@ -89,8 +88,9 @@ func CmdRun(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	opt := runOpt{
+	m := getMetadata(c)
+	opt := &runOpt{
+		Metadata:               m,
 		Git:                    c.String("git"),
 		URL:                    c.String("url"),
 		Local:                  c.String("local"),
@@ -107,16 +107,16 @@ func CmdRun(c *cli.Context) error {
 		Retry:                  c.Int64("retry") + 1,
 		Queue:                  c.String("queue"),
 	}
-	if err := cmdRun(conf, &opt); err != nil {
+	if err := cmdRun(opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	if c.Bool("follow") {
-		return cmdLog(&logOpt{
-			Context:      util.GetContext(c),
+		return cmdLog(&optLog{
+			Metadata:     m,
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,
-			Output:       os.Stdout,
+			SleepTime:    DefaultSleepTime,
 		})
 	}
 	return nil
@@ -124,21 +124,12 @@ func CmdRun(c *cli.Context) error {
 }
 
 // cmdRun implements the main logic of run command.
-func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
-
-	if cfg.GcpConfig.Project == "" {
-		return fmt.Errorf("project ID must be given")
-	}
-	if cfg.GcpConfig.Bucket == "" {
-		fmt.Printf(chalk.Red.Color("Bucket name is not given. Use %s\n."), cfg.GcpConfig.Project)
-		cfg.GcpConfig.Bucket = cfg.GcpConfig.Project
-	}
+func cmdRun(opt *runOpt) (err error) {
 
 	s, err := script.NewScript(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return
 	}
-
 	// Update instance name.
 	// If an instance name is not given, use the default name.
 	if opt.InstanceName != "" {
@@ -146,16 +137,14 @@ func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Prepare a context.
-	ctx, cancel := context.WithCancel(config.NewContext(context.Background(), cfg))
+	ctx, cancel := context.WithCancel(opt.Context)
 	defer cancel()
 
 	// Check a specified bucket exists and create it if not.
-	service, err := gce.NewStorageService(ctx, &cfg.GcpConfig)
+	service, err := opt.StorageManager()
 	if err != nil {
 		return err
 	}
-	defer service.Close()
-
 	storage := cloud.NewStorage(service, nil)
 
 	// Check source section.
@@ -184,7 +173,7 @@ func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
 		}
 
 	case opt.Source != "":
-		setSource(cfg, s, opt.Source)
+		setSource(s, opt.Source)
 
 	case s.Source == "":
 		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
@@ -192,7 +181,7 @@ func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
 
 	// Check result section.
 	if s.Result == "" || opt.OverWriteResultSection {
-		s.Result = script.RoadieSchemePrefix + s.InstanceName
+		s.Result = script.RoadieSchemePrefix + filepath.Join(script.ResultPrefix, s.InstanceName)
 	} else {
 		fmt.Printf(
 			chalk.Red.Color("Since result section is given in %s, all outputs will be stored in %s.\n"), opt.ScriptFile, s.Result)
@@ -203,59 +192,58 @@ func cmdRun(cfg *config.Config, opt *runOpt) (err error) {
 	}
 
 	// Debugging info.
-	fmt.Printf("Script to be run:\n%s\n", s.String())
+	opt.Logger.Printf("Script to be run:\n%s\n", s.String())
 
-	if len(opt.Queue) == 0 {
-		// If queue flag is not given, execute the script in one instance.
+	// if len(opt.Queue) == 0 {
+	// If queue flag is not given, execute the script in one instance.
 
-		// Prepare options.
-		if opt.NoShutdown {
-			s.Options = append(s.Options, "no-shutdown")
-		}
-		if opt.Retry <= 0 {
-			opt.Retry = 10
-		}
-		s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
-
-		// TODO: To support dry-run, make a dummy servicer.
-		err = createInstance(ctx, s.InstanceName, s, opt.DiskSize, os.Stderr)
-
-	} else {
-		// If queue name is given, the script will be enqueued in the queue.
-		// If there are no instances working with the queue,
-		// one instance should be created.
-		var queueManager *gce.QueueService
-		queueManager, err = gce.NewQueueService(ctx, &cfg.GcpConfig, ioutil.Discard)
-		if err != nil {
-			return
-		}
-		defer queueManager.Close()
-
-		s.Image = opt.Image
-		err = queueManager.Enqueue(ctx, opt.Queue, s)
-		if err != nil {
-			return
-		}
-
-		var workerExist bool
-		err = queueManager.Workers(ctx, opt.Queue, func(name string) error {
-			workerExist = true
-			return nil
-		})
-		if err != nil {
-			return
-		}
-
-		if !workerExist {
-			err = queueManager.CreateWorkers(ctx, opt.Queue, opt.DiskSize, 1, func(name string) error {
-				return nil
-			})
-			if err != nil {
-				return
-			}
-		}
-
+	// Prepare options.
+	if opt.NoShutdown {
+		s.Options = append(s.Options, "no-shutdown")
 	}
+	if opt.Retry <= 0 {
+		opt.Retry = 10
+	}
+	s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
+
+	err = createInstance(opt.Metadata, s, os.Stderr)
+
+	// } else {
+	// 	// If queue name is given, the script will be enqueued in the queue.
+	// 	// If there are no instances working with the queue,
+	// 	// one instance should be created.
+	// 	var queueManager *gce.QueueService
+	// 	queueManager, err = gce.NewQueueService(ctx, &cfg.GcpConfig, ioutil.Discard)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// 	defer queueManager.Close()
+	//
+	// 	s.Image = opt.Image
+	// 	err = queueManager.Enqueue(ctx, opt.Queue, s)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	//
+	// 	var workerExist bool
+	// 	err = queueManager.Workers(ctx, opt.Queue, func(name string) error {
+	// 		workerExist = true
+	// 		return nil
+	// 	})
+	// 	if err != nil {
+	// 		return
+	// 	}
+	//
+	// 	if !workerExist {
+	// 		err = queueManager.CreateWorkers(ctx, opt.Queue, opt.DiskSize, 1, func(name string) error {
+	// 			return nil
+	// 		})
+	// 		if err != nil {
+	// 			return
+	// 		}
+	// 	}
+	//
+	// }
 
 	return
 
@@ -340,16 +328,16 @@ func setLocalSource(ctx context.Context, storage *cloud.Storage, s *script.Scrip
 
 }
 
-// setSource sets a URL to a `file` in source directory in GCS to a given `script`.
-// Source codes will be downloaded from the URL. To determine bucketname, it requires
-// config. If overwriting source section, it prints warning, too.
-func setSource(conf *config.Config, s *script.Script, file string) {
+// setSource sets a URL to a `file` in source directory to a given `script`.
+// Source codes will be downloaded from the URL. If overwriting the source
+// section, it prints warning, too.
+func setSource(s *script.Script, file string) {
 
 	if !strings.HasSuffix(file, ".tar.gz") {
 		file += ".tar.gz"
 	}
 
-	url := script.RoadieSchemePrefix + file
+	url := script.RoadieSchemePrefix + filepath.Join(script.SourcePrefix, file)
 	if s.Source != "" {
 		fmt.Printf(
 			chalk.Red.Color("Source section will be overwritten to '%s' since a filename is given.\n"), url)
@@ -358,27 +346,24 @@ func setSource(conf *config.Config, s *script.Script, file string) {
 
 }
 
-// createInstance creates an instance under a given context.
-// The new instance has a given name and a given startup script.
-// It also has a data disk of which volume size is as same as disk.
+// createInstance creates an instance under a given metadata.
+// The new instance has a given startup script.
 // Output messages will be outputted to a given writer, output.
-func createInstance(ctx context.Context, name string, task *script.Script, disk int64, output io.Writer) (err error) {
+func createInstance(m *Metadata, task *script.Script, output io.Writer) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Writer = output
-	s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(name))
+	s.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(task.InstanceName))
 	s.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(s.Prefix)+2))
-
 	s.Start()
 	defer s.Stop()
 
-	cfg, err := config.FromContext(ctx)
+	service, err := m.InstanceManager()
 	if err != nil {
 		return
 	}
 
-	service := gce.NewComputeService(&cfg.GcpConfig, nil)
-	err = service.CreateInstance(ctx, name, task, disk)
+	err = service.CreateInstance(m.Context, task)
 	if err != nil {
 		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(s.Prefix)+2))
 	}
