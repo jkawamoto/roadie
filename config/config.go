@@ -31,6 +31,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/jkawamoto/roadie/cloud/azure"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/mitchellh/go-homedir"
 )
@@ -43,7 +44,10 @@ const DotGit = ".git"
 
 // Config defines a structure of config file.
 type Config struct {
-	GcpConfig gcp.Config `yaml:"gcp"`
+	// Configuration for Microsoft Azure.
+	AzureConfig azure.AzureConfig `yaml:"azure,omitempty"`
+	// Configuration for Google Cloud Platform.
+	GcpConfig gcp.Config `yaml:"gcp,omitempty"`
 	// Config file name used to save/load this config.
 	FileName string `yaml:"-"`
 }
