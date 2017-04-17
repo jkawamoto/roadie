@@ -123,11 +123,14 @@ func (s *ResourceService) CreateResourceGroup(ctx context.Context, name string) 
 // CheckExistence checkes a given named resource group exists.
 func (s *ResourceService) CheckExistence(ctx context.Context, name string) bool {
 
+	s.Logger.Println("Checking existence of resource group", name)
 	_, err := s.client.ResourceGroups.ResourceGroupsCheckExistence(
 		resource_groups.NewResourceGroupsCheckExistenceParamsWithContext(ctx).
 			WithAPIVersion(ResourceAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
 			WithResourceGroupName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
+
+	s.Logger.Println("Finished checking existence of resource group", name)
 	return (err == nil)
 
 }
