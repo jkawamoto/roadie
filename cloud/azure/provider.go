@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/azure/auth"
@@ -40,11 +41,22 @@ type Provider struct {
 // NewProvider creates a new provider for Azure service.
 func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (provider *Provider, err error) {
 
-	if cfg.Token.AccessToken == "" || cfg.Token.Expired() {
+	if cfg.Token.AccessToken == "" {
 
-		fmt.Println("Access token is not given or expired.")
+		fmt.Println("Access token is not given.")
 		var token *auth.Token
 		token, err = auth.AuthorizeDeviceCode(ctx, cfg.ClientID, os.Stdout)
+		if err != nil {
+			return
+		}
+		cfg.Token = *token
+
+	} else if cfg.Token.Expired() {
+
+		fmt.Println("Access token is expired; renewing it now.")
+		var token *auth.Token
+		authorizer := auth.NewManualAuthorizer(cfg.TenantID, cfg.ClientID, nil, fmt.Sprintf("%v", time.Now().Unix()))
+		token, err = authorizer.RefreshToken(&cfg.Token)
 		if err != nil {
 			return
 		}
