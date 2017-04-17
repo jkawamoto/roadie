@@ -36,10 +36,11 @@ type OSInformation struct {
 	Version       string `yaml:"version,omitempty"`
 }
 
+// TODO: Rename it to just "Config"
 // AzureConfig defines configuration to access Azure's API.
 type AzureConfig struct {
 	TenantID          string `yaml:"tenant_id,omitempty"`
-	ClientID          string `yaml:"client_id,omitempty"`
+	ClientID          string `yaml:"-"`
 	SubscriptionID    string `yaml:"subscription_id,omitempty"`
 	Location          string `yaml:"location,omitempty"`
 	ResourceGroupName string `yaml:"resource_group_name,omitempty"`
@@ -79,6 +80,7 @@ func NewAzureConfigFromFile(filename string) (cfg *AzureConfig, err error) {
 	cfg = new(AzureConfig)
 	err = yaml.Unmarshal(data, cfg)
 
+	cfg.ClientID = ClientID
 	if cfg.ResourceGroupName == "" {
 		cfg.ResourceGroupName = ComputeServiceResourceGroupName
 	}
@@ -124,7 +126,7 @@ func (cfg *AzureConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 
 	var aux struct {
 		TenantID          string `yaml:"tenant_id,omitempty"`
-		ClientID          string `yaml:"client_id,omitempty"`
+		ClientID          string `yaml:"-"`
 		SubscriptionID    string `yaml:"subscription_id,omitempty"`
 		Location          string `yaml:"location,omitempty"`
 		ResourceGroupName string `yaml:"resource_group_name,omitempty"`
@@ -140,11 +142,18 @@ func (cfg *AzureConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err er
 	}
 	*cfg = aux
 
+	cfg.ClientID = ClientID
 	if cfg.ResourceGroupName == "" {
 		cfg.ResourceGroupName = ComputeServiceResourceGroupName
 	}
 	if cfg.MachineType == "" {
 		cfg.MachineType = ComputeServiceDefaultMachineType
+	}
+	if cfg.StorageAccount == "" {
+		cfg.StorageAccount = cfg.ResourceGroupName
+	}
+	if cfg.BatchAccount == "" {
+		cfg.BatchAccount = cfg.ResourceGroupName
 	}
 
 	if cfg.OS.PublisherName == "" {
