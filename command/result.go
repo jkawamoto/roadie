@@ -55,10 +55,10 @@ func CmdResultList(c *cli.Context) (err error) {
 	m := getMetadata(c)
 	switch c.NArg() {
 	case 0:
-		err = PrintDirList(m, script.ResultPrefix, c.Bool("url"), c.Bool("quiet"))
+		err = PrintDirList(m, script.ResultPrefix, "", c.Bool("url"), c.Bool("quiet"))
 	case 1:
 		instance := c.Args().First()
-		err = PrintFileList(m, filepath.Join(script.ResultPrefix, instance), c.Bool("url"), c.Bool("quiet"))
+		err = PrintFileList(m, script.ResultPrefix, instance, c.Bool("url"), c.Bool("quiet"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)

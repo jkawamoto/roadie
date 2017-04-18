@@ -32,9 +32,9 @@ import (
 // PrintTimeFormat defines time format to be used to print logs.
 const PrintTimeFormat = "2006/01/02 15:04:05"
 
-// GenerateListAction generates an action which prints list of files satisfies a given prefix.
-// If url is true, show urls, too.
-func GenerateListAction(prefix string) func(*cli.Context) error {
+// GenerateListAction generates an action which prints list of files in a given
+// container. If url is true, show urls, too.
+func GenerateListAction(container string) func(*cli.Context) error {
 
 	return func(c *cli.Context) error {
 
@@ -44,7 +44,7 @@ func GenerateListAction(prefix string) func(*cli.Context) error {
 		}
 
 		m := getMetadata(c)
-		err := PrintFileList(m, prefix, c.Bool("url"), c.Bool("quiet"))
+		err := PrintFileList(m, container, "", c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}

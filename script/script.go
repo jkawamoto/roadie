@@ -115,8 +115,10 @@ func NewScript(filename string, args []string) (res *Script, err error) {
 	} else if strings.Contains(hostname, ".") {
 		hostname = strings.Split(hostname, ".")[0]
 	}
-	res.InstanceName = strings.ToLower(fmt.Sprintf(
-		"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")))
+	res.InstanceName = strings.ToLower(
+		strings.Replace(fmt.Sprintf(
+			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")),
+			".", "-", -1))
 	return
 
 }

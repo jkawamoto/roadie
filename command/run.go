@@ -130,6 +130,7 @@ func cmdRun(opt *runOpt) (err error) {
 	if err != nil {
 		return
 	}
+
 	// Update instance name.
 	// If an instance name is not given, use the default name.
 	if opt.InstanceName != "" {

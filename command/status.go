@@ -84,6 +84,7 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 		}
 		storage := cloud.NewStorage(service, nil)
 
+		var prev string
 		err = storage.ListupFiles(m.Context, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
 			select {
 			case <-m.Context.Done():
@@ -91,9 +92,11 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 			default:
 			}
 
-			rel, _ := filepath.Rel(script.ResultPrefix, info.Path)
-			rel = filepath.Dir(rel)
-			terminatedInstances = append(terminatedInstances, rel)
+			rel := filepath.Dir(info.Path)
+			if prev != rel {
+				terminatedInstances = append(terminatedInstances, rel)
+				prev = rel
+			}
 			return nil
 		})
 		if err != nil {

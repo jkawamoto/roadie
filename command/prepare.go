@@ -114,7 +114,7 @@ func PrepareCommand(c *cli.Context) (err error) {
 
 	// Prepare a logger.
 	var logger *log.Logger
-	if c.Bool("verbose") {
+	if c.GlobalBool("verbose") {
 		logger = log.New(os.Stderr, "", log.LstdFlags)
 	} else {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

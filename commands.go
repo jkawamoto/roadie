@@ -37,6 +37,10 @@ var GlobalFlags = []cli.Flag{
 		Name:  "config, c",
 		Usage: "specify a config file `NAME`.",
 	},
+	cli.BoolFlag{
+		Name:  "verbose",
+		Usage: "verbose outputs.",
+	},
 }
 
 // Commands manage sub commands.

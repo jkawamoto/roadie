@@ -211,9 +211,10 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 		} else {
 			base = filepath.Base(attrs.Name)
 		}
+		dir, _ := filepath.Rel(container, attrs.Name)
 		err = handler(&cloud.FileInfo{
 			Name:        base,
-			Path:        attrs.Name,
+			Path:        dir,
 			TimeCreated: attrs.Created,
 			Size:        attrs.Size,
 		})

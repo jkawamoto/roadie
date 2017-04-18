@@ -35,7 +35,7 @@ import (
 type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(m *Metadata, prefix string, url, quiet bool) (err error) {
+func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -44,17 +44,27 @@ func PrintFileList(m *Metadata, prefix string, url, quiet bool) (err error) {
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(m, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
+	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 		if info.Name != "" {
 			if quiet {
 				table.AddRow(info.Name)
 			} else if url {
-				table.AddRow(info.Name, fmt.Sprintf(
-					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat), info.Path)
+				var size string
+				if info.Size < 1024 {
+					size = fmt.Sprintf("%dB", info.Size)
+				} else {
+					size = fmt.Sprintf("%dKB", info.Size/1024)
+				}
+				table.AddRow(info.Name, size, info.TimeCreated.Format(PrintTimeFormat), info.Path)
 			} else {
-				table.AddRow(info.Name, fmt.Sprintf(
-					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
+				var size string
+				if info.Size < 1024 {
+					size = fmt.Sprintf("%dB", info.Size)
+				} else {
+					size = fmt.Sprintf("%dKB", info.Size/1024)
+				}
+				table.AddRow(info.Name, size, info.TimeCreated.Format(PrintTimeFormat))
 			}
 		}
 
@@ -62,7 +72,7 @@ func PrintFileList(m *Metadata, prefix string, url, quiet bool) (err error) {
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(m *Metadata, prefix string, url, quiet bool) (err error) {
+func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -73,27 +83,24 @@ func PrintDirList(m *Metadata, prefix string, url, quiet bool) (err error) {
 
 	// Storing previous folder name.
 	prev := ""
+	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-	return printList(m, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
-
-		rel, _ := filepath.Rel(prefix, info.Path)
-		rel = filepath.Dir(rel)
-
-		if rel != "." && rel != prev {
+		dir := filepath.Dir(info.Path)
+		if dir != "." && dir != prev {
 			if quiet {
-				table.AddRow(rel)
+				table.AddRow(dir)
 			} else if url {
-				table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat), rel)
+				table.AddRow(dir, info.TimeCreated.Format(PrintTimeFormat), dir)
 			} else {
-				table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
+				table.AddRow(dir, info.TimeCreated.Format(PrintTimeFormat))
 			}
-			prev = rel
+			prev = dir
 		}
 
 	})
 }
 
-func printList(m *Metadata, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
+func printList(m *Metadata, container, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	s.Prefix = "Loading information..."
@@ -115,7 +122,7 @@ func printList(m *Metadata, prefix string, quiet bool, headers []string, addReco
 	}
 
 	storage := cloud.NewStorage(service, nil)
-	err = storage.ListupFiles(m.Context, prefix, "", func(info *cloud.FileInfo) error {
+	err = storage.ListupFiles(m.Context, container, prefix, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})
