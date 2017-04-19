@@ -27,36 +27,37 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 )
 
-// MockProvider is a mock provider for tests.
-type MockProvider struct {
+// Provider is a mock provider for tests.
+type Provider struct {
 	MockInstanceManager cloud.InstanceManager
 	MockQueueManager    cloud.QueueManager
 	MockStorageManager  cloud.StorageManager
 	MockLogManager      cloud.LogManager
 }
 
-func NewMockProvider() *MockProvider {
-	return &MockProvider{
+// NewProvider creates a new mock provider.
+func NewProvider() *Provider {
+	return &Provider{
 		MockStorageManager: NewStorageManager(),
 	}
 }
 
 // InstanceManager returns an instance manager interface.
-func (m *MockProvider) InstanceManager(context.Context) (cloud.InstanceManager, error) {
+func (m *Provider) InstanceManager(context.Context) (cloud.InstanceManager, error) {
 	return m.MockInstanceManager, nil
 }
 
 // QueueManager returns a queue manager interface.
-func (m *MockProvider) QueueManager(context.Context) (cloud.QueueManager, error) {
+func (m *Provider) QueueManager(context.Context) (cloud.QueueManager, error) {
 	return m.MockQueueManager, nil
 }
 
 // StorageManager returns a storage manager interface.
-func (m *MockProvider) StorageManager(context.Context) (cloud.StorageManager, error) {
+func (m *Provider) StorageManager(context.Context) (cloud.StorageManager, error) {
 	return m.MockStorageManager, nil
 }
 
 // LogManager returns a log manager interface.
-func (m *MockProvider) LogManager(context.Context) (cloud.LogManager, error) {
+func (m *Provider) LogManager(context.Context) (cloud.LogManager, error) {
 	return m.MockLogManager, nil
 }

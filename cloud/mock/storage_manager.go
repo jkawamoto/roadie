@@ -36,8 +36,8 @@ import (
 // ErrServiceFailure is an error used in tests.
 var ErrServiceFailure = fmt.Errorf("this service is out of order")
 
-// MockStorageManager is a memory based mock storage manager.
-type MockStorageManager struct {
+// StorageManager is a memory based mock storage manager.
+type StorageManager struct {
 	// Represent a key-value storage.
 	Storage map[string]string
 	// If true, all method returns an error.
@@ -45,14 +45,14 @@ type MockStorageManager struct {
 }
 
 // NewStorageManager creates a new mock storage manager.
-func NewStorageManager() *MockStorageManager {
-	return &MockStorageManager{
+func NewStorageManager() *StorageManager {
+	return &StorageManager{
 		Storage: make(map[string]string),
 	}
 }
 
 // Upload is a mock function to check uploaded file is correct or not.
-func (s *MockStorageManager) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
+func (s *StorageManager) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
 
 	if s.Failure {
 		err = ErrServiceFailure
@@ -68,7 +68,8 @@ func (s *MockStorageManager) Upload(ctx context.Context, container, filename str
 
 }
 
-func (s *MockStorageManager) Download(ctx context.Context, container, filename string, out io.Writer) error {
+// Download writes a file in a container to a writer.
+func (s *StorageManager) Download(ctx context.Context, container, filename string, out io.Writer) error {
 
 	if s.Failure {
 		return ErrServiceFailure
@@ -83,12 +84,13 @@ func (s *MockStorageManager) Download(ctx context.Context, container, filename s
 
 }
 
-func (s *MockStorageManager) GetFileInfo(ctx context.Context, container, filename string) (*cloud.FileInfo, error) {
+// GetFileInfo returns information of a file.
+func (s *StorageManager) GetFileInfo(ctx context.Context, container, filename string) (*cloud.FileInfo, error) {
 	return nil, nil
 }
 
 // List is a mock function of List.
-func (s *MockStorageManager) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) error {
+func (s *StorageManager) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) error {
 
 	// Represent a directory.
 	err := handler(&cloud.FileInfo{
@@ -125,7 +127,8 @@ func (s *MockStorageManager) List(ctx context.Context, container, prefix string,
 	return nil
 }
 
-func (s *MockStorageManager) Delete(ctx context.Context, container, filename string) error {
+// Delete deletes a file.
+func (s *StorageManager) Delete(ctx context.Context, container, filename string) error {
 
 	if s.Failure {
 		return ErrServiceFailure

@@ -38,7 +38,7 @@ func TestCmdDataPut(t *testing.T) {
 		Metadata: &Metadata{
 			Config:   &config.Config{},
 			Context:  context.Background(),
-			provider: mock.NewMockProvider(),
+			provider: mock.NewProvider(),
 		},
 	}
 
