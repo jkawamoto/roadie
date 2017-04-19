@@ -62,7 +62,19 @@ func (m *QueueManager) Enqueue(ctx context.Context, queue string, task *script.S
 	jobSet, err := m.service.Jobs(ctx)
 	if err != nil {
 		return
-	} else if _, exist := jobSet[queue]; !exist {
+	} else if job, exist := jobSet[queue]; !exist {
+
+		err = m.service.CreateJob(ctx, queue)
+		if err != nil {
+			return
+		}
+		createJob = true
+	} else if job.State == "completed" {
+
+		err = m.service.DeleteJob(ctx, queue)
+		if err != nil {
+			return
+		}
 		err = m.service.CreateJob(ctx, queue)
 		if err != nil {
 			return
