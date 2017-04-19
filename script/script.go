@@ -30,8 +30,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jkawamoto/roadie/command/util"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -117,7 +115,7 @@ func NewScript(filename string, args []string) (res *Script, err error) {
 	}
 	res.InstanceName = strings.ToLower(
 		strings.Replace(fmt.Sprintf(
-			"%s-%s-%s", hostname, util.Basename(filename), time.Now().Format("20060102150405")),
+			"%s-%s-%s", hostname, basename(filename), time.Now().Format("20060102150405")),
 			".", "-", -1))
 	return
 
