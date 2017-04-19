@@ -27,6 +27,9 @@ import (
 	"github.com/jkawamoto/roadie/script"
 )
 
+// InstanceHandler is a handler function to retrive instances' status.
+type InstanceHandler func(name, status string) error
+
 // InstanceManager is a service interface of an instance manager.
 type InstanceManager interface {
 
@@ -37,7 +40,7 @@ type InstanceManager interface {
 	DeleteInstance(ctx context.Context, name string) error
 
 	// Instances returns a list of running instances
-	Instances(context.Context) (instances map[string]struct{}, err error)
+	Instances(ctx context.Context, handler InstanceHandler) error
 
 	// AvailableRegions returns a list of available regions.
 	AvailableRegions(context.Context) (regions []Region, err error)

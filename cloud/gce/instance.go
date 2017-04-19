@@ -28,6 +28,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -181,11 +182,11 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 }
 
 // Instances returns a list of running instances
-func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
+func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
 
 	s.Logger.Println("Retrieving running instances")
-	instances = make(map[string]struct{})
-	log := NewLogManager(s.Config)
+	instances := make(map[string]struct{})
+	log := NewLogManager(s.Config, s.Logger)
 	err = log.OperationLogEntries(ctx, func(_ time.Time, payload *ActivityPayload) error {
 
 		select {
@@ -204,12 +205,47 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 		return nil
 
 	})
-
 	if err != nil {
 		return
 	}
 
-	s.Logger.Println("Finished retrieving running instances")
+	var instanceNames []string
+	for name := range instances {
+		instanceNames = append(instanceNames, name)
+	}
+	sort.Strings(instanceNames)
+	for _, name := range instanceNames {
+		err = handler(name, "running")
+		if err != nil {
+			return
+		}
+	}
+
+	s.Logger.Println("Retrieving terminated instances")
+	storage, err := NewStorageService(ctx, s.Config, s.Logger)
+	if err != nil {
+		return err
+	}
+
+	var prev string
+	err = storage.List(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) (err error) {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		dir := filepath.Base(filepath.Dir(info.Path))
+		if prev != dir {
+			handler(dir, "terminated")
+			prev = dir
+		}
+		return
+	})
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished retrieving instances")
 	return
 }
 
@@ -286,7 +322,7 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 		s.Logger.Println("*", v.Message)
 	}
 
-	log := NewLogManager(s.Config)
+	log := NewLogManager(s.Config, s.Logger)
 	filter := fmt.Sprintf(
 		`jsonPayload.event_type = "GCE_OPERATION_DONE" AND timestamp > "%s"`,
 		time.Now().In(time.UTC).Format(LogTimeFormat))

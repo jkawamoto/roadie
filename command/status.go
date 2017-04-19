@@ -23,14 +23,10 @@ package command
 
 import (
 	"fmt"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
@@ -53,69 +49,29 @@ func CmdStatus(c *cli.Context) error {
 // instances of which results are deleted already will be omitted.
 func cmdStatus(m *Metadata, all bool) (err error) {
 
-	var runningInstances []string
-	var terminatedInstances []string
+	m.Spinner.Prefix = "Loading information..."
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
-	err = func() (err error) {
-		m.Spinner.Prefix = "Loading information..."
-		m.Spinner.Start()
-		defer m.Spinner.Stop()
-
-		compute, err := m.InstanceManager()
-		if err != nil {
-			return
-		}
-		instances, err := compute.Instances(m.Context)
-		if err != nil {
-			return err
-		}
-		for name := range instances {
-			runningInstances = append(runningInstances, name)
-		}
-		sort.Strings(runningInstances)
-
-		service, err := m.StorageManager()
-		if err != nil {
-			return err
-		}
-		storage := cloud.NewStorage(service, nil)
-
-		var prev string
-		err = storage.ListupFiles(m.Context, script.ResultPrefix, "", func(info *cloud.FileInfo) error {
-			select {
-			case <-m.Context.Done():
-				return m.Context.Err()
-			default:
-			}
-
-			rel := filepath.Dir(info.Path)
-			if prev != rel {
-				terminatedInstances = append(terminatedInstances, rel)
-				prev = rel
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		sort.Strings(terminatedInstances)
-		return
-	}()
+	compute, err := m.InstanceManager()
 	if err != nil {
-		return err
+		return
 	}
 
 	table := uitable.New()
 	table.AddRow("INSTANCE NAME", "STATUS")
-	for _, name := range runningInstances {
-		table.AddRow(name, "running")
+	err = compute.Instances(m.Context, func(name, status string) (err error) {
+		table.AddRow(name, status)
+		return
+	})
+	if err != nil {
+		return
 	}
-	for _, name := range terminatedInstances {
-		table.AddRow(name, "terminated")
-	}
-	fmt.Println(table)
 
-	return nil
+	m.Spinner.Stop()
+	fmt.Println(table.String())
+	return
+
 }
 
 // CmdStatusKill kills an instance.
