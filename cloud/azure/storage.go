@@ -140,6 +140,15 @@ func (s *StorageService) UploadWithMetadata(ctx context.Context, container, file
 		return
 	}
 
+	s.Logger.Printf("Checking the uploading file %v exists\n", filename)
+	exists, err := containerRef.GetBlobReference(filename).DeleteIfExists(nil)
+	if err != nil {
+		s.Logger.Println("Cannot check the existence of the uploading file")
+		return
+	} else if exists {
+		s.Logger.Println("Old file has been deleted")
+	}
+
 	s.Logger.Println("Creating append blob", filename)
 	blob := containerRef.GetBlobReference(filename)
 	blob.Metadata = storage.BlobMetadata(metadata)
