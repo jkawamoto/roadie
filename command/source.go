@@ -26,9 +26,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
@@ -60,17 +58,16 @@ func cmdSourcePut(m *Metadata, root, name string, excludes []string) (err error)
 	filename := fmt.Sprintf("%s.tar.gz", filepath.Base(name))
 	uploadingPath := filepath.Join(os.TempDir(), filename)
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = fmt.Sprintf("Creating %s...", filename)
-	s.FinalMSG = fmt.Sprintf("\n%s\rDone.\n", strings.Repeat(" ", len(s.Prefix)+2))
+	m.Spinner.Prefix = fmt.Sprintf("Creating %s...", filename)
+	m.Spinner.FinalMSG = fmt.Sprintf("\n%s\rDone.\n", strings.Repeat(" ", len(m.Spinner.Prefix)+2))
 
-	s.Start()
+	m.Spinner.Start()
 	if err = util.Archive(root, uploadingPath, append(excludes, uploadingPath)); err != nil {
-		s.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create %s.\n"), strings.Repeat(" ", len(s.Prefix)+2), filename)
-		s.Stop()
+		m.Spinner.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create %s.\n"), strings.Repeat(" ", len(m.Spinner.Prefix)+2), filename)
+		m.Spinner.Stop()
 		return
 	}
-	s.Stop()
+	m.Spinner.Stop()
 	defer os.Remove(uploadingPath)
 
 	service, err := m.StorageManager()

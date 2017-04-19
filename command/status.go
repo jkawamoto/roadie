@@ -26,9 +26,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
@@ -59,11 +57,9 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 	var terminatedInstances []string
 
 	err = func() (err error) {
-		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Prefix = "Loading information..."
-		s.FinalMSG = fmt.Sprintf("\n%s\r", strings.Repeat(" ", len(s.Prefix)+2))
-		s.Start()
-		defer s.Stop()
+		m.Spinner.Prefix = "Loading information..."
+		m.Spinner.Start()
+		defer m.Spinner.Stop()
 
 		compute, err := m.InstanceManager()
 		if err != nil {
@@ -141,11 +137,10 @@ func CmdStatusKill(c *cli.Context) error {
 // cmdStatusKill kills a given instance named `instanceName`.
 func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
-	s.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.\n", strings.Repeat(" ", len(s.Prefix)+2), instanceName)
-	s.Start()
-	defer s.Stop()
+	m.Spinner.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
+	m.Spinner.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.\n", strings.Repeat(" ", len(m.Spinner.Prefix)+2), instanceName)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
 	compute, err := m.InstanceManager()
 	if err != nil {
@@ -153,9 +148,9 @@ func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 	}
 
 	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
-		s.FinalMSG = fmt.Sprintf(
+		m.Spinner.FinalMSG = fmt.Sprintf(
 			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
-			strings.Repeat(" ", len(s.Prefix)+2), instanceName, err.Error())
+			strings.Repeat(" ", len(m.Spinner.Prefix)+2), instanceName, err.Error())
 	}
 	return
 

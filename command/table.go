@@ -24,9 +24,7 @@ package command
 import (
 	"fmt"
 	"path/filepath"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
 )
@@ -102,10 +100,9 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 
 func printList(m *Metadata, container, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.Start()
-	defer s.Stop()
+	m.Spinner.Prefix = "Loading information..."
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
 	table := uitable.New()
 	if !quiet {
@@ -127,7 +124,7 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 		return nil
 	})
 	if err == nil {
-		s.FinalMSG += table.String() + "\n"
+		m.Spinner.FinalMSG += table.String() + "\n"
 	}
 	return
 

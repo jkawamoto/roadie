@@ -29,7 +29,6 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -50,7 +49,7 @@ type optQueueAdd struct {
 	// Metadata to run a command.
 	*Metadata
 	// SourceOpt specifies options for source secrion of a script.
-	util.SourceOpt
+	SourceOpt
 	// TaskName to be created.
 	TaskName string
 	// QueueName the task to be added to.
@@ -73,7 +72,7 @@ func CmdQueueAdd(c *cli.Context) (err error) {
 
 	return cmdQueueAdd(&optQueueAdd{
 		Metadata: getMetadata(c),
-		SourceOpt: util.SourceOpt{
+		SourceOpt: SourceOpt{
 			Git:     c.String("git"),
 			URL:     c.String("url"),
 			Local:   c.String("local"),
@@ -109,13 +108,13 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 	storage := cloud.NewStorage(service, nil)
 
 	// Update source section.
-	err = util.UpdateSourceSection(opt.Context, s, &opt.SourceOpt, storage, os.Stdout)
+	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage, os.Stdout)
 	if err != nil {
 		return
 	}
 
 	// Update result section
-	util.UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+	UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
 
 	queueManager, err := opt.QueueManager()
 	if err != nil {

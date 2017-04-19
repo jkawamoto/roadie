@@ -28,7 +28,6 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
@@ -38,7 +37,7 @@ type runOpt struct {
 	// Metadata to run a command.
 	*Metadata
 	// SourceOpt specifies options for source secrion of a script.
-	util.SourceOpt
+	SourceOpt
 	// Path for the script file to be run.
 	ScriptFile string
 	// Arguments for the script.
@@ -71,7 +70,7 @@ func CmdRun(c *cli.Context) error {
 	m := getMetadata(c)
 	opt := &runOpt{
 		Metadata: m,
-		SourceOpt: util.SourceOpt{
+		SourceOpt: SourceOpt{
 			Git:     c.String("git"),
 			URL:     c.String("url"),
 			Local:   c.String("local"),
@@ -125,13 +124,13 @@ func cmdRun(opt *runOpt) (err error) {
 	storage := cloud.NewStorage(service, nil)
 
 	// Update source section.
-	err = util.UpdateSourceSection(opt.Context, s, &opt.SourceOpt, storage, os.Stdout)
+	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage, os.Stdout)
 	if err != nil {
 		return
 	}
 
 	// Update result section
-	util.UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+	UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
 
 	// Debugging info.
 	opt.Logger.Printf("Script to be run:\n%s\n", s.String())

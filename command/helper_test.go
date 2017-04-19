@@ -1,5 +1,5 @@
 //
-// command/util/source_test.go
+// command/helper_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package util
+package command
 
 import (
 	"context"
@@ -28,7 +28,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
@@ -102,6 +104,11 @@ func TestSetLocalSource(t *testing.T) {
 	}
 	ctx := config.NewContext(context.Background(), conf)
 	storage := cloud.NewStorage(&MockStorageServicer{}, ioutil.Discard)
+	m := &Metadata{
+		Context: ctx,
+		Spinner: spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+	}
+	m.Spinner.Writer = ioutil.Discard
 
 	var s script.Script
 	var err error
@@ -114,7 +121,7 @@ func TestSetLocalSource(t *testing.T) {
 		}
 
 		t.Logf("Trying target %s", target)
-		if err = setLocalSource(ctx, storage, &s, target, nil); err != nil {
+		if err = setLocalSource(m, storage, &s, target, nil); err != nil {
 			t.Error(err.Error())
 		}
 		if !strings.HasSuffix(s.Source, "test.tar.gz") {
@@ -127,7 +134,7 @@ func TestSetLocalSource(t *testing.T) {
 	s = script.Script{
 		InstanceName: "test",
 	}
-	if err = setLocalSource(ctx, storage, &s, "run.go", nil); err != nil {
+	if err = setLocalSource(m, storage, &s, "run.go", nil); err != nil {
 		t.Error(err.Error())
 	}
 	if !strings.HasSuffix(s.Source, "run.go") {
@@ -135,7 +142,7 @@ func TestSetLocalSource(t *testing.T) {
 	}
 
 	// Test with unexisting file.
-	if err = setLocalSource(ctx, storage, &s, "abcd.efg", nil); err == nil {
+	if err = setLocalSource(m, storage, &s, "abcd.efg", nil); err == nil {
 		t.Error("Give an unexisting path but no error occurs.")
 	}
 	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())
