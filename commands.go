@@ -41,11 +41,14 @@ var GlobalFlags = []cli.Flag{
 		Name:  "verbose",
 		Usage: "verbose outputs.",
 	},
+	// cli.BoolFlag{
+	// 	Name: "no-color",
+	// 	Usage: "disable colorized output."
+	// },
 }
 
 // Commands manage sub commands.
 var Commands = []cli.Command{
-	// TODO: run command should be splited to run and queue commands.
 	{
 		Name:  "init",
 		Usage: "initialize roadie.",
@@ -108,11 +111,6 @@ var Commands = []cli.Command{
 				Name:  "overwrite-result-section",
 				Usage: "if set, result section in a given script will be overwritten to default value.",
 			},
-			cli.Int64Flag{
-				Name:  "disk-size",
-				Usage: "set disk size in GB.",
-				Value: 9,
-			},
 			cli.StringFlag{
 				Name:  "image",
 				Usage: "customize the base image which given program will run on.",
@@ -130,10 +128,6 @@ var Commands = []cli.Command{
 				Name:  "retry",
 				Usage: "retry the program a given times when GCP's error happens.",
 				Value: 10,
-			},
-			cli.StringFlag{
-				Name:  "queue",
-				Usage: "queue `name` this script to be enqueued to. If the given queue desn't exist, it'll be created.",
 			},
 		},
 	},
@@ -554,8 +548,50 @@ files belonging to the instance.`,
 		Name:        "queue",
 		Usage:       "manage queues and enqueued jobs.",
 		Description: "",
-		Category:    "Execution",
+		Category:    "Queue based execution",
 		Subcommands: cli.Commands{
+			{
+				Name:  "add",
+				Usage: "add a new task to a queue.",
+				Description: "add a new task to a queue. If the specified queue does not\n" +
+					"exist, a new queue and one worker instance are created for the task.",
+				ArgsUsage: "<queue name> <script file>",
+				Action:    command.CmdQueueAdd,
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "git",
+						Usage: "git repository `URL`. Souce files will be cloned from there.",
+					},
+					cli.StringFlag{
+						Name:  "url",
+						Usage: "source files will be downloaded from `URL`.",
+					},
+					cli.StringFlag{
+						Name:  "local",
+						Usage: "upload source files from given `PATH` and use it the new instance.",
+					},
+					cli.StringSliceFlag{
+						Name:  "exclude",
+						Usage: "`path` to be excluded to upload as the source files. This flag can be set multiply but only works with --local.",
+					},
+					cli.StringFlag{
+						Name:  "source",
+						Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
+					},
+					cli.StringFlag{
+						Name:  "name, n",
+						Usage: "new instance uses the given `NAME`.",
+					},
+					cli.StringSliceFlag{
+						Name:  "e",
+						Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
+					},
+					cli.BoolFlag{
+						Name:  "overwrite-result-section",
+						Usage: "if set, result section in a given script will be overwritten to default value.",
+					},
+				},
+			},
 			{
 				Name:        "list",
 				Usage:       "list up queues.",

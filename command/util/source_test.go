@@ -1,5 +1,5 @@
 //
-// command/run_test.go
+// command/util/source_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package util
 
 import (
 	"context"
@@ -114,7 +114,7 @@ func TestSetLocalSource(t *testing.T) {
 		}
 
 		t.Logf("Trying target %s", target)
-		if err = setLocalSource(ctx, storage, &s, target, nil, true); err != nil {
+		if err = setLocalSource(ctx, storage, &s, target, nil); err != nil {
 			t.Error(err.Error())
 		}
 		if !strings.HasSuffix(s.Source, "test.tar.gz") {
@@ -127,7 +127,7 @@ func TestSetLocalSource(t *testing.T) {
 	s = script.Script{
 		InstanceName: "test",
 	}
-	if err = setLocalSource(ctx, storage, &s, "run.go", nil, true); err != nil {
+	if err = setLocalSource(ctx, storage, &s, "run.go", nil); err != nil {
 		t.Error(err.Error())
 	}
 	if !strings.HasSuffix(s.Source, "run.go") {
@@ -135,7 +135,7 @@ func TestSetLocalSource(t *testing.T) {
 	}
 
 	// Test with unexisting file.
-	if err = setLocalSource(ctx, storage, &s, "abcd.efg", nil, true); err == nil {
+	if err = setLocalSource(ctx, storage, &s, "abcd.efg", nil); err == nil {
 		t.Error("Give an unexisting path but no error occurs.")
 	}
 	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())

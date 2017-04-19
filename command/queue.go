@@ -24,9 +24,12 @@ package command
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
@@ -40,6 +43,96 @@ const QueueKind = "roadie-queue"
 type QueueName struct {
 	// Queue name.
 	QueueName string
+}
+
+// optQueueAdd defines arguments for cmdQueueAdd.
+type optQueueAdd struct {
+	// Metadata to run a command.
+	*Metadata
+	// SourceOpt specifies options for source secrion of a script.
+	util.SourceOpt
+	// TaskName to be created.
+	TaskName string
+	// QueueName the task to be added to.
+	QueueName string
+	// ScriptFile to be run.
+	ScriptFile string
+	// ScriptArgs to fill place holders in the script.
+	ScriptArgs []string
+	// OverWriteResultSection if it is set True.
+	OverWriteResultSection bool
+}
+
+// CmdQueueAdd adds a given script to a given named queue.
+func CmdQueueAdd(c *cli.Context) (err error) {
+
+	if c.NArg() != 2 {
+		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	return cmdQueueAdd(&optQueueAdd{
+		Metadata: getMetadata(c),
+		SourceOpt: util.SourceOpt{
+			Git:     c.String("git"),
+			URL:     c.String("url"),
+			Local:   c.String("local"),
+			Exclude: c.StringSlice("exclude"),
+			Source:  c.String("source"),
+		},
+		TaskName:               c.String("name"),
+		QueueName:              c.Args().First(),
+		ScriptFile:             c.Args().Get(1),
+		ScriptArgs:             c.StringSlice("e"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
+	})
+}
+
+func cmdQueueAdd(opt *optQueueAdd) (err error) {
+
+	s, err := script.NewScript(opt.ScriptFile, opt.ScriptArgs)
+	if err != nil {
+		return
+	}
+
+	// Update instance name.
+	// If an instance name is not given, use the default name.
+	if opt.TaskName != "" {
+		s.InstanceName = strings.ToLower(opt.TaskName)
+	}
+
+	// Check a specified bucket exists and create it if not.
+	service, err := opt.StorageManager()
+	if err != nil {
+		return err
+	}
+	storage := cloud.NewStorage(service, nil)
+
+	// Update source section.
+	err = util.UpdateSourceSection(opt.Context, s, &opt.SourceOpt, storage, os.Stdout)
+	if err != nil {
+		return
+	}
+
+	// Update result section
+	util.UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+
+	queueManager, err := opt.QueueManager()
+	if err != nil {
+		return
+	}
+
+	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.InstanceName), chalk.Bold.TextStyle(opt.QueueName))
+	opt.Spinner.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+	opt.Spinner.Start()
+	defer opt.Spinner.Stop()
+
+	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
+	if err != nil {
+		opt.Spinner.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+	}
+	return
+
 }
 
 // CmdQueueList lists up existing queue information.
