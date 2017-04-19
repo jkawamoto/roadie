@@ -27,19 +27,33 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/gce"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
 
+const (
+	// metadataKey is a key for metadata.
+	metadataKey = "metadata"
+)
+
 // Metadata is a set of data used for any commands.
 type Metadata struct {
-	Context  context.Context
-	Config   *config.Config
+	// Context for running a command.
+	Context context.Context
+	// Config for running a command.
+	Config *config.Config
+	// Provider of a cloud service.
 	provider cloud.Provider
-	Logger   *log.Logger
+	// Logger to output logs.
+	Logger *log.Logger
+	// Spinner for decorating output standard message; not logging information.
+	// If verbose mode is set, the spinner will be disabled.
+	Spinner *spinner.Spinner
 }
 
 // InstanceManager returns an instance manager interface.
@@ -65,30 +79,19 @@ func (m *Metadata) LogManager() (cloud.LogManager, error) {
 // getMetadata gets metadata from a cli context.
 func getMetadata(c *cli.Context) *Metadata {
 
-	rawCtx, _ := c.App.Metadata["context"]
-	ctx, _ := rawCtx.(context.Context)
-
-	rawCfg, _ := c.App.Metadata["config"]
-	cfg, _ := rawCfg.(*config.Config)
-
-	rawProvier, _ := c.App.Metadata["provider"]
-	provider, _ := rawProvier.(cloud.Provider)
-
-	rawLogger, _ := c.App.Metadata["logger"]
-	logger, _ := rawLogger.(*log.Logger)
-
-	return &Metadata{
-		Context:  ctx,
-		Config:   cfg,
-		provider: provider,
-		Logger:   logger,
-	}
+	meta, _ := c.App.Metadata[metadataKey].(*Metadata)
+	return meta
 
 }
 
 // PrepareCommand prepares executing any command; it loads the configuratio file,
 // checkes global flags.
 func PrepareCommand(c *cli.Context) (err error) {
+
+	meta := new(Metadata)
+
+	// Get a context from main function.
+	meta.Context, _ = c.App.Metadata["context"].(context.Context)
 
 	// Load the configuration file.
 	var cfg *config.Config
@@ -110,26 +113,32 @@ func PrepareCommand(c *cli.Context) (err error) {
 		}
 
 	}
-	c.App.Metadata["config"] = cfg
+	meta.Config = cfg
 
-	// Prepare a logger.
+	// Prepare a logger and decorator.
+	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	var logger *log.Logger
 	if c.GlobalBool("verbose") {
 		logger = log.New(os.Stderr, "", log.LstdFlags)
+		// If verbose mode, spinner is disabled, since it may conflict logging information.
+		meta.Spinner.Writer = ioutil.Discard
 	} else {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+
 	}
-	c.App.Metadata["logger"] = logger
+	meta.Logger = logger
 
 	// Prepare a service provider.
+	var provider cloud.Provider
 	switch {
 	case cfg.GcpConfig.Project != "":
-		c.App.Metadata["provider"] = gce.NewProvider(&cfg.GcpConfig, logger)
+		provider = gce.NewProvider(&cfg.GcpConfig, logger)
 	default:
-		// TODO: Return an error.
-		return fmt.Errorf("")
+		return fmt.Errorf("Cloud configuration isn't given")
 	}
+	meta.provider = provider
 
+	c.App.Metadata[metadataKey] = meta
 	return
 
 }
