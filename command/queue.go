@@ -28,6 +28,7 @@ import (
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
+	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
@@ -134,50 +135,120 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 
 }
 
-// CmdQueueList lists up existing queue information.
+// CmdQueueStatus lists up existing queue information if no arguments given;
+// otherwise lists up existing tasks' information in a given queue.
 // Each information should have queue name, the number of items in the queue,
 // the number of instances working to the queue.
-func CmdQueueList(c *cli.Context) (err error) {
-
-	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
+func CmdQueueStatus(c *cli.Context) error {
 
 	m := getMetadata(c)
-	queue, err := m.QueueManager()
-	if err != nil {
-		return
+	switch c.NArg() {
+	case 0:
+		return cmdQueueStatus(m)
+	case 1:
+		return cmdTaskStatus(m, c.Args().First())
+	default:
+		fmt.Printf(chalk.Red.Color("expected at most one argument. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
 	}
-
-	return queue.Queues(m.Context, func(name string) (err error) {
-		_, err = fmt.Println(name)
-		return err
-	})
 
 }
 
-// CmdQueueShow prints information about a given queue.
-// It prints how many items in the queue and how many instance working for the queue.
-func CmdQueueShow(c *cli.Context) (err error) {
+// cmdQueueStatus prints status of queues.
+func cmdQueueStatus(m *Metadata) (err error) {
 
-	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
+	m.Spinner.Prefix = "Loading information"
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
-	m := getMetadata(c)
-	name := c.Args().First()
 	queue, err := m.QueueManager()
 	if err != nil {
 		return
 	}
 
-	return queue.Tasks(m.Context, name, func(item *script.Script) (err error) {
-		_, err = fmt.Println(item.InstanceName)
-		return err
+	table := uitable.New()
+	table.AddRow("QUEUE NAME")
+	err = queue.Queues(m.Context, func(name string) error {
+		table.AddRow(name)
+		return nil
 	})
+	if err != nil {
+		return
+	}
 
+	m.Spinner.Stop()
+	fmt.Println(table.String())
+	return
+
+}
+
+// cmdTaskStatus prints status of tasks in a given queue.
+func cmdTaskStatus(m *Metadata, queue string) (err error) {
+
+	m.Spinner.Prefix = "Loading information"
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	table := uitable.New()
+	table.AddRow("TASK NAME", "STATUS")
+	err = manager.Tasks(m.Context, queue, func(name, status string) error {
+		table.AddRow(name, status)
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Stop()
+	fmt.Println(table.String())
+	return
+
+}
+
+// CmdQueueLog prints all log from a queue if only queue name is given;
+// otherwise prints log of a specific task/
+func CmdQueueLog(c *cli.Context) error {
+
+	m := getMetadata(c)
+	switch c.NArg() {
+	case 1:
+		return cmdQueueLog(m, c.Args().First())
+	case 2:
+		return cmdTaskLog(m, c.Args().First(), c.Args().Get(1))
+	default:
+		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+// cmdQueueLog prints log from a given queue.
+func cmdQueueLog(m *Metadata, queue string) (err error) {
+	log, err := m.LogManager()
+	if err != nil {
+		return
+	}
+	return log.GetQueueLog(m.Context, queue, func(line string) (err error) {
+		fmt.Println(line)
+		return
+	})
+}
+
+// cmdTaskLog prints log from a task.
+func cmdTaskLog(m *Metadata, queue, task string) (err error) {
+	log, err := m.LogManager()
+	if err != nil {
+		return
+	}
+	return log.GetTaskLog(m.Context, queue, task, func(line string) (err error) {
+		fmt.Println(line)
+		return
+	})
 }
 
 // CmdQueueInstanceList lists up instances working with a given queue.

@@ -30,8 +30,11 @@ import (
 // QueueManagerNameHandler is a type of handler function to retrieve names.
 type QueueManagerNameHandler func(string) error
 
+// QueueStatusHandler is a type of handler function to retrieve queues' stauts.
+type QueueStatusHandler func(name string) error
+
 // QueueManagerTaskHandler is a type of handler function to retrieve tasks.
-type QueueManagerTaskHandler func(*script.Script) error
+type QueueManagerTaskHandler func(name string, status string) error
 
 // QueueManager is a service interface of a queuing task manager.
 type QueueManager interface {
@@ -40,7 +43,7 @@ type QueueManager interface {
 	// Tasks retrieves tasks in a given names queue.
 	Tasks(ctx context.Context, queue string, handler QueueManagerTaskHandler) error
 	// Queues retrieves existing queue names.
-	Queues(ctx context.Context, handler QueueManagerNameHandler) error
+	Queues(ctx context.Context, handler QueueStatusHandler) error
 	// Stop executing tasks in a given named queue.
 	Stop(ctx context.Context, queue string) error
 	// Restart executing tasks in a given names queue.
