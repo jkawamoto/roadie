@@ -187,7 +187,7 @@ func (s *StorageService) GetFileInfo(ctx context.Context, container, filename st
 // In that case, this function will also return the given value.
 func (s *StorageService) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) (err error) {
 
-	s.Logger.Println("Retrieving the list of files matching to", prefix)
+	s.Logger.Printf(`Retrieving the list of files matching to prefix "%v"`, prefix)
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return
