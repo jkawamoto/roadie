@@ -28,11 +28,13 @@ import (
 
 // LogHandler defines a hanler function for log entries.
 type LogHandler func(timestamp time.Time, line string, stderr bool) error
-type QueueLogHandler func(string) error
 
 // LogManager defines a service interface for obtaining log entries.
 type LogManager interface {
+	// Get instance log.
 	Get(ctx context.Context, instanceName string, from time.Time, handler LogHandler) error
-	GetQueueLog(ctx context.Context, queue string, handler QueueLogHandler) error
-	GetTaskLog(ctx context.Context, queue, task string, handler QueueLogHandler) error
+	// Delete instance log.
+	Delete(ctx context.Context, instanceName string) error
+	GetQueueLog(ctx context.Context, queue string, handler LogHandler) error
+	GetTaskLog(ctx context.Context, queue, task string, handler LogHandler) error
 }

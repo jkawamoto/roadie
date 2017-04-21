@@ -139,6 +139,7 @@ func CmdResultDelete(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m := getMetadata(c)
 	instance := c.Args().First()
 	var patterns []string
 	if c.NArg() == 1 {
@@ -150,8 +151,19 @@ func CmdResultDelete(c *cli.Context) error {
 
 		if err != nil {
 			return cli.NewExitError(err.Error(), -1)
+
 		} else if deleteAll {
 			patterns = []string{"*"}
+
+			logManager, err := m.LogManager()
+			if err != nil {
+				return err
+			}
+			err = logManager.Delete(m.Context, instance)
+			if err != nil {
+				return err
+			}
+
 		} else {
 			return nil
 		}
@@ -160,7 +172,6 @@ func CmdResultDelete(c *cli.Context) error {
 		patterns = c.Args().Tail()
 	}
 
-	m := getMetadata(c)
 	service, err := m.StorageManager()
 	if err != nil {
 		return err
