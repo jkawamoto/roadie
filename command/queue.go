@@ -361,3 +361,41 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	return queueManager.Restart(m.Context, queue)
 
 }
+
+// CmdQueueDelete deletes a task in a queue or whole queue.
+func CmdQueueDelete(c *cli.Context) error {
+
+	m := getMetadata(c)
+	switch c.NArg() {
+	case 1:
+		return cmdQueueDelete(m, c.Args().First())
+	case 2:
+		return cmdTaskDelete(m, c.Args().First(), c.Args().Get(1))
+	default:
+		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+// cmdQueueDelete deletes a given queue.
+func cmdQueueDelete(m *Metadata, queue string) (err error) {
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+	return manager.DeleteQueue(m.Context, queue)
+
+}
+
+// cmdTaskDelete deletes a task in a queue.
+func cmdTaskDelete(m *Metadata, queue, task string) (err error) {
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+	return manager.DeleteTask(m.Context, queue, task)
+
+}

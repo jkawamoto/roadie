@@ -52,4 +52,8 @@ type QueueManager interface {
 	CreateWorkers(ctx context.Context, queue string, n int, handler QueueManagerNameHandler) error
 	// Workers retrieves worker instance names for a given queue.
 	Workers(ctx context.Context, queue string, handler QueueManagerNameHandler) error
+	// DeleteQueue deletes a given named queue.
+	DeleteQueue(ctx context.Context, queue string) error
+	// DeleteTask deletes a given named task in a given named queue.
+	DeleteTask(ctx context.Context, queue, task string) error
 }

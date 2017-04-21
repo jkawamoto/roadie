@@ -416,6 +416,7 @@ files belonging to the instance.`,
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
 			"This command lists up those scripts and delete them if necessary.",
 		Category: "Data handling",
+		Action:   command.GenerateListAction(script.SourcePrefix),
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -653,7 +654,13 @@ files belonging to the instance.`,
 				Description: "restart a stopping queue. By default, one instance will be created to handle the queue.",
 				ArgsUsage:   "<queue name>",
 				Action:      command.CmdQueueRestart,
-				Flags:       []cli.Flag{},
+			},
+			{
+				Name:        "delete",
+				Usage:       "delete a queue or a task",
+				Description: "if both a queue name and a task name are given, delete the tasks; otherwise delete the queue.",
+				ArgsUsage:   "<queue name> [<task name>]",
+				Action:      command.CmdQueueDelete,
 			},
 		},
 	},
