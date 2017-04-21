@@ -605,6 +605,12 @@ files belonging to the instance.`,
 				Description: "show all log in a queue if only quene name is given; otherwise show log of a specific task.",
 				ArgsUsage:   "<queue name> [task name]",
 				Action:      command.CmdQueueLog,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "no-timestamp",
+						Usage: "not print time stamps.",
+					},
+				},
 			},
 			{
 				Name:        "instance",

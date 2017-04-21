@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
@@ -34,9 +35,6 @@ import (
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
-
-// QueueKind defines kind of entries stored in cloud datastore.
-const QueueKind = "roadie-queue"
 
 // QueueName is a structure to obtaine QueueName attribute from entities
 // in cloud datastore.
@@ -217,9 +215,9 @@ func CmdQueueLog(c *cli.Context) error {
 	m := getMetadata(c)
 	switch c.NArg() {
 	case 1:
-		return cmdQueueLog(m, c.Args().First())
+		return cmdQueueLog(m, c.Args().First(), !c.Bool("no-timestamp"))
 	case 2:
-		return cmdTaskLog(m, c.Args().First(), c.Args().Get(1))
+		return cmdTaskLog(m, c.Args().First(), c.Args().Get(1), !c.Bool("no-timestamp"))
 	default:
 		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
@@ -228,25 +226,45 @@ func CmdQueueLog(c *cli.Context) error {
 }
 
 // cmdQueueLog prints log from a given queue.
-func cmdQueueLog(m *Metadata, queue string) (err error) {
+func cmdQueueLog(m *Metadata, queue string, timestamp bool) (err error) {
 	log, err := m.LogManager()
 	if err != nil {
 		return
 	}
-	return log.GetQueueLog(m.Context, queue, func(line string) (err error) {
-		fmt.Println(line)
+	return log.GetQueueLog(m.Context, queue, func(t time.Time, line string, stderr bool) (err error) {
+		var msg string
+		if timestamp {
+			msg = fmt.Sprintf("%v %s", t.Format(PrintTimeFormat), line)
+		} else {
+			msg = line
+		}
+		if stderr {
+			fmt.Fprintln(os.Stderr, msg)
+		} else {
+			fmt.Println(msg)
+		}
 		return
 	})
 }
 
 // cmdTaskLog prints log from a task.
-func cmdTaskLog(m *Metadata, queue, task string) (err error) {
+func cmdTaskLog(m *Metadata, queue, task string, timestamp bool) (err error) {
 	log, err := m.LogManager()
 	if err != nil {
 		return
 	}
-	return log.GetTaskLog(m.Context, queue, task, func(line string) (err error) {
-		fmt.Println(line)
+	return log.GetTaskLog(m.Context, queue, task, func(t time.Time, line string, stderr bool) (err error) {
+		var msg string
+		if timestamp {
+			msg = fmt.Sprintf("%v %s", t.Format(PrintTimeFormat), line)
+		} else {
+			msg = line
+		}
+		if stderr {
+			fmt.Fprintln(os.Stderr, msg)
+		} else {
+			fmt.Println(msg)
+		}
 		return
 	})
 }

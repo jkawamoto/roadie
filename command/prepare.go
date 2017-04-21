@@ -129,6 +129,10 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Logger = logger
 
 	// Prepare a service provider.
+	meta.Spinner.Prefix = "Checking authentication information"
+	meta.Spinner.Start()
+	defer meta.Spinner.Stop()
+
 	var provider cloud.Provider
 	switch {
 	case cfg.GcpConfig.Project != "":

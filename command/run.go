@@ -145,7 +145,7 @@ func cmdRun(opt *runOpt) (err error) {
 	s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
 
 	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(s.InstanceName))
-	opt.Spinner.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Instance created.\n")
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 

@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
@@ -54,7 +55,7 @@ func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err 
 				} else {
 					size = fmt.Sprintf("%dKB", info.Size/1024)
 				}
-				table.AddRow(info.Name, size, info.TimeCreated.Format(PrintTimeFormat), info.Path)
+				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.Path)
 			} else {
 				var size string
 				if info.Size < 1024 {
@@ -62,7 +63,7 @@ func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err 
 				} else {
 					size = fmt.Sprintf("%dKB", info.Size/1024)
 				}
-				table.AddRow(info.Name, size, info.TimeCreated.Format(PrintTimeFormat))
+				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
 		}
 
@@ -88,9 +89,9 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 			if quiet {
 				table.AddRow(dir)
 			} else if url {
-				table.AddRow(dir, info.TimeCreated.Format(PrintTimeFormat), dir)
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), dir)
 			} else {
-				table.AddRow(dir, info.TimeCreated.Format(PrintTimeFormat))
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
 			prev = dir
 		}
@@ -123,9 +124,12 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 		addRecorder(table, info, quiet)
 		return nil
 	})
-	if err == nil {
-		m.Spinner.FinalMSG += table.String() + "\n"
+	if err != nil {
+		return
 	}
+
+	m.Spinner.Stop()
+	fmt.Println(table.String())
 	return
 
 }

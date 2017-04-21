@@ -79,7 +79,7 @@ func cmdLog(opt *optLog) (err error) {
 
 			var msg string
 			if opt.Timestamp {
-				msg = fmt.Sprintf("%v: %s", timestamp.Format(PrintTimeFormat), line)
+				msg = fmt.Sprintf("%v %s", timestamp.Format(PrintTimeFormat), line)
 			} else {
 				msg = fmt.Sprintf("%s", line)
 			}
@@ -105,20 +105,10 @@ func cmdLog(opt *optLog) (err error) {
 		select {
 		case <-opt.Context.Done():
 			return opt.Context.Err()
-		case <-wait(opt.SleepTime):
+		case <-time.After(opt.SleepTime):
 		}
 
 	}
 	return
 
-}
-
-// Wait a given duration.
-func wait(d time.Duration) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		time.Sleep(d)
-		close(ch)
-	}()
-	return ch
 }
