@@ -53,7 +53,7 @@ func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (pro
 
 	} else if cfg.Token.Expired() {
 
-		fmt.Println("Access token is expired; renewing it now.")
+		logger.Println("Access token is expired; refreshing now.")
 		var token *auth.Token
 		authorizer := auth.NewManualAuthorizer(cfg.TenantID, cfg.ClientID, nil, fmt.Sprintf("%v", time.Now().Unix()))
 		token, err = authorizer.RefreshToken(&cfg.Token)
