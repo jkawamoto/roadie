@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -105,7 +106,11 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 		if err != nil {
 			return err
 		}
-		storage := cloud.NewStorage(service, nil)
+		storage := cloud.NewStorage(service, ioutil.Discard)
+
+		m.Spinner.Prefix = "Delete files..."
+		m.Spinner.Start()
+		defer m.Spinner.Stop()
 
 		if err := storage.DeleteFiles(m.Context, container, "", c.Args()); err != nil {
 			return cli.NewExitError(err.Error(), 2)

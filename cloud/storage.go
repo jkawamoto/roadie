@@ -36,6 +36,7 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/ulikunitz/xz"
 	"github.com/urfave/cli"
 )
 
@@ -43,6 +44,7 @@ import (
 type Storage struct {
 	// Servicer.
 	service StorageManager
+	// TODO: Delete or update this.
 	// Writer logs to be printed.
 	Log io.Writer
 }
@@ -198,16 +200,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, queries []string) error {
-
-	fmt.Fprintln(s.Log, "Deleting...")
-	pool, err := pb.StartPool()
-	if err != nil {
-		log.Println("cannot create a progress bar:", err.Error())
-	} else {
-		pool.Output = s.Log
-		defer pool.Stop()
-	}
+func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, queries []string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -228,18 +221,14 @@ func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, que
 
 		if match(queries, info.Name) {
 
-			bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-			if pool != nil {
-				pool.Add(bar)
-			}
-
-			eg.Go(func() error {
-				defer bar.Add64(int64(info.Size))
-				goerr := s.service.Delete(ctx, container, info.Path)
-				if goerr != nil {
-					fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, goerr.Error())
+			eg.Go(func() (err error) {
+				err = s.service.Delete(ctx, container, info.Path)
+				if err != nil {
+					fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+				} else {
+					fmt.Fprintln(s.Log, info.Path)
 				}
-				return goerr
+				return
 			})
 
 		}
@@ -248,7 +237,7 @@ func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, que
 	})
 
 	if err != nil {
-		return err
+		return
 	}
 	return eg.Wait()
 
@@ -263,17 +252,32 @@ func (s *Storage) PrintFileBody(ctx context.Context, container, prefix, query st
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-
 		default:
-			if info.Name != "" && strings.HasPrefix(info.Name, query) {
-				if header {
-					fmt.Fprintf(output, "*** %s ***\n", info.Name)
-				}
-				return s.service.Download(ctx, container, info.Path, output)
+		}
+
+		if info.Name != "" && strings.HasPrefix(info.Name, query) {
+
+			if header {
+				fmt.Fprintf(output, "*** %s ***\n", info.Name)
 			}
 
-			return nil
+			if strings.HasSuffix(info.Name, ".xz") {
+				pipeReader, pipeWriter := io.Pipe()
+				defer pipeWriter.Close()
+
+				xzReader, err := xz.NewReader(pipeReader)
+				if err != nil {
+					return err
+				}
+
+				go io.Copy(output, xzReader)
+				output = pipeWriter
+			}
+
+			return s.service.Download(ctx, container, info.Path, output)
 		}
+
+		return nil
 
 	})
 
