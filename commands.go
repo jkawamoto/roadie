@@ -487,6 +487,7 @@ files belonging to the instance.`,
 			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
 			"Use data section in your script to load data files in your instance.",
 		Category: "Data handling",
+		Action:   command.GenerateListAction(script.DataPrefix),
 		Subcommands: cli.Commands{
 			{
 				Name:        "list",
@@ -550,6 +551,7 @@ files belonging to the instance.`,
 		Usage:       "manage queues and enqueued jobs.",
 		Description: "",
 		Category:    "Queue based execution",
+		Action:      command.CmdQueueStatus,
 		Subcommands: cli.Commands{
 			{
 				Name:  "add",

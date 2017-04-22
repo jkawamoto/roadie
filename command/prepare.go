@@ -132,6 +132,7 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Spinner.Prefix = "Checking authentication information"
 	meta.Spinner.Start()
 	defer meta.Spinner.Stop()
+	meta.Logger.Println(meta.Spinner.Prefix)
 
 	var provider cloud.Provider
 	switch {
