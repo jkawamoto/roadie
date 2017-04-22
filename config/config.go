@@ -35,7 +35,7 @@ import (
 )
 
 // ConfigureFile defines configuration file name.
-const ConfigureFile = ".roadie"
+const ConfigureFile = "roadie.yml"
 
 // DotGit defines a git repository name.
 const DotGit = ".git"
