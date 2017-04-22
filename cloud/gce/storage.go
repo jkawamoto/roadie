@@ -59,27 +59,25 @@ func NewStorageService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) 
 	if err != nil {
 		return
 	}
+	defer cli.Close()
+
+	// Check the given project has the given bucket; if not, create a new bucket.
+	logger.Println("Checking bucket", cfg.Bucket, "exists")
+
+	bucket := cli.Bucket(cfg.Bucket)
+	_, err = bucket.Attrs(ctx)
+	if err != nil {
+		logger.Println("Creating bucket", cfg.Bucket)
+		err = bucket.Create(ctx, cfg.Project, nil)
+		if err != nil {
+			return
+		}
+	}
+
 	s = &StorageService{
 		Config: cfg,
 		Logger: logger,
 	}
-
-	// Check the given project has the given bucket; if not, create a new bucket.
-	var attrs *storage.BucketAttrs
-	iter := cli.Buckets(ctx, cfg.Project)
-	for {
-		attrs, err = iter.Next()
-		if err == iterator.Done {
-			break
-		} else if err != nil {
-			return
-		}
-		if attrs.Name == cfg.Bucket {
-			return
-		}
-	}
-
-	err = cli.Bucket(cfg.Bucket).Create(ctx, cfg.Project, nil)
 	return
 
 }
@@ -94,7 +92,7 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 	}
 	defer client.Close()
 
-	path := filepath.Join(container, filename)
+	path := filepath.Join(StoragePrefix, container, filename)
 	obj := client.Bucket(s.Config.Bucket).Object(path)
 	writer := obj.NewWriter(ctx)
 	size, err := io.Copy(writer, in)
@@ -195,7 +193,8 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 	defer client.Close()
 
 	iter := client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
-		Prefix: filepath.Join(StoragePrefix, container, prefix),
+		Prefix:   filepath.Join(StoragePrefix, container, prefix),
+		Versions: false,
 	})
 	for {
 		attrs, err := iter.Next()
@@ -211,7 +210,7 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 		} else {
 			base = filepath.Base(attrs.Name)
 		}
-		dir, _ := filepath.Rel(container, attrs.Name)
+		dir, _ := filepath.Rel(filepath.Join(StoragePrefix, container), attrs.Name)
 		err = handler(&cloud.FileInfo{
 			Name:        base,
 			Path:        dir,
