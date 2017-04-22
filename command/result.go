@@ -23,6 +23,8 @@ package command
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -177,7 +179,14 @@ func CmdResultDelete(c *cli.Context) error {
 		return err
 	}
 
-	storage := cloud.NewStorage(service, nil)
+	var msg io.Writer
+	if c.GlobalBool("verbose") {
+		msg = ioutil.Discard
+	} else {
+		msg = os.Stdout
+	}
+
+	storage := cloud.NewStorage(service, msg)
 	if err := storage.DeleteFiles(m.Context, script.ResultPrefix, instance, patterns); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
