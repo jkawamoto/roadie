@@ -385,6 +385,11 @@ func cmdQueueDelete(m *Metadata, queue string) (err error) {
 	if err != nil {
 		return
 	}
+
+	m.Spinner.Prefix = fmt.Sprint("Deleting queue", queue)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
 	return manager.DeleteQueue(m.Context, queue)
 
 }
@@ -396,6 +401,11 @@ func cmdTaskDelete(m *Metadata, queue, task string) (err error) {
 	if err != nil {
 		return
 	}
+
+	m.Spinner.Prefix = fmt.Sprint("Deleting task", task, "in queue", queue)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
 	return manager.DeleteTask(m.Context, queue, task)
 
 }
