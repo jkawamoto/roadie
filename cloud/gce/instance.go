@@ -49,6 +49,9 @@ const (
 var (
 	// Token for specifying a target instance has been started.
 	instanceStarted = fmt.Errorf("Target instance has been started.")
+	// RoadieSchemeURLOffset defines an offset value to remove scheme name from
+	// URLs.
+	RoadieSchemeURLOffset = len(script.RoadieSchemePrefix)
 )
 
 // ComputeService implements cloud.InstanceManager based on Google Cloud
@@ -383,34 +386,32 @@ func (s *ComputeService) createInstance(ctx context.Context, task *script.Script
 // Those URLs are modified to "gs://<bucketname>/.roadie/".
 func (s *ComputeService) replaceURLScheme(task *script.Script) {
 
-	offset := len(script.RoadieSchemePrefix)
-
 	// Replace source section.
 	if strings.HasPrefix(task.Source, script.RoadieSchemePrefix) {
-		task.Source = s.createURL(script.SourcePrefix, task.Source[offset:])
+		task.Source = s.createURL(task.Source[RoadieSchemeURLOffset:])
 	}
 
 	// Replace data section.
 	for i, url := range task.Data {
 		if strings.HasPrefix(url, script.RoadieSchemePrefix) {
-			task.Data[i] = s.createURL(script.DataPrefix, url[offset:])
+			task.Data[i] = s.createURL(url[RoadieSchemeURLOffset:])
 		}
 	}
 
 	// Replace result section.
 	if strings.HasPrefix(task.Result, script.RoadieSchemePrefix) {
-		task.Result = s.createURL(script.ResultPrefix, task.Result[offset:])
+		task.Result = s.createURL(task.Result[RoadieSchemeURLOffset:])
 	}
 
 }
 
 // createURL creates a valid URL for uploaing object.
-func (s *ComputeService) createURL(group, name string) string {
+func (s *ComputeService) createURL(name string) string {
 
 	u := url.URL{
 		Scheme: "gs",
 		Host:   s.Config.Bucket,
-		Path:   filepath.Join("/", StoragePrefix, group, name),
+		Path:   filepath.Join("/", StoragePrefix, name),
 	}
 	return u.String()
 
