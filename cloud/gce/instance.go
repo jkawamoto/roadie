@@ -252,9 +252,16 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 			return ctx.Err()
 		default:
 		}
+
+		if info.Name == "" {
+			return
+		}
+
 		dir := filepath.Base(filepath.Dir(info.Path))
 		if prev != dir {
-			handler(dir, "terminated")
+			if _, exist := instances[dir]; !exist {
+				handler(dir, "terminated")
+			}
 			prev = dir
 		}
 		return
