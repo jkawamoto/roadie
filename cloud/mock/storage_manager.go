@@ -64,6 +64,7 @@ func (s *StorageManager) Upload(ctx context.Context, container, filename string,
 		return
 	}
 	s.Storage[filename] = string(body)
+	uri = fmt.Sprint("file://mock/", filepath.Join(container, filename))
 	return
 
 }

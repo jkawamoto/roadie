@@ -31,7 +31,7 @@ import (
 type Provider struct {
 	MockInstanceManager cloud.InstanceManager
 	MockQueueManager    cloud.QueueManager
-	MockStorageManager  cloud.StorageManager
+	MockStorageManager  *StorageManager
 	MockLogManager      cloud.LogManager
 }
 
