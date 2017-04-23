@@ -23,49 +23,16 @@ package command
 
 import (
 	"context"
-	"io"
 	"io/ioutil"
-	"path/filepath"
+	"log"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/jkawamoto/roadie/cloud/mock"
 	"github.com/jkawamoto/roadie/script"
 )
-
-type MockStorageServicer struct{}
-
-// Upload a given stream with a given file name; returned string represents
-// a URI assosiated with the uploaded file.
-func (s *MockStorageServicer) Upload(ctx context.Context, container, filename string, in io.Reader) (string, error) {
-	return filepath.Join(script.RoadieSchemePrefix, container, filename), nil
-}
-
-// Download a file associated with a given file name and write it to a given
-// writer.
-func (s *MockStorageServicer) Download(ctx context.Context, conatiner, filename string, out io.Writer) error {
-	return nil
-}
-
-// GetFileInfo gets file information of a given filename.
-func (s *MockStorageServicer) GetFileInfo(ctx context.Context, container, filename string) (*cloud.FileInfo, error) {
-	return nil, nil
-}
-
-// List up files matching a given prefix.
-// It takes a handler; information of found files are sent to it.
-func (s *MockStorageServicer) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) error {
-	return nil
-}
-
-// Delete a given file.
-func (s *MockStorageServicer) Delete(ctx context.Context, container, filename string) error {
-	return nil
-}
 
 // TestSetGitSource checks setGitSource sets correct repository URL.
 func TestSetGitSource(t *testing.T) {
@@ -97,16 +64,12 @@ func TestSetGitSource(t *testing.T) {
 // are tested in tests for util.Archive.
 func TestSetLocalSource(t *testing.T) {
 
-	conf := &config.Config{
-		GcpConfig: gce.GcpConfig{
-			Bucket: "somebucket",
-		},
-	}
-	ctx := config.NewContext(context.Background(), conf)
-	storage := cloud.NewStorage(&MockStorageServicer{}, ioutil.Discard)
+	provider := mock.NewProvider()
 	m := &Metadata{
-		Context: ctx,
-		Spinner: spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+		Context:  context.Background(),
+		provider: provider,
+		Logger:   log.New(ioutil.Discard, "", log.LstdFlags),
+		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
 	}
 	m.Spinner.Writer = ioutil.Discard
 
@@ -121,11 +84,11 @@ func TestSetLocalSource(t *testing.T) {
 		}
 
 		t.Logf("Trying target %s", target)
-		if err = setLocalSource(m, storage, &s, target, nil); err != nil {
+		if err = setLocalSource(m, &s, target, nil); err != nil {
 			t.Error(err.Error())
 		}
 		if !strings.HasSuffix(s.Source, "test.tar.gz") {
-			t.Errorf("source section is not correct: %s", s.Source)
+			t.Error("source section is not correct:", s.Source)
 		}
 
 	}
@@ -134,15 +97,15 @@ func TestSetLocalSource(t *testing.T) {
 	s = script.Script{
 		InstanceName: "test",
 	}
-	if err = setLocalSource(m, storage, &s, "run.go", nil); err != nil {
+	if err = setLocalSource(m, &s, "run.go", nil); err != nil {
 		t.Error(err.Error())
 	}
 	if !strings.HasSuffix(s.Source, "run.go") {
-		t.Errorf("source section is not correct: %s", s.Source)
+		t.Error("source section is not correct:", s.Source)
 	}
 
 	// Test with unexisting file.
-	if err = setLocalSource(m, storage, &s, "abcd.efg", nil); err == nil {
+	if err = setLocalSource(m, &s, "abcd.efg", nil); err == nil {
 		t.Error("Give an unexisting path but no error occurs.")
 	}
 	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())
@@ -166,6 +129,48 @@ func TestSetSource(t *testing.T) {
 	setSource(&s, "abc")
 	if s.Source != script.RoadieSchemePrefix+"source/abc.tar.gz" {
 		t.Errorf("source section is not correct: %s", s.Source)
+	}
+
+}
+
+func TestUploadFiles(t *testing.T) {
+
+	provider := mock.NewProvider()
+	m := Metadata{
+		Context:  context.Background(),
+		provider: provider,
+		Logger:   log.New(ioutil.Discard, "", log.LstdFlags),
+		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+	}
+	m.Spinner.Writer = ioutil.Discard
+
+	var err error
+	// Test uploading a directory without renaming.
+	if _, err = uploadFiles(&m, ".", "", nil); err != nil {
+		t.Error(err.Error())
+	} else if _, exist := provider.MockStorageManager.Storage["command.tar.gz"]; !exist {
+		t.Error("Failed to upload a directory")
+	}
+
+	// Test uploading a directory with a file name.
+	if _, err = uploadFiles(&m, ".", "dir", nil); err != nil {
+		t.Error(err.Error())
+	} else if _, exist := provider.MockStorageManager.Storage["dir.tar.gz"]; !exist {
+		t.Error("Faild to upload a directory with a file name")
+	}
+
+	// Test uploading a file without renaming.
+	if _, err = uploadFiles(&m, "source.go", "", nil); err != nil {
+		t.Error(err.Error())
+	} else if _, exist := provider.MockStorageManager.Storage["source.go"]; !exist {
+		t.Error("Faild tp upload a file")
+	}
+
+	// Test uploading a file with renaming.
+	if _, err = uploadFiles(&m, "helper_test.go", "another_test.go", nil); err != nil {
+		t.Error(err.Error())
+	} else if _, exist := provider.MockStorageManager.Storage["another_test.go"]; !exist {
+		t.Error("Faild to upload a file with renaming")
 	}
 
 }

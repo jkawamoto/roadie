@@ -467,9 +467,11 @@ files belonging to the instance.`,
 			{
 				Name:  "put",
 				Usage: "put source files.",
-				Description: "make a tarball of a given path and upload it. Uploaded file name will be " +
-					"`<name>.tar.gz`.",
-				ArgsUsage: "<dir> <name>",
+				Description: "upload a given path as source code to be run. If the given \n" +
+					"path points a directory, files in the directory are tarballed; in this case \n" +
+					"uploaded file name is the directory name followd by `.tar.gz`. \n" +
+					"If name option is given, uploaded file is renamed to the given name.",
+				ArgsUsage: "<filepath> [<name>]",
 				Action:    command.CmdSourcePut,
 				Flags: []cli.Flag{
 					cli.StringSliceFlag{

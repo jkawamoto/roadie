@@ -165,7 +165,7 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		s.Source = opt.URL
 
 	case opt.Local != "":
-		if err = setLocalSource(m, storage, s, opt.Local, opt.Exclude); err != nil {
+		if err = setLocalSource(m, s, opt.Local, opt.Exclude); err != nil {
 			return
 		}
 
@@ -213,47 +213,24 @@ func setGitSource(s *script.Script, repo string) (err error) {
 // the uploaded files to the source section. If filename patters are given
 // by `excludes`, files matching such patters are excluded to upload.
 // To upload files to GCS, `conf` is used.
-func setLocalSource(m *Metadata, storage *cloud.Storage, s *script.Script, path string, excludes []string) (err error) {
+func setLocalSource(m *Metadata, s *script.Script, path string, excludes []string) (err error) {
 
 	info, err := os.Stat(path)
 	if err != nil {
 		return
 	}
 
-	var filename string      // File name on GCS.
-	var uploadingPath string // File path to be uploaded.
-
-	if info.IsDir() { // Directory will be archived.
-
-		filename = s.InstanceName + ".tar.gz"
-		uploadingPath = filepath.Join(os.TempDir(), filename)
-
-		m.Spinner.Prefix = fmt.Sprintf("Creating an archived file %s...", uploadingPath)
-		m.Spinner.FinalMSG = fmt.Sprintf("\n%s\rCreating the archived file %s.    \n", strings.Repeat(" ", len(m.Spinner.Prefix)+2), uploadingPath)
-		m.Spinner.Start()
-
-		if err = util.Archive(path, uploadingPath, excludes); err != nil {
-			m.Spinner.Stop()
-			return
-		}
-		defer os.Remove(uploadingPath)
-
-		m.Spinner.Stop()
-
-	} else { // One source file just will be uploaded.
-
-		uploadingPath = path
-		filename = filepath.Base(path)
-
+	var name string
+	if info.IsDir() {
+		name = s.InstanceName
 	}
 
-	// URL where the archive is uploaded.
-	location, err := storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingPath)
+	location, err := uploadFiles(m, path, name, excludes)
 	if err != nil {
 		return
 	}
 	s.Source = location
-	return nil
+	return
 
 }
 
@@ -291,5 +268,61 @@ func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 			warning,
 			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
 	}
+
+}
+
+// uploadFiles uploads a file or directory specified by path and store them with
+// a given name.
+func uploadFiles(m *Metadata, path, name string, excludes []string) (location string, err error) {
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+
+	var filename string      // File name on a cloud storage.
+	var uploadingPath string // File path to be uploaded.
+
+	if info.IsDir() { // Directory will be archived.
+
+		if name == "" {
+			var abs string
+			if abs, err = filepath.Abs(path); err != nil {
+				return
+			}
+			name = filepath.Base(abs)
+		}
+		filename = fmt.Sprintf("%v.tar.gz", strings.TrimSuffix(name, ".tar.gz"))
+		uploadingPath = filepath.Join(os.TempDir(), filename)
+
+		m.Spinner.Prefix = fmt.Sprint("Creating archived file", uploadingPath)
+		m.Spinner.FinalMSG = fmt.Sprint("Finished creating archived file", uploadingPath)
+		m.Spinner.Start()
+
+		if err = util.Archive(path, uploadingPath, excludes); err != nil {
+			m.Spinner.Stop()
+			return
+		}
+		defer os.Remove(uploadingPath)
+		m.Spinner.Stop()
+
+	} else { // One source file just will be uploaded.
+
+		uploadingPath = path
+		if name == "" {
+			filename = filepath.Base(path)
+		} else {
+			filename = name
+		}
+
+	}
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, nil)
+	location, err = storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingPath)
+	return
 
 }
