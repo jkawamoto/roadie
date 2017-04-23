@@ -29,7 +29,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +39,11 @@ import (
 
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+)
+
+const (
+	// SourceImage defines the ID of the source image to be used for instance.
+	SourceImage = "projects/coreos-cloud/global/images/coreos-stable-1298-7-0-v20170401"
 )
 
 var (
@@ -139,17 +143,28 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 // CreateInstance creates a new instance based on the builder's configuration.
 func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script) (err error) {
 
-	s.Logger.Println("Creating instance", task.InstanceName)
+	if task.Image == "" {
+		task.Image = "jkawamoto/roadie-gcp"
+	}
 
 	// Update URLs of which scheme is `roadie://` to `gs://`.
 	s.replaceURLScheme(task)
+	s.Logger.Printf("Updated script file is \n%v\n", task.String())
 
-	// Create a startup script.
-	startup, err := s.createStartupScript(task)
+	// Create an ignition config.
+	fluentd, err := FluentdUnit(task.InstanceName)
 	if err != nil {
 		return
 	}
-	err = s.createInstance(ctx, task.InstanceName, startup)
+	roadie, err := RoadieUnit(task.InstanceName, task.Image, "")
+	if err != nil {
+		return
+	}
+	ignition := NewIgnitionConfig().Append(fluentd).Append(roadie).String()
+	s.Logger.Println("Ignition configuration is", ignition)
+
+	s.Logger.Println("Creating instance", task.InstanceName)
+	err = s.createInstance(ctx, task, ignition)
 	if err != nil {
 		return
 	}
@@ -250,22 +265,27 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 }
 
 // CreateInstance creates a new instance based on the builder's configuration.
-func (s *ComputeService) createInstance(ctx context.Context, name string, startup string) (err error) {
+func (s *ComputeService) createInstance(ctx context.Context, task *script.Script, ignition string) (err error) {
 
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
 	}
 
+	scriptStr := task.String()
 	matadataItems := []*compute.MetadataItems{
 		&compute.MetadataItems{
-			Key:   "startup-script",
-			Value: &startup,
+			Key:   "script",
+			Value: &scriptStr,
+		},
+		&compute.MetadataItems{
+			Key:   "user-data",
+			Value: &ignition,
 		},
 	}
 
 	blueprint := compute.Instance{
-		Name:        strings.ToLower(name),
+		Name:        strings.ToLower(task.InstanceName),
 		Zone:        s.Config.normalizedZone(),
 		MachineType: s.Config.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
@@ -275,7 +295,7 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 				Mode:       "READ_WRITE",
 				AutoDelete: true,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
-					SourceImage: "https://www.googleapis.com/compute/v1/projects/coreos-cloud/global/images/coreos-stable-1010-5-0-v20160527",
+					SourceImage: SourceImage,
 					DiskType:    s.Config.diskType(),
 					DiskSizeGb:  s.Config.DiskSize,
 				},
@@ -332,7 +352,7 @@ func (s *ComputeService) createInstance(ctx context.Context, name string, startu
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-wait(10 * time.Second):
+		case <-time.After(s.SleepTime):
 		}
 
 		err := log.Entries(ctx, filter, func(entry *logging.Entry) (err error) {
@@ -394,44 +414,4 @@ func (s *ComputeService) createURL(group, name string) string {
 	}
 	return u.String()
 
-}
-
-// createStartupScript creates a start up script with a given name and task.
-func (s *ComputeService) createStartupScript(task *script.Script) (startup string, err error) {
-
-	retry := 10
-	options := ""
-	for _, v := range task.Options {
-		switch {
-		case strings.HasPrefix(v, "retry:"):
-			retry, err = strconv.Atoi(v[len("retry:"):])
-			if err != nil {
-				retry = 10
-			}
-
-		default:
-			options += "--" + v
-
-		}
-	}
-
-	startup, err = Startup(&StartupOpt{
-		Name:    task.InstanceName,
-		Script:  task.String(),
-		Options: options,
-		Image:   task.Image,
-		Retry:   retry,
-	})
-	return
-
-}
-
-// Wait a given duration.
-func wait(d time.Duration) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		time.Sleep(d)
-		close(ch)
-	}()
-	return ch
 }

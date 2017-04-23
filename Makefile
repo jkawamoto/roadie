@@ -25,7 +25,8 @@ default: build
 
 .PHONY: asset
 asset:
-	go-bindata -pkg assets -o assets/assets.go -nometadata assets/*.sh
+	rm assets/assets.go
+	go-bindata -pkg assets -o assets/assets.go -nometadata assets/*
 
 
 .PHONY: build

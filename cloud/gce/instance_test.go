@@ -23,9 +23,7 @@ package gce
 
 import (
 	"net/url"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/jkawamoto/roadie/script"
 )
@@ -55,69 +53,6 @@ func TestNewComputeService(t *testing.T) {
 
 	if s.Logger == nil {
 		t.Error("Logger is nil")
-	}
-
-}
-
-func TestCreateStartupScript(t *testing.T) {
-
-	project := "sample-project"
-	bucket := "test-bucket"
-	region := "us-central1-c"
-	machine := "n1-standard-2"
-	cfg := &GcpConfig{
-		Project:     project,
-		Bucket:      bucket,
-		Zone:        region,
-		MachineType: machine,
-	}
-	service := NewComputeService(cfg, nil)
-
-	var err error
-	var task script.Script
-	var startup string
-	name := "test-name"
-
-	task = script.Script{
-		Options:      []string{},
-		InstanceName: name,
-	}
-	startup, err = service.createStartupScript(&task)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if !strings.Contains(startup, "$(seq 10)") {
-		t.Error("Default retry is not set:", startup)
-	}
-
-	task = script.Script{
-		Options: []string{
-			"no-shutdown",
-			"retry:15",
-		},
-	}
-	startup, err = service.createStartupScript(&task)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if !strings.Contains(startup, "$(seq 15)") {
-		t.Error("Retry is not correct:", startup)
-	}
-	if !strings.Contains(startup, "--no-shutdown") {
-		t.Error("Options are not set:", startup)
-	}
-
-	task = script.Script{
-		Options: []string{
-			"retry:?",
-		},
-	}
-	startup, err = service.createStartupScript(&task)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if !strings.Contains(startup, "$(seq 10)") {
-		t.Error("Retry is not correct:", startup)
 	}
 
 }
@@ -174,7 +109,7 @@ func TestCreateURL(t *testing.T) {
 	}
 	service := NewComputeService(cfg, nil)
 
-	u, err := url.Parse(service.createURL("source", "/path/to/file"))
+	u, err := url.Parse(service.createURL("/path/to/file"))
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -184,19 +119,8 @@ func TestCreateURL(t *testing.T) {
 	if u.Host != bucket {
 		t.Errorf("Host name is not correct: %s", u.Host)
 	}
-	if u.Path != "/.roadie/source/path/to/file" {
+	if u.Path != "/.roadie/path/to/file" {
 		t.Errorf("Path is not correct: %s", u.Path)
-	}
-
-}
-
-func TestWait(t *testing.T) {
-
-	select {
-	case <-wait(1 * time.Minute):
-		t.Fatal("Returned waiting 1min function first.")
-	case <-wait(1 * time.Second):
-		t.Log("Waiting 1 second returns first.")
 	}
 
 }
