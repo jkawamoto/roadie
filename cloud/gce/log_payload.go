@@ -23,7 +23,6 @@ package gce
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/golang/protobuf/ptypes/struct"
 	"github.com/jkawamoto/structpbconv"
@@ -66,31 +65,5 @@ func NewActivityPayload(payload interface{}) (res *ActivityPayload, err error) {
 		return nil, fmt.Errorf("Given payload is not an instance of *structpb.Struct: %v", payload)
 	}
 
-	return
-}
-
-// RoadiePayload defines the payload structure of instance logs.
-type RoadiePayload struct {
-	Username     string
-	Stream       string
-	Log          string
-	ContainerID  string `structpb:"container_id"`
-	InstanceName string `structpb:"instance_name"`
-}
-
-// NewRoadiePayload converts LogEntry's payload to a RoadiePayload.
-func NewRoadiePayload(payload interface{}) (res *RoadiePayload, err error) {
-
-	switch s := payload.(type) {
-	case *RoadiePayload:
-		res = s
-	case *structpb.Struct:
-		res = &RoadiePayload{}
-		structpbconv.Convert(s, res)
-	default:
-		return nil, fmt.Errorf("Given payload is not an instance of *structpb.Struct: %v", payload)
-	}
-
-	res.Log = strings.TrimRight(res.Log, "\n")
 	return
 }

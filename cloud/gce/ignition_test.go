@@ -47,6 +47,9 @@ func TestFluentdUnit(t *testing.T) {
 	if !strings.Contains(unit.Contents, fmt.Sprintf("INSTANCE=%v", name)) {
 		t.Error("Created fluentd unit doesn't have a correct instane name")
 	}
+	if strings.Contains(unit.Contents, "# fluentd.service") {
+		t.Error("Unit contents still has comments")
+	}
 
 }
 
@@ -68,6 +71,25 @@ func TestRoadieUnit(t *testing.T) {
 	}
 	if !strings.Contains(unit.Contents, options) {
 		t.Error("Created unit doesn't have correct options")
+	}
+	if strings.Contains(unit.Contents, "# roadie.service") {
+		t.Error("Unit contents still has comments")
+	}
+
+}
+
+func TestLogcastUnit(t *testing.T) {
+
+	unit, err := LogcastUnit()
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if !strings.Contains(unit.Contents, "/usr/bin/ncat 127.0.0.1 24225") {
+		t.Error("Created unit doesn't have a correct cmd")
+	}
+	if strings.Contains(unit.Contents, "# logcast.service") {
+		t.Error("Unit contents still has comments")
 	}
 
 }

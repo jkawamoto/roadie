@@ -32,8 +32,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/logging"
-
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 
@@ -160,10 +158,15 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 		return
 	}
 	roadie, err := RoadieUnit(task.InstanceName, task.Image, "")
+	// roadie, err := RoadieUnit(task.InstanceName, task.Image, "--no-shutdown")
 	if err != nil {
 		return
 	}
-	ignition := NewIgnitionConfig().Append(fluentd).Append(roadie).String()
+	logcast, err := LogcastUnit()
+	if err != nil {
+		return
+	}
+	ignition := NewIgnitionConfig().Append(fluentd).Append(roadie).Append(logcast).String()
 	s.Logger.Println("Ignition configuration is", ignition)
 
 	s.Logger.Println("Creating instance", task.InstanceName)
@@ -205,7 +208,7 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 	s.Logger.Println("Retrieving running instances")
 	instances := make(map[string]struct{})
 	log := NewLogManager(s.Config, s.Logger)
-	err = log.OperationLogEntries(ctx, func(_ time.Time, payload *ActivityPayload) error {
+	err = log.OperationLogEntries(ctx, time.Time{}, func(_ time.Time, payload *ActivityPayload) error {
 
 		select {
 		case <-ctx.Done():
@@ -353,10 +356,7 @@ func (s *ComputeService) createInstance(ctx context.Context, task *script.Script
 	}
 
 	log := NewLogManager(s.Config, s.Logger)
-	filter := fmt.Sprintf(
-		`jsonPayload.event_type = "GCE_OPERATION_DONE" AND timestamp > "%s"`,
-		time.Now().In(time.UTC).Format(LogTimeFormat))
-
+	from := time.Now().In(time.UTC)
 	for {
 
 		select {
@@ -365,14 +365,11 @@ func (s *ComputeService) createInstance(ctx context.Context, task *script.Script
 		case <-time.After(s.SleepTime):
 		}
 
-		err := log.Entries(ctx, filter, func(entry *logging.Entry) (err error) {
-			payload, err := NewActivityPayload(entry.Payload)
-			if err != nil {
-				return
-			}
+		err := log.OperationLogEntries(ctx, from, func(t time.Time, payload *ActivityPayload) (err error) {
 			if payload.EventSubtype == LogEventSubtypeInsert && payload.Resource.Name == blueprint.Name {
 				return instanceStarted
 			}
+			from = t
 			return
 		})
 

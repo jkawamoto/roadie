@@ -24,13 +24,15 @@ package gce
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
 
-	"cloud.google.com/go/logging"
-	"cloud.google.com/go/logging/logadmin"
+	"cloud.google.com/go/logging/apiv2"
 	"google.golang.org/api/iterator"
+	loggingpb "google.golang.org/genproto/googleapis/logging/v2"
 )
 
 // LogManager implements cloud.LogManager interface.
@@ -38,23 +40,29 @@ import (
 type LogManager struct {
 	// Config is a reference for a configuration of GCP.
 	Config    *GcpConfig
+	Logger    *log.Logger
 	SleepTime time.Duration
 }
 
 // EntryHandler is a function type to handler Entries.
-type EntryHandler func(*logging.Entry) error
+type EntryHandler func(*loggingpb.LogEntry) error
 
 // RoadiePayloadHandler is a function type to handle RoadiePayloads.
-type RoadiePayloadHandler func(time.Time, *RoadiePayload) error
+type RoadiePayloadHandler func(time.Time, string) error
 
 // ActivityPayloadHandler is a function type to handle ActivityPayloads.
 type ActivityPayloadHandler func(time.Time, *ActivityPayload) error
 
 // NewLogManager creates a new log manager.
-func NewLogManager(cfg *GcpConfig) (m *LogManager) {
+func NewLogManager(cfg *GcpConfig, logger *log.Logger) (m *LogManager) {
+
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+	}
 
 	return &LogManager{
 		Config:    cfg,
+		Logger:    logger,
 		SleepTime: 30 * time.Second,
 	}
 
@@ -63,28 +71,25 @@ func NewLogManager(cfg *GcpConfig) (m *LogManager) {
 // Get requests log entries of the given named instance.
 func (s *LogManager) Get(ctx context.Context, instanceName string, from time.Time, handler cloud.LogHandler) (err error) {
 
-	var stopIteration = fmt.Errorf("Stop Iteration")
-
 	// Determine when the newest instance starts.
-	err = s.OperationLogEntries(ctx, func(timestamp time.Time, payload *ActivityPayload) (err error) {
+	err = s.OperationLogEntries(ctx, from, func(timestamp time.Time, payload *ActivityPayload) (err error) {
 		if payload.Resource.Name == instanceName {
 			if payload.EventSubtype == LogEventSubtypeInsert {
 				from = timestamp
-				return stopIteration
 			}
 		}
 		return
 	})
-	if err != nil && err != stopIteration {
+	if err != nil {
 		return
 	}
 
 	// Request log entries.
-	return s.InstanceLogEntries(ctx, instanceName, from, func(timestamp time.Time, payload *RoadiePayload) (err error) {
-
-		return handler(timestamp, payload.Log, payload.Stream != "stdout")
-
+	return s.InstanceLogEntries(ctx, instanceName, from, func(timestamp time.Time, payload string) (err error) {
+		return handler(timestamp, payload, false)
 	})
+
+
 
 }
 
@@ -93,13 +98,19 @@ func (s *LogManager) Get(ctx context.Context, instanceName string, from time.Tim
 // If the handler returns non-nil value as an error, this function will end.
 func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHandler) (err error) {
 
-	client, err := logadmin.NewClient(ctx, s.Config.Project)
+	s.Logger.Println("Retrieving log:", filter)
+	client, err := logging.NewClient(ctx)
 	if err != nil {
 		return
 	}
 	defer client.Close()
 
-	iter := client.Entries(ctx, logadmin.Filter(filter))
+	iter := client.ListLogEntries(ctx, &loggingpb.ListLogEntriesRequest{
+		ResourceNames: []string{
+			fmt.Sprintf("projects/%v", s.Config.Project),
+		},
+		Filter: filter,
+	})
 	for {
 		select {
 		case <-ctx.Done():
@@ -109,7 +120,7 @@ func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHa
 
 		e, err := iter.Next()
 		if err == iterator.Done {
-			return nil
+			break
 		} else if err != nil {
 			return err
 		}
@@ -117,6 +128,9 @@ func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHa
 			return err
 		}
 	}
+
+	s.Logger.Println("Finished retrieving log")
+	return
 }
 
 // InstanceLogEntries requests log entries of a given instance.
@@ -132,12 +146,16 @@ func (s *LogManager) InstanceLogEntries(ctx context.Context, instanceName string
 		`resource.type = "gce_instance" AND jsonPayload.instance_name = "%s" AND timestamp > "%s"`,
 		instanceName, from.In(time.UTC).Format(LogTimeFormat))
 
-	return s.Entries(ctx, filter, func(entry *logging.Entry) error {
-		payload, err := NewRoadiePayload(entry.Payload)
-		if err != nil {
-			return err
+	return s.Entries(ctx, filter, func(entry *loggingpb.LogEntry) error {
+		payload := entry.GetJsonPayload()
+		if value, ok := payload.GetFields()["MESSAGE"]; !ok {
+			return nil
+		} else if msg := value.GetStringValue(); msg == "" {
+			return nil
+		} else {
+			ts := entry.GetTimestamp()
+			return handler(time.Unix(ts.Seconds, int64(ts.Nanos)).In(time.Local), msg)
 		}
-		return handler(entry.Timestamp.In(time.Local), payload)
 	})
 
 }
@@ -145,15 +163,18 @@ func (s *LogManager) InstanceLogEntries(ctx context.Context, instanceName string
 // OperationLogEntries requests log entries about google cloud platform operations.
 // Obtained log entries will be passed a given handler entry by entry.
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
-func (s *LogManager) OperationLogEntries(ctx context.Context, handler ActivityPayloadHandler) error {
+func (s *LogManager) OperationLogEntries(ctx context.Context, from time.Time, handler ActivityPayloadHandler) error {
 
-	filter := `jsonPayload.event_type = "GCE_OPERATION_DONE"`
-	return s.Entries(ctx, filter, func(entry *logging.Entry) error {
-		payload, err := NewActivityPayload(entry.Payload)
+	filter := fmt.Sprintf(
+		`jsonPayload.event_type = "GCE_OPERATION_DONE" AND timestamp > "%s"`,
+		from.In(time.UTC).Format(LogTimeFormat))
+	return s.Entries(ctx, filter, func(entry *loggingpb.LogEntry) error {
+		payload, err := NewActivityPayload(entry.GetJsonPayload())
 		if err != nil {
 			return err
 		}
-		return handler(entry.Timestamp.In(time.Local), payload)
+		ts := entry.GetTimestamp()
+		return handler(time.Unix(ts.Seconds, int64(ts.Nanos)).In(time.Local), payload)
 	})
 
 }

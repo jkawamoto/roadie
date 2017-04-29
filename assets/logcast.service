@@ -1,6 +1,6 @@
 #
-# roadie.service
-# Template of service unit definition for roadie-gcp
+# logcast.service
+# Template of service unit definition for forwarding log message to Fluentd.
 #
 # Copyright (c) 2016-2017 Junpei Kawamoto
 #
@@ -20,18 +20,15 @@
 # along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 #
 [Unit]
-Description=Roadie Script Execution
-Requires=fluentd.service
+Description=Forward Log messages to Fluentd
+Requires=fluentd.service roadie.service
 After=fluentd.service
 
 [Service]
-ExecStartPre=-/usr/bin/docker stop {{.Name}}
-ExecStartPre=-/usr/bin/docker rm {{.Name}}
-ExecStartPre=-/usr/bin/docker pull {{.Image}}
-ExecStartPre=/usr/bin/curl -o /root/script.yml "http://metadata.google.internal/computeMetadata/v1/instance/attributes/script" -H "Metadata-Flavor: Google"
-ExecStart=/usr/bin/docker run -i --name {{.Name}} -v /root/script.yml:/root/script.yml {{.Image}} {{.Options}} -c /root/script.yml
-ExecStop=/usr/bin/docker stop {{.Name}}
-Type=oneshot
+ExecStart=/bin/bash -c "/usr/bin/journalctl -u roadie.service -o json -f | /usr/bin/ncat 127.0.0.1 24225"
+Restart=always
+RestartSec=2sec
+Type=simple
 
 [Install]
 WantedBy=multi-user.target

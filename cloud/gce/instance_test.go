@@ -74,11 +74,11 @@ func TestReplaceURLScheme(t *testing.T) {
 	service := NewComputeService(cfg, nil)
 
 	task := script.Script{
-		Source: "roadie://some-sourcefile",
+		Source: "roadie://source/some-sourcefile",
 		Data: []string{
-			"roadie://some-datafile",
+			"roadie://data/some-datafile",
 		},
-		Result: "roadie://result-file",
+		Result: "roadie://result/result-file",
 	}
 	service.replaceURLScheme(&task)
 

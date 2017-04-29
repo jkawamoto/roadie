@@ -22,11 +22,14 @@
 [Unit]
 Description=Fluentd Log Management Service
 Requires=docker.service
+After=docker.service 
 
 [Service]
 ExecStartPre=-/usr/bin/docker stop fluentd
 ExecStartPre=-/usr/bin/docker rm fluentd
-ExecStart=/usr/bin/docker run --name fluentd -e 'INSTANCE={{.Name}}' -e 'USERNAME=roadie' -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd:dev
+ExecStartPre=-/usr/bin/docker pull jkawamoto/docker-google-fluentd:dev
+ExecStart=/usr/bin/docker run --name fluentd -e 'INSTANCE={{.Name}}' -e 'USERNAME=roadie' -p 127.0.0.1:24225:24225 jkawamoto/docker-google-fluentd:dev
+#ExecStart=/usr/bin/docker run --name fluentd -e 'INSTANCE={{.Name}}' -e 'USERNAME=roadie' -p 127.0.0.1:24225:24225 -v /var/lib/docker:/var/lib/docker jkawamoto/docker-google-fluentd:dev
 ExecStop=/usr/bin/docker stop fluentd
 Restart=always
 Type=simple

@@ -24,6 +24,7 @@ package gce
 import (
 	"bytes"
 	"encoding/json"
+	"regexp"
 	"text/template"
 
 	"github.com/jkawamoto/roadie/assets"
@@ -83,7 +84,8 @@ func NewIgnitionConfig() *IgnitionConfig {
 // String marshals this config to a JSON string.
 func (c *IgnitionConfig) String() string {
 
-	data, err := json.Marshal(c)
+	// data, err := json.Marshal(c)
+	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		// This error can be solved during developping phase.
 		panic(err)
@@ -128,7 +130,7 @@ func FluentdUnit(name string) (unit SystemdUnit, err error) {
 
 	unit.Name = "fluentd.service"
 	unit.Enable = true
-	unit.Contents = buf.String()
+	unit.Contents = removeComments(buf.String())
 	return
 
 }
@@ -164,7 +166,27 @@ func RoadieUnit(name, image, options string) (unit SystemdUnit, err error) {
 
 	unit.Name = "roadie.service"
 	unit.Enable = true
-	unit.Contents = buf.String()
+	unit.Contents = removeComments(buf.String())
 	return
 
+}
+
+// LogcastUnit creates a new unit for forwarding log to Fluentd.
+func LogcastUnit() (unit SystemdUnit, err error) {
+
+	data, err := assets.Asset("assets/logcast.service")
+	if err != nil {
+		return
+	}
+
+	unit.Name = "logcast.service"
+	unit.Enable = true
+	unit.Contents = removeComments(string(data))
+	return
+
+}
+
+func removeComments(str string) string {
+	r := regexp.MustCompile("#.*\n")
+	return r.ReplaceAllString(str, "")
 }
