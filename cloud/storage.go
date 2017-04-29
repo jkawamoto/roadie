@@ -26,6 +26,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -53,7 +54,7 @@ type Storage struct {
 func NewStorage(servicer StorageManager, log io.Writer) (s *Storage) {
 
 	if log == nil {
-		log = os.Stderr
+		log = ioutil.Discard
 	}
 
 	s = &Storage{
