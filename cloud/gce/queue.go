@@ -34,6 +34,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/iterator"
 )
 
@@ -98,8 +99,9 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	})
 
 	// If there are no workers, create one worker.
-	if exist, err := s.workerExists(ctx, queue); err != nil {
-		return err
+	exist, err := s.workerExists(ctx, queue)
+	if err != nil {
+		return
 	} else if !exist {
 		s.CreateWorkers(ctx, queue, 1, func(name string) error {
 			s.Logger.Printf("New instance %v has started\n", name)
@@ -148,7 +150,7 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 			break
 		}
 
-		err = handler(&task)
+		err = handler(task.InstanceName, "pending")
 		if err != nil {
 			break
 		}
@@ -161,7 +163,7 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 }
 
 // Queues retrieves existing queue names.
-func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueManagerNameHandler) (err error) {
+func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueStatusHandler) (err error) {
 
 	s.Logger.Println("Retrieving queue names")
 	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
@@ -295,69 +297,114 @@ func (s *QueueService) Restart(ctx context.Context, queue string) (err error) {
 }
 
 // CreateWorkers creates worker instances working for a given named queue.
-func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, handler cloud.QueueManagerNameHandler) error {
+func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, handler cloud.QueueManagerNameHandler) (err error) {
 
 	s.Logger.Println("Creating worker instances for queue", queue)
-	compute := NewComputeService(s.Config, s.Logger)
+	cService := NewComputeService(s.Config, s.Logger)
+
+	// Create an ignition config.
+	fluentd, err := FluentdUnit(queue)
+	if err != nil {
+		return
+	}
+	qManager, err := QueueManagerUnit(s.Config.Project, QueueManagerVersion, queue)
+	if err != nil {
+		return
+	}
+	logcast, err := LogcastUnit()
+	if err != nil {
+		return
+	}
+	ignition := NewIgnitionConfig().Append(fluentd).Append(qManager).Append(logcast).String()
+	s.Logger.Println("Ignition configuration is", ignition)
+
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < n; i++ {
 
-		eg.Go(func() error {
+		name := fmt.Sprintf("%s-%d%d", queue, time.Now().Unix(), i)
+		eg.Go(func() (err error) {
 
-			var err error
-			name := fmt.Sprintf("%s-%d%d", queue, time.Now().Unix(), i)
-			startup, err := WorkerStartup(&WorkerStartupOpt{
-				ProjectID:    s.Config.Project,
-				InstanceName: name,
-				Name:         queue,
-				Version:      QueueManagerVersion,
+			err = cService.createInstance(ctx, name, []*compute.MetadataItems{
+				&compute.MetadataItems{
+					Key:   "user-data",
+					Value: &ignition,
+				},
 			})
 			if err != nil {
-				return err
+				return
 			}
-
-			err = compute.createInstance(ctx, name, startup)
-			if err == nil {
-				err = handler(name)
-			}
-			return err
+			return handler(name)
 
 		})
 
 	}
 
-	err := eg.Wait()
+	err = eg.Wait()
 	if err != nil {
 		s.Logger.Println("Failed to create worker instances:", err.Error())
 	} else {
 		s.Logger.Println("Created worker instances for queue", queue)
 	}
-	return err
+	return
 
 }
 
 // Workers retrieves worker instance names for a given queue.
-func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.QueueManagerNameHandler) error {
+func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.QueueManagerNameHandler) (err error) {
 
 	s.Logger.Println("Retrieving workers in queue", queue)
-	compute := NewComputeService(s.Config, s.Logger)
-	instances, err := compute.Instances(ctx)
-	if err != nil {
-		return err
-	}
-
-	for name := range instances {
-		if strings.HasPrefix(name, queue) {
-			err = handler(name)
-			if err != nil {
-				return err
-			}
+	cService := NewComputeService(s.Config, s.Logger)
+	prefix := fmt.Sprintf("%v-", queue)
+	err = cService.Instances(ctx, func(name, status string) error {
+		if strings.HasPrefix(name, prefix) && status == StatusRunning {
+			return handler(name)
 		}
+		return nil
+	})
+	if err != nil {
+		return
 	}
 
 	s.Logger.Println("Finishes retrieving workers in queue", queue)
-	return nil
+	return
 
+}
+
+// DeleteQueue deletes a given named queue. This function deletes all tasks
+// in a given queue and deletes all workers for that queue.
+func (s *QueueService) DeleteQueue(ctx context.Context, queue string) (err error) {
+
+	s.Logger.Println("Deleting queue", queue)
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
+	err = s.deleteTask(ctx, query)
+	if err != nil {
+		return
+	}
+
+	cService := NewComputeService(s.Config, s.Logger)
+	err = s.Workers(ctx, queue, func(name string) (err error) {
+		return cService.DeleteInstance(ctx, name)
+	})
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished deleting queue", queue)
+	return
+}
+
+// DeleteTask deletes a given named task in a given named queue.
+func (s *QueueService) DeleteTask(ctx context.Context, queue, task string) (err error) {
+
+	s.Logger.Println("Deleting task", task)
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue).Filter("Name=", task)
+	err = s.deleteTask(ctx, query)
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Finished deleting task", task)
+	return
 }
 
 // workerExists returns true if there is at lease one worker is working for the
@@ -372,6 +419,45 @@ func (s *QueueService) workerExists(ctx context.Context, queue string) (exist bo
 	if err == done {
 		err = nil
 	}
+	return
+
+}
+
+func (s *QueueService) deleteTask(ctx context.Context, query *datastore.Query) (err error) {
+
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
+
+		var key *datastore.Key
+		iter := client.Run(ctx, query)
+		for {
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			key, err = iter.Next(nil)
+			if err == iterator.Done {
+				return nil
+			} else if err != nil {
+				return err
+			}
+
+			err = tx.Delete(key)
+			if err != nil {
+				return
+			}
+
+		}
+
+	})
 	return
 
 }

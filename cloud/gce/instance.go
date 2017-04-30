@@ -45,8 +45,6 @@ const (
 )
 
 var (
-	// Token for specifying a target instance has been started.
-	instanceStarted = fmt.Errorf("Target instance has been started.")
 	// RoadieSchemeURLOffset defines an offset value to remove scheme name from
 	// URLs.
 	RoadieSchemeURLOffset = len(script.RoadieSchemePrefix)
@@ -148,10 +146,6 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 		task.Image = "jkawamoto/roadie-gcp"
 	}
 
-	// Update URLs of which scheme is `roadie://` to `gs://`.
-	s.replaceURLScheme(task)
-	s.Logger.Printf("Updated script file is \n%v\n", task.String())
-
 	// Create an ignition config.
 	fluentd, err := FluentdUnit(task.InstanceName)
 	if err != nil {
@@ -169,8 +163,21 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	ignition := NewIgnitionConfig().Append(fluentd).Append(roadie).Append(logcast).String()
 	s.Logger.Println("Ignition configuration is", ignition)
 
-	s.Logger.Println("Creating instance", task.InstanceName)
-	err = s.createInstance(ctx, task, ignition)
+	// Update URLs of which scheme is `roadie://` to `gs://`.
+	s.replaceURLScheme(task)
+	s.Logger.Printf("Updated script file is \n%v\n", task.String())
+
+	scriptStr := task.String()
+	err = s.createInstance(ctx, task.InstanceName, []*compute.MetadataItems{
+		&compute.MetadataItems{
+			Key:   "script",
+			Value: &scriptStr,
+		},
+		&compute.MetadataItems{
+			Key:   "user-data",
+			Value: &ignition,
+		},
+	})
 	if err != nil {
 		return
 	}
@@ -236,7 +243,7 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 	}
 	sort.Strings(instanceNames)
 	for _, name := range instanceNames {
-		err = handler(name, "running")
+		err = handler(name, StatusRunning)
 		if err != nil {
 			return
 		}
@@ -263,7 +270,7 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 		dir := filepath.Base(filepath.Dir(info.Path))
 		if prev != dir {
 			if _, exist := instances[dir]; !exist {
-				handler(dir, "terminated")
+				handler(dir, StatusTerminated)
 			}
 			prev = dir
 		}
@@ -278,27 +285,16 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 }
 
 // CreateInstance creates a new instance based on the builder's configuration.
-func (s *ComputeService) createInstance(ctx context.Context, task *script.Script, ignition string) (err error) {
+func (s *ComputeService) createInstance(ctx context.Context, instanceName string, matadataItems []*compute.MetadataItems) (err error) {
 
+	s.Logger.Println("Creating instance", instanceName)
 	service, err := s.newService(ctx)
 	if err != nil {
 		return
 	}
 
-	scriptStr := task.String()
-	matadataItems := []*compute.MetadataItems{
-		&compute.MetadataItems{
-			Key:   "script",
-			Value: &scriptStr,
-		},
-		&compute.MetadataItems{
-			Key:   "user-data",
-			Value: &ignition,
-		},
-	}
-
 	blueprint := compute.Instance{
-		Name:        strings.ToLower(task.InstanceName),
+		Name:        strings.ToLower(instanceName),
 		Zone:        s.Config.normalizedZone(),
 		MachineType: s.Config.normalizedMachineType(),
 		Disks: []*compute.AttachedDisk{
@@ -357,6 +353,8 @@ func (s *ComputeService) createInstance(ctx context.Context, task *script.Script
 
 	log := NewLogManager(s.Config, s.Logger)
 	from := time.Now().In(time.UTC)
+	// Token for specifying a target instance has been started.
+	instanceStarted := fmt.Errorf("Target instance has been started.")
 	for {
 
 		select {

@@ -186,6 +186,42 @@ func LogcastUnit() (unit SystemdUnit, err error) {
 
 }
 
+// queueManagerUnitOpt defines options for queue manager service unit.
+type queueManagerUnitOpt struct {
+	ProjectID string
+	Version   string
+	QueueName string
+}
+
+// QueueManagerUnit creates a new unit for Roadie queue manager.
+func QueueManagerUnit(project, version, queueName string) (unit SystemdUnit, err error) {
+
+	data, err := assets.Asset("assets/queue.service")
+	if err != nil {
+		return
+	}
+
+	buf := &bytes.Buffer{}
+	temp, err := template.New("queue").Parse(string(data))
+	if err != nil {
+		return
+	}
+	err = temp.ExecuteTemplate(buf, "queue", &queueManagerUnitOpt{
+		ProjectID: project,
+		Version:   version,
+		QueueName: queueName,
+	})
+	if err != nil {
+		return
+	}
+
+	unit.Name = "queue.service"
+	unit.Enable = true
+	unit.Contents = removeComments(buf.String())
+	return
+
+}
+
 func removeComments(str string) string {
 	r := regexp.MustCompile("#.*\n")
 	return r.ReplaceAllString(str, "")

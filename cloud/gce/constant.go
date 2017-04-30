@@ -42,4 +42,9 @@ const (
 	LogEventSubtypeInsert = "compute.instances.insert"
 	// LogEventSubtypeDelete means this event is deleting an instance.
 	LogEventSubtypeDelete = "compute.instances.delete"
+
+	// StatusRunning is a status representing an instance is running.
+	StatusRunning = "running"
+	// StatusTerminated is a status representing an instance is terminated.
+	StatusTerminated = "terminated"
 )
