@@ -39,9 +39,9 @@ type Provider struct {
 }
 
 // NewProvider creates a new provider for Azure service.
-func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (provider *Provider, err error) {
+func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger, forceAuth bool) (provider *Provider, err error) {
 
-	if cfg.Token.AccessToken == "" {
+	if cfg.Token.AccessToken == "" || forceAuth {
 
 		fmt.Println("Access token is not given.")
 		var token *auth.Token
