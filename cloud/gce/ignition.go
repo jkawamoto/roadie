@@ -188,16 +188,18 @@ func LogcastUnit(service string) (unit SystemdUnit, err error) {
 
 // queueManagerUnitOpt defines options for queue manager service unit.
 type queueManagerUnitOpt struct {
+	Project   string
 	Version   string
 	QueueName string
 }
 
 // QueueManagerUnit creates a new unit for Roadie queue manager.
-func QueueManagerUnit(version, queueName string) (unit SystemdUnit, err error) {
+func QueueManagerUnit(project, version, queueName string) (unit SystemdUnit, err error) {
 
 	unit.Name = "queue.service"
 	unit.Enable = true
 	unit.Contents, err = loadUnitTemplate("assets/queue.service", &queueManagerUnitOpt{
+		Project:   project,
 		Version:   version,
 		QueueName: queueName,
 	})

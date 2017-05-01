@@ -312,7 +312,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, h
 	if err != nil {
 		return
 	}
-	qManager, err := QueueManagerUnit(QueueManagerVersion, queue)
+	qManager, err := QueueManagerUnit(s.Config.Project, QueueManagerVersion, queue)
 	if err != nil {
 		return
 	}

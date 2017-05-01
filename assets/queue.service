@@ -27,7 +27,7 @@ After=fluentd.service
 [Service]
 ExecStartPre=/usr/bin/curl -LO https://github.com/jkawamoto/roadie-queue-manager/releases/download/v{{.Version}}/roadie-queue-manager_{{.Version}}_linux_amd64.tar.gz
 ExecStartPre=/usr/bin/tar -zxvf roadie-queue-manager_{{.Version}}_linux_amd64.tar.gz -C /root --strip-components 1
-ExecStart=/root/roadie-queue-manager {{.QueueName}}
+ExecStart=/root/roadie-queue-manager {{.Project}} {{.QueueName}}
 Restart=always
 Type=simple
 
