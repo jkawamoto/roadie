@@ -128,6 +128,43 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 
 }
 
+// Fetch retrieves one task from a queue and returns it; status of the returned
+// task is updated to running.
+// If there is no task, return nil with nil error.
+func (s *QueueService) Fetch(ctx context.Context, queue string) (task *Task, err error) {
+
+	s.Logger.Println("Retrieving a task in queue", queue)
+	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue).Filter("Status=", TaskStatusWaiting).Limit(1)
+
+	client, err := datastore.NewClient(ctx, s.Config.Project)
+	if err != nil {
+		return
+	}
+	defer client.Close()
+
+	task = new(Task)
+	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
+
+		iter := client.Run(ctx, query)
+		key, err := iter.Next(task)
+		if err != nil {
+			return
+		}
+
+		task.Status = TaskStatusRunning
+		_, err = tx.Put(key, task)
+		return
+
+	})
+
+	if err == iterator.Done {
+		s.Logger.Println("No tasks are found")
+		return nil, nil
+	}
+	return
+
+}
+
 // Tasks retrieves tasks in a given names queue.
 func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.QueueManagerTaskHandler) (err error) {
 

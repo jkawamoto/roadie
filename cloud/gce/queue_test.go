@@ -24,7 +24,13 @@ package gce
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"os"
 	"testing"
+	"time"
+
+	"github.com/jkawamoto/roadie/script"
 )
 
 func TestNewQueueService(t *testing.T) {
@@ -57,8 +63,42 @@ func TestNewQueueService(t *testing.T) {
 	if s.Logger == nil {
 		t.Error("Logger is nil")
 	}
-	if s.logWriter == nil {
-		t.Error("Log writer is nil")
+
+}
+
+func TestEnqueuAndFetch(t *testing.T) {
+
+	cfg := GetConfig()
+	if cfg == nil {
+		t.Skip("Config file to access GCP is not given")
 	}
+
+	ctx := context.Background()
+	service, err := NewQueueService(ctx, cfg, log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile))
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	queue := fmt.Sprintf("test-queue-%v", time.Now().Unix())
+	taskName := "test-task"
+
+	err = service.Enqueue(ctx, queue, &script.Script{
+		InstanceName: taskName,
+		Run:          []string{"echo test"},
+		Result:       fmt.Sprintf("gs://%v/%v/result/test", cfg.Bucket, StoragePrefix),
+	})
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	task, err := service.Fetch(ctx, queue)
+	if err != nil {
+		t.Error(err.Error())
+	} else if task == nil {
+		t.Error("Cannot fatch the added task")
+	} else if task.Name != taskName {
+		t.Error("Name of the fetched task is not correct:", task.Name)
+	}
+
+	service.DeleteQueue(ctx, queue)
 
 }
