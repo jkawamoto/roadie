@@ -23,6 +23,15 @@ package gce
 
 import "github.com/jkawamoto/roadie/script"
 
+const (
+	// TaskStatusWaiting represents a task is waiting to be run.
+	TaskStatusWaiting = "waiting"
+	// TaskStatusRunning represents a task is running.
+	TaskStatusRunning = "running"
+	// TaskStatusPending represents a task is pending to be run.
+	TaskStatusPending = "pending"
+)
+
 // Task defines a data structure of enqueued script file.
 type Task struct {
 	// Name of this task.
@@ -31,7 +40,6 @@ type Task struct {
 	Script *script.Script `yaml:"script,omitempty"`
 	// Queue name.
 	QueueName string `yaml:"queue-name"`
-	// If true, NextQueuedScript will skip this script.
-	// In order to stop a queue, this flag will be used.
-	Pending bool `yaml:"pending"`
+	// Status of this task
+	Status string `yaml:"status"`
 }

@@ -98,7 +98,7 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 			Name:      task.InstanceName,
 			QueueName: queue,
 			Script:    task,
-			Pending:   false,
+			Status:    TaskStatusWaiting,
 		})
 		return
 	})
@@ -271,7 +271,9 @@ func (s *QueueService) UpdateTask(ctx context.Context, queue string, modifier fu
 func (s *QueueService) Stop(ctx context.Context, queue string) error {
 
 	return s.UpdateTask(ctx, queue, func(task *Task) *Task {
-		task.Pending = true
+		if task.Status == TaskStatusWaiting {
+			task.Status = TaskStatusPending
+		}
 		return task
 	})
 
@@ -282,7 +284,9 @@ func (s *QueueService) Restart(ctx context.Context, queue string) (err error) {
 
 	s.Logger.Println("Restarting queue", queue)
 	err = s.UpdateTask(ctx, queue, func(task *Task) *Task {
-		task.Pending = false
+		if task.Status == TaskStatusPending {
+			task.Status = TaskStatusWaiting
+		}
 		return task
 	})
 	if err != nil {
@@ -367,6 +371,7 @@ func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.
 	prefix := fmt.Sprintf("%v-", queue)
 	err = cService.Instances(ctx, func(name, status string) error {
 		if strings.HasPrefix(name, prefix) && status == StatusRunning {
+			s.Logger.Println("Worker", name, "is working for queue", queue)
 			return handler(name)
 		}
 		return nil
@@ -410,6 +415,7 @@ func (s *QueueService) DeleteTask(ctx context.Context, queue, task string) (err 
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue).Filter("Name=", task)
 	err = s.deleteTask(ctx, query)
 	if err != nil {
+		s.Logger.Println("Failed to delete task", task, ":", err.Error())
 		return
 	}
 
