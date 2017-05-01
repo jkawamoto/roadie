@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -164,7 +163,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	s.Logger.Println("Ignition configuration is", ignition)
 
 	// Update URLs of which scheme is `roadie://` to `gs://`.
-	s.replaceURLScheme(task)
+	ReplaceURLScheme(s.Config, task)
 	s.Logger.Printf("Updated script file is \n%v\n", task.String())
 
 	scriptStr := task.String()
@@ -381,40 +380,5 @@ func (s *ComputeService) createInstance(ctx context.Context, instanceName string
 		}
 
 	}
-
-}
-
-// replaceURLScheme replaced URLs which start with "roadie://".
-// Those URLs are modified to "gs://<bucketname>/.roadie/".
-func (s *ComputeService) replaceURLScheme(task *script.Script) {
-
-	// Replace source section.
-	if strings.HasPrefix(task.Source, script.RoadieSchemePrefix) {
-		task.Source = s.createURL(task.Source[RoadieSchemeURLOffset:])
-	}
-
-	// Replace data section.
-	for i, url := range task.Data {
-		if strings.HasPrefix(url, script.RoadieSchemePrefix) {
-			task.Data[i] = s.createURL(url[RoadieSchemeURLOffset:])
-		}
-	}
-
-	// Replace result section.
-	if strings.HasPrefix(task.Result, script.RoadieSchemePrefix) {
-		task.Result = s.createURL(task.Result[RoadieSchemeURLOffset:])
-	}
-
-}
-
-// createURL creates a valid URL for uploaing object.
-func (s *ComputeService) createURL(name string) string {
-
-	u := url.URL{
-		Scheme: "gs",
-		Host:   s.Config.Bucket,
-		Path:   filepath.Join("/", StoragePrefix, name),
-	}
-	return u.String()
 
 }

@@ -22,10 +22,7 @@
 package gce
 
 import (
-	"net/url"
 	"testing"
-
-	"github.com/jkawamoto/roadie/script"
 )
 
 func TestNewComputeService(t *testing.T) {
@@ -53,74 +50,6 @@ func TestNewComputeService(t *testing.T) {
 
 	if s.Logger == nil {
 		t.Error("Logger is nil")
-	}
-
-}
-
-// TestReplaceURLScheme checks that function replaces URLs which start with "roadie://".
-// to "gs://<bucketname>/.roadie/".
-func TestReplaceURLScheme(t *testing.T) {
-
-	project := "sample-project"
-	bucket := "test-bucket"
-	region := "us-central1-c"
-	machine := "n1-standard-2"
-	cfg := &GcpConfig{
-		Project:     project,
-		Bucket:      bucket,
-		Zone:        region,
-		MachineType: machine,
-	}
-	service := NewComputeService(cfg, nil)
-
-	task := script.Script{
-		Source: "roadie://source/some-sourcefile",
-		Data: []string{
-			"roadie://data/some-datafile",
-		},
-		Result: "roadie://result/result-file",
-	}
-	service.replaceURLScheme(&task)
-
-	// Check results.
-	if task.Source != "gs://test-bucket/.roadie/source/some-sourcefile" {
-		t.Error("source section is not correct:", task.Source)
-	}
-	if task.Data[0] != "gs://test-bucket/.roadie/data/some-datafile" {
-		t.Error("data section is not correct:", task.Data)
-	}
-	if task.Result != "gs://test-bucket/.roadie/result/result-file" {
-		t.Error("result section is not correct:", task.Result)
-	}
-
-}
-
-func TestCreateURL(t *testing.T) {
-
-	project := "sample-project"
-	bucket := "test-bucket"
-	region := "us-central1-c"
-	machine := "n1-standard-2"
-	cfg := &GcpConfig{
-		Project:     project,
-		Bucket:      bucket,
-		Zone:        region,
-		MachineType: machine,
-	}
-	service := NewComputeService(cfg, nil)
-
-	u, err := url.Parse(service.createURL("/path/to/file"))
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if u.Scheme != "gs" {
-		t.Errorf("Scheme is not correct: %s", u.Scheme)
-	}
-	if u.Host != bucket {
-		t.Errorf("Host name is not correct: %s", u.Host)
-	}
-	if u.Path != "/.roadie/path/to/file" {
-		t.Errorf("Path is not correct: %s", u.Path)
 	}
 
 }

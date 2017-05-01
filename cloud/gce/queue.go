@@ -88,6 +88,11 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	}
 	defer client.Close()
 
+	// Update URLs of which scheme is `roadie://` to `gs://`.
+	ReplaceURLScheme(s.Config, task)
+	s.Logger.Println("Script of the enqueuing task is\n", task.String())
+
+	// Enqueue the task.
 	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 		_, err = tx.Put(key, &Task{
 			Name:      task.InstanceName,
