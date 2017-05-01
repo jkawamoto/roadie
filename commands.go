@@ -45,6 +45,10 @@ var GlobalFlags = []cli.Flag{
 	// 	Name: "no-color",
 	// 	Usage: "disable colorized output."
 	// },
+	cli.BoolFlag{
+		Name:  "auth",
+		Usage: "force running an authentication process even if already logged in",
+	},
 }
 
 // Commands manage sub commands.
