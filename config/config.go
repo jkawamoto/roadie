@@ -111,15 +111,14 @@ func (c *Config) Load() (err error) {
 
 }
 
-// Print shows current configurations as a TOML style.
-func (c *Config) Print() (err error) {
+// String returns a string representing this config.
+func (c *Config) String() string {
 
 	data, err := yaml.Marshal(*c)
 	if err != nil {
-		return
+		return err.Error()
 	}
-	fmt.Println(string(data))
-	return
+	return string(data)
 
 }
 
