@@ -89,7 +89,25 @@ func (s *LogManager) Get(ctx context.Context, instanceName string, from time.Tim
 		return handler(timestamp, payload, false)
 	})
 
+}
 
+// Delete doesn't do anything.
+func (s *LogManager) Delete(ctx context.Context, instanceName string) error {
+
+	// In GCP, it is not necessary to delete log entries because old entries will
+	// be deleted automatically.
+	return nil
+
+}
+
+// GetQueueLog retrieves log entries from a queue.
+func (s *LogManager) GetQueueLog(ctx context.Context, queue string, handler cloud.LogHandler) (err error) {
+
+	return s.InstanceLogEntries(ctx, queueLogKey(queue), time.Time{}, func(timestamp time.Time, payload string) (err error) {
+		return handler(timestamp, payload, false)
+	})
+
+}
 
 }
 
