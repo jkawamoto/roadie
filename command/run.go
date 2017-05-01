@@ -113,7 +113,7 @@ func cmdRun(opt *runOpt) (err error) {
 	// Update instance name.
 	// If an instance name is not given, use the default name.
 	if opt.InstanceName != "" {
-		s.InstanceName = strings.ToLower(opt.InstanceName)
+		s.Name = strings.ToLower(opt.InstanceName)
 	}
 
 	// Check a specified bucket exists and create it if not.
@@ -144,7 +144,7 @@ func cmdRun(opt *runOpt) (err error) {
 	}
 	s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
 
-	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(s.InstanceName))
+	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(s.Name))
 	opt.Spinner.FinalMSG = fmt.Sprintf("Instance created.\n")
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()

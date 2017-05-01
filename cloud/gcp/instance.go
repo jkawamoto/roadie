@@ -146,12 +146,12 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	}
 
 	// Create an ignition config.
-	fluentd, err := FluentdUnit(task.InstanceName)
+	fluentd, err := FluentdUnit(task.Name)
 	if err != nil {
 		return
 	}
-	roadie, err := RoadieUnit(task.InstanceName, task.Image, "")
-	// roadie, err := RoadieUnit(task.InstanceName, task.Image, "--no-shutdown")
+	roadie, err := RoadieUnit(task.Name, task.Image, "")
+	// roadie, err := RoadieUnit(task.Name, task.Image, "--no-shutdown")
 	if err != nil {
 		return
 	}
@@ -167,7 +167,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	s.Logger.Printf("Updated script file is \n%v\n", task.String())
 
 	scriptStr := task.String()
-	err = s.createInstance(ctx, task.InstanceName, []*compute.MetadataItems{
+	err = s.createInstance(ctx, task.Name, []*compute.MetadataItems{
 		&compute.MetadataItems{
 			Key:   "script",
 			Value: &scriptStr,
@@ -181,7 +181,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 		return
 	}
 
-	s.Logger.Println("Finished creating instance", task.InstanceName)
+	s.Logger.Println("Finished creating instance", task.Name)
 	return
 
 }

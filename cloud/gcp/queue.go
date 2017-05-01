@@ -95,7 +95,7 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	// Enqueue the task.
 	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 		_, err = tx.Put(key, &Task{
-			Name:      task.InstanceName,
+			Name:      task.Name,
 			QueueName: queue,
 			Script:    task,
 			Status:    TaskStatusWaiting,
@@ -197,7 +197,7 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 			break
 		}
 
-		err = handler(task.InstanceName, "pending")
+		err = handler(task.Name, "pending")
 		if err != nil {
 			break
 		}

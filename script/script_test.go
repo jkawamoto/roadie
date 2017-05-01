@@ -86,12 +86,12 @@ func TestLoadScript(t *testing.T) {
 	}
 
 	// Tests
-	if script.InstanceName != strings.ToLower(script.InstanceName) {
-		t.Errorf("Instance name %s has upper cases.", script.InstanceName)
+	if script.Name != strings.ToLower(script.Name) {
+		t.Errorf("Instance name %s has upper cases.", script.Name)
 	}
 
-	if strings.Contains(script.InstanceName, ".") {
-		t.Errorf("Instance name %s has dots.", script.InstanceName)
+	if strings.Contains(script.Name, ".") {
+		t.Errorf("Instance name %s has dots.", script.Name)
 	}
 
 	if len(script.APT) != 1 || script.APT[0] != "python-numpy" {

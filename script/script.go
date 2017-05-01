@@ -62,9 +62,8 @@ type Script struct {
 	// List of option flags.
 	Options []string `yaml:"options,omitempty"`
 
-	// ** Following attributes are given by roadie. **
-	// InstanceName to run the script.
-	InstanceName string `yaml:"instance_name,omitempty"`
+	// Name of this script.
+	Name string `yaml:"name,omitempty"`
 	// Image is a docker image name used to run this script.
 	Image string
 }
@@ -125,7 +124,7 @@ func NewScriptTemplate(filename string, args []string) (res *Script, err error) 
 		return
 	}
 
-	res.InstanceName = strings.ToLower(
+	res.Name = strings.ToLower(
 		strings.Replace(fmt.Sprintf(
 			"%s-%s", basename(filename), time.Now().Format("20060102150405")),
 			".", "-", -1))

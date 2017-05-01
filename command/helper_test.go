@@ -80,7 +80,7 @@ func TestSetLocalSource(t *testing.T) {
 	for _, target := range []string{".", "../command"} {
 
 		s = script.Script{
-			InstanceName: "test",
+			Name: "test",
 		}
 
 		t.Logf("Trying target %s", target)
@@ -95,7 +95,7 @@ func TestSetLocalSource(t *testing.T) {
 
 	// Test with a file.
 	s = script.Script{
-		InstanceName: "test",
+		Name: "test",
 	}
 	if err = setLocalSource(m, &s, "run.go", nil); err != nil {
 		t.Error(err.Error())

@@ -222,7 +222,7 @@ func setLocalSource(m *Metadata, s *script.Script, path string, excludes []strin
 
 	var name string
 	if info.IsDir() {
-		name = s.InstanceName
+		name = s.Name
 	}
 
 	location, err := uploadFiles(m, path, name, excludes)
@@ -256,7 +256,7 @@ func setSource(s *script.Script, file string) {
 func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 
 	if s.Result == "" || overwrite {
-		s.Result = script.RoadieSchemePrefix + filepath.Join(script.ResultPrefix, s.InstanceName)
+		s.Result = script.RoadieSchemePrefix + filepath.Join(script.ResultPrefix, s.Name)
 	} else {
 		fmt.Fprintf(
 			warning,

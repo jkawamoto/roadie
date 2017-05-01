@@ -96,7 +96,7 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 	// Update instance name.
 	// If an instance name is not given, use the default name.
 	if opt.TaskName != "" {
-		s.InstanceName = strings.ToLower(opt.TaskName)
+		s.Name = strings.ToLower(opt.TaskName)
 	}
 
 	// Check a specified bucket exists and create it if not.
@@ -120,14 +120,14 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 		return
 	}
 
-	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.InstanceName), chalk.Bold.TextStyle(opt.QueueName))
-	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.InstanceName, opt.QueueName)
+	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.Name), chalk.Bold.TextStyle(opt.QueueName))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.Name, opt.QueueName)
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
 	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Red.Color("Cannot add the task:"), s.InstanceName, ":", err.Error())
+		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Red.Color("Cannot add the task:"), s.Name, ":", err.Error())
 	}
 	return
 
