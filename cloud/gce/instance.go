@@ -156,7 +156,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	if err != nil {
 		return
 	}
-	logcast, err := LogcastUnit()
+	logcast, err := LogcastUnit("roadie.service")
 	if err != nil {
 		return
 	}

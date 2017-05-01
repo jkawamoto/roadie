@@ -80,15 +80,14 @@ func TestRoadieUnit(t *testing.T) {
 
 func TestQueueManagerUnit(t *testing.T) {
 
-	project := "test-project"
 	version := "0.1.0"
 	queueName := "test-queue"
-	unit, err := QueueManagerUnit(project, version, queueName)
+	unit, err := QueueManagerUnit(version, queueName)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	if !strings.Contains(unit.Contents, fmt.Sprintf("/root/roadie-queue-manager %v %v", project, queueName)) {
+	if !strings.Contains(unit.Contents, fmt.Sprintf("/root/roadie-queue-manager %v", queueName)) {
 		t.Error("Created unit doesn't have correct project name and queue name")
 	}
 	if !strings.Contains(unit.Contents, fmt.Sprintf("roadie-queue-manager_%v_linux_amd64.tar.gz", version)) {
@@ -99,13 +98,16 @@ func TestQueueManagerUnit(t *testing.T) {
 
 func TestLogcastUnit(t *testing.T) {
 
-	unit, err := LogcastUnit()
+	unit, err := LogcastUnit("sample.service")
 	if err != nil {
 		t.Error(err.Error())
 	}
 
 	if !strings.Contains(unit.Contents, "/usr/bin/ncat 127.0.0.1 24225") {
 		t.Error("Created unit doesn't have a correct cmd")
+	}
+	if !strings.Contains(unit.Contents, "-u sample.service") {
+		t.Error("Created unit doesn't refere a correct service unit")
 	}
 	if strings.Contains(unit.Contents, "# logcast.service") {
 		t.Error("Unit contents still has comments")

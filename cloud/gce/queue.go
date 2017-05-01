@@ -42,7 +42,7 @@ const (
 	// QueueKind defines kind of entries stored in cloud datastore.
 	QueueKind = "roadie-queue"
 	// QueueManagerVersion defines the version of queue manager to be used.
-	QueueManagerVersion = "0.1.3"
+	QueueManagerVersion = "0.2.0-dev"
 )
 
 // QueueName is a structure to obtaine QueueName attribute from entities
@@ -90,7 +90,6 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	_, err = client.RunInTransaction(ctx, func(tx *datastore.Transaction) (err error) {
 		_, err = tx.Put(key, &Task{
 			Name:      task.InstanceName,
-			Image:     task.Image,
 			QueueName: queue,
 			Script:    task,
 			Pending:   false,
@@ -307,11 +306,11 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, h
 	if err != nil {
 		return
 	}
-	qManager, err := QueueManagerUnit(s.Config.Project, QueueManagerVersion, queue)
+	qManager, err := QueueManagerUnit(QueueManagerVersion, queue)
 	if err != nil {
 		return
 	}
-	logcast, err := LogcastUnit()
+	logcast, err := LogcastUnit("queue.service")
 	if err != nil {
 		return
 	}

@@ -35,6 +35,11 @@ const (
 	DefaultIgnitionVersion = "2.0.0"
 )
 
+var (
+	// RegexpCommentLine defines a regular expression for a comment line.
+	RegexpCommentLine = regexp.MustCompile("#.*\n")
+)
+
 // SystemdUnit is configuration for a systemd unit.
 type SystemdUnit struct {
 	Name     string `json:"name,omitempty"`
@@ -103,6 +108,29 @@ func (c *IgnitionConfig) Append(unit SystemdUnit) *IgnitionConfig {
 
 }
 
+// loadUnitTemplate loads a given named template and applies opt.
+func loadUnitTemplate(name string, opt interface{}) (str string, err error) {
+
+	data, err := assets.Asset(name)
+	if err != nil {
+		return
+	}
+
+	buf := &bytes.Buffer{}
+	temp, err := template.New("").Parse(string(data))
+	if err != nil {
+		return
+	}
+	err = temp.ExecuteTemplate(buf, "", opt)
+	if err != nil {
+		return
+	}
+
+	str = RegexpCommentLine.ReplaceAllString(buf.String(), "")
+	return
+
+}
+
 // fluentdUnitOpt defines options for processing a template of fluentd.service.
 type fluentdUnitOpt struct {
 	Name string
@@ -111,26 +139,11 @@ type fluentdUnitOpt struct {
 // FluentdUnit creates a new SystemdUnit for fluentd.
 func FluentdUnit(name string) (unit SystemdUnit, err error) {
 
-	data, err := assets.Asset("assets/fluentd.service")
-	if err != nil {
-		return
-	}
-
-	buf := &bytes.Buffer{}
-	temp, err := template.New("fluentd").Parse(string(data))
-	if err != nil {
-		return
-	}
-	err = temp.ExecuteTemplate(buf, "fluentd", &fluentdUnitOpt{
-		Name: name,
-	})
-	if err != nil {
-		return
-	}
-
 	unit.Name = "fluentd.service"
 	unit.Enable = true
-	unit.Contents = removeComments(buf.String())
+	unit.Contents, err = loadUnitTemplate("assets/fluentd.service", &fluentdUnitOpt{
+		Name: name,
+	})
 	return
 
 }
@@ -145,84 +158,49 @@ type roadieUnitOpt struct {
 // RoadieUnit creates a new SystemdUnit for roadie-gcp.
 func RoadieUnit(name, image, options string) (unit SystemdUnit, err error) {
 
-	data, err := assets.Asset("assets/roadie.service")
-	if err != nil {
-		return
-	}
-
-	buf := &bytes.Buffer{}
-	temp, err := template.New("roadie").Parse(string(data))
-	if err != nil {
-		return
-	}
-	err = temp.ExecuteTemplate(buf, "roadie", &roadieUnitOpt{
+	unit.Name = "roadie.service"
+	unit.Enable = true
+	unit.Contents, err = loadUnitTemplate("assets/roadie.service", &roadieUnitOpt{
 		Name:    name,
 		Image:   image,
 		Options: options,
 	})
-	if err != nil {
-		return
-	}
-
-	unit.Name = "roadie.service"
-	unit.Enable = true
-	unit.Contents = removeComments(buf.String())
 	return
 
 }
 
-// LogcastUnit creates a new unit for forwarding log to Fluentd.
-func LogcastUnit() (unit SystemdUnit, err error) {
+// logcaseUnitOpt defines options for processing a template of logcast.service.
+type logcaseUnitOpt struct {
+	Service string
+}
 
-	data, err := assets.Asset("assets/logcast.service")
-	if err != nil {
-		return
-	}
+// LogcastUnit creates a new unit for forwarding log to Fluentd.
+func LogcastUnit(service string) (unit SystemdUnit, err error) {
 
 	unit.Name = "logcast.service"
 	unit.Enable = true
-	unit.Contents = removeComments(string(data))
+	unit.Contents, err = loadUnitTemplate("assets/logcast.service", &logcaseUnitOpt{
+		Service: service,
+	})
 	return
 
 }
 
 // queueManagerUnitOpt defines options for queue manager service unit.
 type queueManagerUnitOpt struct {
-	ProjectID string
 	Version   string
 	QueueName string
 }
 
 // QueueManagerUnit creates a new unit for Roadie queue manager.
-func QueueManagerUnit(project, version, queueName string) (unit SystemdUnit, err error) {
-
-	data, err := assets.Asset("assets/queue.service")
-	if err != nil {
-		return
-	}
-
-	buf := &bytes.Buffer{}
-	temp, err := template.New("queue").Parse(string(data))
-	if err != nil {
-		return
-	}
-	err = temp.ExecuteTemplate(buf, "queue", &queueManagerUnitOpt{
-		ProjectID: project,
-		Version:   version,
-		QueueName: queueName,
-	})
-	if err != nil {
-		return
-	}
+func QueueManagerUnit(version, queueName string) (unit SystemdUnit, err error) {
 
 	unit.Name = "queue.service"
 	unit.Enable = true
-	unit.Contents = removeComments(buf.String())
+	unit.Contents, err = loadUnitTemplate("assets/queue.service", &queueManagerUnitOpt{
+		Version:   version,
+		QueueName: queueName,
+	})
 	return
 
-}
-
-func removeComments(str string) string {
-	r := regexp.MustCompile("#.*\n")
-	return r.ReplaceAllString(str, "")
 }
