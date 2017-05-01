@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,8 +69,25 @@ type Script struct {
 	Image string
 }
 
-// NewScript loads a given script file and apply arguments.
-func NewScript(filename string, args []string) (res *Script, err error) {
+// NewScript reads a given file and creates a new script.
+func NewScript(filename string) (s *Script, err error) {
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return
+	}
+
+	s = new(Script)
+	err = yaml.Unmarshal(data, s)
+	if err != nil {
+		return
+	}
+	return
+
+}
+
+// NewScriptTemplate loads a given script file and apply arguments.
+func NewScriptTemplate(filename string, args []string) (res *Script, err error) {
 
 	// Define function map to replace place holders.
 	funcs := template.FuncMap{}

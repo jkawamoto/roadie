@@ -88,7 +88,7 @@ func CmdQueueAdd(c *cli.Context) (err error) {
 
 func cmdQueueAdd(opt *optQueueAdd) (err error) {
 
-	s, err := script.NewScript(opt.ScriptFile, opt.ScriptArgs)
+	s, err := script.NewScriptTemplate(opt.ScriptFile, opt.ScriptArgs)
 	if err != nil {
 		return
 	}

@@ -80,7 +80,7 @@ func TestLoadScript(t *testing.T) {
 	defer os.Remove(filename)
 
 	// Loading test.
-	script, err := NewScript(filename, nil)
+	script, err := NewScriptTemplate(filename, nil)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -142,7 +142,7 @@ func TestLoadScriptWithPlaceholders(t *testing.T) {
 	defer os.Remove(filename)
 
 	// Loading test.
-	script, err := NewScript(filename, []string{"args=xyz"})
+	script, err := NewScriptTemplate(filename, []string{"args=xyz"})
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -153,7 +153,7 @@ func TestLoadScriptWithPlaceholders(t *testing.T) {
 	}
 
 	// Loading without parameters test.
-	_, err = NewScript(filename, nil)
+	_, err = NewScriptTemplate(filename, nil)
 	if err == nil {
 		t.Error("Placeholders are not given but script is created.")
 	}
