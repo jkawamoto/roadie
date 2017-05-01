@@ -31,7 +31,7 @@ import (
 
 // ReplaceURLScheme replaced URLs which start with "roadie://".
 // Those URLs are modified to "gs://<bucketname>/.roadie/".
-func ReplaceURLScheme(cfg *GcpConfig, task *script.Script) {
+func ReplaceURLScheme(cfg *Config, task *script.Script) {
 
 	// Replace source section.
 	if strings.HasPrefix(task.Source, script.RoadieSchemePrefix) {
@@ -53,7 +53,7 @@ func ReplaceURLScheme(cfg *GcpConfig, task *script.Script) {
 }
 
 // CreateURL creates a valid URL for uploaing object.
-func CreateURL(cfg *GcpConfig, name string) string {
+func CreateURL(cfg *Config, name string) string {
 
 	u := url.URL{
 		Scheme: "gs",

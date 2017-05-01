@@ -30,12 +30,12 @@ import (
 
 // Provider defines information for the service provider for GCP.
 type Provider struct {
-	Config *GcpConfig
+	Config *Config
 	Logger *log.Logger
 }
 
 // NewProvider creates a new provider for GCP service.
-func NewProvider(cfg *GcpConfig, logger *log.Logger) *Provider {
+func NewProvider(cfg *Config, logger *log.Logger) *Provider {
 
 	return &Provider{
 		Config: cfg,

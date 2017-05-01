@@ -40,7 +40,7 @@ import (
 // It requests logs to google cloud logging service.
 type LogManager struct {
 	// Config is a reference for a configuration of GCP.
-	Config    *GcpConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -55,7 +55,7 @@ type RoadiePayloadHandler func(time.Time, string) error
 type ActivityPayloadHandler func(time.Time, *ActivityPayload) error
 
 // NewLogManager creates a new log manager.
-func NewLogManager(cfg *GcpConfig, logger *log.Logger) (m *LogManager) {
+func NewLogManager(cfg *Config, logger *log.Logger) (m *LogManager) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

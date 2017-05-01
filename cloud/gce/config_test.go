@@ -30,10 +30,10 @@ import (
 
 func TestUnmarshalYAML(t *testing.T) {
 
-	var cfg GcpConfig
-	var res GcpConfig
+	var cfg Config
+	var res Config
 
-	cfg = GcpConfig{
+	cfg = Config{
 		Project:     "sample-project",
 		Bucket:      "sample-bucket",
 		Zone:        "sample-zone",
@@ -58,7 +58,7 @@ func TestUnmarshalYAML(t *testing.T) {
 		t.Error("MachineType doesn't match:", res.MachineType)
 	}
 
-	cfg = GcpConfig{
+	cfg = Config{
 		Project: "sample-project",
 		Bucket:  "sample-bucket",
 	}
@@ -88,7 +88,7 @@ func TestNormalizedZone(t *testing.T) {
 	project := "sample-project"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := GcpConfig{
+	cfg := Config{
 		Project:     project,
 		Zone:        region,
 		MachineType: machine,
@@ -106,7 +106,7 @@ func TestNormalizedMachineType(t *testing.T) {
 	project := "sample-project"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := GcpConfig{
+	cfg := Config{
 		Project:     project,
 		Zone:        region,
 		MachineType: machine,
@@ -124,7 +124,7 @@ func TestDiskType(t *testing.T) {
 	project := "sample-project"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := GcpConfig{
+	cfg := Config{
 		Project:     project,
 		Zone:        region,
 		MachineType: machine,
@@ -142,7 +142,7 @@ func TestNetwork(t *testing.T) {
 	project := "sample-project"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := GcpConfig{
+	cfg := Config{
 		Project:     project,
 		Zone:        region,
 		MachineType: machine,

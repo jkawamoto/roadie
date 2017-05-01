@@ -42,7 +42,7 @@ const DotGit = ".git"
 
 // Config defines a structure of config file.
 type Config struct {
-	GcpConfig gce.GcpConfig `yaml:"gcp"`
+	GcpConfig gce.Config `yaml:"gcp"`
 	// Config file name used to save/load this config.
 	FileName string `yaml:"-"`
 }

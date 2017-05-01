@@ -52,13 +52,13 @@ var (
 // ComputeService implements cloud.InstanceManager based on Google Cloud
 // Platform.
 type ComputeService struct {
-	Config    *GcpConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
 
 // NewComputeService creates a new compute service client.
-func NewComputeService(cfg *GcpConfig, logger *log.Logger) *ComputeService {
+func NewComputeService(cfg *Config, logger *log.Logger) *ComputeService {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

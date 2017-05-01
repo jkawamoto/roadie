@@ -42,14 +42,14 @@ import (
 // cloud storage.
 type StorageService struct {
 	// Config is a reference for a configuration of GCP.
-	Config *GcpConfig
+	Config *Config
 	// Logger
 	Logger *log.Logger
 }
 
 // NewStorageService creates a new storage accessor to a bucket specified in a
 // given configuration.
-func NewStorageService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) (s *StorageService, err error) {
+func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s *StorageService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

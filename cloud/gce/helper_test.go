@@ -31,14 +31,14 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-func GetConfig() *GcpConfig {
+func GetConfig() *Config {
 
 	data, err := ioutil.ReadFile("test_config.yml")
 	if err != nil {
 		return nil
 	}
 
-	cfg := new(GcpConfig)
+	cfg := new(Config)
 	err = yaml.Unmarshal(data, cfg)
 	if err != nil {
 		return nil
@@ -56,7 +56,7 @@ func TestReplaceURLScheme(t *testing.T) {
 	bucket := "test-bucket"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := &GcpConfig{
+	cfg := &Config{
 		Project:     project,
 		Bucket:      bucket,
 		Zone:        region,
@@ -91,7 +91,7 @@ func TestCreateURL(t *testing.T) {
 	bucket := "test-bucket"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := &GcpConfig{
+	cfg := &Config{
 		Project:     project,
 		Bucket:      bucket,
 		Zone:        region,

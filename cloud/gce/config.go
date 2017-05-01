@@ -25,9 +25,8 @@ import (
 	"path/filepath"
 )
 
-// TODO: Rename to "Config".
-// GcpConfig defines information to access Google Cloud Platform.
-type GcpConfig struct {
+// Config defines information to access Google Cloud Platform.
+type Config struct {
 	// Project name.
 	Project string `yaml:"project"`
 	// Bucket name
@@ -40,10 +39,10 @@ type GcpConfig struct {
 	DiskSize int64 `yaml:"disk_size,omitempty"`
 }
 
-// UnmarshalYAML helps to unmarshal GcpConfig objects.
-func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
+// UnmarshalYAML helps to unmarshal Config objects.
+func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 
-	type AuxGcpConfig struct {
+	type AuxConfig struct {
 		Project     string `yaml:"project"`
 		Bucket      string `yaml:"bucket"`
 		Zone        string `yaml:"zone"`
@@ -51,7 +50,7 @@ func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err erro
 		DiskSize    int64  `yaml:"disk_size,omitempty"`
 	}
 
-	aux := AuxGcpConfig{}
+	aux := AuxConfig{}
 	err = unmarshal(&aux)
 	if err != nil {
 		return
@@ -87,21 +86,21 @@ func (cfg *GcpConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err erro
 }
 
 // normalizedZone returns the normalized zone string of Zone property.
-func (cfg *GcpConfig) normalizedZone() string {
+func (cfg *Config) normalizedZone() string {
 	return filepath.Join("projects", cfg.Project, "zones", cfg.Zone)
 }
 
 // normalizedMachineType returns the normalized instance type of MachineType property.
-func (cfg *GcpConfig) normalizedMachineType() string {
+func (cfg *Config) normalizedMachineType() string {
 	return filepath.Join(cfg.normalizedZone(), "machineTypes", cfg.MachineType)
 }
 
 // diskType returns default disk type.
-func (cfg *GcpConfig) diskType() string {
+func (cfg *Config) diskType() string {
 	return filepath.Join(cfg.normalizedZone(), "/diskTypes/pd-standard")
 }
 
 // network returns default network name
-func (cfg *GcpConfig) network() string {
+func (cfg *Config) network() string {
 	return filepath.Join("projects", cfg.Project, "/global/networks/default")
 }

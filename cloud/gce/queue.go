@@ -55,13 +55,13 @@ type QueueName struct {
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
 type QueueService struct {
-	Config *GcpConfig
+	Config *Config
 	Logger *log.Logger
 }
 
 // NewQueueService creates an interace for a queue service based on Google
 // Cloud Datastore.
-func NewQueueService(ctx context.Context, cfg *GcpConfig, logger *log.Logger) (*QueueService, error) {
+func NewQueueService(ctx context.Context, cfg *Config, logger *log.Logger) (*QueueService, error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

@@ -45,7 +45,7 @@ func TestConfig(t *testing.T) {
 
 	cfg := Config{
 		FileName: filepath.Join(dir, "config.yml"),
-		GcpConfig: gce.GcpConfig{
+		GcpConfig: gce.Config{
 			Project:     "sample-project",
 			Bucket:      "sample-bucket",
 			Zone:        "sample-zone",

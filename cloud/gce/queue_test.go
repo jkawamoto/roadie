@@ -38,7 +38,7 @@ func TestNewQueueService(t *testing.T) {
 	project := "sample-project"
 	region := "us-central1-c"
 	machine := "n1-standard-2"
-	cfg := &GcpConfig{
+	cfg := &Config{
 		Project:     project,
 		Zone:        region,
 		MachineType: machine,
