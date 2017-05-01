@@ -105,7 +105,7 @@ func (s *LogManager) Delete(ctx context.Context, instanceName string) error {
 func (s *LogManager) GetQueueLog(ctx context.Context, queue string, handler cloud.LogHandler) (err error) {
 
 	return s.InstanceLogEntries(ctx, queueLogKey(queue), time.Time{}, func(timestamp time.Time, payload string) (err error) {
-		return handler(timestamp, payload, false)
+		return handler(timestamp, strings.TrimPrefix(payload, "task-"), false)
 	})
 
 }
