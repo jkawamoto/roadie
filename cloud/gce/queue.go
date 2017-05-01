@@ -303,7 +303,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, h
 	cService := NewComputeService(s.Config, s.Logger)
 
 	// Create an ignition config.
-	fluentd, err := FluentdUnit(queue)
+	fluentd, err := FluentdUnit(queueLogKey(queue))
 	if err != nil {
 		return
 	}
@@ -460,4 +460,9 @@ func (s *QueueService) deleteTask(ctx context.Context, query *datastore.Query) (
 	})
 	return
 
+}
+
+// queueLogKey returns the log key associated with a given queue.
+func queueLogKey(queue string) string {
+	return fmt.Sprintf("queue-%v", queue)
 }
