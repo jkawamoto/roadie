@@ -28,6 +28,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
@@ -42,12 +43,15 @@ type StorageManager struct {
 	Storage map[string]string
 	// If true, all method returns an error.
 	Failure bool
+	// Lock.
+	mutex *sync.Mutex
 }
 
 // NewStorageManager creates a new mock storage manager.
 func NewStorageManager() *StorageManager {
 	return &StorageManager{
 		Storage: make(map[string]string),
+		mutex:   new(sync.Mutex),
 	}
 }
 
@@ -63,6 +67,10 @@ func (s *StorageManager) Upload(ctx context.Context, container, filename string,
 	if err != nil {
 		return
 	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.Storage[filename] = string(body)
 	uri = fmt.Sprint("file://mock/", filepath.Join(container, filename))
 	return
@@ -134,6 +142,9 @@ func (s *StorageManager) Delete(ctx context.Context, container, filename string)
 	if s.Failure {
 		return ErrServiceFailure
 	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if _, ok := s.Storage[filename]; !ok {
 		return fmt.Errorf("Given file is not found: %v", filename)
