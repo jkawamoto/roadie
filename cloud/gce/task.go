@@ -27,8 +27,6 @@ import "github.com/jkawamoto/roadie/script"
 type Task struct {
 	// Name of this task.
 	Name string `yaml:"name,omitempty"`
-	// Image name to be used to create the instance.
-	Image string `yaml:"image,omitempty"`
 	// The script body.
 	Script *script.Script `yaml:"script,omitempty"`
 	// Queue name.
