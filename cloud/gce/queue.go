@@ -83,6 +83,7 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 
 	client, err := datastore.NewClient(ctx, s.Config.Project)
 	if err != nil {
+		s.Logger.Println("Cannot create a client for Google Cloud Datastore:", err.Error())
 		return
 	}
 	defer client.Close()
@@ -94,15 +95,20 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 			Script:    task,
 			Pending:   false,
 		})
-		return err
+		return
 	})
+	if err != nil {
+		s.Logger.Println("Cannot add the task to the queue:", err.Error())
+		return
+	}
 
 	// If there are no workers, create one worker.
 	exist, err := s.workerExists(ctx, queue)
 	if err != nil {
+		s.Logger.Println("Cannot retrieve running worker instances:", err.Error())
 		return
 	} else if !exist {
-		s.CreateWorkers(ctx, queue, 1, func(name string) error {
+		err = s.CreateWorkers(ctx, queue, 1, func(name string) error {
 			s.Logger.Printf("New instance %v has started\n", name)
 			return nil
 		})

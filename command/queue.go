@@ -121,13 +121,13 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 	}
 
 	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.InstanceName), chalk.Bold.TextStyle(opt.QueueName))
-	opt.Spinner.FinalMSG = fmt.Sprintf("\n%s\rInstance created.\n", strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.InstanceName, opt.QueueName)
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
 	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Red.Color("Cannot add the task:"), s.InstanceName, ":", err.Error())
 	}
 	return
 
