@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
@@ -108,6 +109,17 @@ func (s *LogManager) GetQueueLog(ctx context.Context, queue string, handler clou
 	})
 
 }
+
+// GetTaskLog retrieves log entries for a task in a queue.
+func (s *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler cloud.LogHandler) (err error) {
+
+	prefix := fmt.Sprintf("task-%v:", task)
+	return s.InstanceLogEntries(ctx, queueLogKey(queue), time.Time{}, func(timestamp time.Time, payload string) (err error) {
+		if strings.HasPrefix(payload, prefix) {
+			return handler(timestamp, strings.TrimPrefix(payload, prefix), false)
+		}
+		return
+	})
 
 }
 
