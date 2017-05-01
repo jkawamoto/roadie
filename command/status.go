@@ -23,7 +23,6 @@ package command
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/chalk"
@@ -94,7 +93,7 @@ func CmdStatusKill(c *cli.Context) error {
 func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
 	m.Spinner.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
-	m.Spinner.FinalMSG = fmt.Sprintf("\n%s\rKilled Instance %s.\n", strings.Repeat(" ", len(m.Spinner.Prefix)+2), instanceName)
+	m.Spinner.FinalMSG = fmt.Sprintln("Killed Instance", instanceName)
 	m.Spinner.Start()
 	defer m.Spinner.Stop()
 
@@ -105,8 +104,7 @@ func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
 	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
 		m.Spinner.FinalMSG = fmt.Sprintf(
-			chalk.Red.Color("\n%s\rCannot kill instance %s (%s)\n"),
-			strings.Repeat(" ", len(m.Spinner.Prefix)+2), instanceName, err.Error())
+			chalk.Red.Color("Cannot kill instance %s (%s)\n"), instanceName, err.Error())
 	}
 	return
 
