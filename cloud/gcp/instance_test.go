@@ -1,5 +1,5 @@
 //
-// cloud/gce/doc.go
+// cloud/gcp/instance_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,37 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// Package gce provides implementations of interfaces defined in cloud package.
-package gce
+package gcp
 
-// TODO: this package should be renamed to gcp
+import (
+	"testing"
+)
+
+func TestNewComputeService(t *testing.T) {
+
+	project := "sample-project"
+	region := "us-central1-c"
+	machine := "n1-standard-2"
+	cfg := &Config{
+		Project:     project,
+		Zone:        region,
+		MachineType: machine,
+	}
+
+	s := NewComputeService(cfg, nil)
+
+	if s.Config.Project != project {
+		t.Error("Project name doesn't match:", s.Config.Project)
+	}
+	if s.Config.Zone != region {
+		t.Error("Zone name doesn't match:", s.Config.Zone)
+	}
+	if s.Config.MachineType != machine {
+		t.Error("Machine type doesn't match:", s.Config.MachineType)
+	}
+
+	if s.Logger == nil {
+		t.Error("Logger is nil")
+	}
+
+}

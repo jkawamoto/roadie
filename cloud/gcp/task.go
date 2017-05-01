@@ -1,5 +1,5 @@
 //
-// cloud/gce/instance_test.go
+// cloud/gcp/task.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,37 +19,27 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
-import (
-	"testing"
+import "github.com/jkawamoto/roadie/script"
+
+const (
+	// TaskStatusWaiting represents a task is waiting to be run.
+	TaskStatusWaiting = "waiting"
+	// TaskStatusRunning represents a task is running.
+	TaskStatusRunning = "running"
+	// TaskStatusPending represents a task is pending to be run.
+	TaskStatusPending = "pending"
 )
 
-func TestNewComputeService(t *testing.T) {
-
-	project := "sample-project"
-	region := "us-central1-c"
-	machine := "n1-standard-2"
-	cfg := &Config{
-		Project:     project,
-		Zone:        region,
-		MachineType: machine,
-	}
-
-	s := NewComputeService(cfg, nil)
-
-	if s.Config.Project != project {
-		t.Error("Project name doesn't match:", s.Config.Project)
-	}
-	if s.Config.Zone != region {
-		t.Error("Zone name doesn't match:", s.Config.Zone)
-	}
-	if s.Config.MachineType != machine {
-		t.Error("Machine type doesn't match:", s.Config.MachineType)
-	}
-
-	if s.Logger == nil {
-		t.Error("Logger is nil")
-	}
-
+// Task defines a data structure of enqueued script file.
+type Task struct {
+	// Name of this task.
+	Name string `yaml:"name,omitempty"`
+	// The script body.
+	Script *script.Script `yaml:"script,omitempty"`
+	// Queue name.
+	QueueName string `yaml:"queue-name"`
+	// Status of this task
+	Status string `yaml:"status"`
 }

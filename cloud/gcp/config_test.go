@@ -1,5 +1,5 @@
 //
-// cloud/gce/config_test.go
+// cloud/gcp/config_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import (
 	"fmt"

@@ -31,7 +31,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/cloud/gce"
+	"github.com/jkawamoto/roadie/cloud/gcp"
 )
 
 // ConfigureFile defines configuration file name.
@@ -42,7 +42,7 @@ const DotGit = ".git"
 
 // Config defines a structure of config file.
 type Config struct {
-	GcpConfig gce.Config `yaml:"gcp"`
+	GcpConfig gcp.Config `yaml:"gcp"`
 	// Config file name used to save/load this config.
 	FileName string `yaml:"-"`
 }

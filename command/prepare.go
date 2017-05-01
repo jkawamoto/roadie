@@ -31,7 +31,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/gce"
+	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/urfave/cli"
 )
@@ -137,7 +137,7 @@ func PrepareCommand(c *cli.Context) (err error) {
 	var provider cloud.Provider
 	switch {
 	case cfg.GcpConfig.Project != "":
-		provider = gce.NewProvider(&cfg.GcpConfig, logger)
+		provider = gcp.NewProvider(&cfg.GcpConfig, logger)
 	default:
 		return fmt.Errorf("Cloud configuration isn't given")
 	}

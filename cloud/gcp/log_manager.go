@@ -1,5 +1,5 @@
 //
-// cloud/gce/log_manager.go
+// cloud/gcp/log_manager.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import (
 	"context"
@@ -168,12 +168,12 @@ func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHa
 // If the handler returns non nil value, obtaining log entries is canceled immediately.
 func (s *LogManager) InstanceLogEntries(ctx context.Context, instanceName string, from time.Time, handler RoadiePayloadHandler) error {
 
-	// Instead of logName, which is specified TAG env in roadie-gce,
+	// Instead of logName, which is specified TAG env in roadie-gcp,
 	// use instance name to distinguish instances. This update makes all logs
 	// will have same log name, docker, so that such log can be stored into
 	// GCS easily.
 	filter := fmt.Sprintf(
-		`resource.type = "gce_instance" AND jsonPayload.instance_name = "%s" AND timestamp > "%s"`,
+		`resource.type = "gcp_instance" AND jsonPayload.instance_name = "%s" AND timestamp > "%s"`,
 		instanceName, from.In(time.UTC).Format(LogTimeFormat))
 
 	return s.Entries(ctx, filter, func(entry *loggingpb.LogEntry) error {

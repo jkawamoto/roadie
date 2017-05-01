@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jkawamoto/roadie/cloud/gce"
+	"github.com/jkawamoto/roadie/cloud/gcp"
 )
 
 // Test saving and loading config.
@@ -45,7 +45,7 @@ func TestConfig(t *testing.T) {
 
 	cfg := Config{
 		FileName: filepath.Join(dir, "config.yml"),
-		GcpConfig: gce.Config{
+		GcpConfig: gcp.Config{
 			Project:     "sample-project",
 			Bucket:      "sample-bucket",
 			Zone:        "sample-zone",

@@ -1,5 +1,5 @@
 //
-// cloud/gce/doc.go
+// cloud/gcp/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,13 +19,13 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import compute "google.golang.org/api/compute/v1"
 
 const (
 	// GCP's scope.
-	gceScope = compute.CloudPlatformScope
+	gcpScope = compute.CloudPlatformScope
 	// StoragePrefix is a prefix used to store related data into the cloud
 	// storage.
 	StoragePrefix = ".roadie"

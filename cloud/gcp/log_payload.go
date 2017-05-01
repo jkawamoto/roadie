@@ -1,5 +1,5 @@
 //
-// cloud/gce/log_payload.go
+// cloud/gcp/log_payload.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import (
 	"fmt"

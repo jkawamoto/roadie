@@ -1,5 +1,5 @@
 //
-// cloud/gce/task.go
+// cloud/gcp/doc.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,27 +19,5 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
-
-import "github.com/jkawamoto/roadie/script"
-
-const (
-	// TaskStatusWaiting represents a task is waiting to be run.
-	TaskStatusWaiting = "waiting"
-	// TaskStatusRunning represents a task is running.
-	TaskStatusRunning = "running"
-	// TaskStatusPending represents a task is pending to be run.
-	TaskStatusPending = "pending"
-)
-
-// Task defines a data structure of enqueued script file.
-type Task struct {
-	// Name of this task.
-	Name string `yaml:"name,omitempty"`
-	// The script body.
-	Script *script.Script `yaml:"script,omitempty"`
-	// Queue name.
-	QueueName string `yaml:"queue-name"`
-	// Status of this task
-	Status string `yaml:"status"`
-}
+// Package gcp provides implementations of interfaces defined in cloud package.
+package gcp

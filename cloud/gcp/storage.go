@@ -1,5 +1,5 @@
 //
-// cloud/gce/storage.go
+// cloud/gcp/storage.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import (
 	"context"
@@ -38,7 +38,7 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-// StorageService implements cloud.StorageServicer interface for accessing GCE's
+// StorageService implements cloud.StorageServicer interface for accessing GCP's
 // cloud storage.
 type StorageService struct {
 	// Config is a reference for a configuration of GCP.

@@ -1,5 +1,5 @@
 //
-// cloud/gce/instance.go
+// cloud/gcp/instance.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,7 +19,7 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package gce
+package gcp
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func NewComputeService(cfg *Config, logger *log.Logger) *ComputeService {
 func (s *ComputeService) newService(ctx context.Context) (*compute.Service, error) {
 
 	// Create a client.
-	client, err := google.DefaultClient(ctx, gceScope)
+	client, err := google.DefaultClient(ctx, gcpScope)
 	if err != nil {
 		return nil, err
 	}
