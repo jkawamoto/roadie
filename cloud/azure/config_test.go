@@ -32,9 +32,9 @@ import (
 	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
 
-func TestNewAzureConfig(t *testing.T) {
+func TestNewConfig(t *testing.T) {
 
-	cfg := NewAzureConfig()
+	cfg := NewConfig()
 	if cfg.OS.PublisherName != DefaultOSPublisherName {
 		t.Error("Default publisher name is not correct:", cfg.OS.PublisherName)
 	}
@@ -50,11 +50,11 @@ func TestNewAzureConfig(t *testing.T) {
 
 }
 
-func TestNewAzureConfigFromFile(t *testing.T) {
+func TestNewConfigFromFile(t *testing.T) {
 
 	var err error
 
-	cfg := NewAzureConfig()
+	cfg := NewConfig()
 	cfg.ResourceGroupName = ""
 	cfg.OS.PublisherName = ""
 	cfg.OS.Offer = ""
@@ -67,7 +67,7 @@ func TestNewAzureConfigFromFile(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	res, err := NewAzureConfigFromFile(filename)
+	res, err := NewConfigFromFile(filename)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -89,11 +89,11 @@ func TestNewAzureConfigFromFile(t *testing.T) {
 
 }
 
-func TestAzureConfigWriteFile(t *testing.T) {
+func TestConfigWriteFile(t *testing.T) {
 
 	var err error
 
-	cfg := NewAzureConfig()
+	cfg := NewConfig()
 	cfg.SubscriptionID = "subscription"
 	cfg.ResourceGroupName = "resource"
 	cfg.Location = "location"

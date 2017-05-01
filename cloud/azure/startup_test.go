@@ -31,7 +31,7 @@ import (
 
 func TestStartup(t *testing.T) {
 
-	cfg := NewAzureConfig()
+	cfg := NewConfig()
 	task := &script.Script{
 		Name: "test-instance",
 	}

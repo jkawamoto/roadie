@@ -28,6 +28,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// TODO: Support async to not wait finishing each operation.
+
 // OSInformation defines OS information of creating instances.
 type OSInformation struct {
 	PublisherName string `yaml:"publisher_name,omitempty"`
@@ -36,9 +38,8 @@ type OSInformation struct {
 	Version       string `yaml:"version,omitempty"`
 }
 
-// TODO: Rename it to just "Config"
-// AzureConfig defines configuration to access Azure's API.
-type AzureConfig struct {
+// Config defines configuration to access Azure's API.
+type Config struct {
 	TenantID          string `yaml:"tenant_id,omitempty"`
 	ClientID          string `yaml:"-"`
 	SubscriptionID    string `yaml:"subscription_id,omitempty"`
@@ -51,10 +52,10 @@ type AzureConfig struct {
 	Token             auth.Token
 }
 
-// NewAzureConfig creates a new AzureConfig with default values.
-func NewAzureConfig() *AzureConfig {
+// NewConfig creates a new Config with default values.
+func NewConfig() *Config {
 
-	return &AzureConfig{
+	return &Config{
 		ResourceGroupName: ComputeServiceResourceGroupName,
 		MachineType:       ComputeServiceDefaultMachineType,
 		StorageAccount:    DefaultStorageAccount,
@@ -69,15 +70,15 @@ func NewAzureConfig() *AzureConfig {
 
 }
 
-// NewAzureConfigFromFile creates a new AzureConfig from a file.
-func NewAzureConfigFromFile(filename string) (cfg *AzureConfig, err error) {
+// NewConfigFromFile creates a new Config from a file.
+func NewConfigFromFile(filename string) (cfg *Config, err error) {
 
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
 	}
 
-	cfg = new(AzureConfig)
+	cfg = new(Config)
 	err = yaml.Unmarshal(data, cfg)
 
 	cfg.ClientID = ClientID
@@ -99,7 +100,7 @@ func NewAzureConfigFromFile(filename string) (cfg *AzureConfig, err error) {
 }
 
 // WriteFile writes this configuration to a file.
-func (cfg *AzureConfig) WriteFile(filename string) (err error) {
+func (cfg *Config) WriteFile(filename string) (err error) {
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
@@ -110,7 +111,7 @@ func (cfg *AzureConfig) WriteFile(filename string) (err error) {
 }
 
 // String returns a string representing this configuration.
-func (cfg *AzureConfig) String() (str string, err error) {
+func (cfg *Config) String() (str string, err error) {
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
@@ -122,7 +123,7 @@ func (cfg *AzureConfig) String() (str string, err error) {
 }
 
 // UnmarshalYAML unmarshals this configuration from a YAML document.
-func (cfg *AzureConfig) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
+func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 
 	var aux struct {
 		TenantID          string `yaml:"tenant_id,omitempty"`

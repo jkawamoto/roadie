@@ -46,7 +46,7 @@ const (
 // ResourceService provides an interface for Azure's resource management service.
 type ResourceService struct {
 	client    *client.ResourceManagementClient
-	Config    *AzureConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -57,7 +57,7 @@ type ResourceGroupSet map[string]*models.ResourceGroup
 
 // NewResourceService creates a resource service associated with a given
 // subscription.
-func NewResourceService(cfg *AzureConfig, logger *log.Logger) *ResourceService {
+func NewResourceService(cfg *Config, logger *log.Logger) *ResourceService {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags|log.Lshortfile)
@@ -206,7 +206,7 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 // CreateResourceGroupIfNotExist checks a given named resource group exists in
 // a given subscription and location. If not exists, this function creates a
 // new resource group.
-func CreateResourceGroupIfNotExist(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (err error) {
+func CreateResourceGroupIfNotExist(ctx context.Context, cfg *Config, logger *log.Logger) (err error) {
 
 	service := NewResourceService(cfg, logger)
 	if service.CheckExistence(ctx, cfg.ResourceGroupName) {

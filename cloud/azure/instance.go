@@ -47,7 +47,7 @@ const (
 // ComputeService provides an interface for Azure's compute service.
 type ComputeService struct {
 	client    *client.ComputeManagementClient
-	Config    *AzureConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -60,7 +60,7 @@ type Entry struct {
 
 // NewComputeService creates a new compute service interface assosiated with
 // a given configuration.
-func NewComputeService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (s *ComputeService, err error) {
+func NewComputeService(ctx context.Context, cfg *Config, logger *log.Logger) (s *ComputeService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

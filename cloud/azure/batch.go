@@ -193,7 +193,7 @@ type BatchService struct {
 	client    *client.BatchService
 	storage   *StorageService
 	gmt       *time.Location
-	Config    *AzureConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -207,7 +207,7 @@ type TaskSet map[string]*models.CloudTask
 // NewBatchService creates a new batch service interface assosiated with
 // a given config; to authorize a authentication token
 // is required.
-func NewBatchService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *BatchService, err error) {
+func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (service *BatchService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

@@ -45,7 +45,7 @@ const DotGit = ".git"
 // Config defines a structure of config file.
 type Config struct {
 	// Configuration for Microsoft Azure.
-	AzureConfig azure.AzureConfig `yaml:"azure,omitempty"`
+	AzureConfig azure.Config `yaml:"azure,omitempty"`
 	// Configuration for Google Cloud Platform.
 	GcpConfig gcp.Config `yaml:"gcp,omitempty"`
 	// Config file name used to save/load this config.

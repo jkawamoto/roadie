@@ -43,12 +43,12 @@ import (
 type LogManager struct {
 	storage *StorageService
 	batch   *BatchService
-	Config  *AzureConfig
+	Config  *Config
 	Logger  *log.Logger
 }
 
 // NewLogManager creates a new log manger for Azure.
-func NewLogManager(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (m *LogManager, err error) {
+func NewLogManager(ctx context.Context, cfg *Config, logger *log.Logger) (m *LogManager, err error) {
 
 	storage, err := NewStorageService(ctx, cfg, logger)
 	if err != nil {

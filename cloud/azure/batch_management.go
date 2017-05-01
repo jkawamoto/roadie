@@ -45,7 +45,7 @@ const (
 // service.
 type BatchManagementService struct {
 	client    *client.BatchManagement
-	Config    *AzureConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -54,7 +54,7 @@ type BatchManagementService struct {
 type BatchAccountSet map[string]*models.BatchAccount
 
 // NewBatchManagementService creates a new service for batch manager API.
-func NewBatchManagementService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *BatchManagementService, err error) {
+func NewBatchManagementService(ctx context.Context, cfg *Config, logger *log.Logger) (service *BatchManagementService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

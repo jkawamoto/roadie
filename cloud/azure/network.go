@@ -51,7 +51,7 @@ const (
 // NetworkService provides an interface for Azure's network service.
 type NetworkService struct {
 	client        *client.NetworkManagementClient
-	Config        *AzureConfig
+	Config        *Config
 	AddressPrefix string
 	Logger        *log.Logger
 	SleepTime     time.Duration
@@ -60,7 +60,7 @@ type NetworkService struct {
 // NewNetworkService creates a new network service interface assosiated with
 // a given subscription id and location; to authorize a authentication token
 // is required.
-func NewNetworkService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *NetworkService, err error) {
+func NewNetworkService(ctx context.Context, cfg *Config, logger *log.Logger) (service *NetworkService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags|log.Lshortfile)

@@ -46,7 +46,7 @@ type startupScriptOpt struct {
 }
 
 // StartupScript creates a base64 encoded string representing a starup script.
-func StartupScript(cfg *AzureConfig, task *script.Script) (res string, err error) {
+func StartupScript(cfg *Config, task *script.Script) (res string, err error) {
 
 	data, err := assets.Asset(StartupTemplate)
 	if err != nil {

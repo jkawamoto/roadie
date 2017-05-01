@@ -35,12 +35,12 @@ import (
 // on Azure.
 type QueueManager struct {
 	service *BatchService
-	Config  *AzureConfig
+	Config  *Config
 	Logger  *log.Logger
 }
 
 // NewQueueManager creates a new queue manager.
-func NewQueueManager(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (m *QueueManager, err error) {
+func NewQueueManager(ctx context.Context, cfg *Config, logger *log.Logger) (m *QueueManager, err error) {
 
 	service, err := NewBatchService(ctx, cfg, logger)
 	if err != nil {

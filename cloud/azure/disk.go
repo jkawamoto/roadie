@@ -46,7 +46,7 @@ const (
 // DiskService provides an interface for Azure's disk service.
 type DiskService struct {
 	client    *client.DiskResourceProviderClient
-	Config    *AzureConfig
+	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -58,7 +58,7 @@ type DiskSet map[string]*models.Disk
 // NewDiskService creates a new disk service interface assosiated with
 // a given config; to authorize a authentication token
 // is required.
-func NewDiskService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *DiskService, err error) {
+func NewDiskService(ctx context.Context, cfg *Config, logger *log.Logger) (service *DiskService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

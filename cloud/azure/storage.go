@@ -57,7 +57,7 @@ type StorageService struct {
 	// Client of Azure resource manager
 	armClient *client.StorageManagement
 	// Configuration
-	Config *AzureConfig
+	Config *Config
 	// Logger
 	Logger *log.Logger
 	// Sleep time
@@ -70,7 +70,7 @@ type StorageService struct {
 // given name and belongs to given subscription and location.
 // If log.Logger logger is given, verbose mode is on and logging information will
 // be written to the logger.
-func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (s *StorageService, err error) {
+func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s *StorageService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)

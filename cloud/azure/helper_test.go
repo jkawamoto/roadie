@@ -34,12 +34,12 @@ func init() {
 	apiAccessDebugMode = true
 }
 
-func GetTestConfig() (cfg *AzureConfig, err error) {
+func GetTestConfig() (cfg *Config, err error) {
 
 	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile)
 
 	logger.Println("Loading a configuration file")
-	cfg, err = NewAzureConfigFromFile("./test_config.yml")
+	cfg, err = NewConfigFromFile("./test_config.yml")
 	if err != nil {
 		return
 	}

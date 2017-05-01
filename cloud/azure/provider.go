@@ -34,12 +34,12 @@ import (
 
 // Provider provides information of the service provider for Azure.
 type Provider struct {
-	Config *AzureConfig
+	Config *Config
 	Logger *log.Logger
 }
 
 // NewProvider creates a new provider for Azure service.
-func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger, forceAuth bool) (provider *Provider, err error) {
+func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth bool) (provider *Provider, err error) {
 
 	if cfg.Token.AccessToken == "" || forceAuth {
 

@@ -34,12 +34,12 @@ import (
 // on Azure.
 type InstanceManager struct {
 	service *BatchService
-	Config  *AzureConfig
+	Config  *Config
 	Logger  *log.Logger
 }
 
 // NewInstanceManager creates a new instance manager.
-func NewInstanceManager(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (m *InstanceManager, err error) {
+func NewInstanceManager(ctx context.Context, cfg *Config, logger *log.Logger) (m *InstanceManager, err error) {
 
 	service, err := NewBatchService(ctx, cfg, logger)
 	if err != nil {
