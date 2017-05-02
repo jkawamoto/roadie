@@ -23,6 +23,8 @@ package gcp
 
 import (
 	"path/filepath"
+
+	"golang.org/x/oauth2"
 )
 
 // Config defines information to access Google Cloud Platform.
@@ -39,17 +41,21 @@ type Config struct {
 	DiskSize int64 `yaml:"disk_size,omitempty"`
 	// If true, instances will not shutdown automatically.
 	NoShutdown bool `yaml:"no_shutdown,omitempty"`
+	// Authorization token.
+	Token *oauth2.Token `yaml:"token,omitempty"`
 }
 
 // UnmarshalYAML helps to unmarshal Config objects.
 func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 
 	type AuxConfig struct {
-		Project     string `yaml:"project"`
-		Bucket      string `yaml:"bucket"`
-		Zone        string `yaml:"zone"`
-		MachineType string `yaml:"machine_type"`
-		DiskSize    int64  `yaml:"disk_size,omitempty"`
+		Project     string        `yaml:"project"`
+		Bucket      string        `yaml:"bucket"`
+		Zone        string        `yaml:"zone"`
+		MachineType string        `yaml:"machine_type"`
+		DiskSize    int64         `yaml:"disk_size,omitempty"`
+		NoShutdown  bool          `yaml:"no_shutdown,omitempty"`
+		Token       *oauth2.Token `yaml:"token,omitempty"`
 	}
 
 	aux := AuxConfig{}
@@ -83,6 +89,8 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 		cfg.DiskSize = DefaultDiskSize
 	}
 
+	cfg.NoShutdown = aux.NoShutdown
+	cfg.Token = aux.Token
 	return
 
 }

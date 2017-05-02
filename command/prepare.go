@@ -134,15 +134,17 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Logger = logger
 
 	// Prepare a service provider.
-	meta.Spinner.Prefix = "Checking authentication information"
-	meta.Spinner.Start()
-	defer meta.Spinner.Stop()
-	meta.Logger.Println(meta.Spinner.Prefix)
+	logger.Println("Checking authentication information")
 
 	var provider cloud.Provider
 	switch {
 	case cfg.GcpConfig.Project != "":
-		provider = gcp.NewProvider(&cfg.GcpConfig, logger)
+		provider, err = gcp.NewProvider(meta.Context, &cfg.GcpConfig, logger, c.GlobalBool("auth"))
+		if err != nil {
+			return
+		}
+		cfg.Save()
+
 	default:
 		return fmt.Errorf("Cloud configuration isn't given")
 	}

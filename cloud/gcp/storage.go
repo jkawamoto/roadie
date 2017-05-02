@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 
 	"github.com/jkawamoto/roadie/cloud"
 
@@ -55,7 +56,8 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
-	cli, err := storage.NewClient(ctx)
+	c := NewAuthorizationConfig(0)
+	cli, err := storage.NewClient(ctx, option.WithTokenSource(c.TokenSource(ctx, cfg.Token)))
 	if err != nil {
 		return
 	}
@@ -82,11 +84,19 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 
 }
 
+// newClient creates a new storage client.
+func (s *StorageService) newClient(ctx context.Context) (*storage.Client, error) {
+
+	cfg := NewAuthorizationConfig(0)
+	return storage.NewClient(ctx, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
+
+}
+
 // Upload a file to a location.
 func (s *StorageService) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
 
 	s.Logger.Println("Uploading file", filename)
-	client, err := storage.NewClient(ctx)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -124,7 +134,7 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 func (s *StorageService) Download(ctx context.Context, container, filename string, out io.Writer) (err error) {
 
 	s.Logger.Println("Downloading file", filename)
-	client, err := storage.NewClient(ctx)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -156,7 +166,7 @@ func (s *StorageService) Download(ctx context.Context, container, filename strin
 func (s *StorageService) GetFileInfo(ctx context.Context, container, filename string) (info *cloud.FileInfo, err error) {
 
 	s.Logger.Println("Retrieving information of file", filename)
-	client, err := storage.NewClient(ctx)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -186,7 +196,7 @@ func (s *StorageService) GetFileInfo(ctx context.Context, container, filename st
 func (s *StorageService) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) (err error) {
 
 	s.Logger.Printf(`Retrieving the list of files matching to prefix "%v"`, prefix)
-	client, err := storage.NewClient(ctx)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -231,7 +241,7 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 func (s *StorageService) Delete(ctx context.Context, container, filename string) (err error) {
 
 	s.Logger.Println("Deleting file", filename)
-	client, err := storage.NewClient(ctx)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
