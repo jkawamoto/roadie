@@ -142,7 +142,7 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script) (err error) {
 
 	if task.Image == "" {
-		task.Image = "jkawamoto/roadie-gcp"
+		task.Image = DefaultBaseImage
 	}
 
 	// Create an ignition config.
@@ -150,8 +150,11 @@ func (s *ComputeService) CreateInstance(ctx context.Context, task *script.Script
 	if err != nil {
 		return
 	}
-	roadie, err := RoadieUnit(task.Name, task.Image, "")
-	// roadie, err := RoadieUnit(task.Name, task.Image, "--no-shutdown")
+	options := ""
+	if s.Config.NoShutdown {
+		options += "--no-shutdown"
+	}
+	roadie, err := RoadieUnit(task.Name, task.Image, options)
 	if err != nil {
 		return
 	}

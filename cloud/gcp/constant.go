@@ -36,6 +36,9 @@ const (
 	// DefaultDiskSize defines the default disk size.
 	DefaultDiskSize = 10
 
+	// DefaultBaseImage defines the default base image for sandbox containers.
+	DefaultBaseImage = "jkawamoto/roadie-gcp"
+
 	// LogTimeFormat defines time format of Google Logging.
 	LogTimeFormat = "2006-01-02T15:04:05Z"
 	// LogEventSubtypeInsert means this event is creating an instance.

@@ -37,6 +37,8 @@ type Config struct {
 	MachineType string `yaml:"machine_type"`
 	// Instance disk size.
 	DiskSize int64 `yaml:"disk_size,omitempty"`
+	// If true, instances will not shutdown automatically.
+	NoShutdown bool `yaml:"no_shutdown,omitempty"`
 }
 
 // UnmarshalYAML helps to unmarshal Config objects.

@@ -49,9 +49,6 @@ type runOpt struct {
 	// If true, result section will be overwritten so that roadie can manage
 	// result data. Otherwise, users require to manage them by their self.
 	OverWriteResultSection bool
-	// If true, created instance will not shutdown automatically. So, users
-	// require to do it by their self. This flag can be useful for debugging.
-	NoShutdown bool
 	// If true, do not create any instances but show startup script.
 	// This flag is for debugging.
 	Dry bool
@@ -82,9 +79,8 @@ func CmdRun(c *cli.Context) error {
 		InstanceName: c.String("name"),
 		Image:        c.String("image"),
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
-		NoShutdown:             c.Bool("no-shutdown"),
-		Dry:                    c.Bool("dry"),
-		Retry:                  c.Int64("retry") + 1,
+		Dry:   c.Bool("dry"),
+		Retry: c.Int64("retry") + 1,
 	}
 	if err := cmdRun(opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -115,6 +111,7 @@ func cmdRun(opt *runOpt) (err error) {
 	if opt.InstanceName != "" {
 		s.Name = strings.ToLower(opt.InstanceName)
 	}
+	s.Image = opt.Image
 
 	// Check a specified bucket exists and create it if not.
 	service, err := opt.StorageManager()
@@ -135,14 +132,11 @@ func cmdRun(opt *runOpt) (err error) {
 	// Debugging info.
 	opt.Logger.Printf("Script to be run:\n%s\n", s.String())
 
-	// Prepare options.
-	if opt.NoShutdown {
-		s.Options = append(s.Options, "no-shutdown")
-	}
-	if opt.Retry <= 0 {
-		opt.Retry = 10
-	}
-	s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
+	// // Prepare options.
+	// if opt.Retry <= 0 {
+	// 	opt.Retry = 10
+	// }
+	// s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
 
 	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(s.Name))
 	opt.Spinner.FinalMSG = fmt.Sprintf("Instance created.\n")

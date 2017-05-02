@@ -108,31 +108,22 @@ var Commands = []cli.Command{
 				Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
 			},
 			cli.BoolFlag{
-				Name:  "no-shutdown",
-				Usage: "not showdown instance automatically. To stop instance use 'status kill' command.",
-			},
-			cli.BoolFlag{
 				Name:  "overwrite-result-section",
 				Usage: "if set, result section in a given script will be overwritten to default value.",
 			},
 			cli.StringFlag{
 				Name:  "image",
 				Usage: "customize the base image which given program will run on.",
-				Value: "jkawamoto/roadie-gcp",
 			},
-			cli.BoolFlag{
-				Name:  "dry",
-				Usage: "not create any actual instances but printing the startup script to be run instead.",
-			},
-			cli.BoolFlag{
-				Name:  "follow, f",
-				Usage: "after creating instance, keep watching logs.",
-			},
-			cli.Int64Flag{
-				Name:  "retry",
-				Usage: "retry the program a given times when GCP's error happens.",
-				Value: 10,
-			},
+			// cli.BoolFlag{
+			// 	Name:  "follow, f",
+			// 	Usage: "after creating instance, keep watching logs.",
+			// },
+			// cli.Int64Flag{
+			// 	Name:  "retry",
+			// 	Usage: "retry the program a given times when GCP's error happens.",
+			// 	Value: 10,
+			// },
 		},
 	},
 	{
