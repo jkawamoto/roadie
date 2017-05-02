@@ -32,6 +32,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/azure"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 	colorable "github.com/mattn/go-colorable"
@@ -109,6 +110,16 @@ func (m *Metadata) prepareProvider(forceAuth bool) (err error) {
 
 	case m.Config.GcpConfig.Project != "":
 		m.provider, err = gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, forceAuth)
+		if err != nil {
+			return
+		}
+		m.Config.Save()
+
+	case m.Config.AzureConfig.SubscriptionID != "":
+		if m.Config.AzureConfig.TenantID == "" {
+			return fmt.Errorf("Azure's tenant ID is not given. Check config file %v", m.Config.FileName)
+		}
+		m.provider, err = azure.NewProvider(m.Context, &m.Config.AzureConfig, m.Logger, forceAuth)
 		if err != nil {
 			return
 		}

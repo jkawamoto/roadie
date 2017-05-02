@@ -91,3 +91,8 @@ func (p *Provider) StorageManager(ctx context.Context) (cloud.StorageManager, er
 func (p *Provider) LogManager(ctx context.Context) (cloud.LogManager, error) {
 	return NewLogManager(ctx, p.Config, p.Logger)
 }
+
+// ResourceManager returns a resource manager interface.
+func (p *Provider) ResourceManager(ctx context.Context) (cloud.ResourceManager, error) {
+	return NewResourceManager(p.Config, p.Logger), nil
+}
