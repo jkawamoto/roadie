@@ -1,3 +1,17 @@
+## 0.3.5 (2017-05-01)
+### Updated
+- Worker instances use [Core OS](https://coreos.com/) (v20170401)
+- Flags `--disksize` and `--no-shutdown` are moved to config file
+- Rename the default config file to `roadie.yml` and minimum required configuration is shown below:
+```yml
+gcp:
+  project: <your project id>
+```
+
+### Fixed
+- Missing log entries
+
+
 ## 0.3.4 (2017-02-11)
 ### Updated
 - Switch to use Google Cloud for Go instead of Google APIs Client Library for
