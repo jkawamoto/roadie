@@ -82,17 +82,25 @@ func (m *Metadata) ResourceManager() (cloud.ResourceManager, error) {
 }
 
 // getMetadata gets metadata from a cli context.
-func getMetadata(c *cli.Context) *Metadata {
+func getMetadata(c *cli.Context) (*Metadata, error) {
 
-	meta, _ := c.App.Metadata[metadataKey].(*Metadata)
-	return meta
+	meta, _ := c.App.Metadata[metadataKey]
+	switch m := meta.(type) {
+	case *Metadata:
+		return m, nil
+	case error:
+		return nil, m
+	default:
+		return nil, fmt.Errorf("No metadata is attached")
+	}
 
 }
 
 // PrepareCommand prepares executing any command; it loads the configuratio file,
 // checkes global flags.
-func PrepareCommand(c *cli.Context) (err error) {
+func PrepareCommand(c *cli.Context) error {
 
+	var err error
 	meta := new(Metadata)
 
 	// Get a context from main function.
@@ -101,20 +109,20 @@ func PrepareCommand(c *cli.Context) (err error) {
 	// Load the configuration file.
 	var cfg *config.Config
 	if conf := c.GlobalString("config"); conf != "" {
-
 		cfg = &config.Config{
 			FileName: conf,
 		}
 		err = cfg.Load()
 		if err != nil {
-			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+			c.App.Metadata[metadataKey] = cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+			return nil
 		}
 
 	} else {
-
 		cfg, err = config.NewConfig()
 		if err != nil {
-			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+			c.App.Metadata[metadataKey] = cli.NewExitError(fmt.Sprintf("Cannot read any config files: %v", err.Error()), 1)
+			return nil
 		}
 
 	}
@@ -141,16 +149,18 @@ func PrepareCommand(c *cli.Context) (err error) {
 	case cfg.GcpConfig.Project != "":
 		provider, err = gcp.NewProvider(meta.Context, &cfg.GcpConfig, logger, c.GlobalBool("auth"))
 		if err != nil {
-			return
+			c.App.Metadata[metadataKey] = err
+			return nil
 		}
 		cfg.Save()
 
 	default:
-		return fmt.Errorf("Cloud configuration isn't given")
+		c.App.Metadata[metadataKey] = fmt.Errorf("Configuration isn't correct")
+		return nil
 	}
 	meta.provider = provider
 
 	c.App.Metadata[metadataKey] = meta
-	return
+	return nil
 
 }

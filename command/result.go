@@ -54,7 +54,11 @@ func CmdResult(c *cli.Context) error {
 // CmdResultList shows a list of instance names or result files belonging to an instance.
 func CmdResultList(c *cli.Context) (err error) {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+
 	switch c.NArg() {
 	case 0:
 		err = PrintDirList(m, script.ResultPrefix, "", c.Bool("url"), c.Bool("quiet"))
@@ -76,7 +80,11 @@ func CmdResultList(c *cli.Context) (err error) {
 // CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
 func CmdResultShow(c *cli.Context) (err error) {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+
 	service, err := m.StorageManager()
 	if err != nil {
 		return err
@@ -114,7 +122,11 @@ func CmdResultGet(c *cli.Context) error {
 	}
 
 	instance := c.Args().First()
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	service, err := m.StorageManager()
 	if err != nil {
 		return err
@@ -141,7 +153,11 @@ func CmdResultDelete(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	instance := c.Args().First()
 	var patterns []string
 	if c.NArg() == 1 {

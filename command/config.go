@@ -50,7 +50,10 @@ func CmdConfigProjectSet(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	resource, err := m.ResourceManager()
 	if err != nil {
 		return
@@ -78,7 +81,11 @@ func CmdConfigProjectSet(c *cli.Context) (err error) {
 // CmdConfigProjectShow prints current project ID.
 func CmdConfigProjectShow(c *cli.Context) (err error) {
 
-	resource, err := getMetadata(c).ResourceManager()
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+	resource, err := m.ResourceManager()
 	if err != nil {
 		return
 	}
@@ -113,7 +120,10 @@ func CmdConfigMachineTypeSet(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	resource, err := m.ResourceManager()
 	if err != nil {
 		return
@@ -157,7 +167,10 @@ func CmdConfigMachineTypeSet(c *cli.Context) (err error) {
 // CmdConfigMachineTypeList lists up available machine types for the current project.
 func CmdConfigMachineTypeList(c *cli.Context) (err error) {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	resource, err := m.ResourceManager()
 	if err != nil {
 		return
@@ -186,7 +199,11 @@ func CmdConfigMachineTypeList(c *cli.Context) (err error) {
 // CmdConfigMachineTypeShow shows current configuration of machine type.
 func CmdConfigMachineTypeShow(c *cli.Context) (err error) {
 
-	resource, err := getMetadata(c).ResourceManager()
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+	resource, err := m.ResourceManager()
 	if err != nil {
 		return
 	}
@@ -221,7 +238,10 @@ func CmdConfigRegionSet(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	resource, err := m.ResourceManager()
 	if err != nil {
 		return
@@ -264,7 +284,10 @@ func CmdConfigRegionSet(c *cli.Context) (err error) {
 // CmdConfigRegionList lists up available zones for the current project.
 func CmdConfigRegionList(c *cli.Context) (err error) {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	resource, err := m.ResourceManager()
 	if err != nil {
 		return
@@ -293,7 +316,11 @@ func CmdConfigRegionList(c *cli.Context) (err error) {
 // CmdConfigRegionShow shows current configuration of zone.
 func CmdConfigRegionShow(c *cli.Context) (err error) {
 
-	resource, err := getMetadata(c).ResourceManager()
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+	resource, err := m.ResourceManager()
 	if err != nil {
 		return
 	}

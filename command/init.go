@@ -43,9 +43,8 @@ type GcloudConfig struct {
 }
 
 // CmdInit helps to create a configuration file.
-func CmdInit(c *cli.Context) error {
+func CmdInit(c *cli.Context) (err error) {
 
-	var err error
 	actor := interact.NewActor(os.Stdin, os.Stdout)
 
 	fmt.Printf(`%s.
@@ -67,7 +66,10 @@ for more detail. Type ctrl-c at anytime to quite.
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
 	m.Config.GcpConfig.Project = gcloud.Project
 	m.Config.GcpConfig.Zone = gcloud.Zone
 

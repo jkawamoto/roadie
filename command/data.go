@@ -106,12 +106,16 @@ func CmdDataPut(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
 	storedName := ""
 	if n == 2 {
 		storedName = c.Args()[1]
 	}
 	opt := &optDataPut{
-		Metadata:   getMetadata(c),
+		Metadata:   m,
 		Filename:   c.Args().First(),
 		StoredName: storedName,
 	}

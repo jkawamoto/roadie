@@ -64,7 +64,11 @@ func CmdRun(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	opt := &runOpt{
 		Metadata: m,
 		SourceOpt: SourceOpt{

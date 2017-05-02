@@ -36,7 +36,11 @@ func CmdStatus(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	if err := cmdStatus(m, c.Bool("all")); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
@@ -81,7 +85,11 @@ func CmdStatusKill(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	if err := cmdStatusKill(m, c.Args().First()); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}

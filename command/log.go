@@ -52,9 +52,14 @@ func CmdLog(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	// Run the log command.
 	if err := cmdLog(&optLog{
-		Metadata:     getMetadata(c),
+		Metadata:     m,
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
