@@ -28,33 +28,23 @@ import (
 	"os"
 	"path/filepath"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/naoina/toml"
+	"github.com/jkawamoto/roadie/cloud/gcp"
 )
 
 // ConfigureFile defines configuration file name.
-const ConfigureFile = ".roadie"
+const ConfigureFile = "roadie.yml"
 
 // DotGit defines a git repository name.
 const DotGit = ".git"
 
-// Gcp defines information to access Google Cloud Platform.
-type Gcp struct {
-	// Project name.
-	Project string
-	// Bucket name
-	Bucket string
-	// Zone where instances will run.
-	Zone string
-	// Default machine type of new instances.
-	MachineType string
-}
-
 // Config defines a structure of config file.
 type Config struct {
-	Gcp
+	GcpConfig gcp.Config `yaml:"gcp"`
 	// Config file name used to save/load this config.
-	Filename string `toml:"-"`
+	FileName string `yaml:"-"`
 }
 
 // NewConfig creates a config object. If there is a configure file,
@@ -62,38 +52,9 @@ type Config struct {
 func NewConfig() (cfg *Config, err error) {
 
 	cfg = &Config{
-		Filename: lookup(),
+		FileName: lookup(),
 	}
-
-	if _, exist := os.Stat(cfg.Filename); exist == nil {
-
-		f, err := os.Open(cfg.Filename)
-		if err != nil {
-			return nil, fmt.Errorf(
-				chalk.Red.Color("Cannot open configuration file %s. (%s)"),
-				cfg.Filename, err.Error())
-		}
-		defer f.Close()
-
-		var buf []byte
-		if buf, err = ioutil.ReadAll(f); err == nil {
-			err = toml.Unmarshal(buf, cfg)
-		}
-		if err != nil {
-			return nil, fmt.Errorf(
-				chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
-				cfg.Filename, err.Error())
-		}
-
-	}
-
-	if len(cfg.Zone) == 0 {
-		cfg.Zone = "us-central1-b"
-	}
-	if len(cfg.MachineType) == 0 {
-		cfg.MachineType = "n1-standard-1"
-	}
-
+	err = cfg.Load()
 	return
 
 }
@@ -101,7 +62,7 @@ func NewConfig() (cfg *Config, err error) {
 // Save config stores configurations to a given file.
 func (c *Config) Save() (err error) {
 
-	writeFile, err := os.OpenFile(c.Filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	writeFile, err := os.OpenFile(c.FileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return
 	}
@@ -110,7 +71,7 @@ func (c *Config) Save() (err error) {
 	writer := bufio.NewWriter(writeFile)
 	defer writer.Flush()
 
-	data, err := toml.Marshal(*c)
+	data, err := yaml.Marshal(*c)
 	if err != nil {
 		return
 	}
@@ -120,15 +81,44 @@ func (c *Config) Save() (err error) {
 
 }
 
-// Print shows current configurations as a TOML style.
-func (c *Config) Print() (err error) {
+// Load config file.
+func (c *Config) Load() (err error) {
 
-	data, err := toml.Marshal(*c)
+	_, err = os.Stat(c.FileName)
 	if err != nil {
 		return
 	}
-	fmt.Println(string(data))
+
+	f, err := os.Open(c.FileName)
+	if err != nil {
+		return fmt.Errorf(
+			chalk.Red.Color("Cannot open configuration file %s. (%s)"),
+			c.FileName, err.Error())
+	}
+	defer f.Close()
+
+	buf, err := ioutil.ReadAll(f)
+	if err == nil {
+		err = yaml.Unmarshal(buf, c)
+	}
+	if err != nil {
+		return fmt.Errorf(
+			chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
+			c.FileName, err.Error())
+	}
+
 	return
+
+}
+
+// String returns a string representing this config.
+func (c *Config) String() string {
+
+	data, err := yaml.Marshal(*c)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
 
 }
 

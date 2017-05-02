@@ -1,0 +1,35 @@
+#
+# queue.service
+# Template of service unit definition for roadie-queue-manager
+#
+# Copyright (c) 2016-2017 Junpei Kawamoto
+#
+# This file is part of Roadie.
+#
+# Roadie is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Roadie is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
+#
+[Unit]
+Description=Roadie Queue Manager Service
+Requires=fluentd.service
+After=fluentd.service
+
+[Service]
+ExecStartPre=/usr/bin/curl -LO https://github.com/jkawamoto/roadie-queue-manager/releases/download/v{{.Version}}/roadie-queue-manager_{{.Version}}_linux_amd64.tar.gz
+ExecStartPre=/usr/bin/tar -zxvf roadie-queue-manager_{{.Version}}_linux_amd64.tar.gz -C /root --strip-components 1
+ExecStart=/root/roadie-queue-manager {{.Project}} {{.QueueName}}
+Restart=always
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

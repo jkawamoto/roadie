@@ -22,27 +22,19 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/config"
 )
 
 // AddRecorder is a callback to add file information to a table.
 type AddRecorder func(table *uitable.Table, info *cloud.FileInfo, quiet bool)
 
 // PrintFileList prints a list of files having a given prefix.
-func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err error) {
-
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
+func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -51,18 +43,27 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 		headers = []string{"FILE NAME", "SIZE", "TIME CREATED"}
 	}
 
-	return printList(ctx, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
+	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
 		if info.Name != "" {
 			if quiet {
 				table.AddRow(info.Name)
 			} else if url {
-				table.AddRow(info.Name, fmt.Sprintf(
-					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat),
-					fmt.Sprintf("gs://%s/%s", cfg.Bucket, info.Path))
+				var size string
+				if info.Size < 1024 {
+					size = fmt.Sprintf("%dB", info.Size)
+				} else {
+					size = fmt.Sprintf("%dKB", info.Size/1024)
+				}
+				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.Path)
 			} else {
-				table.AddRow(info.Name, fmt.Sprintf(
-					"%dKB", info.Size/1024), info.TimeCreated.Format(PrintTimeFormat))
+				var size string
+				if info.Size < 1024 {
+					size = fmt.Sprintf("%dB", info.Size)
+				} else {
+					size = fmt.Sprintf("%dKB", info.Size/1024)
+				}
+				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
 		}
 
@@ -70,12 +71,7 @@ func PrintFileList(ctx context.Context, prefix string, url, quiet bool) (err err
 }
 
 // PrintDirList prints a list of directoris in a given prefix.
-func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err error) {
-
-	cfg, err := config.FromContext(ctx)
-	if err != nil {
-		return
-	}
+func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err error) {
 
 	var headers []string
 	if url {
@@ -86,35 +82,28 @@ func PrintDirList(ctx context.Context, prefix string, url, quiet bool) (err erro
 
 	// Storing previous folder name.
 	prev := ""
+	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-	return printList(ctx, prefix, quiet, headers,
-		func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
-
-			rel, _ := filepath.Rel(prefix, info.Path)
-			rel = filepath.Dir(rel)
-
-			if rel != "." && rel != prev {
-				if quiet {
-					table.AddRow(rel)
-				} else if url {
-					table.AddRow(
-						rel, info.TimeCreated.Format(PrintTimeFormat),
-						fmt.Sprintf("gs://%s/%s", cfg.Bucket, rel))
-				} else {
-					table.AddRow(rel, info.TimeCreated.Format(PrintTimeFormat))
-				}
-				prev = rel
+		dir := filepath.Dir(info.Path)
+		if dir != "." && dir != prev {
+			if quiet {
+				table.AddRow(dir)
+			} else if url {
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), dir)
+			} else {
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
+			prev = dir
+		}
 
-		})
+	})
 }
 
-func printList(ctx context.Context, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
+func printList(m *Metadata, container, prefix string, quiet bool, headers []string, addRecorder AddRecorder) (err error) {
 
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Prefix = "Loading information..."
-	s.Start()
-	defer s.Stop()
+	m.Spinner.Prefix = "Loading information..."
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
 	table := uitable.New()
 	if !quiet {
@@ -125,15 +114,22 @@ func printList(ctx context.Context, prefix string, quiet bool, headers []string,
 		table.AddRow(rawHeaders...)
 	}
 
-	storage := cloud.NewStorage(ctx)
-	err = storage.ListupFiles(prefix, func(info *cloud.FileInfo) error {
+	service, err := m.StorageManager()
+	if err != nil {
+		return err
+	}
+
+	storage := cloud.NewStorage(service, nil)
+	err = storage.ListupFiles(m.Context, container, prefix, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})
-
-	if err == nil {
-		s.FinalMSG += table.String() + "\n"
+	if err != nil {
+		return
 	}
+
+	m.Spinner.Stop()
+	fmt.Println(table.String())
 	return
 
 }

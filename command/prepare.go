@@ -24,50 +24,131 @@ package command
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"time"
 
+	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
+
+const (
+	// metadataKey is a key for metadata.
+	metadataKey = "metadata"
+)
+
+// Metadata is a set of data used for any commands.
+type Metadata struct {
+	// Context for running a command.
+	Context context.Context
+	// Config for running a command.
+	Config *config.Config
+	// Provider of a cloud service.
+	provider cloud.Provider
+	// Logger to output logs.
+	Logger *log.Logger
+	// Spinner for decorating output standard message; not logging information.
+	// If verbose mode is set, the spinner will be disabled.
+	Spinner *spinner.Spinner
+}
+
+// InstanceManager returns an instance manager interface.
+func (m *Metadata) InstanceManager() (cloud.InstanceManager, error) {
+	return m.provider.InstanceManager(m.Context)
+}
+
+// QueueManager returns a queue manager interface.
+func (m *Metadata) QueueManager() (cloud.QueueManager, error) {
+	return m.provider.QueueManager(m.Context)
+}
+
+// StorageManager returns a storage manager interface.
+func (m *Metadata) StorageManager() (cloud.StorageManager, error) {
+	return m.provider.StorageManager(m.Context)
+}
+
+// LogManager returns a log manager interface.
+func (m *Metadata) LogManager() (cloud.LogManager, error) {
+	return m.provider.LogManager(m.Context)
+}
+
+// ResourceManager returns a resource manager interface.
+func (m *Metadata) ResourceManager() (cloud.ResourceManager, error) {
+	return m.provider.ResourceManager(m.Context)
+}
+
+// getMetadata gets metadata from a cli context.
+func getMetadata(c *cli.Context) *Metadata {
+
+	meta, _ := c.App.Metadata[metadataKey].(*Metadata)
+	return meta
+
+}
 
 // PrepareCommand prepares executing any command; it loads the configuratio file,
 // checkes global flags.
 func PrepareCommand(c *cli.Context) (err error) {
 
+	meta := new(Metadata)
+
+	// Get a context from main function.
+	meta.Context, _ = c.App.Metadata["context"].(context.Context)
+
 	// Load the configuration file.
-	conf, err := config.NewConfig()
-	if err != nil {
-		return
-	}
+	var cfg *config.Config
+	if conf := c.GlobalString("config"); conf != "" {
 
-	// Update configuration.
-	if conf.Project == "" && c.Command.Name != "init" {
-		fmt.Println(chalk.Yellow.Color("Project ID is not given. It is recommended to run `roadie init`."))
-	}
-	if v := c.GlobalString("project"); v != "" {
-		fmt.Printf("Overwrite project configuration: %s -> %s\n", conf.Project, chalk.Green.Color(v))
-		conf.Project = v
-	}
-	if v := c.GlobalString("type"); v != "" {
-		fmt.Printf("Overwrite machine type configuration: %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
-		conf.MachineType = v
-	}
-	if v := c.GlobalString("zone"); v != "" {
-		fmt.Printf("Overwrite zone configuration: %s -> %s\n", conf.Zone, chalk.Green.Color(v))
-		conf.Zone = v
-	}
-	if v := c.GlobalString("bucket"); v != "" {
-		fmt.Printf("Overwrite bucket configuration: %s -> %s\n", conf.Bucket, chalk.Green.Color(v))
-		conf.Bucket = v
-	}
+		cfg = &config.Config{
+			FileName: conf,
+		}
+		err = cfg.Load()
+		if err != nil {
+			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+		}
 
-	// Append the config to the context.
-	ctx, ok := c.App.Metadata["context"].(context.Context)
-	if !ok {
-		return fmt.Errorf("Context is broken: %v", c.App.Metadata)
-	}
-	c.App.Metadata["context"] = config.NewContext(ctx, conf)
+	} else {
 
+		cfg, err = config.NewConfig()
+		if err != nil {
+			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
+		}
+
+	}
+	meta.Config = cfg
+
+	// Prepare a logger and decorator.
+	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	var logger *log.Logger
+	if c.GlobalBool("verbose") {
+		logger = log.New(os.Stderr, "", log.LstdFlags)
+		// If verbose mode, spinner is disabled, since it may conflict logging information.
+		meta.Spinner.Writer = ioutil.Discard
+	} else {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+
+	}
+	meta.Logger = logger
+
+	// Prepare a service provider.
+	meta.Spinner.Prefix = "Checking authentication information"
+	meta.Spinner.Start()
+	defer meta.Spinner.Stop()
+	meta.Logger.Println(meta.Spinner.Prefix)
+
+	var provider cloud.Provider
+	switch {
+	case cfg.GcpConfig.Project != "":
+		provider = gcp.NewProvider(&cfg.GcpConfig, logger)
+	default:
+		return fmt.Errorf("Cloud configuration isn't given")
+	}
+	meta.provider = provider
+
+	c.App.Metadata[metadataKey] = meta
 	return
 
 }

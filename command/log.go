@@ -22,18 +22,26 @@
 package command
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/log"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/urfave/cli"
 )
+
+// optLog defines arguments of log command.
+type optLog struct {
+	*Metadata
+	// InstanceName of which logs are shown.
+	InstanceName string
+	// If true, timestamp is also printed.
+	Timestamp bool
+	// If true, keep waiting new logs.
+	Follow bool
+	// SleepTime defines sleep time.
+	SleepTime time.Duration
+}
 
 // CmdLog shows logs of a given instance.
 func CmdLog(c *cli.Context) error {
@@ -45,87 +53,60 @@ func CmdLog(c *cli.Context) error {
 	}
 
 	// Run the log command.
-	if err := cmdLog(&logOpt{
-		Context:      util.GetContext(c),
+	if err := cmdLog(&optLog{
+		Metadata:     getMetadata(c),
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
-		Output:       os.Stdout,
+		SleepTime:    DefaultSleepTime,
 	}); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	return nil
 }
 
-// logOpt manages arguments for log command.
-type logOpt struct {
-	// Context, a config must be attached to.
-	Context context.Context
-	// InstanceName of which logs are shown.
-	InstanceName string
-	// If true, timestamp is also printed.
-	Timestamp bool
-	// If true, keep waiting new logs.
-	Follow bool
-	// io.Writer to be outputted logs.
-	Output io.Writer
-	// Used to obtain log entries.
-	Requester log.EntryRequester
-}
+func cmdLog(opt *optLog) (err error) {
 
-func cmdLog(opt *logOpt) (err error) {
-
-	// Validate option.
-	if opt.Output == nil {
-		opt.Output = ioutil.Discard
-	}
-	if opt.Requester == nil {
-		opt.Requester = log.NewCloudLoggingService(opt.Context)
-	}
-
-	// Determine when the newest instance starts.
-	var start time.Time
-	if err = log.GetOperationLogEntries(opt.Context, opt.Requester, func(timestamp time.Time, payload *log.ActivityPayload) (err error) {
-		if payload.Resource.Name == opt.InstanceName {
-			if payload.EventSubtype == log.EventSubtypeInsert {
-				start = timestamp
-			}
-		}
-		return
-	}); err != nil {
+	log, err := opt.LogManager()
+	if err != nil {
 		return
 	}
 
+	var from time.Time
 	for {
 
-		err = log.GetInstanceLogEntries(
-			opt.Context, opt.InstanceName, start, opt.Requester, func(timestamp time.Time, payload *log.RoadiePayload) (err error) {
+		err = log.Get(opt.Context, opt.InstanceName, from, func(timestamp time.Time, line string, stderr bool) error {
 
-				var msg string
-				if opt.Timestamp {
-					msg = fmt.Sprintf("%v: %s", timestamp.Format(PrintTimeFormat), payload.Log)
-				} else {
-					msg = fmt.Sprintf("%s", payload.Log)
-				}
+			var msg string
+			if opt.Timestamp {
+				msg = fmt.Sprintf("%v %s", timestamp.Format(PrintTimeFormat), line)
+			} else {
+				msg = fmt.Sprintf("%s", line)
+			}
 
-				if payload.Stream == "stdout" {
-					fmt.Fprintln(opt.Output, msg)
-				} else {
-					fmt.Fprintln(os.Stderr, msg)
-				}
+			if !stderr {
+				fmt.Fprintln(os.Stdout, msg)
+			} else {
+				fmt.Fprintln(os.Stderr, msg)
+			}
 
-				start = timestamp
-				return
+			from = timestamp
+			return nil
 
-			})
+		})
 		if err != nil {
-			break
+			return
 		}
 
 		if !opt.Follow {
 			break
 		}
-		time.Sleep(30 * time.Second)
+
+		select {
+		case <-opt.Context.Done():
+			return opt.Context.Err()
+		case <-time.After(opt.SleepTime):
+		}
 
 	}
 	return

@@ -22,7 +22,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"runtime"
@@ -31,46 +30,37 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
-// DataPrefix defines a prefix to store data files.
-const DataPrefix = ".roadie/data"
-
-// CmdDataPut uploads a given file.
-func CmdDataPut(c *cli.Context) error {
-
-	n := c.NArg()
-	if n < 1 || n > 2 {
-		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
-
-	filename := c.Args()[0]
-	storedName := ""
-	if n == 2 {
-		storedName = c.Args()[1]
-	}
-
-	if err := cmdDataPut(util.GetContext(c), filename, storedName); err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-	return nil
-
+// optDataPut defines options for data put command.
+type optDataPut struct {
+	*Metadata
+	Filename   string
+	StoredName string
 }
 
-func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
+// run defines process of data put command.
+func (o *optDataPut) run() (err error) {
 
-	filenames, err := filepath.Glob(filename)
+	if o.Filename == "" {
+		return fmt.Errorf("Given filename is empty")
+	}
+
+	filenames, err := filepath.Glob(o.Filename)
 	if err != nil {
 		return
 	}
 
-	wg, ctx := errgroup.WithContext(ctx)
-	semaphore := make(chan struct{}, runtime.NumCPU()-1)
+	service, err := o.Metadata.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, nil)
 
-	storage := cloud.NewStorage(ctx)
+	wg, ctx := errgroup.WithContext(o.Context)
+	semaphore := make(chan struct{}, runtime.NumCPU()-1)
 	for _, target := range filenames {
 
 		select {
@@ -83,14 +73,14 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 					defer func() { <-semaphore }()
 
 					var output string
-					if storedName != "" && len(filenames) == 1 {
-						output = storedName
+					if o.StoredName != "" && len(filenames) == 1 {
+						output = o.StoredName
 					} else {
 						output = filepath.Base(target)
 					}
 
 					var location string
-					location, err = storage.UploadFile(DataPrefix, output, target)
+					location, err = storage.UploadFile(ctx, script.DataPrefix, output, target)
 					if err != nil {
 						return
 					}
@@ -104,5 +94,31 @@ func cmdDataPut(ctx context.Context, filename, storedName string) (err error) {
 	}
 
 	return wg.Wait()
+
+}
+
+// CmdDataPut uploads a given file.
+func CmdDataPut(c *cli.Context) error {
+
+	n := c.NArg()
+	if n < 1 || n > 2 {
+		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+	storedName := ""
+	if n == 2 {
+		storedName = c.Args()[1]
+	}
+	opt := &optDataPut{
+		Metadata:   getMetadata(c),
+		Filename:   c.Args().First(),
+		StoredName: storedName,
+	}
+
+	if err := opt.run(); err != nil {
+		return cli.NewExitError(err.Error(), 2)
+	}
+	return nil
 
 }

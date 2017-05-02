@@ -24,22 +24,40 @@ package command
 import (
 	"context"
 	"testing"
+
+	"github.com/jkawamoto/roadie/cloud/mock"
+	"github.com/jkawamoto/roadie/config"
 )
 
 // TestCmdDataPut checks if wrong patterns are given, cmdDataPut returns error,
 // and if empty pattern is given, it do nothing.
 func TestCmdDataPut(t *testing.T) {
 
+	var err error
+	opt := optDataPut{
+		Metadata: &Metadata{
+			Config:   &config.Config{},
+			Context:  context.Background(),
+			provider: mock.NewProvider(),
+		},
+	}
+
 	// Test for wrong pattern.
-	if err := cmdDataPut(context.Background(), "[b-a", ""); err == nil {
+	opt.Filename = "[b-a"
+	opt.StoredName = ""
+	if err = opt.run(); err == nil {
 		t.Error("Give a wrong pattern but no errors occur.")
 	} else {
-		t.Logf("Wrong patter makes an error: %s", err.Error())
+		t.Logf("Wrong pattern makes an error: %s", err.Error())
 	}
 
 	// Test for empty pattern.
-	if err := cmdDataPut(context.Background(), "", ""); err != nil {
-		t.Errorf(err.Error())
+	opt.Filename = ""
+	opt.StoredName = ""
+	if err = opt.run(); err == nil {
+		t.Error("Give empty pattern but no errors occur.")
+	} else {
+		t.Logf("Empty pattern makes an error: %s", err.Error())
 	}
 
 }

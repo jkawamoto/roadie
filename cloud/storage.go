@@ -26,91 +26,70 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/url"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
+	"github.com/ulikunitz/xz"
 	"github.com/urfave/cli"
 )
 
 // Storage provides APIs to access a cloud storage.
 type Storage struct {
-	// Context this Storage associates with.
-	ctx context.Context
 	// Servicer.
-	service storageServicer
+	service StorageManager
+	// TODO: Delete or update this.
 	// Writer logs to be printed.
 	Log io.Writer
 }
 
-// FileInfoHandler is a handler to recieve a file info.
-type FileInfoHandler func(*FileInfo) error
-
-// storageServicer defines APIs a storage service provider must have.
-type storageServicer interface {
-	CreateIfNotExists() error
-	Upload(in io.Reader, location *url.URL) error
-	Download(filename string, out io.Writer) error
-	Status(filename string) (*FileInfo, error)
-	List(prefix string, handler FileInfoHandler) error
-	Delete(name string) error
-}
-
 // NewStorage creates a cloud storage accessor with a given context.
-// The context must have a Config.
-func NewStorage(ctx context.Context) *Storage {
+func NewStorage(servicer StorageManager, log io.Writer) (s *Storage) {
 
-	return &Storage{
-		ctx:     ctx,
-		service: NewCloudStorageService(ctx),
-		Log:     os.Stderr,
+	if log == nil {
+		log = ioutil.Discard
 	}
 
-}
+	s = &Storage{
+		service: servicer,
+		Log:     log,
+	}
+	return
 
-// PrepareBucket makes a bucket if it doesn't exist under a given context.
-// The given context must have a config.
-func (s *Storage) PrepareBucket() error {
-	return s.service.CreateIfNotExists()
 }
 
 // UploadFile uploads a file to a bucket associated with a project under a given
 // context. Uploaded file will have a given name. This function returns a URL
 // for the uploaded file with error object.
-func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
-
-	var err error
-	cfg, err := config.FromContext(s.ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if err = s.service.CreateIfNotExists(); err != nil {
-		return "", err
-	}
+func (s *Storage) UploadFile(ctx context.Context, container, name, input string) (uri string, err error) {
 
 	if name == "" {
 		name = filepath.Base(input)
 	}
-	location := util.CreateURL(cfg.Bucket, prefix, name)
-
-	info, err := os.Stat(input)
-	if err != nil {
-		return "", err
-	}
 
 	file, err := os.Open(input)
 	if err != nil {
-		return "", err
+		return
 	}
 	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		return
+	}
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+	}
 
 	fmt.Fprintln(s.Log, "Uploading...")
 	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
@@ -119,10 +98,10 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 	bar.Start()
 	defer bar.Finish()
 
-	if err := s.service.Upload(bar.NewProxyReader(file), location); err != nil {
+	if uri, err = s.service.Upload(ctx, container, name, bar.NewProxyReader(file)); err != nil {
 		return "", cli.NewExitError(err.Error(), 2)
 	}
-	return location.String(), nil
+	return
 
 }
 
@@ -130,16 +109,16 @@ func (s *Storage) UploadFile(prefix, name, input string) (string, error) {
 // have a prefix under a given context. Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func (s *Storage) ListupFiles(prefix string, handler FileInfoHandler) (err error) {
+func (s *Storage) ListupFiles(ctx context.Context, container, prefix string, handler FileInfoHandler) (err error) {
 
-	return s.service.List(prefix, handler)
+	return s.service.List(ctx, container, prefix, handler)
 
 }
 
 // DownloadFiles downloads files in a bucket associated with a project,
 // which has a prefix and satisfies a query under a given context.
 // Downloaded files will be put in a given directory.
-func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error) {
+func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir string, queries []string) (err error) {
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -156,129 +135,150 @@ func (s *Storage) DownloadFiles(prefix, dir string, queries []string) (err error
 	fmt.Fprintln(s.Log, "")
 	pool, err := pb.StartPool()
 	if err != nil {
-		return
+		log.Println("cannot create a progress bar:", err.Error())
+	} else {
+		pool.Output = s.Log
+		defer pool.Stop()
 	}
-	defer pool.Stop()
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	return s.ListupFiles(prefix, func(info *FileInfo) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
-		case <-s.ctx.Done():
-			return s.ctx.Err()
-
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
-			// If Name is empty, it might be a folder or a special file.
-			if info.Name == "" {
-				return nil
-			}
+		}
 
-			if match(queries, info.Name) {
-
-				bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-				bar.Output = s.Log
-				pool.Add(bar)
-
-				wg.Add(1)
-				go func(info *FileInfo, bar *pb.ProgressBar) {
-					defer wg.Done()
-
-					filename := filepath.Join(dir, info.Name)
-					f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-					if err != nil {
-						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, err.Error()))
-						return
-					}
-					defer f.Close()
-
-					buf := io.MultiWriter(bufio.NewWriter(f), bar)
-					if err := s.service.Download(info.Path, buf); err != nil {
-						bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, err.Error()))
-					} else {
-						bar.Finish()
-					}
-
-				}(info, bar)
-
-			}
-
+		// If Name is empty, it might be a folder or a special file.
+		if info.Name == "" {
 			return nil
 		}
 
+		if match(queries, info.Name) {
+
+			bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
+			if pool != nil {
+				pool.Add(bar)
+			}
+
+			eg.Go(func() error {
+				var goerr error
+				filename := filepath.Join(dir, info.Name)
+				f, goerr := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if goerr != nil {
+					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, goerr.Error()))
+					return goerr
+				}
+				defer f.Close()
+
+				writer := bufio.NewWriter(f)
+				defer writer.Flush()
+
+				goerr = s.service.Download(ctx, container, info.Path, io.MultiWriter(writer, bar))
+				if goerr != nil {
+					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, goerr.Error()))
+				} else {
+					bar.Finish()
+				}
+				return goerr
+			})
+
+		}
+		return nil
 	})
+
+	if err != nil {
+		return
+	}
+	return eg.Wait()
+
 }
 
 // DeleteFiles deletes files in a bucket associated with a project,
 // which has a prefix and satisfies a query. This request will be done under a
 // given context.
-func (s *Storage) DeleteFiles(prefix string, queries []string) error {
+func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, queries []string) (err error) {
 
-	fmt.Fprintln(s.Log, "Deleting...")
-	pool, _ := pb.StartPool()
-	defer pool.Stop()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
-	return s.ListupFiles(prefix, func(info *FileInfo) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
-		case <-s.ctx.Done():
-			return s.ctx.Err()
-
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
+		}
 
-			// If Name is empty, it might be a folder or a special file.
-			if info.Name == "" {
-				return nil
-			}
-
-			if match(queries, info.Name) {
-
-				bar := pb.New64(int64(info.Size)).SetUnits(pb.U_BYTES).Prefix(info.Name)
-				bar.Output = s.Log
-				pool.Add(bar)
-
-				wg.Add(1)
-				go func(info *FileInfo) {
-					defer wg.Done()
-					defer bar.Add64(int64(info.Size))
-
-					if err := s.service.Delete(info.Path); err != nil {
-						fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
-					}
-				}(info)
-
-			}
-
+		// If Name is empty, it might be a folder or a special file.
+		if info.Name == "" {
 			return nil
 		}
 
+		if match(queries, info.Name) {
+
+			eg.Go(func() (err error) {
+				err = s.service.Delete(ctx, container, info.Path)
+				if err != nil {
+					fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+				} else {
+					fmt.Fprintln(s.Log, info.Path)
+				}
+				return
+			})
+
+		}
+		return nil
+
 	})
+
+	if err != nil {
+		return
+	}
+	return eg.Wait()
+
 }
 
 // PrintFileBody prints file bodies which has a prefix and satisfies query under a context.
 // If header is ture, additional messages well be printed.
-func (s *Storage) PrintFileBody(prefix, query string, output io.Writer, header bool) error {
+func (s *Storage) PrintFileBody(ctx context.Context, container, prefix, query string, output io.Writer, header bool) error {
 
-	return s.ListupFiles(prefix, func(info *FileInfo) error {
+	return s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
 
 		select {
-		case <-s.ctx.Done():
-			return s.ctx.Err()
-
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
-			if info.Name != "" && strings.HasPrefix(info.Name, query) {
-				if header {
-					fmt.Fprintf(output, "*** %s ***\n", info.Name)
-				}
-				return s.service.Download(info.Path, output)
+		}
+
+		if info.Name != "" && strings.HasPrefix(info.Name, query) {
+
+			if header {
+				fmt.Fprintf(output, "*** %s ***\n", info.Name)
 			}
 
-			return nil
+			if strings.HasSuffix(info.Name, ".xz") {
+				pipeReader, pipeWriter := io.Pipe()
+				defer pipeWriter.Close()
+
+				xzReader, err := xz.NewReader(pipeReader)
+				if err != nil {
+					return err
+				}
+
+				go io.Copy(output, xzReader)
+				output = pipeWriter
+			}
+
+			return s.service.Download(ctx, container, info.Path, output)
 		}
+
+		return nil
 
 	})
 

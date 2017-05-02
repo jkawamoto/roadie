@@ -22,7 +22,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -30,18 +29,12 @@ import (
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"golang.org/x/sync/errgroup"
-
+	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
-	"github.com/jkawamoto/roadie/resource"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
-
-// QueueKind defines kind of entries stored in cloud datastore.
-const QueueKind = "roadie-queue"
 
 // QueueName is a structure to obtaine QueueName attribute from entities
 // in cloud datastore.
@@ -50,42 +43,230 @@ type QueueName struct {
 	QueueName string
 }
 
-// CmdQueueList lists up existing queue information.
-// Each information should have queue name, the number of items in the queue,
-// the number of instances working to the queue.
-func CmdQueueList(c *cli.Context) (err error) {
+// optQueueAdd defines arguments for cmdQueueAdd.
+type optQueueAdd struct {
+	// Metadata to run a command.
+	*Metadata
+	// SourceOpt specifies options for source secrion of a script.
+	SourceOpt
+	// TaskName to be created.
+	TaskName string
+	// QueueName the task to be added to.
+	QueueName string
+	// ScriptFile to be run.
+	ScriptFile string
+	// ScriptArgs to fill place holders in the script.
+	ScriptArgs []string
+	// OverWriteResultSection if it is set True.
+	OverWriteResultSection bool
+}
 
-	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+// CmdQueueAdd adds a given script to a given named queue.
+func CmdQueueAdd(c *cli.Context) (err error) {
+
+	if c.NArg() != 2 {
+		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	store := cloud.NewDatastore(util.GetContext(c))
-	err = store.QueueNames(func(name string) error {
-		fmt.Println(name)
-		return nil
+	return cmdQueueAdd(&optQueueAdd{
+		Metadata: getMetadata(c),
+		SourceOpt: SourceOpt{
+			Git:     c.String("git"),
+			URL:     c.String("url"),
+			Local:   c.String("local"),
+			Exclude: c.StringSlice("exclude"),
+			Source:  c.String("source"),
+		},
+		TaskName:               c.String("name"),
+		QueueName:              c.Args().First(),
+		ScriptFile:             c.Args().Get(1),
+		ScriptArgs:             c.StringSlice("e"),
+		OverWriteResultSection: c.Bool("overwrite-result-section"),
 	})
+}
+
+func cmdQueueAdd(opt *optQueueAdd) (err error) {
+
+	s, err := script.NewScriptTemplate(opt.ScriptFile, opt.ScriptArgs)
+	if err != nil {
+		return
+	}
+
+	// Update instance name.
+	// If an instance name is not given, use the default name.
+	if opt.TaskName != "" {
+		s.Name = strings.ToLower(opt.TaskName)
+	}
+
+	// Check a specified bucket exists and create it if not.
+	service, err := opt.StorageManager()
+	if err != nil {
+		return err
+	}
+	storage := cloud.NewStorage(service, nil)
+
+	// Update source section.
+	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage, os.Stdout)
+	if err != nil {
+		return
+	}
+
+	// Update result section
+	UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+
+	queueManager, err := opt.QueueManager()
+	if err != nil {
+		return
+	}
+
+	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.Name), chalk.Bold.TextStyle(opt.QueueName))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.Name, opt.QueueName)
+	opt.Spinner.Start()
+	defer opt.Spinner.Stop()
+
+	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
+	if err != nil {
+		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Red.Color("Cannot add the task:"), s.Name, ":", err.Error())
+	}
 	return
 
 }
 
-// CmdQueueShow prints information about a given queue.
-// It prints how many items in the queue and how many instance working for the queue.
-func CmdQueueShow(c *cli.Context) (err error) {
+// CmdQueueStatus lists up existing queue information if no arguments given;
+// otherwise lists up existing tasks' information in a given queue.
+// Each information should have queue name, the number of items in the queue,
+// the number of instances working to the queue.
+func CmdQueueStatus(c *cli.Context) error {
 
-	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+	m := getMetadata(c)
+	switch c.NArg() {
+	case 0:
+		return cmdQueueStatus(m)
+	case 1:
+		return cmdTaskStatus(m, c.Args().First())
+	default:
+		fmt.Printf(chalk.Red.Color("expected at most one argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	name := c.Args().First()
-	store := cloud.NewDatastore(util.GetContext(c))
-	err = store.FindTasks(name, func(item *resource.Task) error {
-		fmt.Println(item.InstanceName)
+}
+
+// cmdQueueStatus prints status of queues.
+func cmdQueueStatus(m *Metadata) (err error) {
+
+	m.Spinner.Prefix = "Loading information"
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
+	queue, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	table := uitable.New()
+	table.AddRow("QUEUE NAME")
+	err = queue.Queues(m.Context, func(name string) error {
+		table.AddRow(name)
 		return nil
 	})
+	if err != nil {
+		return
+	}
 
+	m.Spinner.Stop()
+	fmt.Println(table.String())
 	return
+
+}
+
+// cmdTaskStatus prints status of tasks in a given queue.
+func cmdTaskStatus(m *Metadata, queue string) (err error) {
+
+	m.Spinner.Prefix = "Loading information"
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	table := uitable.New()
+	table.AddRow("TASK NAME", "STATUS")
+	err = manager.Tasks(m.Context, queue, func(name, status string) error {
+		table.AddRow(name, status)
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Stop()
+	fmt.Println(table.String())
+	return
+
+}
+
+// CmdQueueLog prints all log from a queue if only queue name is given;
+// otherwise prints log of a specific task/
+func CmdQueueLog(c *cli.Context) error {
+
+	m := getMetadata(c)
+	switch c.NArg() {
+	case 1:
+		return cmdQueueLog(m, c.Args().First(), !c.Bool("no-timestamp"))
+	case 2:
+		return cmdTaskLog(m, c.Args().First(), c.Args().Get(1), !c.Bool("no-timestamp"))
+	default:
+		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+// cmdQueueLog prints log from a given queue.
+func cmdQueueLog(m *Metadata, queue string, timestamp bool) (err error) {
+	log, err := m.LogManager()
+	if err != nil {
+		return
+	}
+	return log.GetQueueLog(m.Context, queue, func(t time.Time, line string, stderr bool) (err error) {
+		var msg string
+		if timestamp {
+			msg = fmt.Sprintf("%v %s", t.Format(PrintTimeFormat), line)
+		} else {
+			msg = line
+		}
+		if stderr {
+			fmt.Fprintln(os.Stderr, msg)
+		} else {
+			fmt.Println(msg)
+		}
+		return
+	})
+}
+
+// cmdTaskLog prints log from a task.
+func cmdTaskLog(m *Metadata, queue, task string, timestamp bool) (err error) {
+	log, err := m.LogManager()
+	if err != nil {
+		return
+	}
+	return log.GetTaskLog(m.Context, queue, task, func(t time.Time, line string, stderr bool) (err error) {
+		var msg string
+		if timestamp {
+			msg = fmt.Sprintf("%v %s", t.Format(PrintTimeFormat), line)
+		} else {
+			msg = line
+		}
+		if stderr {
+			fmt.Fprintln(os.Stderr, msg)
+		} else {
+			fmt.Println(msg)
+		}
+		return
+	})
 }
 
 // CmdQueueInstanceList lists up instances working with a given queue.
@@ -96,37 +277,35 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	instances, err := runningInstances(util.GetContext(c))
+	m := getMetadata(c)
+	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
 	}
-
 	queue := c.Args().First()
-	for name := range instances {
 
-		if strings.HasPrefix(name, queue) {
-			fmt.Println(name)
-		}
+	return queueManager.Workers(m.Context, queue, func(name string) (err error) {
+		_, err = fmt.Println(name)
+		return err
+	})
 
-	}
-
-	return nil
 }
 
 // CmdQueueInstanceAdd creates instances working for a given queue.
-func CmdQueueInstanceAdd(c *cli.Context) error {
+func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	cfg := config.FromCliContext(c)
-	ctx := util.GetContext(c)
-
+	m := getMetadata(c)
 	queue := c.Args().First()
 	instances := c.Int("instances")
-	size := c.Int64("disk-size")
+	queueManager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
 
 	fmt.Fprintln(os.Stderr, "Creating instances")
 	bar := pb.New(instances)
@@ -135,36 +314,10 @@ func CmdQueueInstanceAdd(c *cli.Context) error {
 	bar.Start()
 	defer bar.Finish()
 
-	wg, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < instances; i++ {
-
-		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-			ProjectID:    cfg.Project,
-			InstanceName: name,
-			Name:         queue,
-			Version:      QueueManagerVersion,
-		})
-		if err != nil {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			func(name, startup string) {
-				wg.Go(func() error {
-					defer bar.Increment()
-					return createInstance(ctx, name, startup, size, os.Stderr)
-				})
-			}(name, startup)
-		}
-
-	}
-
-	return wg.Wait()
+	return queueManager.CreateWorkers(m.Context, queue, instances, func(name string) error {
+		bar.Increment()
+		return nil
+	})
 
 }
 
@@ -176,7 +329,15 @@ func CmdQueueStop(c *cli.Context) (err error) {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-	return updatePending(util.GetContext(c), c.Args().First(), true)
+
+	m := getMetadata(c)
+	queue := c.Args().First()
+	queueManager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	return queueManager.Stop(m.Context, queue)
 
 }
 
@@ -191,63 +352,60 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	}
 
 	queue := c.Args().First()
-	cfg := config.FromCliContext(c)
-	ctx := util.GetContext(c)
-	err = updatePending(ctx, queue, false)
+	m := getMetadata(c)
+	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
 	}
 
-	instances := c.Int("instances")
-	size := c.Int64("disk-size")
-
-	fmt.Fprintln(os.Stderr, "Creating instances")
-	bar := pb.New(instances)
-	bar.Output = os.Stderr
-	bar.Prefix("Instance")
-	bar.Start()
-	defer bar.Finish()
-
-	wg, ctx := errgroup.WithContext(ctx)
-	for i := 0; i < instances; i++ {
-
-		name := fmt.Sprintf("%s-%d", queue, time.Now().Unix())
-		startup, err := resource.WorkerStartup(&resource.WorkerStartupOpt{
-			ProjectID:    cfg.Project,
-			InstanceName: name,
-			Name:         queue,
-			Version:      QueueManagerVersion,
-		})
-		if err != nil {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			func(name, startup string) {
-				wg.Go(func() error {
-					defer bar.Increment()
-					return createInstance(ctx, name, startup, size, os.Stderr)
-				})
-			}(name, startup)
-		}
-
-	}
-
-	return wg.Wait()
+	return queueManager.Restart(m.Context, queue)
 
 }
 
-// updatePending updates pending attribute of tasks in a given queue.
-func updatePending(ctx context.Context, queue string, pending bool) (err error) {
+// CmdQueueDelete deletes a task in a queue or whole queue.
+func CmdQueueDelete(c *cli.Context) error {
 
-	store := cloud.NewDatastore(ctx)
-	return store.UpdateTasks(queue, func(task *resource.Task) (*resource.Task, error) {
-		task.Pending = pending
-		return task, nil
-	})
+	m := getMetadata(c)
+	switch c.NArg() {
+	case 1:
+		return cmdQueueDelete(m, c.Args().First())
+	case 2:
+		return cmdTaskDelete(m, c.Args().First(), c.Args().Get(1))
+	default:
+		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
+
+}
+
+// cmdQueueDelete deletes a given queue.
+func cmdQueueDelete(m *Metadata, queue string) (err error) {
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Prefix = fmt.Sprint("Deleting queue", queue)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
+	return manager.DeleteQueue(m.Context, queue)
+
+}
+
+// cmdTaskDelete deletes a task in a queue.
+func cmdTaskDelete(m *Metadata, queue, task string) (err error) {
+
+	manager, err := m.QueueManager()
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Prefix = fmt.Sprint("Deleting task", task, "in queue", queue)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+
+	return manager.DeleteTask(m.Context, queue, task)
 
 }

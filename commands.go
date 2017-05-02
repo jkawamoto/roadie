@@ -27,27 +27,28 @@ import (
 
 	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command"
+	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
 )
 
 // GlobalFlags manages global flags.
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
-		Name:  "project, p",
-		Usage: "overwrite project ID configuration by `NAME`.",
+		Name:  "config, c",
+		Usage: "specify a config file `NAME`.",
 	},
-	cli.StringFlag{
-		Name:  "type, t",
-		Usage: "overwrite machine type configuration by `TYPE`.",
+	cli.BoolFlag{
+		Name:  "verbose",
+		Usage: "verbose outputs.",
 	},
-	cli.StringFlag{
-		Name:  "zone, z",
-		Usage: "overwrite zone configuration by `ZONE`.",
-	},
-	cli.StringFlag{
-		Name:  "bucket, b",
-		Usage: "overwrite bucket name configuration by `NAME`.",
-	},
+	// cli.BoolFlag{
+	// 	Name: "no-color",
+	// 	Usage: "disable colorized output."
+	// },
+	// cli.BoolFlag{
+	// 	Name:  "auth",
+	// 	Usage: "force running an authentication process even if already logged in",
+	// },
 }
 
 // Commands manage sub commands.
@@ -107,40 +108,22 @@ var Commands = []cli.Command{
 				Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
 			},
 			cli.BoolFlag{
-				Name:  "no-shutdown",
-				Usage: "not showdown instance automatically. To stop instance use 'status kill' command.",
-			},
-			cli.BoolFlag{
 				Name:  "overwrite-result-section",
 				Usage: "if set, result section in a given script will be overwritten to default value.",
-			},
-			cli.Int64Flag{
-				Name:  "disk-size",
-				Usage: "set disk size in GB.",
-				Value: 9,
 			},
 			cli.StringFlag{
 				Name:  "image",
 				Usage: "customize the base image which given program will run on.",
-				Value: "jkawamoto/roadie-gcp",
 			},
-			cli.BoolFlag{
-				Name:  "dry",
-				Usage: "not create any actual instances but printing the startup script to be run instead.",
-			},
-			cli.BoolFlag{
-				Name:  "follow, f",
-				Usage: "after creating instance, keep watching logs.",
-			},
-			cli.Int64Flag{
-				Name:  "retry",
-				Usage: "retry the program a given times when GCP's error happens.",
-				Value: 10,
-			},
-			cli.StringFlag{
-				Name:  "queue",
-				Usage: "queue `name` this script to be enqueued to. If the given queue desn't exist, it'll be created.",
-			},
+			// cli.BoolFlag{
+			// 	Name:  "follow, f",
+			// 	Usage: "after creating instance, keep watching logs.",
+			// },
+			// cli.Int64Flag{
+			// 	Name:  "retry",
+			// 	Usage: "retry the program a given times when GCP's error happens.",
+			// 	Value: 10,
+			// },
 		},
 	},
 	{
@@ -268,13 +251,13 @@ files belonging to the instance.`,
 	{
 		Name:  "config",
 		Usage: "show and update configuration.",
-		Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
+		Description: "Show and update configurations. Every configurations are stored to 'roadie.yml' in the current working directory. " +
 			"You can also update configurations without this command by editing that file.",
 		Category: "Configuration",
 		Subcommands: cli.Commands{
 			cli.Command{
 				Name:      "project",
-				Usage:     "show and update project ID of Google Cloud Platform.",
+				Usage:     "show and update project ID.",
 				ArgsUsage: "[<project ID>]",
 				Action:    command.CmdConfigProject,
 				Flags: []cli.Flag{
@@ -301,9 +284,9 @@ files belonging to the instance.`,
 				},
 			},
 			{
-				Name:   "type",
+				Name:   "machine",
 				Usage:  "show and update machine type used to run scripts.",
-				Action: command.CmdConfigType,
+				Action: command.CmdConfigMachineType,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "help, h",
@@ -316,7 +299,7 @@ files belonging to the instance.`,
 						Usage:       "set machine type.",
 						Description: "Set a new machine type. Available machine types are shown in 'list' command.",
 						ArgsUsage:   "<machine type>",
-						Action:      command.CmdConfigTypeSet,
+						Action:      command.CmdConfigMachineTypeSet,
 					},
 					{
 						Name:  "list",
@@ -325,7 +308,7 @@ files belonging to the instance.`,
 							"To receive available machine types, project ID must be set. See 'roadie config project'. " +
 							"This command takes no arguments.",
 						ArgsUsage: " ",
-						Action:    command.CmdConfigTypeList,
+						Action:    command.CmdConfigMachineTypeList,
 					},
 					{
 						Name:  "show",
@@ -333,14 +316,14 @@ files belonging to the instance.`,
 						Description: "Show current machine type. If it is not set, show default machine type. " +
 							"This command takes no arguments.",
 						ArgsUsage: " ",
-						Action:    command.CmdConfigTypeShow,
+						Action:    command.CmdConfigMachineTypeShow,
 					},
 				},
 			},
 			{
-				Name:   "zone",
-				Usage:  "show and update zone used to run scripts.",
-				Action: command.CmdConfigZone,
+				Name:   "region",
+				Usage:  "show and update region information used to run scripts.",
+				Action: command.CmdConfigRegion,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "help, h",
@@ -350,74 +333,25 @@ files belonging to the instance.`,
 				Subcommands: cli.Commands{
 					{
 						Name:        "set",
-						Usage:       "set zone where scripts run.",
-						Description: "Set zone. Available zones are shown in 'list' command.",
+						Usage:       "set a region where scripts run.",
+						Description: "Set a region. Available regions are shown in 'list' command.",
 						ArgsUsage:   "<zone>",
-						Action:      command.CmdConfigZoneSet,
+						Action:      command.CmdConfigRegionSet,
 					},
 					{
-						Name:  "list",
-						Usage: "show available zones.",
-						Description: "Show a list of zones for the current project. " +
-							"To receive available zones, project ID must be set. See 'roadie config project'. " +
-							"This command takes no arguments.",
-						ArgsUsage: " ",
-						Action:    command.CmdConfigZoneList,
+						Name:        "list",
+						Usage:       "show available regions.",
+						Description: "Show a list of regions for the current project. ",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigRegionList,
 					},
-					{
-						Name:  "show",
-						Usage: "show current zone.",
-						Description: "Show current zone. If it is not set, show default zone. " +
-							"This command takes no arguments.",
-						ArgsUsage: " ",
-						Action:    command.CmdConfigZoneShow,
-					},
-				},
-			},
-			{
-				Name:   "bucket",
-				Usage:  "show and update bucket name.",
-				Action: command.CmdConfigBucket,
-				Flags: []cli.Flag{
-					cli.BoolFlag{
-						Name:  "help, h",
-						Usage: "show help",
-					},
-				},
-				Subcommands: cli.Commands{
-					{
-						Name:        "set",
-						Usage:       "set bucket used to store source codes and results.",
-						Description: "Set bucket. If the bucket does not exist, it will be created, automatically.",
-						// Description: "Set bucket. The given bucket must exist. Use create command to prepare new bucket." +
-						// 	"list command shows buckets names associated with the current project.",
-						ArgsUsage: "<bucket name>",
-						Action:    command.CmdConfigBucketSet,
-					},
-					// {
-					// 	Name:  "list",
-					// 	Usage: "show available buckets.",
-					// 	Description: "Show a list of buckets the current project can access. " +
-					// 		"To receive the bucket names, project ID must be set. " +
-					// 		"This command takes no arguments.",
-					// 	ArgsUsage: " ",
-					// 	Action:    command.CmdConfigBucketList,
-					// },
 					{
 						Name:        "show",
-						Usage:       "show current bucket name.",
-						Description: "Show current bucket name. This command takes no arguments.",
+						Usage:       "show current zone.",
+						Description: "Show current region.",
 						ArgsUsage:   " ",
-						Action:      command.CmdConfigBucketShow,
+						Action:      command.CmdConfigRegionShow,
 					},
-					// {
-					// 	Name:  "create",
-					// 	Usage: "create a new bucket.",
-					// 	Description: "Create a new bucket with a given name. " +
-					// 		"To create a new bucket, project ID must be set.",
-					// 	ArgsUsage: "<bucket name>",
-					// 	Action:    command.CmdConfigBucketShow,
-					// },
 				},
 			},
 		},
@@ -428,6 +362,7 @@ files belonging to the instance.`,
 		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
 			"This command lists up those scripts and delete them if necessary.",
 		Category: "Data handling",
+		Action:   command.GenerateListAction(script.SourcePrefix),
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
@@ -436,7 +371,7 @@ files belonging to the instance.`,
 					"To reuse them, use URL like 'gs://<bucket name>/.roadie/source/<filename>'. " +
 					"Otherwise, those files are not used automatically. To reduce storage size, use delete command.",
 				ArgsUsage: " ",
-				Action:    command.GenerateListAction(command.SourcePrefix),
+				Action:    command.GenerateListAction(script.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -454,7 +389,7 @@ files belonging to the instance.`,
 				Description: "delete source files which match given file names. " +
 					"File names accept wild card characters. ",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateDeleteAction(command.SourcePrefix),
+				Action:    command.GenerateDeleteAction(script.SourcePrefix),
 			},
 			{
 				Name:  "get",
@@ -466,7 +401,7 @@ files belonging to the instance.`,
 					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateGetAction(command.SourcePrefix),
+				Action:    command.GenerateGetAction(script.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
@@ -478,9 +413,11 @@ files belonging to the instance.`,
 			{
 				Name:  "put",
 				Usage: "put source files.",
-				Description: "make a tarball of a given path and upload it. Uploaded file name will be " +
-					"`<name>.tar.gz`.",
-				ArgsUsage: "<dir> <name>",
+				Description: "upload a given path as source code to be run. If the given \n" +
+					"path points a directory, files in the directory are tarballed; in this case \n" +
+					"uploaded file name is the directory name followd by `.tar.gz`. \n" +
+					"If name option is given, uploaded file is renamed to the given name.",
+				ArgsUsage: "<filepath> [<name>]",
 				Action:    command.CmdSourcePut,
 				Flags: []cli.Flag{
 					cli.StringSliceFlag{
@@ -498,13 +435,14 @@ files belonging to the instance.`,
 			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
 			"Use data section in your script to load data files in your instance.",
 		Category: "Data handling",
+		Action:   command.GenerateListAction(script.DataPrefix),
 		Subcommands: cli.Commands{
 			{
 				Name:        "list",
 				Usage:       "show lists of data.",
 				Description: "List up data files. This command does not take any arguments.",
 				ArgsUsage:   " ",
-				Action:      command.GenerateListAction(command.DataPrefix),
+				Action:      command.GenerateListAction(script.DataPrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
 						Name:  "quiet, q",
@@ -533,7 +471,7 @@ files belonging to the instance.`,
 				Description: "delete data files which match given file names. " +
 					"File names accept wild card characters. ",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateDeleteAction(command.DataPrefix),
+				Action:    command.GenerateDeleteAction(script.DataPrefix),
 			},
 			{
 				Name:  "get",
@@ -545,7 +483,7 @@ files belonging to the instance.`,
 					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
-				Action:    command.GenerateGetAction(command.DataPrefix),
+				Action:    command.GenerateGetAction(script.DataPrefix),
 				Flags: []cli.Flag{
 					cli.StringFlag{
 						Name:  "o",
@@ -560,21 +498,70 @@ files belonging to the instance.`,
 		Name:        "queue",
 		Usage:       "manage queues and enqueued jobs.",
 		Description: "",
-		Category:    "Execution",
+		Category:    "Queue based execution",
+		Action:      command.CmdQueueStatus,
 		Subcommands: cli.Commands{
 			{
-				Name:        "list",
-				Usage:       "list up queues.",
-				Description: "list up existing queues.",
-				ArgsUsage:   " ",
-				Action:      command.CmdQueueList,
+				Name:  "add",
+				Usage: "add a new task to a queue.",
+				Description: "add a new task to a queue. If the specified queue does not\n" +
+					"exist, a new queue and one worker instance are created for the task.",
+				ArgsUsage: "<queue name> <script file>",
+				Action:    command.CmdQueueAdd,
+				Flags: []cli.Flag{
+					cli.StringFlag{
+						Name:  "git",
+						Usage: "git repository `URL`. Souce files will be cloned from there.",
+					},
+					cli.StringFlag{
+						Name:  "url",
+						Usage: "source files will be downloaded from `URL`.",
+					},
+					cli.StringFlag{
+						Name:  "local",
+						Usage: "upload source files from given `PATH` and use it the new instance.",
+					},
+					cli.StringSliceFlag{
+						Name:  "exclude",
+						Usage: "`path` to be excluded to upload as the source files. This flag can be set multiply but only works with --local.",
+					},
+					cli.StringFlag{
+						Name:  "source",
+						Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
+					},
+					cli.StringFlag{
+						Name:  "name, n",
+						Usage: "new instance uses the given `NAME`.",
+					},
+					cli.StringSliceFlag{
+						Name:  "e",
+						Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
+					},
+					cli.BoolFlag{
+						Name:  "overwrite-result-section",
+						Usage: "if set, result section in a given script will be overwritten to default value.",
+					},
+				},
 			},
 			{
-				Name:        "show",
-				Usage:       "show status of a given queue.",
-				Description: "show status of a given queue.",
-				ArgsUsage:   "<queue name>",
-				Action:      command.CmdQueueShow,
+				Name:        "status",
+				Usage:       "show status of queues or tasks.",
+				Description: "show status of queues if no quene names given; otherwise show status of tasks in the given queue.",
+				ArgsUsage:   "[queue name]",
+				Action:      command.CmdQueueStatus,
+			},
+			{
+				Name:        "log",
+				Usage:       "show log of queues or tasks.",
+				Description: "show all log in a queue if only quene name is given; otherwise show log of a specific task.",
+				ArgsUsage:   "<queue name> [task name]",
+				Action:      command.CmdQueueLog,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "no-timestamp",
+						Usage: "not print time stamps.",
+					},
+				},
 			},
 			{
 				Name:        "instance",
@@ -600,18 +587,13 @@ files belonging to the instance.`,
 								Usage: "`number` of instance to be created.",
 								Value: 1,
 							},
-							cli.Int64Flag{
-								Name:  "disk-size",
-								Usage: "disk `size` in GB which created instances have.",
-								Value: 9,
-							},
 						},
 					},
 				},
 			},
 			{
 				Name:        "stop",
-				Usage:       "stop executing a queue.",
+				Usage:       "stop a executing queue.",
 				Description: "To reduce the number of instances working with a queue, this command helps.",
 				ArgsUsage:   "<queue name>",
 				Action:      command.CmdQueueStop,
@@ -622,18 +604,13 @@ files belonging to the instance.`,
 				Description: "restart a stopping queue. By default, one instance will be created to handle the queue.",
 				ArgsUsage:   "<queue name>",
 				Action:      command.CmdQueueRestart,
-				Flags: []cli.Flag{
-					cli.IntFlag{
-						Name:  "instances",
-						Usage: "`number` of instance to be created.",
-						Value: 1,
-					},
-					cli.Int64Flag{
-						Name:  "disk-size",
-						Usage: "disk `size` in GB which created instances have.",
-						Value: 9,
-					},
-				},
+			},
+			{
+				Name:        "delete",
+				Usage:       "delete a queue or a task",
+				Description: "if both a queue name and a task name are given, delete the tasks; otherwise delete the queue.",
+				ArgsUsage:   "<queue name> [<task name>]",
+				Action:      command.CmdQueueDelete,
 			},
 		},
 	},

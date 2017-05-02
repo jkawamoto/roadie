@@ -30,7 +30,6 @@ import (
 	"strings"
 
 	"github.com/jkawamoto/roadie/chalk"
-	"github.com/jkawamoto/roadie/config"
 
 	"github.com/deiwin/interact"
 	"github.com/urfave/cli"
@@ -68,29 +67,29 @@ for more detail. Type ctrl-c at anytime to quite.
 		return cli.NewExitError(err.Error(), 1)
 	}
 
-	conf := config.FromCliContext(c)
-	conf.Project = gcloud.Project
-	conf.Zone = gcloud.Zone
+	m := getMetadata(c)
+	m.Config.GcpConfig.Project = gcloud.Project
+	m.Config.GcpConfig.Zone = gcloud.Zone
 
 	message := "Please enter project ID"
-	if conf.Project == "" {
-		conf.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
+	if m.Config.GcpConfig.Project == "" {
+		m.Config.GcpConfig.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
 	} else {
-		conf.Project, err = actor.PromptOptionalAndRetry(message, conf.Project, checkNotEmpty)
+		m.Config.GcpConfig.Project, err = actor.PromptOptionalAndRetry(message, m.Config.GcpConfig.Project, checkNotEmpty)
 	}
 	if err != nil {
 		return cli.NewExitError(err.Error(), 10)
 	}
 
 	message = "Please enter bucket name"
-	conf.Bucket, err = actor.PromptOptionalAndRetry(message, conf.Project, checkNotEmpty)
+	m.Config.GcpConfig.Bucket, err = actor.PromptOptionalAndRetry(message, m.Config.GcpConfig.Project, checkNotEmpty)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 10)
 	}
 
 	abs, _ := filepath.Abs(".roadie")
 	fmt.Printf("About to write to %s:\n", abs)
-	conf.Print()
+	fmt.Println(m.Config.String())
 	save, err := actor.Confirm(chalk.Yellow.Color("Is this ok?"), interact.ConfirmNoDefault)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
@@ -98,7 +97,7 @@ for more detail. Type ctrl-c at anytime to quite.
 
 	if save {
 		fmt.Println("Saving configuarions...")
-		if err = conf.Save(); err != nil {
+		if err = m.Config.Save(); err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
 	}

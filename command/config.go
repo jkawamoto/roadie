@@ -26,9 +26,6 @@ import (
 	"strings"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
-	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
@@ -46,47 +43,57 @@ func CmdConfigProject(c *cli.Context) error {
 }
 
 // CmdConfigProjectSet sets a given name to the current project ID.
-func CmdConfigProjectSet(c *cli.Context) error {
+func CmdConfigProjectSet(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	var name string
-	name = c.Args()[0]
+	m := getMetadata(c)
+	resource, err := m.ResourceManager()
+	if err != nil {
+		return
+	}
+
+	name := c.Args().First()
 	if strings.Contains(name, " ") {
 		fmt.Println(chalk.Red.Color("The given project ID has spaces. They are replaced to '_'."))
 		name = strings.Replace(name, " ", "_", -1)
 	}
-	if conf.Project == "" {
+	if id := resource.GetProjectID(); id == "" {
 		fmt.Printf("Set project ID:\n  %s\n", chalk.Green.Color(name))
 	} else {
-		fmt.Printf("Update project ID:\n  %s -> %s\n", conf.Project, chalk.Green.Color(name))
+		fmt.Printf("Update project ID:\n  %s -> %s\n", id, chalk.Green.Color(name))
 	}
-	conf.Project = name
+	resource.SetProjectID(name)
 
-	if err := conf.Save(); err != nil {
+	err = m.Config.Save()
+	if err != nil {
 		return cli.NewExitError(err.Error(), 3)
 	}
-	return nil
+	return
 }
 
 // CmdConfigProjectShow prints current project ID.
-func CmdConfigProjectShow(c *cli.Context) error {
-	conf := config.FromCliContext(c)
-	if conf.Project != "" {
-		fmt.Println(conf.Project)
+func CmdConfigProjectShow(c *cli.Context) (err error) {
+
+	resource, err := getMetadata(c).ResourceManager()
+	if err != nil {
+		return
+	}
+
+	if id := resource.GetProjectID(); id != "" {
+		fmt.Println(id)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set"))
 	}
-	return nil
+	return
 }
 
-// CmdConfigType shows current configuration of machine type,
+// CmdConfigMachineType shows current configuration of machine type,
 // or show help message when either -h or --help flag is set.
-func CmdConfigType(c *cli.Context) error {
+func CmdConfigMachineType(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
 	}
@@ -94,90 +101,107 @@ func CmdConfigType(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-	return CmdConfigTypeShow(c)
+	return CmdConfigMachineTypeShow(c)
 }
 
-// CmdConfigTypeSet sets a new machine type.
-func CmdConfigTypeSet(c *cli.Context) error {
+// CmdConfigMachineTypeSet sets a new machine type.
+func CmdConfigMachineTypeSet(c *cli.Context) (err error) {
+
 	if c.NArg() != 1 {
 		fmt.Printf(
 			chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	v := c.Args()[0]
-	if conf.MachineType == "" {
-		fmt.Printf("Set machine type:\n  %s\n", chalk.Green.Color(v))
-	} else {
-		fmt.Printf("Update machine type:\n  %s -> %s\n", conf.MachineType, chalk.Green.Color(v))
+	m := getMetadata(c)
+	resource, err := m.ResourceManager()
+	if err != nil {
+		return
 	}
 
-	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
-	if err == nil {
-		available := false
-		for _, item := range list {
-			if v == item.Name {
-				available = true
+	newType := c.Args().First()
+
+	types, err := resource.MachineTypes(m.Context)
+	if err != nil {
+		fmt.Println("Cannot get available machine types:", err.Error())
+	} else {
+
+		var exist bool
+		for _, v := range types {
+			if v.Name == newType {
+				exist = true
+				break
 			}
 		}
-		if !available {
-			fmt.Printf(chalk.Red.Color("Updated but the given machine type '%s' is not available.\n"), v)
+		if !exist {
+			return fmt.Errorf("Given machine type %v is not available", newType)
 		}
-	} else {
-		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given machine type '%s' is available.\n"), v)
+
 	}
 
-	conf.MachineType = v
-	if err = conf.Save(); err != nil {
+	if t := resource.GetMachineType(); t == "" {
+		fmt.Println("Set machine type:", chalk.Green.Color(newType))
+	} else {
+		fmt.Println("Update machine type:", t, "->", chalk.Green.Color(newType))
+	}
+
+	resource.SetMachineType(newType)
+	err = m.Config.Save()
+	if err != nil {
 		return cli.NewExitError(err.Error(), 3)
 	}
 
 	return nil
 }
 
-// CmdConfigTypeList lists up available machine types for the current project.
-func CmdConfigTypeList(c *cli.Context) error {
+// CmdConfigMachineTypeList lists up available machine types for the current project.
+func CmdConfigMachineTypeList(c *cli.Context) (err error) {
 
-	conf := config.FromCliContext(c)
-	if conf.Project == "" {
-		return cli.NewExitError("project ID is required to receive available machine types.", 2)
+	m := getMetadata(c)
+	resource, err := m.ResourceManager()
+	if err != nil {
+		return
 	}
 
-	list, err := cloud.AvailableMachineTypes(util.GetContext(c))
+	types, err := resource.MachineTypes(m.Context)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		return
 	}
 
 	fmt.Println("Available machine types:")
 	table := uitable.New()
 	table.AddRow("MACHINE TYPE", "DESCRIPTION")
-	for _, v := range list {
-		if v.Name == conf.MachineType {
+	for _, v := range types {
+		if v.Name == resource.GetMachineType() {
 			table.AddRow(chalk.Green.Color(v.Name)+"*", chalk.Green.Color(v.Description))
 		} else {
 			table.AddRow(chalk.ResetColor.Color(v.Name), v.Description)
 		}
 	}
 	fmt.Println(table.String())
-	return nil
+	return
 
 }
 
-// CmdConfigTypeShow shows current configuration of machine type.
-func CmdConfigTypeShow(c *cli.Context) error {
-	conf := config.FromCliContext(c)
-	if conf.MachineType != "" {
-		fmt.Println(conf.MachineType)
+// CmdConfigMachineTypeShow shows current configuration of machine type.
+func CmdConfigMachineTypeShow(c *cli.Context) (err error) {
+
+	resource, err := getMetadata(c).ResourceManager()
+	if err != nil {
+		return
+	}
+
+	if t := resource.GetMachineType(); t != "" {
+		fmt.Println(t)
 	} else {
-		fmt.Println(chalk.Red.Color("Not set") + " - 'n1-standard-1' will be used by default.")
+		fmt.Println(chalk.Red.Color("Not set"))
 	}
 	return nil
 }
 
-// CmdConfigZone shows current configuration of zone,
+// CmdConfigRegion shows current configuration of zone,
 // or show help message when either -h or --help flag is set.
-func CmdConfigZone(c *cli.Context) error {
+func CmdConfigRegion(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
 	}
@@ -185,11 +209,11 @@ func CmdConfigZone(c *cli.Context) error {
 		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
-	return CmdConfigZoneShow(c)
+	return CmdConfigRegionShow(c)
 }
 
-// CmdConfigZoneSet sets a zone.
-func CmdConfigZoneSet(c *cli.Context) error {
+// CmdConfigRegionSet sets a zone.
+func CmdConfigRegionSet(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf(
@@ -197,127 +221,88 @@ func CmdConfigZoneSet(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	conf := config.FromCliContext(c)
-	v := c.Args()[0]
-	if conf.Zone == "" {
-		fmt.Printf("Set zone:\n  %s\n", chalk.Green.Color(v))
-	} else {
-		fmt.Printf("Update zone:\n  %s -> %s\n", conf.Zone, chalk.Green.Color(v))
+	m := getMetadata(c)
+	resource, err := m.ResourceManager()
+	if err != nil {
+		return
 	}
 
-	list, err := cloud.AvailableZones(util.GetContext(c))
-	if err == nil {
-		available := false
-		for _, item := range list {
-			if v == item.Name {
-				available = true
+	newRegion := c.Args().First()
+	regions, err := resource.Regions(m.Context)
+	if err != nil {
+		fmt.Println("Cannot obtain available regions:", err.Error())
+	} else {
+
+		var exist bool
+		for _, v := range regions {
+			if v.Name == newRegion {
+				exist = true
+				break
 			}
 		}
-		if !available {
-			fmt.Printf(chalk.Red.Color("Updated but the given zone '%s' is not available.\n"), v)
+		if !exist {
+			return fmt.Errorf("Given region %v is not available", newRegion)
 		}
-	} else {
-		fmt.Printf(chalk.Red.Color("Since project ID is not given, cannot check the given zone '%s' is available.\n"), v)
+
 	}
 
-	conf.Zone = v
-	if err = conf.Save(); err != nil {
+	if old := resource.GetRegion(); old == "" {
+		fmt.Println("Set region:", chalk.Green.Color(newRegion))
+	} else {
+		fmt.Println("Update region:", old, "->", chalk.Green.Color(newRegion))
+	}
+	resource.SetRegion(newRegion)
+
+	err = m.Config.Save()
+	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
-	return nil
+	return
 
 }
 
-// CmdConfigZoneList lists up available zones for the current project.
-func CmdConfigZoneList(c *cli.Context) error {
+// CmdConfigRegionList lists up available zones for the current project.
+func CmdConfigRegionList(c *cli.Context) (err error) {
 
-	conf := config.FromCliContext(c)
-	if conf.Project == "" {
-		return cli.NewExitError("project ID is required to receive available zones.", 2)
+	m := getMetadata(c)
+	resource, err := m.ResourceManager()
+	if err != nil {
+		return
 	}
 
-	list, err := cloud.AvailableZones(util.GetContext(c))
+	regions, err := resource.Regions(m.Context)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		return
 	}
 
 	fmt.Println("Available zones:")
 	table := uitable.New()
 	table.AddRow(chalk.ResetColor.Color("ZONE"), "STATUS")
-	for _, v := range list {
-		if v.Name == conf.Zone {
+	for _, v := range regions {
+		if v.Name == resource.GetRegion() {
 			table.AddRow(chalk.Green.Color(v.Name)+"*", v.Status)
 		} else {
 			table.AddRow(chalk.ResetColor.Color(v.Name), v.Status)
 		}
 	}
 	fmt.Println(table.String())
-	return nil
+	return
 
 }
 
-// CmdConfigZoneShow shows current configuration of zone.
-func CmdConfigZoneShow(c *cli.Context) error {
-	conf := config.FromCliContext(c)
-	if conf.Zone != "" {
-		fmt.Println(conf.Zone)
-	} else {
-		fmt.Println(chalk.Red.Color("Not set") + " - 'us-central1-b' will be used by default.")
-	}
-	return nil
-}
+// CmdConfigRegionShow shows current configuration of zone.
+func CmdConfigRegionShow(c *cli.Context) (err error) {
 
-// CmdConfigBucket shows current configuration of bucket name,
-// or show help message when either -h or --help flag is set.
-func CmdConfigBucket(c *cli.Context) error {
-	if c.Bool("help") {
-		return cli.ShowSubcommandHelp(c)
-	}
-	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
-	}
-	return CmdConfigBucketShow(c)
-}
-
-// CmdConfigBucketSet sets bucket name.
-func CmdConfigBucketSet(c *cli.Context) error {
-	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
-		return cli.ShowSubcommandHelp(c)
+	resource, err := getMetadata(c).ResourceManager()
+	if err != nil {
+		return
 	}
 
-	conf := config.FromCliContext(c)
-	name := c.Args()[0]
-	if conf.Bucket == "" {
-		fmt.Printf("Set bucket name:\n  %s\n", chalk.Green.Color(name))
-	} else {
-		fmt.Printf("Update bucket name:\n  %s -> %s\n", conf.Bucket, chalk.Green.Color(name))
-	}
-
-	conf.Bucket = name
-	if err := conf.Save(); err != nil {
-		return cli.NewExitError(err.Error(), 3)
-	}
-	return nil
-
-}
-
-// func CmdConfigBucketList(c *cli.Context) error {
-// 	return nil
-// }
-
-// CmdConfigBucketShow shows current bucket name.
-func CmdConfigBucketShow(c *cli.Context) error {
-	conf := config.FromCliContext(c)
-	if conf.Bucket != "" {
-		fmt.Println(conf.Bucket)
+	if region := resource.GetRegion(); region != "" {
+		fmt.Println(region)
 	} else {
 		fmt.Println(chalk.Red.Color("Not set"))
 	}
-	return nil
-}
+	return
 
-// func CmdConfigBucketShow(c *cli.Context) error {
-// 	return nil
-// }
+}

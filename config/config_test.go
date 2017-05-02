@@ -28,10 +28,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jkawamoto/roadie/cloud/gcp"
 )
 
-// Test saving config.
-func TestSave(t *testing.T) {
+// Test saving and loading config.
+func TestConfig(t *testing.T) {
 
 	var err error
 
@@ -42,8 +44,8 @@ func TestSave(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	cfg := Config{
-		Filename: filepath.Join(dir, "config.toml"),
-		Gcp: Gcp{
+		FileName: filepath.Join(dir, "config.yml"),
+		GcpConfig: gcp.Config{
 			Project:     "sample-project",
 			Bucket:      "sample-bucket",
 			Zone:        "sample-zone",
@@ -56,24 +58,45 @@ func TestSave(t *testing.T) {
 		t.Error("Save returns an error:", err.Error())
 	}
 
-	raw, err := ioutil.ReadFile(cfg.Filename)
+	raw, err := ioutil.ReadFile(cfg.FileName)
 	if err != nil {
 		t.Error("Cannot read a saved config file:", err.Error())
 	}
 
 	data := string(raw)
 	t.Log("Saved config:\n", data)
-	if !strings.Contains(data, cfg.Project) {
+	if !strings.Contains(data, cfg.GcpConfig.Project) {
 		t.Error("Project isn't saved")
 	}
-	if !strings.Contains(data, cfg.Bucket) {
+	if !strings.Contains(data, cfg.GcpConfig.Bucket) {
 		t.Error("Bucket isn't saved")
 	}
-	if !strings.Contains(data, cfg.Zone) {
+	if !strings.Contains(data, cfg.GcpConfig.Zone) {
 		t.Error("Zone isn't saved")
 	}
-	if !strings.Contains(data, cfg.MachineType) {
+	if !strings.Contains(data, cfg.GcpConfig.MachineType) {
 		t.Error("MachineType isn't saved")
+	}
+
+	// Test loading.
+	res := Config{
+		FileName: cfg.FileName,
+	}
+	err = res.Load()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	if res.GcpConfig.Project != cfg.GcpConfig.Project {
+		t.Error("Project isn't loaded")
+	}
+	if res.GcpConfig.Bucket != cfg.GcpConfig.Bucket {
+		t.Error("Bucket isn't loaded")
+	}
+	if res.GcpConfig.Zone != cfg.GcpConfig.Zone {
+		t.Error("Zone isn't loaded")
+	}
+	if res.GcpConfig.MachineType != cfg.GcpConfig.MachineType {
+		t.Error("MachineType isn't loaded")
 	}
 
 }
