@@ -33,4 +33,6 @@ type Provider interface {
 	StorageManager(context.Context) (StorageManager, error)
 	// LogManager returns a log manager interface.
 	LogManager(context.Context) (LogManager, error)
+	// ResourceManager returns a resource manager interface.
+	ResourceManager(context.Context) (ResourceManager, error)
 }

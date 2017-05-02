@@ -33,6 +33,7 @@ type Provider struct {
 	MockQueueManager    cloud.QueueManager
 	MockStorageManager  *StorageManager
 	MockLogManager      cloud.LogManager
+	MockResourceManager cloud.ResourceManager
 }
 
 // NewProvider creates a new mock provider.
@@ -60,4 +61,9 @@ func (m *Provider) StorageManager(context.Context) (cloud.StorageManager, error)
 // LogManager returns a log manager interface.
 func (m *Provider) LogManager(context.Context) (cloud.LogManager, error) {
 	return m.MockLogManager, nil
+}
+
+// ResourceManager returns a mock resrouce manager.
+func (m *Provider) ResourceManager(context.Context) (cloud.ResourceManager, error) {
+	return m.MockResourceManager, nil
 }
