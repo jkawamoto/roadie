@@ -76,6 +76,11 @@ func (m *Metadata) LogManager() (cloud.LogManager, error) {
 	return m.provider.LogManager(m.Context)
 }
 
+// ResourceManager returns a resource manager interface.
+func (m *Metadata) ResourceManager() (cloud.ResourceManager, error) {
+	return m.provider.ResourceManager(m.Context)
+}
+
 // getMetadata gets metadata from a cli context.
 func getMetadata(c *cli.Context) *Metadata {
 

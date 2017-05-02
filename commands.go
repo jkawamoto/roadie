@@ -45,10 +45,10 @@ var GlobalFlags = []cli.Flag{
 	// 	Name: "no-color",
 	// 	Usage: "disable colorized output."
 	// },
-	cli.BoolFlag{
-		Name:  "auth",
-		Usage: "force running an authentication process even if already logged in",
-	},
+	// cli.BoolFlag{
+	// 	Name:  "auth",
+	// 	Usage: "force running an authentication process even if already logged in",
+	// },
 }
 
 // Commands manage sub commands.
@@ -257,163 +257,114 @@ files belonging to the instance.`,
 			},
 		},
 	},
-	// {
-	// 	Name:  "config",
-	// 	Usage: "show and update configuration.",
-	// 	Description: "Show and update configurations. Every configurations are stored to '.roadie' in the current working directory. " +
-	// 		"You can also update configurations without this command by editing that file.",
-	// 	Category: "Configuration",
-	// 	Subcommands: cli.Commands{
-	// 		cli.Command{
-	// 			Name:      "project",
-	// 			Usage:     "show and update project ID of Google Cloud Platform.",
-	// 			ArgsUsage: "[<project ID>]",
-	// 			Action:    command.CmdConfigProject,
-	// 			Flags: []cli.Flag{
-	// 				cli.BoolFlag{
-	// 					Name:  "help, h",
-	// 					Usage: "show help",
-	// 				},
-	// 			},
-	// 			Subcommands: cli.Commands{
-	// 				{
-	// 					Name:        "set",
-	// 					Usage:       "set project ID",
-	// 					Description: "Set a new name to the current project. project ID should start with alphabet and not have spaces.",
-	// 					ArgsUsage:   "<project ID>",
-	// 					Action:      command.CmdConfigProjectSet,
-	// 				},
-	// 				{
-	// 					Name:        "show",
-	// 					Usage:       "show the current project ID.",
-	// 					Description: "Show the current project ID.",
-	// 					ArgsUsage:   " ",
-	// 					Action:      command.CmdConfigProjectShow,
-	// 				},
-	// 			},
-	// 		},
-	// 		{
-	// 			Name:   "type",
-	// 			Usage:  "show and update machine type used to run scripts.",
-	// 			Action: command.CmdConfigType,
-	// 			Flags: []cli.Flag{
-	// 				cli.BoolFlag{
-	// 					Name:  "help, h",
-	// 					Usage: "show help",
-	// 				},
-	// 			},
-	// 			Subcommands: cli.Commands{
-	// 				{
-	// 					Name:        "set",
-	// 					Usage:       "set machine type.",
-	// 					Description: "Set a new machine type. Available machine types are shown in 'list' command.",
-	// 					ArgsUsage:   "<machine type>",
-	// 					Action:      command.CmdConfigTypeSet,
-	// 				},
-	// 				{
-	// 					Name:  "list",
-	// 					Usage: "show available machine types.",
-	// 					Description: "Show a list of available machine types for the current project. " +
-	// 						"To receive available machine types, project ID must be set. See 'roadie config project'. " +
-	// 						"This command takes no arguments.",
-	// 					ArgsUsage: " ",
-	// 					Action:    command.CmdConfigTypeList,
-	// 				},
-	// 				{
-	// 					Name:  "show",
-	// 					Usage: "show current machine type.",
-	// 					Description: "Show current machine type. If it is not set, show default machine type. " +
-	// 						"This command takes no arguments.",
-	// 					ArgsUsage: " ",
-	// 					Action:    command.CmdConfigTypeShow,
-	// 				},
-	// 			},
-	// 		},
-	// 		{
-	// 			Name:   "zone",
-	// 			Usage:  "show and update zone used to run scripts.",
-	// 			Action: command.CmdConfigZone,
-	// 			Flags: []cli.Flag{
-	// 				cli.BoolFlag{
-	// 					Name:  "help, h",
-	// 					Usage: "show help",
-	// 				},
-	// 			},
-	// 			Subcommands: cli.Commands{
-	// 				{
-	// 					Name:        "set",
-	// 					Usage:       "set zone where scripts run.",
-	// 					Description: "Set zone. Available zones are shown in 'list' command.",
-	// 					ArgsUsage:   "<zone>",
-	// 					Action:      command.CmdConfigZoneSet,
-	// 				},
-	// 				{
-	// 					Name:  "list",
-	// 					Usage: "show available zones.",
-	// 					Description: "Show a list of zones for the current project. " +
-	// 						"To receive available zones, project ID must be set. See 'roadie config project'. " +
-	// 						"This command takes no arguments.",
-	// 					ArgsUsage: " ",
-	// 					Action:    command.CmdConfigZoneList,
-	// 				},
-	// 				{
-	// 					Name:  "show",
-	// 					Usage: "show current zone.",
-	// 					Description: "Show current zone. If it is not set, show default zone. " +
-	// 						"This command takes no arguments.",
-	// 					ArgsUsage: " ",
-	// 					Action:    command.CmdConfigZoneShow,
-	// 				},
-	// 			},
-	// 		},
-	// 		{
-	// 			Name:   "bucket",
-	// 			Usage:  "show and update bucket name.",
-	// 			Action: command.CmdConfigBucket,
-	// 			Flags: []cli.Flag{
-	// 				cli.BoolFlag{
-	// 					Name:  "help, h",
-	// 					Usage: "show help",
-	// 				},
-	// 			},
-	// 			Subcommands: cli.Commands{
-	// 				{
-	// 					Name:        "set",
-	// 					Usage:       "set bucket used to store source codes and results.",
-	// 					Description: "Set bucket. If the bucket does not exist, it will be created, automatically.",
-	// 					// Description: "Set bucket. The given bucket must exist. Use create command to prepare new bucket." +
-	// 					// 	"list command shows buckets names associated with the current project.",
-	// 					ArgsUsage: "<bucket name>",
-	// 					Action:    command.CmdConfigBucketSet,
-	// 				},
-	// 				// {
-	// 				// 	Name:  "list",
-	// 				// 	Usage: "show available buckets.",
-	// 				// 	Description: "Show a list of buckets the current project can access. " +
-	// 				// 		"To receive the bucket names, project ID must be set. " +
-	// 				// 		"This command takes no arguments.",
-	// 				// 	ArgsUsage: " ",
-	// 				// 	Action:    command.CmdConfigBucketList,
-	// 				// },
-	// 				{
-	// 					Name:        "show",
-	// 					Usage:       "show current bucket name.",
-	// 					Description: "Show current bucket name. This command takes no arguments.",
-	// 					ArgsUsage:   " ",
-	// 					Action:      command.CmdConfigBucketShow,
-	// 				},
-	// 				// {
-	// 				// 	Name:  "create",
-	// 				// 	Usage: "create a new bucket.",
-	// 				// 	Description: "Create a new bucket with a given name. " +
-	// 				// 		"To create a new bucket, project ID must be set.",
-	// 				// 	ArgsUsage: "<bucket name>",
-	// 				// 	Action:    command.CmdConfigBucketShow,
-	// 				// },
-	// 			},
-	// 		},
-	// 	},
-	// },
+	{
+		Name:  "config",
+		Usage: "show and update configuration.",
+		Description: "Show and update configurations. Every configurations are stored to 'roadie.yml' in the current working directory. " +
+			"You can also update configurations without this command by editing that file.",
+		Category: "Configuration",
+		Subcommands: cli.Commands{
+			cli.Command{
+				Name:      "project",
+				Usage:     "show and update project ID.",
+				ArgsUsage: "[<project ID>]",
+				Action:    command.CmdConfigProject,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					{
+						Name:        "set",
+						Usage:       "set project ID",
+						Description: "Set a new name to the current project. project ID should start with alphabet and not have spaces.",
+						ArgsUsage:   "<project ID>",
+						Action:      command.CmdConfigProjectSet,
+					},
+					{
+						Name:        "show",
+						Usage:       "show the current project ID.",
+						Description: "Show the current project ID.",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigProjectShow,
+					},
+				},
+			},
+			{
+				Name:   "machine",
+				Usage:  "show and update machine type used to run scripts.",
+				Action: command.CmdConfigMachineType,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					{
+						Name:        "set",
+						Usage:       "set machine type.",
+						Description: "Set a new machine type. Available machine types are shown in 'list' command.",
+						ArgsUsage:   "<machine type>",
+						Action:      command.CmdConfigMachineTypeSet,
+					},
+					{
+						Name:  "list",
+						Usage: "show available machine types.",
+						Description: "Show a list of available machine types for the current project. " +
+							"To receive available machine types, project ID must be set. See 'roadie config project'. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigMachineTypeList,
+					},
+					{
+						Name:  "show",
+						Usage: "show current machine type.",
+						Description: "Show current machine type. If it is not set, show default machine type. " +
+							"This command takes no arguments.",
+						ArgsUsage: " ",
+						Action:    command.CmdConfigMachineTypeShow,
+					},
+				},
+			},
+			{
+				Name:   "region",
+				Usage:  "show and update region information used to run scripts.",
+				Action: command.CmdConfigRegion,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "help, h",
+						Usage: "show help",
+					},
+				},
+				Subcommands: cli.Commands{
+					{
+						Name:        "set",
+						Usage:       "set a region where scripts run.",
+						Description: "Set a region. Available regions are shown in 'list' command.",
+						ArgsUsage:   "<zone>",
+						Action:      command.CmdConfigRegionSet,
+					},
+					{
+						Name:        "list",
+						Usage:       "show available regions.",
+						Description: "Show a list of regions for the current project. ",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigRegionList,
+					},
+					{
+						Name:        "show",
+						Usage:       "show current zone.",
+						Description: "Show current region.",
+						ArgsUsage:   " ",
+						Action:      command.CmdConfigRegionShow,
+					},
+				},
+			},
+		},
+	},
 	{
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
