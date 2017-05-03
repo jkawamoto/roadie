@@ -39,12 +39,10 @@ type Provider struct {
 func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth bool) (p *Provider, err error) {
 
 	if cfg.Token == nil || forceAuth {
-
 		cfg.Token, err = RequestToken(ctx, os.Stdout)
 		if err != nil {
 			return
 		}
-
 	}
 
 	p = &Provider{

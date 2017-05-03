@@ -79,6 +79,7 @@ func newCodeReciever() *codeReciever {
 	}
 }
 
+// ServeHTTP recieves authorization code from a browser.
 func (r *codeReciever) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	queries := req.URL.Query()
@@ -142,8 +143,12 @@ func RequestToken(ctx context.Context, output io.Writer) (token *oauth2.Token, e
 	cfg := NewAuthorizationConfig(port)
 	state := fmt.Sprintf("%v", time.Now().Unix())
 	endpoint := cfg.AuthCodeURL(state, oauth2.SetAuthURLParam("code_challenge_method", "plain"), oauth2.SetAuthURLParam("code_challenge", codeChallenge))
-	// TODO: Print message to open the following link.
-	fmt.Fprintln(output, endpoint)
+	fmt.Fprintf(output, `Authorization is required.
+Open the following URL in your browser and grand access to this application.
+
+%v
+
+`, endpoint)
 
 	receiver := newCodeReciever()
 	go http.Serve(listener, receiver)
@@ -151,7 +156,7 @@ func RequestToken(ctx context.Context, output io.Writer) (token *oauth2.Token, e
 	var code *authorizationCode
 	select {
 	case code = <-receiver.Result:
-		fmt.Println(code)
+		// TODO: Check the recieved state is correct.
 	case errMsg := <-receiver.Error:
 		err = fmt.Errorf("Failed authorization: %v", errMsg)
 		return
