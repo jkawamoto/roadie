@@ -46,4 +46,4 @@ get-deps:
 
 .PHONY: test
 test: asset
-	go test -v ./...
+	go test -v ./... -tags=dummy
