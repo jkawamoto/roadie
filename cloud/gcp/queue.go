@@ -36,6 +36,7 @@ import (
 	"github.com/jkawamoto/roadie/script"
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 const (
@@ -74,6 +75,14 @@ func NewQueueService(ctx context.Context, cfg *Config, logger *log.Logger) (*Que
 
 }
 
+// newClient creates a new datastore client.
+func (s *QueueService) newClient(ctx context.Context) (*datastore.Client, error) {
+
+	cfg := NewAuthorizationConfig(0)
+	return datastore.NewClient(ctx, s.Config.Project, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
+
+}
+
 // Enqueue add a given script to a given named queue.
 func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.Script) (err error) {
 
@@ -81,7 +90,7 @@ func (s *QueueService) Enqueue(ctx context.Context, queue string, task *script.S
 	id := time.Now().Unix()
 	key := datastore.IDKey(QueueKind, id, nil)
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		s.Logger.Println("Cannot create a client for Google Cloud Datastore:", err.Error())
 		return
@@ -136,7 +145,7 @@ func (s *QueueService) Fetch(ctx context.Context, queue string) (task *Task, err
 	s.Logger.Println("Retrieving a task in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue).Filter("Status=", TaskStatusWaiting).Limit(1)
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -171,7 +180,7 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 	s.Logger.Println("Retrieving tasks in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -215,7 +224,7 @@ func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueStatusHand
 	s.Logger.Println("Retrieving queue names")
 	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -259,7 +268,7 @@ func (s *QueueService) UpdateTask(ctx context.Context, queue string, modifier fu
 	s.Logger.Println("Updating tasks' status in queue", queue)
 	query := datastore.NewQuery(QueueKind).Filter("QueueName=", queue)
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
@@ -478,7 +487,7 @@ func (s *QueueService) workerExists(ctx context.Context, queue string) (exist bo
 
 func (s *QueueService) deleteTask(ctx context.Context, query *datastore.Query) (err error) {
 
-	client, err := datastore.NewClient(ctx, s.Config.Project)
+	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}

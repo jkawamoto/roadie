@@ -51,8 +51,11 @@ func GenerateListAction(container string) func(*cli.Context) error {
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		m := getMetadata(c)
-		err := PrintFileList(m, container, "", c.Bool("url"), c.Bool("quiet"))
+		m, err := getMetadata(c)
+		if err != nil {
+			return err
+		}
+		err = PrintFileList(m, container, "", c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
 			return cli.NewExitError(err.Error(), 2)
 		}
@@ -66,17 +69,20 @@ func GenerateListAction(container string) func(*cli.Context) error {
 // container.
 func GenerateGetAction(container string) func(*cli.Context) error {
 
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (err error) {
 
 		if c.NArg() == 0 {
 			fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		m := getMetadata(c)
+		m, err := getMetadata(c)
+		if err != nil {
+			return
+		}
 		service, err := m.StorageManager()
 		if err != nil {
-			return err
+			return
 		}
 		storage := cloud.NewStorage(service, nil)
 
@@ -84,7 +90,7 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 			return cli.NewExitError(err.Error(), 2)
 		}
 
-		return nil
+		return
 
 	}
 
@@ -94,17 +100,20 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 // container.
 func GenerateDeleteAction(container string) func(*cli.Context) error {
 
-	return func(c *cli.Context) error {
+	return func(c *cli.Context) (err error) {
 
 		if c.NArg() == 0 {
 			fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
-		m := getMetadata(c)
+		m, err := getMetadata(c)
+		if err != nil {
+			return
+		}
 		service, err := m.StorageManager()
 		if err != nil {
-			return err
+			return
 		}
 		storage := cloud.NewStorage(service, ioutil.Discard)
 
@@ -116,7 +125,7 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 			return cli.NewExitError(err.Error(), 2)
 		}
 
-		return nil
+		return
 
 	}
 

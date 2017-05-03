@@ -31,7 +31,11 @@ import (
 // CmdSourcePut archives a given folder and uploads it as a given named file.
 func CmdSourcePut(c *cli.Context) error {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	switch c.NArg() {
 	case 1:
 		return cmdSourcePut(m, c.Args().First(), "", c.StringSlice("exclude"))

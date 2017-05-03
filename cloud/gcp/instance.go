@@ -34,7 +34,6 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -74,10 +73,8 @@ func NewComputeService(cfg *Config, logger *log.Logger) *ComputeService {
 func (s *ComputeService) newService(ctx context.Context) (*compute.Service, error) {
 
 	// Create a client.
-	client, err := google.DefaultClient(ctx, gcpScope)
-	if err != nil {
-		return nil, err
-	}
+	cfg := NewAuthorizationConfig(0)
+	client := cfg.Client(ctx, s.Config.Token)
 
 	// Create a servicer.
 	return compute.New(client)

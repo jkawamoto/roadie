@@ -23,6 +23,18 @@ package cloud
 
 import "context"
 
+// MachineType defines a structure of machine type infoemation.
+type MachineType struct {
+	Name        string
+	Description string
+}
+
+// Region defines a structure of region information.
+type Region struct {
+	Name   string
+	Status string
+}
+
 // ResourceManager defines an interface for configuration to use a cloud service.
 type ResourceManager interface {
 	// GetProjectID returns an ID of the current project.

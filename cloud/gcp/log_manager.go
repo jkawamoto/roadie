@@ -33,6 +33,7 @@ import (
 
 	"cloud.google.com/go/logging/apiv2"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 	loggingpb "google.golang.org/genproto/googleapis/logging/v2"
 )
 
@@ -129,7 +130,8 @@ func (s *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler
 func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHandler) (err error) {
 
 	s.Logger.Println("Retrieving log:", filter)
-	client, err := logging.NewClient(ctx)
+	cfg := NewAuthorizationConfig(0)
+	client, err := logging.NewClient(ctx, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
 	if err != nil {
 		return
 	}
@@ -173,7 +175,7 @@ func (s *LogManager) InstanceLogEntries(ctx context.Context, instanceName string
 	// will have same log name, docker, so that such log can be stored into
 	// GCS easily.
 	filter := fmt.Sprintf(
-		`resource.type = "gcp_instance" AND jsonPayload.instance_name = "%s" AND timestamp > "%s"`,
+		`resource.type = "gce_instance" AND jsonPayload.instance_name = "%s" AND timestamp > "%s"`,
 		instanceName, from.In(time.UTC).Format(LogTimeFormat))
 
 	return s.Entries(ctx, filter, func(entry *loggingpb.LogEntry) error {

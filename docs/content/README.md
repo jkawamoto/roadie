@@ -7,7 +7,6 @@ date: 2016-12-20
 lastmod: 2016-12-29
 slug: description
 ---
-
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
 [![Build Status](https://travis-ci.org/jkawamoto/roadie.svg?branch=master)](https://travis-ci.org/jkawamoto/roadie)
 [![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
@@ -50,19 +49,23 @@ $ roadie result get analyze-wowah "*" -o ./res
 
 Then, `roadie` downloads all result files into `./res` directory.
 
-## Install
-Compiled binary files for some platforms are uploaded in [release page](https://github.com/jkawamoto/roadie/releases).
-To install in other platforms following the go manner, use `go get`:
-
-```sh
-$ go get github.com/jkawamoto/roadie
-```
+## Installation
+Compiled binary files for some platforms are uploaded in
+[release page](https://github.com/jkawamoto/roadie/releases).
 
 For mac user, `roadie` is available in [Homebrew](http://brew.sh/).
 
 ```sh
 $ brew tap jkawamoto/roadie
 $ brew install roadie
+```
+
+## Initialization
+After installing `roadie`, the following initialization is required in order to
+authorize `roadie` to access cloud services.
+
+```sh
+$ roadie init
 ```
 
 ## License

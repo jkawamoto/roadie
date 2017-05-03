@@ -32,37 +32,16 @@ type InstanceHandler func(name, status string) error
 
 // InstanceManager is a service interface of an instance manager.
 type InstanceManager interface {
-
 	// CreateInstance creates an instance which has a given name.
 	CreateInstance(ctx context.Context, script *script.Script) error
-
 	// DeleteInstance deletes the given named instance.
 	DeleteInstance(ctx context.Context, name string) error
-
 	// Instances returns a list of running instances
 	Instances(ctx context.Context, handler InstanceHandler) error
-
-	// AvailableRegions returns a list of available regions.
-	AvailableRegions(context.Context) (regions []Region, err error)
-
-	// AvailableMachineTypes returns a list of available machine types.
-	AvailableMachineTypes(context.Context) (types []MachineType, err error)
 }
 
 // MetadataItem has Key and Value properties.
 type MetadataItem struct {
 	Key   string
 	Value string
-}
-
-// MachineType defines a structure of machine type infoemation.
-type MachineType struct {
-	Name        string
-	Description string
-}
-
-// Region defines a structure of region information.
-type Region struct {
-	Name   string
-	Status string
 }

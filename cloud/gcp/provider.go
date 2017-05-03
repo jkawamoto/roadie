@@ -24,6 +24,7 @@ package gcp
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/jkawamoto/roadie/cloud"
 )
@@ -35,12 +36,20 @@ type Provider struct {
 }
 
 // NewProvider creates a new provider for GCP service.
-func NewProvider(cfg *Config, logger *log.Logger) *Provider {
+func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth bool) (p *Provider, err error) {
 
-	return &Provider{
+	if cfg.Token == nil || forceAuth {
+		cfg.Token, err = RequestToken(ctx, os.Stdout)
+		if err != nil {
+			return
+		}
+	}
+
+	p = &Provider{
 		Config: cfg,
 		Logger: logger,
 	}
+	return
 
 }
 

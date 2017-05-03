@@ -23,13 +23,11 @@ package command
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/cloud/gcp"
+	"github.com/jkawamoto/roadie/config"
 
 	"github.com/deiwin/interact"
 	"github.com/urfave/cli"
@@ -43,166 +41,52 @@ type GcloudConfig struct {
 }
 
 // CmdInit helps to create a configuration file.
-func CmdInit(c *cli.Context) error {
+func CmdInit(c *cli.Context) (err error) {
 
-	var err error
+	fmt.Println(chalk.Green.Color("Initialize Roadie"))
 	actor := interact.NewActor(os.Stdin, os.Stdout)
 
-	fmt.Printf(`%s.
-This command will create ."roadie" file in current directory. Configurations
-can be updated with "roadie config" command. See "roadie config --help",
-for more detail. Type ctrl-c at anytime to quite.
+	// Initialization steps:
+	// 1. Choose cloud service provider (GCP only).
+	// 2. Ask nessesarry information (project id for gcp).
+	// 3. Authentication.
+	// 4. Store configurations.
 
-`, chalk.Bold.TextStyle("Initialize Roadie"))
-
-	// Check gcloud command.
-	if err = checkGcloud(actor); err != nil {
-		return err
-	}
-
-	// Get gcloud configuration.
-	fmt.Println("Loading configurations of `Google Cloud SDK`...")
-	gcloud, err := getGcloudConf()
+	m, err := getMetadata(c)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 1)
+		fmt.Println(`This command will create file "roadie.yml" in current directory.
+Configurations can be updated with "roadie config" command.
+See "roadie config --help", for more detail.
+`)
+		m.Config = new(config.Config)
+		m.Config.FileName = "roadie.yml"
 	}
 
-	m := getMetadata(c)
-	m.Config.GcpConfig.Project = gcloud.Project
-	m.Config.GcpConfig.Zone = gcloud.Zone
-
-	message := "Please enter project ID"
-	if m.Config.GcpConfig.Project == "" {
-		m.Config.GcpConfig.Project, err = actor.PromptAndRetry(message, checkNotEmpty)
-	} else {
-		m.Config.GcpConfig.Project, err = actor.PromptOptionalAndRetry(message, m.Config.GcpConfig.Project, checkNotEmpty)
-	}
+	var project string
+	message := "Please enter your project ID"
+	project, err = actor.PromptAndRetry(message, checkNotEmpty)
 	if err != nil {
 		return cli.NewExitError(err.Error(), 10)
 	}
+	m.Config.GcpConfig.Project = project
 
-	message = "Please enter bucket name"
-	m.Config.GcpConfig.Bucket, err = actor.PromptOptionalAndRetry(message, m.Config.GcpConfig.Project, checkNotEmpty)
+	fmt.Println("")
+	fmt.Println(chalk.Green.Color("Cheking authorization..."))
+	provider, err := gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, true)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 10)
+		return
 	}
+	_ = provider
 
-	abs, _ := filepath.Abs(".roadie")
-	fmt.Printf("About to write to %s:\n", abs)
-	fmt.Println(m.Config.String())
-	save, err := actor.Confirm(chalk.Yellow.Color("Is this ok?"), interact.ConfirmNoDefault)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
+	fmt.Println(chalk.Green.Color("Saving configuarions..."))
+	return m.Config.Save()
 
-	if save {
-		fmt.Println("Saving configuarions...")
-		if err = m.Config.Save(); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-	}
-	return nil
 }
 
+// checkNotEmpty is a predicate used in actor to check input message is empty.
 func checkNotEmpty(value string) error {
 	if value == "" {
 		return fmt.Errorf("Input value is empty.")
 	}
 	return nil
-}
-
-func installSDK() (err error) {
-
-	curl := exec.Command("curl", "https://sdk.cloud.google.com")
-	runner := exec.Command("bash")
-
-	curlOut, err := curl.StdoutPipe()
-	if err != nil {
-		return
-	}
-	runnerIn, err := runner.StdinPipe()
-	if err != nil {
-		return
-	}
-	go func() {
-		io.Copy(runnerIn, curlOut)
-		runnerIn.Close()
-	}()
-
-	runnerOut, err := runner.StdoutPipe()
-	if err != nil {
-		return
-	}
-	go io.Copy(os.Stdout, runnerOut)
-
-	curlErr, err := curl.StderrPipe()
-	if err != nil {
-		return
-	}
-	runnerErr, err := runner.StderrPipe()
-	if err != nil {
-		return
-	}
-	go io.Copy(os.Stderr, io.MultiReader(curlErr, runnerErr))
-
-	curl.Start()
-	runner.Run()
-	curl.Wait()
-
-	return nil
-}
-
-func getGcloudConf() (res GcloudConfig, err error) {
-
-	output, err := exec.Command("gcloud", "config", "list").Output()
-	if err != nil {
-		return
-	}
-
-	res = GcloudConfig{}
-	for _, v := range strings.Split(string(output), "\n") {
-		if strings.Contains(v, "=") {
-
-			kv := strings.Split(v, " = ")
-			switch kv[0] {
-			case "zone":
-				res.Zone = kv[1]
-			case "account":
-				res.Account = kv[1]
-			case "project":
-				res.Project = kv[1]
-			}
-		}
-	}
-	return
-
-}
-
-func setupGcloud() (err error) {
-
-	cmd := exec.Command("gcloud", "init")
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return
-	}
-	defer stdin.Close()
-	go io.Copy(stdin, os.Stdin)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return
-	}
-	defer stdout.Close()
-	go io.Copy(os.Stdout, stdout)
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return
-	}
-	defer stderr.Close()
-	go io.Copy(os.Stderr, stderr)
-
-	return cmd.Run()
-
 }

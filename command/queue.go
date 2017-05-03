@@ -69,8 +69,13 @@ func CmdQueueAdd(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	return cmdQueueAdd(&optQueueAdd{
-		Metadata: getMetadata(c),
+		Metadata: m,
 		SourceOpt: SourceOpt{
 			Git:     c.String("git"),
 			URL:     c.String("url"),
@@ -139,7 +144,11 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 // the number of instances working to the queue.
 func CmdQueueStatus(c *cli.Context) error {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	switch c.NArg() {
 	case 0:
 		return cmdQueueStatus(m)
@@ -212,7 +221,11 @@ func cmdTaskStatus(m *Metadata, queue string) (err error) {
 // otherwise prints log of a specific task/
 func CmdQueueLog(c *cli.Context) error {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	switch c.NArg() {
 	case 1:
 		return cmdQueueLog(m, c.Args().First(), !c.Bool("no-timestamp"))
@@ -277,7 +290,11 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
@@ -299,7 +316,11 @@ func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+
 	queue := c.Args().First()
 	instances := c.Int("instances")
 	queueManager, err := m.QueueManager()
@@ -330,7 +351,11 @@ func CmdQueueStop(c *cli.Context) (err error) {
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+
 	queue := c.Args().First()
 	queueManager, err := m.QueueManager()
 	if err != nil {
@@ -352,7 +377,11 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 	}
 
 	queue := c.Args().First()
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return
+	}
+
 	queueManager, err := m.QueueManager()
 	if err != nil {
 		return
@@ -365,7 +394,11 @@ func CmdQueueRestart(c *cli.Context) (err error) {
 // CmdQueueDelete deletes a task in a queue or whole queue.
 func CmdQueueDelete(c *cli.Context) error {
 
-	m := getMetadata(c)
+	m, err := getMetadata(c)
+	if err != nil {
+		return err
+	}
+
 	switch c.NArg() {
 	case 1:
 		return cmdQueueDelete(m, c.Args().First())

@@ -82,43 +82,27 @@ func (m *Metadata) ResourceManager() (cloud.ResourceManager, error) {
 }
 
 // getMetadata gets metadata from a cli context.
-func getMetadata(c *cli.Context) *Metadata {
+func getMetadata(c *cli.Context) (meta *Metadata, err error) {
 
-	meta, _ := c.App.Metadata[metadataKey].(*Metadata)
-	return meta
+	meta, ok := c.App.Metadata[metadataKey].(*Metadata)
+	if !ok {
+		err = fmt.Errorf("No metadata is attached")
+	} else if meta.Config == nil {
+		err = fmt.Errorf("No configuration is given")
+	} else if meta.provider == nil {
+		err = fmt.Errorf("Cloud service configuration is not correct")
+	}
+	return
 
 }
 
 // PrepareCommand prepares executing any command; it loads the configuratio file,
 // checkes global flags.
 func PrepareCommand(c *cli.Context) (err error) {
-
 	meta := new(Metadata)
 
 	// Get a context from main function.
 	meta.Context, _ = c.App.Metadata["context"].(context.Context)
-
-	// Load the configuration file.
-	var cfg *config.Config
-	if conf := c.GlobalString("config"); conf != "" {
-
-		cfg = &config.Config{
-			FileName: conf,
-		}
-		err = cfg.Load()
-		if err != nil {
-			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
-		}
-
-	} else {
-
-		cfg, err = config.NewConfig()
-		if err != nil {
-			return cli.NewExitError(fmt.Sprintf("Cannot read the given config file: %v", err.Error()), 1)
-		}
-
-	}
-	meta.Config = cfg
 
 	// Prepare a logger and decorator.
 	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
@@ -133,22 +117,48 @@ func PrepareCommand(c *cli.Context) (err error) {
 	}
 	meta.Logger = logger
 
-	// Prepare a service provider.
-	meta.Spinner.Prefix = "Checking authentication information"
-	meta.Spinner.Start()
-	defer meta.Spinner.Stop()
-	meta.Logger.Println(meta.Spinner.Prefix)
+	// Load the configuration file.
+	var cfg *config.Config
+	if conf := c.GlobalString("config"); conf != "" {
+		cfg = &config.Config{
+			FileName: conf,
+		}
+		err = cfg.Load()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Cannot read the given config file:", err.Error())
+			cfg = nil
+		}
 
-	var provider cloud.Provider
-	switch {
-	case cfg.GcpConfig.Project != "":
-		provider = gcp.NewProvider(&cfg.GcpConfig, logger)
-	default:
-		return fmt.Errorf("Cloud configuration isn't given")
+	} else {
+		cfg, err = config.NewConfig()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Cannot read any config files:", err.Error())
+			cfg = nil
+		}
+
 	}
-	meta.provider = provider
+	meta.Config = cfg
+
+	if meta.Config != nil {
+		// Prepare a service provider.
+		logger.Println("Checking authentication information")
+		var provider cloud.Provider
+		switch {
+		case cfg.GcpConfig.Project != "":
+			provider, err = gcp.NewProvider(meta.Context, &cfg.GcpConfig, logger, c.GlobalBool("auth"))
+			if err != nil {
+				return
+			}
+			cfg.Save()
+
+		default:
+			// return fmt.Errorf("Configuration isn't correct")
+		}
+		meta.provider = provider
+
+	}
 
 	c.App.Metadata[metadataKey] = meta
-	return
+	return nil
 
 }
