@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/jkawamoto/roadie.svg?branch=master)](https://travis-ci.org/jkawamoto/roadie)
 [![wercker status](https://app.wercker.com/status/6c499024136e7067b86bef4bd07d7f62/s/master "wercker status")](https://app.wercker.com/project/byKey/6c499024136e7067b86bef4bd07d7f62)
 [![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
-[![Release](https://img.shields.io/badge/release-0.3.6-brightgreen.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.3.6)
+[![Release](https://img.shields.io/badge/release-0.3.7-brightgreen.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.3.7)
 [![Japanese](https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg)](http://qiita.com/jkawamoto/items/751558536a597a33ae2a)
 
 [![Logo](https://jkawamoto.github.io/roadie/img/banner.png)](https://jkawamoto.github.io/roadie/)
