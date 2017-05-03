@@ -127,7 +127,7 @@ body {
         <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
         
         
-        <li><a class="page-scroll" href="./release/">Release</a></li>
+        <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie/releases">Release</a></li>
         
         <li>
         <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
@@ -147,18 +147,6 @@ body {
               <h2 class="section-heading">インストールと初期設定</h2>
               
 
-<h3 id="インストールの前に:4c40a97dcf30b230e73eabba1323c21c">インストールの前に</h3>
-
-<p><code>roadie</code> は <a href="https://cloud.google.com/">Google Cloud Platform</a>
-でプログラムを実行します．
-そのため，Google Cloud Platform が利用可能になっている必要があります．</p>
-
-<p>また，<code>roadie</code> は Google の <a href="https://cloud.google.com/sdk/">Cloud SDK</a> を利用します．
-<a href="(https://cloud.google.com/sdk/">ここ</a>) から取得できるので，
-インストールし初期設定を行ってください．
-<code>gcloud auth list</code> を実行してみて，認証済みのアカウント名（メールアドレス）が表示されれば
-初期化は完了しています．</p>
-
 <h3 id="インストール:4c40a97dcf30b230e73eabba1323c21c">インストール</h3>
 
 <p><code>roadie</code> のコンパイル済みバイナリは，GitHub の
@@ -166,13 +154,6 @@ body {
 から取得できます．
 アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
 一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．</p>
-
-<p>また，Go 言語の環境設定が済んでいる場合，<code>go get</code> コマンドでもインストールできます．</p>
-
-<pre><code class="language-sh">$ go get github.com/jkawamoto/roadie
-</code></pre>
-
-<p>この場合，実行ファイルは <code>$GOPATH/bin</code> に保存されます．</p>
 
 <p>また，mac の場合は <a href="http://brew.sh/">Homebrew</a> でもインストールできます．</p>
 
@@ -196,7 +177,7 @@ $ brew install roadie
 <p>初期設定では，上記のプロジェクト ID の他，データの保存先やプログラムを実行するリージョンや
 仮想マシンのデフォルトなどを設定します．</p>
 
-<p>設定ファイルは，<code>roadie init</code> を実行したディレクトリの <code>.roadie</code> です．
+<p>設定ファイルは，<code>roadie init</code> を実行したディレクトリの <code>roadie.yml</code> です．
 テキスト形式なので後から編集できます．
 また，<code>roadie config</code> コマンドで対話的に変更することもできます．
 詳しくは <a href="documents-ja/configuration">設定について</a> のページをご覧ください．</p>

@@ -127,7 +127,7 @@ body {
         <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
         
         
-        <li><a class="page-scroll" href="./release/">Release</a></li>
+        <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie/releases">Release</a></li>
         
         <li>
         <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
@@ -185,7 +185,7 @@ body {
 <p><a href="https://www.gnu.org/copyleft/gpl.html"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="GPLv3" /></a>
 <a href="https://travis-ci.org/jkawamoto/roadie"><img src="https://travis-ci.org/jkawamoto/roadie.svg?branch=master" alt="Build Status" /></a>
 <a href="https://codeclimate.com/github/jkawamoto/roadie"><img src="https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg" alt="Code Climate" /></a>
-<a href="https://github.com/jkawamoto/roadie/releases/tag/v0.3.5"><img src="https://img.shields.io/badge/release-0.3.5-brightgreen.svg" alt="Release" /></a>
+<a href="https://github.com/jkawamoto/roadie/releases/tag/v0.3.6"><img src="https://img.shields.io/badge/release-0.3.6-brightgreen.svg" alt="Release" /></a>
 <a href="http://qiita.com/jkawamoto/items/751558536a597a33ae2a"><img src="https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg" alt="Japanese" /></a></p>
 
 <p><code>roadie</code> helps you to upload your source codes to the cloud, create and delete
@@ -221,18 +221,23 @@ You can access those results by</p>
 
 <p>Then, <code>roadie</code> downloads all result files into <code>./res</code> directory.</p>
 
-<h2 id="install:04c6e90faac2675aa89e2176d2eec7d8">Install</h2>
+<h2 id="installation:04c6e90faac2675aa89e2176d2eec7d8">Installation</h2>
 
-<p>Compiled binary files for some platforms are uploaded in <a href="https://github.com/jkawamoto/roadie/releases">release page</a>.
-To install in other platforms following the go manner, use <code>go get</code>:</p>
-
-<pre><code class="language-sh">$ go get github.com/jkawamoto/roadie
-</code></pre>
+<p>Compiled binary files for some platforms are uploaded in
+<a href="https://github.com/jkawamoto/roadie/releases">release page</a>.</p>
 
 <p>For mac user, <code>roadie</code> is available in <a href="http://brew.sh/">Homebrew</a>.</p>
 
 <pre><code class="language-sh">$ brew tap jkawamoto/roadie
 $ brew install roadie
+</code></pre>
+
+<h2 id="initialization:04c6e90faac2675aa89e2176d2eec7d8">Initialization</h2>
+
+<p>After installing <code>roadie</code>, the following initialization is required in order to
+authorize <code>roadie</code> to access cloud services.</p>
+
+<pre><code class="language-sh">$ roadie init
 </code></pre>
 
 <h2 id="license:04c6e90faac2675aa89e2176d2eec7d8">License</h2>

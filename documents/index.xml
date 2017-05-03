@@ -17,17 +17,16 @@
       <description>
 
 &lt;p&gt;To update configuration of roadie, use &lt;code&gt;roadie config&lt;/code&gt; command.
-It provides four sub commands:&lt;/p&gt;
+It provides the following sub commands:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;project&lt;/strong&gt; shows and updates project ID of Google Cloud Platform,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;zone&lt;/strong&gt; shows and updates zone used to run scripts,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;type&lt;/strong&gt; shows and updates machine type used to run scripts,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;bucket&lt;/strong&gt; shows and updates bucket name used to store related files.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;region&lt;/strong&gt; shows and updates region used to run scripts,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;machine&lt;/strong&gt; shows and updates machine type used to run scripts,&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Note that every configurations are stored to &amp;lsquo;.roadie&amp;rsquo;
-in the current working directory.
+&lt;p&gt;Note that every configurations are stored to &lt;code&gt;roadie.yml&lt;/code&gt;
+in the current working directory by default.
 You can also update configurations without this command by editing that file.&lt;/p&gt;
 
 &lt;h3 id=&#34;project:a66b35d20295cb764719ac8bd35837ec&#34;&gt;project&lt;/h3&gt;
@@ -45,39 +44,35 @@ You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/pr
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config project set PROJECT
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Valid project ID is required to access Google Cloud Platform.
-If you set correct project ID but any commands such as
-&lt;code&gt;roadie config type list&lt;/code&gt; fail,
-make sure you have authenticated your computer by checking &lt;code&gt;gcloud auth list&lt;/code&gt;
-shows your account is credentialed.&lt;/p&gt;
+&lt;p&gt;Valid project ID is required to access Google Cloud Platform.&lt;/p&gt;
 
-&lt;h3 id=&#34;zone:a66b35d20295cb764719ac8bd35837ec&#34;&gt;zone&lt;/h3&gt;
+&lt;h3 id=&#34;region:a66b35d20295cb764719ac8bd35837ec&#34;&gt;region&lt;/h3&gt;
 
 &lt;p&gt;In Google Cloud Platform, the platform is divided into several zones
 based on actual locations where virtual machine will run.
 You can find current available zones by running&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone list
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;By default, &lt;code&gt;us-central1-b&lt;/code&gt; is chosen.
 To check current zone, run&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;and to set another &lt;code&gt;ZONE&lt;/code&gt;, run&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone set ZONE
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region set ZONE
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h3 id=&#34;type:a66b35d20295cb764719ac8bd35837ec&#34;&gt;type&lt;/h3&gt;
+&lt;h3 id=&#34;machine:a66b35d20295cb764719ac8bd35837ec&#34;&gt;machine&lt;/h3&gt;
 
 &lt;p&gt;There are some options about machine type on which your program runs.
 Each machine type has different number of virtual CPUs and RAM.
 You can find available machine types by running&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type list
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;and &lt;a href=&#34;https://cloud.google.com/compute/pricing&#34;&gt;here&lt;/a&gt; is more information about
@@ -88,30 +83,12 @@ You should set zone before checking machine types.&lt;/p&gt;
 &lt;p&gt;By default, &lt;code&gt;n1-standard-1&lt;/code&gt;, which has 1 vCPU and 3.75 GB RAM, is selected.
 To check current machine type, run&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;and to set another &lt;code&gt;TYPE&lt;/code&gt;, run&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type set TYPE
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&#34;bucket:a66b35d20295cb764719ac8bd35837ec&#34;&gt;bucket&lt;/h3&gt;
-
-&lt;p&gt;Bucket is a place to store any data including source codes and outputs from
-your program.
-Each bucket is identified by bucket name and it must be unique in the world.
-You can choose any name but it is recommended to use same name as your project ID.
-Actually, by default, roadie sets the project ID to the bucket name.&lt;/p&gt;
-
-&lt;p&gt;To check current bucket name, run&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;and to set another bucket name &lt;code&gt;NAME&lt;/code&gt;, run&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket set NAME
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine set TYPE
 &lt;/code&gt;&lt;/pre&gt;
 </description>
     </item>
@@ -523,33 +500,14 @@ For example, you created an instance by&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
       <description>
 
-&lt;h3 id=&#34;requirements:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Requirements&lt;/h3&gt;
-
-&lt;p&gt;Since roadie currently supports only
-&lt;a href=&#34;https://cloud.google.com/&#34;&gt;Google Cloud Platform&lt;/a&gt;,
-you need to register it at first.&lt;/p&gt;
-
-&lt;p&gt;roadie uses Google&amp;rsquo;s &lt;a href=&#34;https://cloud.google.com/sdk/&#34;&gt;Cloud SDK&lt;/a&gt;.
-Please install and initialize it by yourself.
-&lt;code&gt;gcloud auth list&lt;/code&gt; shows an authorized account name, i.e. an email address,
-after success of initialization.&lt;/p&gt;
-
 &lt;h3 id=&#34;install:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Install&lt;/h3&gt;
 
-&lt;p&gt;roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
+&lt;p&gt;Roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
 &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
 Download one of them according to your environment and put the binary into
 a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
 
-&lt;p&gt;You can also install roadie by following the go manner.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ go get github.com/jkawamoto/roadie
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Then, the binary will be installed in &lt;code&gt;$GOPATH/bin&lt;/code&gt;.
-In this case, you need to install &lt;code&gt;go&lt;/code&gt; before running &lt;code&gt;go get&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;If you are using mac, you can install &lt;code&gt;roadie&lt;/code&gt; via &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If you are a mac user, you can install &lt;code&gt;roadie&lt;/code&gt; via &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie
@@ -557,18 +515,13 @@ $ brew install roadie
 
 &lt;h3 id=&#34;initialization:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;Initialization&lt;/h3&gt;
 
-&lt;p&gt;Each project needs to initialize roadie and notifies the &lt;em&gt;project ID&lt;/em&gt; and
-a bucket name.
+&lt;p&gt;Each project needs to initialize roadie and sets your &lt;em&gt;project ID&lt;/em&gt;.
 Project ID is an ID registered in Google Cloud Platform.
 You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
 Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie init
 &lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The initialization command asks you the current Google Cloud Platform&amp;rsquo;s project
-ID and other your preference, then makes configuration file &lt;code&gt;.roadie&lt;/code&gt; in the
-current directory.&lt;/p&gt;
 
 &lt;p&gt;Although the configuration file is a text file and you can edit it,
 roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.

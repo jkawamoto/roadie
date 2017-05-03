@@ -16,18 +16,6 @@
       <guid>https://jkawamoto.github.io/roadie/documents-ja/installation/</guid>
       <description>
 
-&lt;h3 id=&#34;インストールの前に:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;インストールの前に&lt;/h3&gt;
-
-&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; は &lt;a href=&#34;https://cloud.google.com/&#34;&gt;Google Cloud Platform&lt;/a&gt;
-でプログラムを実行します．
-そのため，Google Cloud Platform が利用可能になっている必要があります．&lt;/p&gt;
-
-&lt;p&gt;また，&lt;code&gt;roadie&lt;/code&gt; は Google の &lt;a href=&#34;https://cloud.google.com/sdk/&#34;&gt;Cloud SDK&lt;/a&gt; を利用します．
-&lt;a href=&#34;(https://cloud.google.com/sdk/&#34;&gt;ここ&lt;/a&gt;) から取得できるので，
-インストールし初期設定を行ってください．
-&lt;code&gt;gcloud auth list&lt;/code&gt; を実行してみて，認証済みのアカウント名（メールアドレス）が表示されれば
-初期化は完了しています．&lt;/p&gt;
-
 &lt;h3 id=&#34;インストール:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;インストール&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; のコンパイル済みバイナリは，GitHub の
@@ -35,13 +23,6 @@
 から取得できます．
 アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
 一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．&lt;/p&gt;
-
-&lt;p&gt;また，Go 言語の環境設定が済んでいる場合，&lt;code&gt;go get&lt;/code&gt; コマンドでもインストールできます．&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ go get github.com/jkawamoto/roadie
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;この場合，実行ファイルは &lt;code&gt;$GOPATH/bin&lt;/code&gt; に保存されます．&lt;/p&gt;
 
 &lt;p&gt;また，mac の場合は &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; でもインストールできます．&lt;/p&gt;
 
@@ -65,7 +46,7 @@ $ brew install roadie
 &lt;p&gt;初期設定では，上記のプロジェクト ID の他，データの保存先やプログラムを実行するリージョンや
 仮想マシンのデフォルトなどを設定します．&lt;/p&gt;
 
-&lt;p&gt;設定ファイルは，&lt;code&gt;roadie init&lt;/code&gt; を実行したディレクトリの &lt;code&gt;.roadie&lt;/code&gt; です．
+&lt;p&gt;設定ファイルは，&lt;code&gt;roadie init&lt;/code&gt; を実行したディレクトリの &lt;code&gt;roadie.yml&lt;/code&gt; です．
 テキスト形式なので後から編集できます．
 また，&lt;code&gt;roadie config&lt;/code&gt; コマンドで対話的に変更することもできます．
 詳しくは &lt;a href=&#34;documents-ja/configuration&#34;&gt;設定について&lt;/a&gt; のページをご覧ください．&lt;/p&gt;
@@ -659,12 +640,11 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;project&lt;/strong&gt; 現在の Google Cloud Platform プロジェクト ID を表示・変更します,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;zone&lt;/strong&gt; 現在のゾーン設定を表示・変更します,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;type&lt;/strong&gt; 現在の仮想マシンタイプを表示・変更します,&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;bucket&lt;/strong&gt; 現在の Google Cloud Storage バケット名を表示・変更します．&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;region&lt;/strong&gt; 現在のゾーン設定を表示・変更します,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;machine&lt;/strong&gt; 現在の仮想マシンタイプを表示・変更します,&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;すべての設定は，カレントディレクトリの &lt;code&gt;.roadie&lt;/code&gt; ファイルに保存されます．
+&lt;p&gt;すべての設定は，カレントディレクトリの &lt;code&gt;roadie.yml&lt;/code&gt; ファイルに保存されます．
 このファイルはテキストファイルなので，手作業で編集できます．&lt;/p&gt;
 
 &lt;h3 id=&#34;project:a66b35d20295cb764719ac8bd35837ec&#34;&gt;project&lt;/h3&gt;
@@ -685,25 +665,19 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;を実行します．&lt;/p&gt;
 
-&lt;p&gt;プロジェクト ID は，&lt;code&gt;roadie&lt;/code&gt; の他のコマンドが Google Cloud Platform に
-アクセスするために使用されます．
-もし，正しいプロジェクト ID を設定しているにも関わらず，
-他のコマンドが失敗する場合，正しく認証されていることを確認してください．
-&lt;code&gt;gcloud auth list&lt;/code&gt; は，認証状況を出力します．&lt;/p&gt;
-
-&lt;h3 id=&#34;zone:a66b35d20295cb764719ac8bd35837ec&#34;&gt;zone&lt;/h3&gt;
+&lt;h3 id=&#34;region:a66b35d20295cb764719ac8bd35837ec&#34;&gt;region&lt;/h3&gt;
 
 &lt;p&gt;Google Cloud Platform では，仮想マシンを実行するデータセンターが幾つか提供されています．
 仮想マシンの利用料金はゾーンごとに異なっています．
 利用可能なゾーンを取得するためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone list
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
 現在設定されているゾーンを調べるためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
@@ -711,18 +685,18 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;最後に，ゾーンをある値 &lt;code&gt;ZONE&lt;/code&gt; に変更するためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config zone set ZONE
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region set ZONE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
 
-&lt;h3 id=&#34;type:a66b35d20295cb764719ac8bd35837ec&#34;&gt;type&lt;/h3&gt;
+&lt;h3 id=&#34;machine:a66b35d20295cb764719ac8bd35837ec&#34;&gt;machine&lt;/h3&gt;
 
 &lt;p&gt;プログラムを実行する仮想マシンのスペックにはいくつかの種類が用意されています．
 各マシンタイプには異なる仮想 CPU 数やメモリサイズが設定されています．
 利用可能な仮想マシンタイプを取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type list
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
@@ -736,36 +710,16 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 &lt;code&gt;n1-standard-1&lt;/code&gt; が選ばれています．
 現在設定されている仮想マシンタイプを取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
 また，仮想マシンタイプを &lt;code&gt;TYPE&lt;/code&gt; へ変更する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config type set TYPE
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine set TYPE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
-
-&lt;h3 id=&#34;bucket:a66b35d20295cb764719ac8bd35837ec&#34;&gt;bucket&lt;/h3&gt;
-
-&lt;p&gt;バケットは，ソースコードを含め &lt;code&gt;roadie&lt;/code&gt; が使用するデータを保存する
-クラウドストレージの場所です．
-バケットは全世界でユニークなバケット名で識別されます．
-任意のバケット名を使用可能ですが，プロジェクト ID と同じものを設定しておく方が良いでしょう．
-なお，デフォルトではプロジェクト ID と同じ値が設定されます．&lt;/p&gt;
-
-&lt;p&gt;現在設定されているバケット名を調べるには，&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;を実行します．また，バケット名として &lt;code&gt;NAME&lt;/code&gt; を使用する場合，&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config bucket set NAME
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;を実行します．&lt;/p&gt;
 </description>
     </item>
     

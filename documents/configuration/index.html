@@ -127,7 +127,7 @@ body {
         <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
         
         
-        <li><a class="page-scroll" href="./release/">Release</a></li>
+        <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie/releases">Release</a></li>
         
         <li>
         <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
@@ -148,17 +148,16 @@ body {
               
 
 <p>To update configuration of roadie, use <code>roadie config</code> command.
-It provides four sub commands:</p>
+It provides the following sub commands:</p>
 
 <ul>
 <li><strong>project</strong> shows and updates project ID of Google Cloud Platform,</li>
-<li><strong>zone</strong> shows and updates zone used to run scripts,</li>
-<li><strong>type</strong> shows and updates machine type used to run scripts,</li>
-<li><strong>bucket</strong> shows and updates bucket name used to store related files.</li>
+<li><strong>region</strong> shows and updates region used to run scripts,</li>
+<li><strong>machine</strong> shows and updates machine type used to run scripts,</li>
 </ul>
 
-<p>Note that every configurations are stored to &lsquo;.roadie&rsquo;
-in the current working directory.
+<p>Note that every configurations are stored to <code>roadie.yml</code>
+in the current working directory by default.
 You can also update configurations without this command by editing that file.</p>
 
 <h3 id="project:a66b35d20295cb764719ac8bd35837ec">project</h3>
@@ -176,39 +175,35 @@ You can find your project ID <a href="https://console.cloud.google.com/project">
 <pre><code class="language-sh">$ roadie config project set PROJECT
 </code></pre>
 
-<p>Valid project ID is required to access Google Cloud Platform.
-If you set correct project ID but any commands such as
-<code>roadie config type list</code> fail,
-make sure you have authenticated your computer by checking <code>gcloud auth list</code>
-shows your account is credentialed.</p>
+<p>Valid project ID is required to access Google Cloud Platform.</p>
 
-<h3 id="zone:a66b35d20295cb764719ac8bd35837ec">zone</h3>
+<h3 id="region:a66b35d20295cb764719ac8bd35837ec">region</h3>
 
 <p>In Google Cloud Platform, the platform is divided into several zones
 based on actual locations where virtual machine will run.
 You can find current available zones by running</p>
 
-<pre><code class="language-sh">$ roadie config zone list
+<pre><code class="language-sh">$ roadie config region list
 </code></pre>
 
 <p>By default, <code>us-central1-b</code> is chosen.
 To check current zone, run</p>
 
-<pre><code class="language-sh">$ roadie config zone
+<pre><code class="language-sh">$ roadie config region
 </code></pre>
 
 <p>and to set another <code>ZONE</code>, run</p>
 
-<pre><code class="language-sh">$ roadie config zone set ZONE
+<pre><code class="language-sh">$ roadie config region set ZONE
 </code></pre>
 
-<h3 id="type:a66b35d20295cb764719ac8bd35837ec">type</h3>
+<h3 id="machine:a66b35d20295cb764719ac8bd35837ec">machine</h3>
 
 <p>There are some options about machine type on which your program runs.
 Each machine type has different number of virtual CPUs and RAM.
 You can find available machine types by running</p>
 
-<pre><code class="language-sh">$ roadie config type list
+<pre><code class="language-sh">$ roadie config machine list
 </code></pre>
 
 <p>and <a href="https://cloud.google.com/compute/pricing">here</a> is more information about
@@ -219,30 +214,12 @@ You should set zone before checking machine types.</p>
 <p>By default, <code>n1-standard-1</code>, which has 1 vCPU and 3.75 GB RAM, is selected.
 To check current machine type, run</p>
 
-<pre><code class="language-sh">$ roadie config type
+<pre><code class="language-sh">$ roadie config machine
 </code></pre>
 
 <p>and to set another <code>TYPE</code>, run</p>
 
-<pre><code class="language-sh">$ roadie config type set TYPE
-</code></pre>
-
-<h3 id="bucket:a66b35d20295cb764719ac8bd35837ec">bucket</h3>
-
-<p>Bucket is a place to store any data including source codes and outputs from
-your program.
-Each bucket is identified by bucket name and it must be unique in the world.
-You can choose any name but it is recommended to use same name as your project ID.
-Actually, by default, roadie sets the project ID to the bucket name.</p>
-
-<p>To check current bucket name, run</p>
-
-<pre><code class="language-sh">$ roadie config bucket
-</code></pre>
-
-<p>and to set another bucket name <code>NAME</code>, run</p>
-
-<pre><code class="language-sh">$ roadie config bucket set NAME
+<pre><code class="language-sh">$ roadie config machine set TYPE
 </code></pre>
 
             </div>

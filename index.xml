@@ -271,7 +271,7 @@ limitations under the License.&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.gnu.org/copyleft/gpl.html&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/license-GPLv3-blue.svg&#34; alt=&#34;GPLv3&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://travis-ci.org/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://travis-ci.org/jkawamoto/roadie.svg?branch=master&#34; alt=&#34;Build Status&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;https://codeclimate.com/github/jkawamoto/roadie&#34;&gt;&lt;img src=&#34;https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg&#34; alt=&#34;Code Climate&#34; /&gt;&lt;/a&gt;
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.5&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.5-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.6&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.6-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;http://qiita.com/jkawamoto/items/751558536a597a33ae2a&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg&#34; alt=&#34;Japanese&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; helps you to upload your source codes to the cloud, create and delete
@@ -307,18 +307,23 @@ You can access those results by&lt;/p&gt;
 
 &lt;p&gt;Then, &lt;code&gt;roadie&lt;/code&gt; downloads all result files into &lt;code&gt;./res&lt;/code&gt; directory.&lt;/p&gt;
 
-&lt;h2 id=&#34;install:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Install&lt;/h2&gt;
+&lt;h2 id=&#34;installation:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Installation&lt;/h2&gt;
 
-&lt;p&gt;Compiled binary files for some platforms are uploaded in &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
-To install in other platforms following the go manner, use &lt;code&gt;go get&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ go get github.com/jkawamoto/roadie
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Compiled binary files for some platforms are uploaded in
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;For mac user, &lt;code&gt;roadie&lt;/code&gt; is available in &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;initialization:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Initialization&lt;/h2&gt;
+
+&lt;p&gt;After installing &lt;code&gt;roadie&lt;/code&gt;, the following initialization is required in order to
+authorize &lt;code&gt;roadie&lt;/code&gt; to access cloud services.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie init
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;h2 id=&#34;license:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;License&lt;/h2&gt;

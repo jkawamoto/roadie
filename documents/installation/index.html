@@ -127,7 +127,7 @@ body {
         <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
         
         
-        <li><a class="page-scroll" href="./release/">Release</a></li>
+        <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie/releases">Release</a></li>
         
         <li>
         <a class="page-scroll" href=https://www.jkawamoto.info/>Junpei Kawamoto</a>
@@ -147,33 +147,14 @@ body {
               <h2 class="section-heading">Installation</h2>
               
 
-<h3 id="requirements:4c40a97dcf30b230e73eabba1323c21c">Requirements</h3>
-
-<p>Since roadie currently supports only
-<a href="https://cloud.google.com/">Google Cloud Platform</a>,
-you need to register it at first.</p>
-
-<p>roadie uses Google&rsquo;s <a href="https://cloud.google.com/sdk/">Cloud SDK</a>.
-Please install and initialize it by yourself.
-<code>gcloud auth list</code> shows an authorized account name, i.e. an email address,
-after success of initialization.</p>
-
 <h3 id="install:4c40a97dcf30b230e73eabba1323c21c">Install</h3>
 
-<p>roadie&rsquo;s compiled binary files for some platforms are found in Github&rsquo;s
+<p>Roadie&rsquo;s compiled binary files for some platforms are found in Github&rsquo;s
 <a href="https://github.com/jkawamoto/roadie/releases">release page</a>.
 Download one of them according to your environment and put the binary into
 a directory in your <code>$PATH</code>, or put it as same directory as your current project.</p>
 
-<p>You can also install roadie by following the go manner.</p>
-
-<pre><code class="language-sh">$ go get github.com/jkawamoto/roadie
-</code></pre>
-
-<p>Then, the binary will be installed in <code>$GOPATH/bin</code>.
-In this case, you need to install <code>go</code> before running <code>go get</code>.</p>
-
-<p>If you are using mac, you can install <code>roadie</code> via <a href="http://brew.sh/">Homebrew</a>.</p>
+<p>If you are a mac user, you can install <code>roadie</code> via <a href="http://brew.sh/">Homebrew</a>.</p>
 
 <pre><code class="language-sh">$ brew tap jkawamoto/roadie
 $ brew install roadie
@@ -181,18 +162,13 @@ $ brew install roadie
 
 <h3 id="initialization:4c40a97dcf30b230e73eabba1323c21c">Initialization</h3>
 
-<p>Each project needs to initialize roadie and notifies the <em>project ID</em> and
-a bucket name.
+<p>Each project needs to initialize roadie and sets your <em>project ID</em>.
 Project ID is an ID registered in Google Cloud Platform.
 You can find your project ID <a href="https://console.cloud.google.com/project">here</a>.
 Note that <em>project name</em> is different from project ID.</p>
 
 <pre><code class="language-sh">$ roadie init
 </code></pre>
-
-<p>The initialization command asks you the current Google Cloud Platform&rsquo;s project
-ID and other your preference, then makes configuration file <code>.roadie</code> in the
-current directory.</p>
 
 <p>Although the configuration file is a text file and you can edit it,
 roadie provides <code>config</code> command to edit it interactively.
