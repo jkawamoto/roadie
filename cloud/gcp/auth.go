@@ -39,6 +39,11 @@ const (
 	authorizeEndpoint = "https://accounts.google.com/o/oauth2/v2/auth"
 	// tokenEndpoint defines a URL to obtain a token and refresh a token.
 	tokenEndpoint = "https://www.googleapis.com/oauth2/v4/token"
+
+	// AuthSucceedURL is a page showing authentication success.
+	AuthSucceedURL = "https://jkawamoto.github.io/roadie/auth/succeed/"
+	// AuthErrorURL is a page showing authentication error.
+	AuthErrorURL = "https://jkawamoto.github.io/roadie/auth/error/"
 )
 
 var (
@@ -84,21 +89,22 @@ func (r *codeReciever) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	queries := req.URL.Query()
 	if errCode := queries.Get("error"); errCode != "" {
-		fmt.Fprintln(res, "Done")
+		res.Header().Add("Location", AuthErrorURL)
 		r.Error <- errCode
 
 	} else if code := queries.Get("code"); code == "" {
-		fmt.Fprintln(res, "Invarid")
+		res.Header().Add("Location", AuthErrorURL)
 		r.Error <- ""
 
 	} else {
-		fmt.Fprintln(res, "Approved")
+		res.Header().Add("Location", AuthSucceedURL)
 		r.Result <- &authorizationCode{
 			Code:  queries.Get("code"),
 			State: queries.Get("state"),
 		}
 
 	}
+	res.WriteHeader(http.StatusFound)
 
 }
 
