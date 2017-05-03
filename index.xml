@@ -6,8 +6,34 @@
     <description>Recent content on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 21 Dec 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 03 May 2017 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://jkawamoto.github.io/roadie/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Authentication Failed</title>
+      <link>https://jkawamoto.github.io/roadie/auth/error/</link>
+      <pubDate>Wed, 03 May 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/auth/error/</guid>
+      <description>&lt;ul&gt;
+&lt;li&gt;Authentication process has been failed. Please close this page and try it again.&lt;/li&gt;
+&lt;li&gt;認証手続きに失敗しました．このページを閉じてアプリケーションに戻ってください．&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Authentication Success</title>
+      <link>https://jkawamoto.github.io/roadie/auth/succeed/</link>
+      <pubDate>Wed, 03 May 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/auth/succeed/</guid>
+      <description>&lt;ul&gt;
+&lt;li&gt;Authentication process has been done successfully. Please close this page.&lt;/li&gt;
+&lt;li&gt;認証手続きが終了しました．このページを閉じてアプリケーションに戻ってください．&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>Licenses</title>
@@ -512,53 +538,6 @@ It will reduce your types to make script files.&lt;/p&gt;
 when GCP error happens.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.2.0&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Version 0.1.4</title>
-      <link>https://jkawamoto.github.io/roadie/release/v0.1.4/</link>
-      <pubDate>Sun, 17 Jul 2016 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/release/v0.1.4/</guid>
-      <description>
-
-&lt;h3 id=&#34;fixed:3ce5f2778e724d327f8a7f2865a19883&#34;&gt;Fixed&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Look for configuration files.&lt;/li&gt;
-&lt;li&gt;Print warning if Project ID is not set in configure file.&lt;/li&gt;
-&lt;li&gt;Project ID and Bucket name do not allow empty strings.&lt;/li&gt;
-&lt;li&gt;Project name has been renamed to Project ID.&lt;/li&gt;
-&lt;li&gt;Update to use current zone name in order to search available machine types.&lt;/li&gt;
-&lt;li&gt;Run command creates a bucket if necessary.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.1.4&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Version 0.1.3</title>
-      <link>https://jkawamoto.github.io/roadie/release/v0.1.3/</link>
-      <pubDate>Fri, 15 Jul 2016 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/release/v0.1.3/</guid>
-      <description>
-
-&lt;h3 id=&#34;feature:4a8c8644fbfeec8969f57592dec005a2&#34;&gt;Feature&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;In addition to &lt;code&gt;--name&lt;/code&gt; flag, support &lt;code&gt;-n&lt;/code&gt; flag as a short version.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&#34;fixed:4a8c8644fbfeec8969f57592dec005a2&#34;&gt;Fixed&lt;/h3&gt;
-
-&lt;ul&gt;
-&lt;li&gt;A bug of uploaded file names that all uploaded files were saved as a same name.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/v0.1.3&#34;&gt;Download&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     

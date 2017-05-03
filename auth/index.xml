@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Auths on Roadie</title>
+    <link>https://jkawamoto.github.io/roadie/auth/</link>
+    <description>Recent content in Auths on Roadie</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 03 May 2017 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://jkawamoto.github.io/roadie/auth/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Authentication Failed</title>
+      <link>https://jkawamoto.github.io/roadie/auth/error/</link>
+      <pubDate>Wed, 03 May 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/auth/error/</guid>
+      <description>&lt;ul&gt;
+&lt;li&gt;Authentication process has been failed. Please close this page and try it again.&lt;/li&gt;
+&lt;li&gt;認証手続きに失敗しました．このページを閉じてアプリケーションに戻ってください．&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Authentication Success</title>
+      <link>https://jkawamoto.github.io/roadie/auth/succeed/</link>
+      <pubDate>Wed, 03 May 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/auth/succeed/</guid>
+      <description>&lt;ul&gt;
+&lt;li&gt;Authentication process has been done successfully. Please close this page.&lt;/li&gt;
+&lt;li&gt;認証手続きが終了しました．このページを閉じてアプリケーションに戻ってください．&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
