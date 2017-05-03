@@ -2,15 +2,14 @@
 title: Configuration
 ---
 To update configuration of roadie, use `roadie config` command.
-It provides four sub commands:
+It provides the following sub commands:
 
 - **project** shows and updates project ID of Google Cloud Platform,
-- **zone** shows and updates zone used to run scripts,
-- **type** shows and updates machine type used to run scripts,
-- **bucket** shows and updates bucket name used to store related files.
+- **region** shows and updates region used to run scripts,
+- **machine** shows and updates machine type used to run scripts,
 
-Note that every configurations are stored to '.roadie'
-in the current working directory.
+Note that every configurations are stored to `roadie.yml`
+in the current working directory by default.
 You can also update configurations without this command by editing that file.
 
 ### project
@@ -30,40 +29,36 @@ $ roadie config project set PROJECT
 ```
 
 Valid project ID is required to access Google Cloud Platform.
-If you set correct project ID but any commands such as
-`roadie config type list` fail,
-make sure you have authenticated your computer by checking `gcloud auth list`
-shows your account is credentialed.
 
-### zone
+### region
 In Google Cloud Platform, the platform is divided into several zones
 based on actual locations where virtual machine will run.
 You can find current available zones by running
 
 ```sh
-$ roadie config zone list
+$ roadie config region list
 ```
 
 By default, `us-central1-b` is chosen.
 To check current zone, run
 
 ```sh
-$ roadie config zone
+$ roadie config region
 ```
 
 and to set another `ZONE`, run
 
 ```sh
-$ roadie config zone set ZONE
+$ roadie config region set ZONE
 ```
 
-### type
+### machine
 There are some options about machine type on which your program runs.
 Each machine type has different number of virtual CPUs and RAM.
 You can find available machine types by running
 
 ```sh
-$ roadie config type list
+$ roadie config machine list
 ```
 
 and [here](https://cloud.google.com/compute/pricing) is more information about
@@ -75,30 +70,11 @@ By default, `n1-standard-1`, which has 1 vCPU and 3.75 GB RAM, is selected.
 To check current machine type, run
 
 ```sh
-$ roadie config type
+$ roadie config machine
 ```
 
 and to set another `TYPE`, run
 
 ```sh
-$ roadie config type set TYPE
-```
-
-### bucket
-Bucket is a place to store any data including source codes and outputs from
-your program.
-Each bucket is identified by bucket name and it must be unique in the world.
-You can choose any name but it is recommended to use same name as your project ID.
-Actually, by default, roadie sets the project ID to the bucket name.
-
-To check current bucket name, run
-
-```sh
-$ roadie config bucket
-```
-
-and to set another bucket name `NAME`, run
-
-```sh
-$ roadie config bucket set NAME
+$ roadie config machine set TYPE
 ```
