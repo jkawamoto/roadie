@@ -1,3 +1,7 @@
+## 0.3.7 (2017-05-03)
+### Updated
+- Use better authentication protocol.
+
 ## 0.3.6 (2017-05-03)
 ### Updated
 - Run authentication process for Google Cloud Platform

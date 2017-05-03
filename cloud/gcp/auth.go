@@ -24,11 +24,14 @@ package gcp
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"math/big"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -73,14 +76,14 @@ type authorizationCode struct {
 // codeReciever is a local HTTP server to recieve an authorization code.
 type codeReciever struct {
 	Result chan *authorizationCode
-	Error  chan string
+	Error  chan error
 }
 
 // newCodeReciever create a new codeReciever.
 func newCodeReciever() *codeReciever {
 	return &codeReciever{
 		Result: make(chan *authorizationCode, 1),
-		Error:  make(chan string, 1),
+		Error:  make(chan error, 1),
 	}
 }
 
@@ -90,11 +93,11 @@ func (r *codeReciever) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	queries := req.URL.Query()
 	if errCode := queries.Get("error"); errCode != "" {
 		res.Header().Add("Location", AuthErrorURL)
-		r.Error <- errCode
+		r.Error <- fmt.Errorf("Failed authorization: %v", errCode)
 
 	} else if code := queries.Get("code"); code == "" {
 		res.Header().Add("Location", AuthErrorURL)
-		r.Error <- ""
+		r.Error <- fmt.Errorf("Failed authorization")
 
 	} else {
 		res.Header().Add("Location", AuthSucceedURL)
@@ -137,7 +140,8 @@ func RequestToken(ctx context.Context, output io.Writer) (token *oauth2.Token, e
 	if err != nil {
 		return
 	}
-	codeChallenge := string(codeVerifier)
+	sum := sha256.Sum256(codeVerifier)
+	codeChallenge := strings.TrimRight(base64.URLEncoding.EncodeToString(sum[:]), "=")
 
 	port := 18029
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%v", port))
@@ -148,7 +152,7 @@ func RequestToken(ctx context.Context, output io.Writer) (token *oauth2.Token, e
 
 	cfg := NewAuthorizationConfig(port)
 	state := fmt.Sprintf("%v", time.Now().Unix())
-	endpoint := cfg.AuthCodeURL(state, oauth2.SetAuthURLParam("code_challenge_method", "plain"), oauth2.SetAuthURLParam("code_challenge", codeChallenge))
+	endpoint := cfg.AuthCodeURL(state, oauth2.SetAuthURLParam("code_challenge_method", "S256"), oauth2.SetAuthURLParam("code_challenge", codeChallenge))
 	fmt.Fprintf(output, `Authorization is required.
 Open the following URL in your browser and grand access to this application.
 
@@ -162,9 +166,12 @@ Open the following URL in your browser and grand access to this application.
 	var code *authorizationCode
 	select {
 	case code = <-receiver.Result:
-		// TODO: Check the recieved state is correct.
-	case errMsg := <-receiver.Error:
-		err = fmt.Errorf("Failed authorization: %v", errMsg)
+		if code.State != state {
+			err = fmt.Errorf("Received state dosen't match")
+			return
+		}
+
+	case err = <-receiver.Error:
 		return
 	case <-ctx.Done():
 		return nil, ctx.Err()
