@@ -1,3 +1,10 @@
+## 0.3.6 (2017-05-03)
+### Updated
+- Run authentication process for Google Cloud Platform
+- Not dependent gcloud
+- Initialization command becomes simple
+
+
 ## 0.3.5 (2017-05-01)
 ### Updated
 - Worker instances use [Core OS](https://coreos.com/) (v20170401)
