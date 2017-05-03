@@ -35,11 +35,11 @@ import (
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:  "config, c",
-		Usage: "specify a config file `NAME`.",
+		Usage: "specify a config `FILE`",
 	},
 	cli.BoolFlag{
 		Name:  "verbose",
-		Usage: "verbose outputs.",
+		Usage: "verbose outputs",
 	},
 	// cli.BoolFlag{
 	// 	Name: "no-color",
@@ -54,13 +54,12 @@ var GlobalFlags = []cli.Flag{
 // Commands manage sub commands.
 var Commands = []cli.Command{
 	{
-		Name:  "init",
-		Usage: "initialize roadie.",
-		Description: "Check requirements. Install and set up `Google Cloud SDK` if necessary. " +
-			"Create configuration file `.roadie`.",
-		Category:  "Configuration",
-		ArgsUsage: " ",
-		Action:    command.CmdInit,
+		Name:        "init",
+		Usage:       "initialize roadie.",
+		Description: "Create configuration file `roadie.yml`",
+		Category:    "Configuration",
+		ArgsUsage:   " ",
+		Action:      command.CmdInit,
 	},
 	{
 		Name:  "run",
