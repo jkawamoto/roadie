@@ -1,6 +1,7 @@
 # roadie
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/copyleft/gpl.html)
 [![Build Status](https://travis-ci.org/jkawamoto/roadie.svg?branch=master)](https://travis-ci.org/jkawamoto/roadie)
+[![wercker status](https://app.wercker.com/status/6c499024136e7067b86bef4bd07d7f62/s/master "wercker status")](https://app.wercker.com/project/byKey/6c499024136e7067b86bef4bd07d7f62)
 [![Code Climate](https://codeclimate.com/github/jkawamoto/roadie/badges/gpa.svg)](https://codeclimate.com/github/jkawamoto/roadie)
 [![Release](https://img.shields.io/badge/release-0.3.5-brightgreen.svg)](https://github.com/jkawamoto/roadie/releases/tag/v0.3.5)
 [![Japanese](https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg)](http://qiita.com/jkawamoto/items/751558536a597a33ae2a)
@@ -48,19 +49,23 @@ $ roadie result get analyze-wowah "*" -o ./res
 
 Then, `roadie` downloads all result files into `./res` directory.
 
-## Install
-Compiled binary files for some platforms are uploaded in [release page](https://github.com/jkawamoto/roadie/releases).
-To install in other platforms following the go manner, use `go get`:
-
-```sh
-$ go get github.com/jkawamoto/roadie
-```
+## Installation
+Compiled binary files for some platforms are uploaded in
+[release page](https://github.com/jkawamoto/roadie/releases).
 
 For mac user, `roadie` is available in [Homebrew](http://brew.sh/).
 
 ```sh
 $ brew tap jkawamoto/roadie
 $ brew install roadie
+```
+
+## Initialization
+After installing `roadie`, the following initialization is required in order to
+authorize `roadie` to access cloud services.
+
+```sh
+$ roadie init
 ```
 
 ## License
