@@ -54,7 +54,7 @@ func CmdInit(c *cli.Context) (err error) {
 
 	m, err := getMetadata(c)
 	if err != nil {
-		fmt.Println(`This command will create "roadie.yml" file in current directory.
+		fmt.Println(`This command will create file "roadie.yml" in current directory.
 Configurations can be updated with "roadie config" command.
 See "roadie config --help", for more detail.
 `)
