@@ -29,7 +29,6 @@ import (
 	"path/filepath"
 
 	"github.com/deiwin/interact"
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
@@ -66,7 +65,7 @@ func CmdResultList(c *cli.Context) (err error) {
 		instance := c.Args().First()
 		err = PrintFileList(m, script.ResultPrefix, instance, c.Bool("url"), c.Bool("quiet"))
 	default:
-		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at most 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -102,7 +101,7 @@ func CmdResultShow(c *cli.Context) (err error) {
 		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
 
 	default:
-		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -117,7 +116,7 @@ func CmdResultShow(c *cli.Context) (err error) {
 func CmdResultGet(c *cli.Context) error {
 
 	if c.NArg() == 0 {
-		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -149,7 +148,7 @@ func CmdResultGet(c *cli.Context) error {
 func CmdResultDelete(c *cli.Context) error {
 
 	if c.NArg() == 0 {
-		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -164,7 +163,7 @@ func CmdResultDelete(c *cli.Context) error {
 
 		actor := interact.NewActor(os.Stdin, os.Stdout)
 		deleteAll, err := actor.Confirm(
-			chalk.Red.Color("File names are not given. Do you want to delete all files?"),
+			m.Decorator.Red("File names are not given. Do you want to delete all files?"),
 			interact.ConfirmDefaultToNo)
 
 		if err != nil {

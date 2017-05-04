@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/gosuri/uitable"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -36,7 +35,7 @@ func CmdConfigProject(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected no arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 	return CmdConfigProjectShow(c)
@@ -46,7 +45,7 @@ func CmdConfigProject(c *cli.Context) error {
 func CmdConfigProjectSet(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -61,13 +60,13 @@ func CmdConfigProjectSet(c *cli.Context) (err error) {
 
 	name := c.Args().First()
 	if strings.Contains(name, " ") {
-		fmt.Println(chalk.Red.Color("The given project ID has spaces. They are replaced to '_'."))
+		fmt.Println(m.Decorator.Red("The given project ID has spaces. They are replaced to '_'."))
 		name = strings.Replace(name, " ", "_", -1)
 	}
 	if id := resource.GetProjectID(); id == "" {
-		fmt.Printf("Set project ID:\n  %s\n", chalk.Green.Color(name))
+		fmt.Printf("Set project ID:\n  %s\n", m.Decorator.Green(name))
 	} else {
-		fmt.Printf("Update project ID:\n  %s -> %s\n", id, chalk.Green.Color(name))
+		fmt.Printf("Update project ID:\n  %s -> %s\n", id, m.Decorator.Green(name))
 	}
 	resource.SetProjectID(name)
 
@@ -93,7 +92,7 @@ func CmdConfigProjectShow(c *cli.Context) (err error) {
 	if id := resource.GetProjectID(); id != "" {
 		fmt.Println(id)
 	} else {
-		fmt.Println(chalk.Red.Color("Not set"))
+		fmt.Println(m.Decorator.Red("Not set"))
 	}
 	return
 }
@@ -105,7 +104,7 @@ func CmdConfigMachineType(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected no arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 	return CmdConfigMachineTypeShow(c)
@@ -115,8 +114,7 @@ func CmdConfigMachineType(c *cli.Context) error {
 func CmdConfigMachineTypeSet(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(
-			chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -150,9 +148,9 @@ func CmdConfigMachineTypeSet(c *cli.Context) (err error) {
 	}
 
 	if t := resource.GetMachineType(); t == "" {
-		fmt.Println("Set machine type:", chalk.Green.Color(newType))
+		fmt.Println("Set machine type:", m.Decorator.Green(newType))
 	} else {
-		fmt.Println("Update machine type:", t, "->", chalk.Green.Color(newType))
+		fmt.Println("Update machine type:", t, "->", m.Decorator.Green(newType))
 	}
 
 	resource.SetMachineType(newType)
@@ -186,9 +184,9 @@ func CmdConfigMachineTypeList(c *cli.Context) (err error) {
 	table.AddRow("MACHINE TYPE", "DESCRIPTION")
 	for _, v := range types {
 		if v.Name == resource.GetMachineType() {
-			table.AddRow(chalk.Green.Color(v.Name)+"*", chalk.Green.Color(v.Description))
+			table.AddRow(m.Decorator.Green(v.Name)+"*", m.Decorator.Green(v.Description))
 		} else {
-			table.AddRow(chalk.ResetColor.Color(v.Name), v.Description)
+			table.AddRow(m.Decorator.White(v.Name), v.Description)
 		}
 	}
 	fmt.Println(table.String())
@@ -211,7 +209,7 @@ func CmdConfigMachineTypeShow(c *cli.Context) (err error) {
 	if t := resource.GetMachineType(); t != "" {
 		fmt.Println(t)
 	} else {
-		fmt.Println(chalk.Red.Color("Not set"))
+		fmt.Println(m.Decorator.Red("Not set"))
 	}
 	return nil
 }
@@ -223,7 +221,7 @@ func CmdConfigRegion(c *cli.Context) error {
 		return cli.ShowSubcommandHelp(c)
 	}
 	if c.NArg() != 0 {
-		fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected no arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 	return CmdConfigRegionShow(c)
@@ -233,8 +231,7 @@ func CmdConfigRegion(c *cli.Context) error {
 func CmdConfigRegionSet(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(
-			chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -267,9 +264,9 @@ func CmdConfigRegionSet(c *cli.Context) (err error) {
 	}
 
 	if old := resource.GetRegion(); old == "" {
-		fmt.Println("Set region:", chalk.Green.Color(newRegion))
+		fmt.Println("Set region:", m.Decorator.Green(newRegion))
 	} else {
-		fmt.Println("Update region:", old, "->", chalk.Green.Color(newRegion))
+		fmt.Println("Update region:", old, "->", m.Decorator.Green(newRegion))
 	}
 	resource.SetRegion(newRegion)
 
@@ -300,12 +297,12 @@ func CmdConfigRegionList(c *cli.Context) (err error) {
 
 	fmt.Println("Available zones:")
 	table := uitable.New()
-	table.AddRow(chalk.ResetColor.Color("ZONE"), "STATUS")
+	table.AddRow(m.Decorator.White("ZONE"), "STATUS")
 	for _, v := range regions {
 		if v.Name == resource.GetRegion() {
-			table.AddRow(chalk.Green.Color(v.Name)+"*", v.Status)
+			table.AddRow(m.Decorator.Green(v.Name)+"*", v.Status)
 		} else {
-			table.AddRow(chalk.ResetColor.Color(v.Name), v.Status)
+			table.AddRow(m.Decorator.White(v.Name), v.Status)
 		}
 	}
 	fmt.Println(table.String())
@@ -328,7 +325,7 @@ func CmdConfigRegionShow(c *cli.Context) (err error) {
 	if region := resource.GetRegion(); region != "" {
 		fmt.Println(region)
 	} else {
-		fmt.Println(chalk.Red.Color("Not set"))
+		fmt.Println(m.Decorator.Red("Not set"))
 	}
 	return
 

@@ -32,7 +32,6 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -65,7 +64,7 @@ type optQueueAdd struct {
 func CmdQueueAdd(c *cli.Context) (err error) {
 
 	if c.NArg() != 2 {
-		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 2 arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -125,14 +124,14 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 		return
 	}
 
-	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.Name), chalk.Bold.TextStyle(opt.QueueName))
+	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", opt.Decorator.Bold(s.Name), opt.Decorator.Bold(opt.QueueName))
 	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.Name, opt.QueueName)
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
 	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Red.Color("Cannot add the task:"), s.Name, ":", err.Error())
+		opt.Spinner.FinalMSG = fmt.Sprint(opt.Decorator.Bold("Cannot add the task:"), s.Name, ":", err.Error())
 	}
 	return
 
@@ -155,7 +154,7 @@ func CmdQueueStatus(c *cli.Context) error {
 	case 1:
 		return cmdTaskStatus(m, c.Args().First())
 	default:
-		fmt.Printf(chalk.Red.Color("expected at most one argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at most one argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -232,7 +231,7 @@ func CmdQueueLog(c *cli.Context) error {
 	case 2:
 		return cmdTaskLog(m, c.Args().First(), c.Args().Get(1), !c.Bool("no-timestamp"))
 	default:
-		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected one or two arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -286,7 +285,7 @@ func cmdTaskLog(m *Metadata, queue, task string, timestamp bool) (err error) {
 func CmdQueueInstanceList(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -312,7 +311,7 @@ func CmdQueueInstanceList(c *cli.Context) (err error) {
 func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -347,7 +346,7 @@ func CmdQueueInstanceAdd(c *cli.Context) (err error) {
 func CmdQueueStop(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -372,7 +371,7 @@ func CmdQueueStop(c *cli.Context) (err error) {
 func CmdQueueRestart(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -405,7 +404,7 @@ func CmdQueueDelete(c *cli.Context) error {
 	case 2:
 		return cmdTaskDelete(m, c.Args().First(), c.Args().Get(1))
 	default:
-		fmt.Printf(chalk.Red.Color("expected one or two arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected one or two arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 

@@ -24,7 +24,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -42,7 +41,7 @@ func CmdSourcePut(c *cli.Context) error {
 	case 2:
 		return cmdSourcePut(m, c.Args().First(), c.Args().Get(1), c.StringSlice("exclude"))
 	default:
-		fmt.Printf(chalk.Red.Color("expected 2 arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 2 arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -57,7 +56,7 @@ func cmdSourcePut(m *Metadata, path, name string, excludes []string) (err error)
 	if err != nil {
 		return
 	}
-	fmt.Println("Source files are uploaded to", chalk.Bold.TextStyle(location))
+	fmt.Println("Source files are uploaded to", m.Decorator.Bold(location))
 	return
 
 }

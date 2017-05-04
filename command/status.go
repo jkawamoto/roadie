@@ -25,7 +25,6 @@ import (
 	"fmt"
 
 	"github.com/gosuri/uitable"
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -81,7 +80,7 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 func CmdStatusKill(c *cli.Context) error {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -112,7 +111,7 @@ func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
 	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
 		m.Spinner.FinalMSG = fmt.Sprintf(
-			chalk.Red.Color("Cannot kill instance %s (%s)\n"), instanceName, err.Error())
+			m.Decorator.Red("Cannot kill instance %s (%s)\n"), instanceName, err.Error())
 	}
 	return
 

@@ -26,7 +26,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -48,7 +47,7 @@ func CmdLog(c *cli.Context) error {
 
 	// Checking the number of arguments.
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 

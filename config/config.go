@@ -30,7 +30,6 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 )
 
@@ -92,7 +91,7 @@ func (c *Config) Load() (err error) {
 	f, err := os.Open(c.FileName)
 	if err != nil {
 		return fmt.Errorf(
-			chalk.Red.Color("Cannot open configuration file %s. (%s)"),
+			"Cannot open configuration file %s. (%s)",
 			c.FileName, err.Error())
 	}
 	defer f.Close()
@@ -103,7 +102,7 @@ func (c *Config) Load() (err error) {
 	}
 	if err != nil {
 		return fmt.Errorf(
-			chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
+			"Configuration file %s is broken. Fix or delete it, first. (%s)",
 			c.FileName, err.Error())
 	}
 

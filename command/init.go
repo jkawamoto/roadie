@@ -24,8 +24,9 @@ package command
 import (
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/jkawamoto/roadie/chalk"
+	"github.com/jkawamoto/roadie/cloud/azure"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 
@@ -33,17 +34,9 @@ import (
 	"github.com/urfave/cli"
 )
 
-// GcloudConfig defines information received from `gcloud config list`.
-type GcloudConfig struct {
-	Zone    string
-	Account string
-	Project string
-}
-
 // CmdInit helps to create a configuration file.
 func CmdInit(c *cli.Context) (err error) {
 
-	fmt.Println(chalk.Green.Color("Initialize Roadie"))
 	actor := interact.NewActor(os.Stdin, os.Stdout)
 
 	// Initialization steps:
@@ -60,25 +53,61 @@ See "roadie config --help", for more detail.
 `)
 		m.Config = new(config.Config)
 		m.Config.FileName = "roadie.yml"
+
+	} else {
+		filename := m.Config.FileName
+		m.Config = new(config.Config)
+		m.Config.FileName = filename
+
 	}
 
-	var project string
-	message := "Please enter your project ID"
-	project, err = actor.PromptAndRetry(message, checkNotEmpty)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 10)
-	}
-	m.Config.GcpConfig.Project = project
-
-	fmt.Println("")
-	fmt.Println(chalk.Green.Color("Cheking authorization..."))
-	provider, err := gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, true)
+	fmt.Println(m.Decorator.Green("Initialize Roadie"))
+	servicer, err := actor.PromptAndRetry("Choose a cloud service provider from [azure, gcp]", checkOption("azure", "gcp"))
 	if err != nil {
 		return
 	}
-	_ = provider
 
-	fmt.Println(chalk.Green.Color("Saving configuarions..."))
+	switch servicer {
+	case "gcp":
+		var project string
+		project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
+		if err != nil {
+			return cli.NewExitError(err.Error(), 10)
+		}
+		m.Config.GcpConfig.Project = project
+
+		fmt.Println("")
+		fmt.Println(m.Decorator.Green("Cheking authorization..."))
+		_, err = gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, true)
+		if err != nil {
+			return
+		}
+
+	case "azure":
+		m.Config.AzureConfig.TenantID, err = actor.PromptAndRetry("Enter your tenant ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		m.Config.AzureConfig.SubscriptionID, err = actor.PromptAndRetry("Enter your subscription ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		m.Config.AzureConfig.ResourceGroupName, err = actor.PromptAndRetry(
+			"Enter your project ID (you can choose any name but it must be unique in the world)", checkNotEmpty)
+		if err != nil {
+			return
+		}
+
+		fmt.Println("")
+		fmt.Println(m.Decorator.Green("Cheking authorization..."))
+		_, err = azure.NewProvider(m.Context, &m.Config.AzureConfig, m.Logger, true)
+		if err != nil {
+			return
+		}
+
+	}
+
+	fmt.Println(m.Decorator.Green("Saving configuarions..."))
 	return m.Config.Save()
 
 }
@@ -89,4 +118,15 @@ func checkNotEmpty(value string) error {
 		return fmt.Errorf("Input value is empty.")
 	}
 	return nil
+}
+
+func checkOption(options ...string) interact.InputCheck {
+	return func(str string) error {
+		for _, v := range options {
+			if v == str {
+				return nil
+			}
+		}
+		return fmt.Errorf("Input must be one of [%v]", strings.Join(options, ", "))
+	}
 }

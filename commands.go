@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/command"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
@@ -41,10 +40,10 @@ var GlobalFlags = []cli.Flag{
 		Name:  "verbose",
 		Usage: "verbose outputs",
 	},
-	// cli.BoolFlag{
-	// 	Name: "no-color",
-	// 	Usage: "disable colorized output."
-	// },
+	cli.BoolFlag{
+		Name:  "no-color",
+		Usage: "disable colorized output.",
+	},
 	cli.BoolFlag{
 		Name:  "auth",
 		Usage: "force running an authentication process even if already logged in",
@@ -224,7 +223,7 @@ var Commands = []cli.Command{
 					"File names accept wild-card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wild-cards in unexpected way. " +
+					"Note that your shell may expand wild-cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<instance name> <file name>...",
 				Action:    command.CmdResultGet,
@@ -397,7 +396,7 @@ files belonging to the instance.`,
 					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"Note that your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(script.SourcePrefix),
@@ -479,7 +478,7 @@ files belonging to the instance.`,
 					"File names accept wild card characters. " +
 					"Downloaded file will be stored in the current working directory. " +
 					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					chalk.Bold.TextStyle("Note that") + " your shell may expand wild cards in unexpected way. " +
+					"Note that your shell may expand wild cards in unexpected way. " +
 					"To avoid this problem, quote each file name.",
 				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(script.DataPrefix),
@@ -618,7 +617,7 @@ files belonging to the instance.`,
 // CommandNotFound shows error message and exit when a given command is not found.
 func CommandNotFound(c *cli.Context, command string) {
 
-	fmt.Fprintf(os.Stderr, chalk.Red.Color("'%s' is not a %s command..\n"), command, c.App.Name)
+	fmt.Fprintf(os.Stderr, "'%s' is not a %s command..\n", command, c.App.Name)
 	cli.ShowAppHelp(c)
 	os.Exit(2)
 

@@ -30,7 +30,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
@@ -47,7 +46,7 @@ func GenerateListAction(container string) func(*cli.Context) error {
 	return func(c *cli.Context) error {
 
 		if c.NArg() != 0 {
-			fmt.Printf(chalk.Red.Color("expected no arguments. (%d given)\n"), c.NArg())
+			fmt.Printf("expected no arguments. (%d given)\n", c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
@@ -72,7 +71,7 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 	return func(c *cli.Context) (err error) {
 
 		if c.NArg() == 0 {
-			fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+			fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
@@ -103,7 +102,7 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 	return func(c *cli.Context) (err error) {
 
 		if c.NArg() == 0 {
-			fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+			fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 			return cli.ShowSubcommandHelp(c)
 		}
 
@@ -157,7 +156,7 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		if s.Source != "" {
 			fmt.Fprintf(
 				warning,
-				chalk.Red.Color("The source section of the script will be overwritten to '%s' since a Git repository is given.\n"),
+				m.Decorator.Red("The source section of the script will be overwritten to '%s' since a Git repository is given.\n"),
 				opt.Git)
 		}
 		if err = setGitSource(s, opt.Git); err != nil {
@@ -168,7 +167,7 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		if s.Source != "" {
 			fmt.Fprintf(
 				warning,
-				chalk.Red.Color("The source section the script will be overwritten to '%s' since a repository URL is given.\n"),
+				m.Decorator.Red("The source section the script will be overwritten to '%s' since a repository URL is given.\n"),
 				opt.URL)
 		}
 		s.Source = opt.URL
@@ -182,7 +181,7 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		setSource(s, opt.Source)
 
 	case s.Source == "":
-		fmt.Println(chalk.Red.Color("No source section and source flags are given."))
+		fmt.Println(m.Decorator.Red("No source section and source flags are given."))
 	}
 
 	return
@@ -254,8 +253,7 @@ func setSource(s *script.Script, file string) {
 
 	url := script.RoadieSchemePrefix + filepath.Join(script.SourcePrefix, file)
 	if s.Source != "" {
-		fmt.Printf(
-			chalk.Red.Color("Source section will be overwritten to '%s' since a filename is given.\n"), url)
+		fmt.Printf("Source section will be overwritten to '%s' since a filename is given.\n", url)
 	}
 	s.Source = url
 
@@ -269,13 +267,9 @@ func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 	} else {
 		fmt.Fprintf(
 			warning,
-			chalk.Red.Color("Since result section is given, all outputs will be stored in %s.\n"), s.Result)
-		fmt.Fprintln(
-			warning,
-			chalk.Red.Color("Those buckets might not be retrieved from this program and manually downloading results is required."))
-		fmt.Fprintln(
-			warning,
-			chalk.Red.Color("To manage outputs by this program, delete result section or set --overwrite-result-section flag."))
+			`Since result section is given, all outputs will be stored in %s.\n
+Those buckets might not be retrieved from this program and manually downloading results is required.
+To manage outputs by this program, delete result section or set --overwrite-result-section flag.`, s.Result)
 	}
 
 }
