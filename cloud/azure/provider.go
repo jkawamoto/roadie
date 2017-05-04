@@ -45,7 +45,7 @@ func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth
 
 		fmt.Println("Access token is not given.")
 		var token *auth.Token
-		token, err = auth.AuthorizeDeviceCode(ctx, cfg.ClientID, os.Stdout)
+		token, err = auth.AuthorizeDeviceCode(ctx, ClientID, os.Stdout)
 		if err != nil {
 			return
 		}
@@ -55,7 +55,7 @@ func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth
 
 		logger.Println("Access token is expired; refreshing now.")
 		var token *auth.Token
-		authorizer := auth.NewManualAuthorizer(cfg.TenantID, cfg.ClientID, nil, fmt.Sprintf("%v", time.Now().Unix()))
+		authorizer := auth.NewManualAuthorizer(cfg.TenantID, ClientID, nil, fmt.Sprintf("%v", time.Now().Unix()))
 		token, err = authorizer.RefreshToken(&cfg.Token)
 		if err != nil {
 			return

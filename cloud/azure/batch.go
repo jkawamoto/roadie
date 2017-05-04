@@ -279,7 +279,7 @@ func (s *BatchService) Nodes(ctx context.Context, pool string) (nodes []*models.
 	res, err := s.client.ComputeNodes.ComputeNodeList(
 		compute_nodes.NewComputeNodeListParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithPoolID(pool).
 			WithOcpDate(s.getOcpDate()))
 	if err != nil {
@@ -299,7 +299,7 @@ func (s *BatchService) GetPoolInfo(ctx context.Context, name string) (info *mode
 	res, err := s.client.Pools.PoolGet(
 		pools.NewPoolGetParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithPoolID(name).
 			WithOcpDate(s.getOcpDate()))
 	if err != nil {
@@ -320,7 +320,7 @@ func (s *BatchService) UpdatePoolSize(ctx context.Context, name string, size int
 	_, err = s.client.Pools.PoolResize(
 		pools.NewPoolResizeParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithPoolID(name).
 			WithOcpDate(s.getOcpDate()).
 			WithPoolResizeParameter(&models.PoolResizeParameter{
@@ -402,7 +402,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 	_, err = s.client.Jobs.JobAdd(
 		jobs.NewJobAddParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithOcpDate(s.getOcpDate()).
 			WithJob(&models.JobAddParameter{
 				ID: &name,
@@ -461,7 +461,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 				// s.client.Tasks.TaskAdd(
 				// 	tasks.NewTaskAddParamsWithContext(ctx).
 				// 		WithAPIVersion(BatchAPIVersion).
-				// 		WithClientRequestID(&s.Config.ClientID).
+				// 		WithClientRequestID(toPtr(ClientID)).
 				// 		WithJobID(name).
 				// 		WithOcpDate(s.getOcpDate()).
 				// 		WithTask(&models.TaskAddParameter{
@@ -507,7 +507,7 @@ func (s *BatchService) EnableJob(ctx context.Context, name string) (err error) {
 	_, err = s.client.Jobs.JobEnable(
 		jobs.NewJobEnableParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(name).
 			WithOcpDate(s.getOcpDate()))
 
@@ -528,7 +528,7 @@ func (s *BatchService) DisableJob(ctx context.Context, name string) (err error) 
 	_, err = s.client.Jobs.JobDisable(
 		jobs.NewJobDisableParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(name).
 			WithOcpDate(s.getOcpDate()).
 			WithJobDisableParameter(&models.JobDisableParameter{
@@ -553,7 +553,7 @@ func (s *BatchService) Jobs(ctx context.Context) (set JobSet, err error) {
 	res, err := s.client.Jobs.JobList(
 		jobs.NewJobListParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithOcpDate(s.getOcpDate()))
 	if err != nil {
 		err = NewAPIError(err)
@@ -577,7 +577,7 @@ func (s *BatchService) DeleteJob(ctx context.Context, name string) (err error) {
 	_, err = s.client.Jobs.JobDelete(
 		jobs.NewJobDeleteParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithOcpDate(s.getOcpDate()).
 			WithJobID(name))
 
@@ -616,7 +616,7 @@ func (s *BatchService) GetJobInfo(ctx context.Context, job string) (info *models
 	res, err := s.client.Jobs.JobGet(
 		jobs.NewJobGetParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(job).
 			WithOcpDate(s.getOcpDate()))
 	if err != nil {
@@ -710,7 +710,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	_, err = s.client.Tasks.TaskAdd(
 		tasks.NewTaskAddParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(job).
 			WithOcpDate(s.getOcpDate()).
 			WithTask(&models.TaskAddParameter{
@@ -755,7 +755,7 @@ func (s *BatchService) Tasks(ctx context.Context, job string) (set TaskSet, err 
 	res, err := s.client.Tasks.TaskList(
 		tasks.NewTaskListParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(job).
 			WithOcpDate(s.getOcpDate()))
 
@@ -782,7 +782,7 @@ func (s *BatchService) DeleteTask(ctx context.Context, job, task string) (err er
 	_, err = s.client.Tasks.TaskDelete(
 		tasks.NewTaskDeleteParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithJobID(job).
 			WithOcpDate(s.getOcpDate()).
 			WithTaskID(task))
@@ -853,7 +853,7 @@ func (s *BatchService) AvailableOSImages(ctx context.Context) (images []string, 
 	res, err := s.client.Accounts.AccountListNodeAgentSkus(
 		accounts.NewAccountListNodeAgentSkusParamsWithContext(ctx).
 			WithAPIVersion(BatchAPIVersion).
-			WithClientRequestID(&s.Config.ClientID).
+			WithClientRequestID(toPtr(ClientID)).
 			WithOcpDate(s.getOcpDate()))
 	if err != nil {
 		err = NewAPIError(err)

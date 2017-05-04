@@ -41,7 +41,6 @@ type OSInformation struct {
 // Config defines configuration to access Azure's API.
 type Config struct {
 	TenantID          string `yaml:"tenant_id,omitempty"`
-	ClientID          string `yaml:"-"`
 	SubscriptionID    string `yaml:"subscription_id,omitempty"`
 	Location          string `yaml:"location,omitempty"`
 	ResourceGroupName string `yaml:"resource_group_name,omitempty"`
@@ -81,7 +80,6 @@ func NewConfigFromFile(filename string) (cfg *Config, err error) {
 	cfg = new(Config)
 	err = yaml.Unmarshal(data, cfg)
 
-	cfg.ClientID = ClientID
 	if cfg.ResourceGroupName == "" {
 		cfg.ResourceGroupName = ComputeServiceResourceGroupName
 	}
@@ -127,7 +125,6 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 
 	var aux struct {
 		TenantID          string `yaml:"tenant_id,omitempty"`
-		ClientID          string `yaml:"-"`
 		SubscriptionID    string `yaml:"subscription_id,omitempty"`
 		Location          string `yaml:"location,omitempty"`
 		ResourceGroupName string `yaml:"resource_group_name,omitempty"`
@@ -143,7 +140,6 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 	}
 	*cfg = aux
 
-	cfg.ClientID = ClientID
 	if cfg.ResourceGroupName == "" {
 		cfg.ResourceGroupName = ComputeServiceResourceGroupName
 	}

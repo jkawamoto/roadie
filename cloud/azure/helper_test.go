@@ -51,7 +51,7 @@ func GetTestConfig() (cfg *Config, err error) {
 	}
 	if token.Expired() {
 		logger.Println("Token was expired; refreshing it")
-		token, err = auth.NewManualAuthorizer(cfg.TenantID, cfg.ClientID, &url.URL{}, "0000").RefreshToken(token)
+		token, err = auth.NewManualAuthorizer(cfg.TenantID, ClientID, &url.URL{}, "0000").RefreshToken(token)
 		if err != nil {
 			return
 		}
