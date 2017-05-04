@@ -60,7 +60,7 @@ type QueueService struct {
 	Logger *log.Logger
 }
 
-// NewQueueService creates an interace for a queue service based on Google
+// NewQueueService creates an interface for a queue service based on Google
 // Cloud Datastore.
 func NewQueueService(ctx context.Context, cfg *Config, logger *log.Logger) (*QueueService, error) {
 

@@ -33,7 +33,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// GcloudConfig defines information recived from `gcloud config list`.
+// GcloudConfig defines information received from `gcloud config list`.
 type GcloudConfig struct {
 	Zone    string
 	Account string

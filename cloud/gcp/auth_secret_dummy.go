@@ -23,7 +23,7 @@
 package gcp
 
 const (
-	// ClientID is the registerd ID of roadie for Google Cloud Platform.
+	// ClientID is the registered ID of roadie for Google Cloud Platform.
 	ClientID = "000000000"
 	// ClientSecret is a secret associated with the above client ID.
 	ClientSecret = "111111111"

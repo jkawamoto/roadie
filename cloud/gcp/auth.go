@@ -73,22 +73,22 @@ type authorizationCode struct {
 	State string
 }
 
-// codeReciever is a local HTTP server to recieve an authorization code.
-type codeReciever struct {
+// codeReceiver is a local HTTP server to receive an authorization code.
+type codeReceiver struct {
 	Result chan *authorizationCode
 	Error  chan error
 }
 
-// newCodeReciever create a new codeReciever.
-func newCodeReciever() *codeReciever {
-	return &codeReciever{
+// newcodeReceiver create a new codeReceiver.
+func newcodeReceiver() *codeReceiver {
+	return &codeReceiver{
 		Result: make(chan *authorizationCode, 1),
 		Error:  make(chan error, 1),
 	}
 }
 
-// ServeHTTP recieves authorization code from a browser.
-func (r *codeReciever) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+// ServeHTTP receives authorization code from a browser.
+func (r *codeReceiver) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 	queries := req.URL.Query()
 	if errCode := queries.Get("error"); errCode != "" {
@@ -160,7 +160,7 @@ Open the following URL in your browser and grand access to this application.
 
 `, endpoint)
 
-	receiver := newCodeReciever()
+	receiver := newcodeReceiver()
 	go http.Serve(listener, receiver)
 
 	var code *authorizationCode

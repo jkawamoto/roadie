@@ -30,7 +30,7 @@ import (
 type StorageManager interface {
 
 	// Upload a given stream with a given container and file name; returned string
-	// represents a URI assosiated with the uploaded file.
+	// represents a URI associated with the uploaded file.
 	Upload(ctx context.Context, container, filename string, in io.Reader) (string, error)
 
 	// Download a file associated with a given container and file name and write
@@ -48,5 +48,5 @@ type StorageManager interface {
 	Delete(ctx context.Context, container, filename string) error
 }
 
-// FileInfoHandler is a handler to recieve a file info.
+// FileInfoHandler is a handler to receive a file info.
 type FileInfoHandler func(*FileInfo) error
