@@ -26,10 +26,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/deiwin/interact"
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
@@ -66,7 +64,7 @@ func CmdResultList(c *cli.Context) (err error) {
 		instance := c.Args().First()
 		err = PrintFileList(m, script.ResultPrefix, instance, c.Bool("url"), c.Bool("quiet"))
 	default:
-		fmt.Printf(chalk.Red.Color("expected at most 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at most 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -102,7 +100,7 @@ func CmdResultShow(c *cli.Context) (err error) {
 		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
 
 	default:
-		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -117,7 +115,7 @@ func CmdResultShow(c *cli.Context) (err error) {
 func CmdResultGet(c *cli.Context) error {
 
 	if c.NArg() == 0 {
-		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -137,7 +135,7 @@ func CmdResultGet(c *cli.Context) error {
 	if len(pattern) == 0 {
 		pattern = append(pattern, "*")
 	}
-	if err := storage.DownloadFiles(m.Context, script.ResultPrefix, instance, filepath.ToSlash(c.String("o")), pattern); err != nil {
+	if err := storage.DownloadFiles(m.Context, script.ResultPrefix, instance, c.String("o"), pattern); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 
@@ -146,25 +144,26 @@ func CmdResultGet(c *cli.Context) error {
 }
 
 // CmdResultDelete deletes results for a given instance and file names are matched to queries.
-func CmdResultDelete(c *cli.Context) error {
+func CmdResultDelete(c *cli.Context) (err error) {
 
 	if c.NArg() == 0 {
-		fmt.Printf(chalk.Red.Color("expected at least 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return
 	}
 
 	instance := c.Args().First()
 	var patterns []string
 	if c.NArg() == 1 {
 
+		var deleteAll bool
 		actor := interact.NewActor(os.Stdin, os.Stdout)
-		deleteAll, err := actor.Confirm(
-			chalk.Red.Color("File names are not given. Do you want to delete all files?"),
+		deleteAll, err = actor.Confirm(
+			m.Decorator.Red("File names are not given. Do you want to delete all files?"),
 			interact.ConfirmDefaultToNo)
 
 		if err != nil {
@@ -173,13 +172,14 @@ func CmdResultDelete(c *cli.Context) error {
 		} else if deleteAll {
 			patterns = []string{"*"}
 
-			logManager, err := m.LogManager()
+			var logManager cloud.LogManager
+			logManager, err = m.LogManager()
 			if err != nil {
-				return err
+				return
 			}
 			err = logManager.Delete(m.Context, instance)
 			if err != nil {
-				return err
+				return
 			}
 
 		} else {
@@ -192,7 +192,7 @@ func CmdResultDelete(c *cli.Context) error {
 
 	service, err := m.StorageManager()
 	if err != nil {
-		return err
+		return
 	}
 
 	var msg io.Writer
@@ -203,9 +203,10 @@ func CmdResultDelete(c *cli.Context) error {
 	}
 
 	storage := cloud.NewStorage(service, msg)
-	if err := storage.DeleteFiles(m.Context, script.ResultPrefix, instance, patterns); err != nil {
+	err = storage.DeleteFiles(m.Context, script.ResultPrefix, instance, patterns)
+	if err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
-	return nil
+	return
 
 }

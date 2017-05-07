@@ -27,11 +27,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud/gcp"
+	"github.com/mitchellh/go-homedir"
 )
 
 // ConfigureFile defines configuration file name.
@@ -92,7 +93,7 @@ func (c *Config) Load() (err error) {
 	f, err := os.Open(c.FileName)
 	if err != nil {
 		return fmt.Errorf(
-			chalk.Red.Color("Cannot open configuration file %s. (%s)"),
+			"Cannot open configuration file %s. (%s)",
 			c.FileName, err.Error())
 	}
 	defer f.Close()
@@ -103,7 +104,7 @@ func (c *Config) Load() (err error) {
 	}
 	if err != nil {
 		return fmt.Errorf(
-			chalk.Red.Color("Configuration file %s is broken. Fix or delete it, first. (%s)"),
+			"Configuration file %s is broken. Fix or delete it, first. (%s)",
 			c.FileName, err.Error())
 	}
 
@@ -129,30 +130,40 @@ func (c *Config) String() string {
 // Otherwise, use a configuration file in the current directory.
 func lookup() (res string) {
 
+	// By default, configuration file in the current dir is selected.
 	res = ConfigureFile
-	path, err := filepath.Abs(".")
+
+	if _, err := os.Stat(res); err == nil {
+		// If the current directory has a configuration file, use it.
+		return
+	}
+
+	home, err := homedir.Dir()
+	if err != nil {
+		return
+	}
+	cur, err := filepath.Abs(".")
 	if err != nil {
 		return
 	}
 
-	var repo string
-	for ; path != "/"; path = filepath.Join(path, "..") {
-
-		cand := filepath.Join(path, ConfigureFile)
-		if _, exist := os.Stat(cand); exist == nil {
-			return cand
+	if !strings.HasPrefix(cur, home) {
+		// If user's home directory has a configuration file, use it.
+		homeConf := filepath.Join(home, ConfigureFile)
+		if _, err := os.Stat(homeConf); err == nil {
+			return homeConf
 		}
 
-		if repo == "" {
-			if _, exist := os.Stat(filepath.Join(path, DotGit)); exist == nil {
-				repo = path
+	} else {
+
+		for ; strings.HasPrefix(cur, home); cur = filepath.Dir(cur) {
+			cand := filepath.Join(cur, ConfigureFile)
+			if _, err := os.Stat(cand); err == nil {
+				return cand
 			}
 		}
 
 	}
 
-	if repo != "" {
-		res = filepath.Join(repo, ConfigureFile)
-	}
 	return
 }

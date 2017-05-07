@@ -28,7 +28,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
@@ -84,7 +83,7 @@ func (o *optDataPut) run() (err error) {
 					if err != nil {
 						return
 					}
-					fmt.Printf("File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					fmt.Printf("File uploaded to %s.\n", o.Decorator.Bold(location))
 					return
 
 				})
@@ -102,7 +101,7 @@ func CmdDataPut(c *cli.Context) error {
 
 	n := c.NArg()
 	if n < 1 || n > 2 {
-		fmt.Printf(chalk.Red.Color("expected 1 or 2 arguments. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -112,7 +111,7 @@ func CmdDataPut(c *cli.Context) error {
 	}
 	storedName := ""
 	if n == 2 {
-		storedName = c.Args()[1]
+		storedName = filepath.ToSlash(c.Args()[1])
 	}
 	opt := &optDataPut{
 		Metadata:   m,

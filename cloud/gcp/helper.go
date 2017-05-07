@@ -23,7 +23,7 @@ package gcp
 
 import (
 	"net/url"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/jkawamoto/roadie/script"
@@ -58,7 +58,7 @@ func CreateURL(cfg *Config, name string) string {
 	u := url.URL{
 		Scheme: "gs",
 		Host:   cfg.Bucket,
-		Path:   filepath.Join("/", StoragePrefix, name),
+		Path:   path.Join("/", StoragePrefix, name),
 	}
 	return u.String()
 

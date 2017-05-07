@@ -54,6 +54,8 @@ type Metadata struct {
 	// Spinner for decorating output standard message; not logging information.
 	// If verbose mode is set, the spinner will be disabled.
 	Spinner *spinner.Spinner
+
+	Decorator *Decorator
 }
 
 // InstanceManager returns an instance manager interface.
@@ -116,6 +118,12 @@ func PrepareCommand(c *cli.Context) (err error) {
 
 	}
 	meta.Logger = logger
+
+	if c.GlobalBool("no-color") {
+		meta.Decorator = &MonoDecorator
+	} else {
+		meta.Decorator = &ColoredDecorator
+	}
 
 	// Load the configuration file.
 	var cfg *config.Config

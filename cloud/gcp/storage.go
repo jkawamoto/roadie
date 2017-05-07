@@ -28,7 +28,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"google.golang.org/api/iterator"
@@ -102,8 +102,10 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 	}
 	defer client.Close()
 
-	path := filepath.Join(StoragePrefix, container, filename)
-	obj := client.Bucket(s.Config.Bucket).Object(path)
+	// File path the uploading file to be stored to.
+	storedPath := path.Join(StoragePrefix, container, filename)
+
+	obj := client.Bucket(s.Config.Bucket).Object(storedPath)
 	writer := obj.NewWriter(ctx)
 	size, err := io.Copy(writer, in)
 	writer.Close()
@@ -116,13 +118,13 @@ func (s *StorageService) Upload(ctx context.Context, container, filename string,
 		return
 	} else if info.Size != size {
 		obj.Delete(ctx)
-		return "", fmt.Errorf("Faild to upload object %v", path)
+		return "", fmt.Errorf("Faild to upload object %v", storedPath)
 	}
 
 	u := url.URL{
 		Scheme: "gs",
 		Host:   s.Config.Bucket,
-		Path:   filepath.Join(StoragePrefix, path),
+		Path:   path.Join(StoragePrefix, storedPath),
 	}
 	uri = u.String()
 	s.Logger.Println("Finished uploading the file to", uri)
@@ -140,7 +142,7 @@ func (s *StorageService) Download(ctx context.Context, container, filename strin
 	}
 	defer client.Close()
 
-	obj := client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename))
+	obj := client.Bucket(s.Config.Bucket).Object(path.Join(StoragePrefix, container, filename))
 	info, err := obj.Attrs(ctx)
 	if err != nil {
 		return
@@ -172,13 +174,13 @@ func (s *StorageService) GetFileInfo(ctx context.Context, container, filename st
 	}
 	defer client.Close()
 
-	attrs, err := client.Bucket(s.Config.Bucket).Object(filepath.Join(StoragePrefix, container, filename)).Attrs(ctx)
+	attrs, err := client.Bucket(s.Config.Bucket).Object(path.Join(StoragePrefix, container, filename)).Attrs(ctx)
 	if err != nil {
 		return
 	}
 
 	info = &cloud.FileInfo{
-		Name:        filepath.Base(attrs.Name),
+		Name:        path.Base(attrs.Name),
 		Path:        attrs.Name,
 		TimeCreated: attrs.Created,
 		Size:        attrs.Size,
@@ -203,7 +205,7 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 	defer client.Close()
 
 	iter := client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
-		Prefix:   filepath.Join(StoragePrefix, container, prefix),
+		Prefix:   path.Join(StoragePrefix, container, prefix) + "/",
 		Versions: false,
 	})
 	for {
@@ -218,9 +220,9 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 		if strings.HasSuffix(attrs.Name, "/") {
 			base = ""
 		} else {
-			base = filepath.Base(attrs.Name)
+			base = path.Base(attrs.Name)
 		}
-		dir, _ := filepath.Rel(filepath.Join(StoragePrefix, container), attrs.Name)
+		dir := strings.TrimPrefix(attrs.Name, path.Join(StoragePrefix, container)+"/")
 		err = handler(&cloud.FileInfo{
 			Name:        base,
 			Path:        dir,
@@ -248,7 +250,7 @@ func (s *StorageService) Delete(ctx context.Context, container, filename string)
 	defer client.Close()
 
 	err = client.Bucket(s.Config.Bucket).
-		Object(filepath.Join(StoragePrefix, container, filename)).
+		Object(path.Join(StoragePrefix, container, filename)).
 		Delete(ctx)
 	if err != nil {
 		return

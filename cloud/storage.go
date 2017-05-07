@@ -36,7 +36,6 @@ import (
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/ulikunitz/xz"
 	"github.com/urfave/cli"
 )
@@ -170,7 +169,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 				filename := filepath.Join(dir, info.Name)
 				f, goerr := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 				if goerr != nil {
-					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot create file %s (%s)"), filename, goerr.Error()))
+					bar.FinishPrint(fmt.Sprintf("Cannot create file %s (%s)", filename, goerr.Error()))
 					return goerr
 				}
 				defer f.Close()
@@ -180,7 +179,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 
 				goerr = s.service.Download(ctx, container, info.Path, io.MultiWriter(writer, bar))
 				if goerr != nil {
-					bar.FinishPrint(fmt.Sprintf(chalk.Red.Color("Cannot download %s (%s)"), info.Name, goerr.Error()))
+					bar.FinishPrint(fmt.Sprintf("Cannot download %s (%s)", info.Name, goerr.Error()))
 				} else {
 					bar.Finish()
 				}
@@ -225,7 +224,7 @@ func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, que
 			eg.Go(func() (err error) {
 				err = s.service.Delete(ctx, container, info.Path)
 				if err != nil {
-					fmt.Fprintf(s.Log, chalk.Red.Color("Cannot delete %s (%s)\n"), info.Path, err.Error())
+					fmt.Fprintf(s.Log, "Cannot delete %s (%s)\n", info.Path, err.Error())
 				} else {
 					fmt.Fprintln(s.Log, info.Path)
 				}

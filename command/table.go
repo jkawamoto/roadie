@@ -23,7 +23,7 @@ package command
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"time"
 
 	"github.com/gosuri/uitable"
@@ -84,7 +84,7 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 	prev := ""
 	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-		dir := filepath.Dir(info.Path)
+		dir := path.Dir(info.Path)
 		if dir != "." && dir != prev {
 			if quiet {
 				table.AddRow(dir)

@@ -1,6 +1,6 @@
 // +build !windows
 //
-// chalk/wrapper_x.go
+// command/decorator_x.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -20,32 +20,32 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package chalk
+package command
 
-import (
-	baseChalk "github.com/ttacon/chalk"
-)
+import "github.com/ttacon/chalk"
 
-var (
-	//Colors
-	Black      = baseChalk.Black
-	Red        = baseChalk.Red
-	Green      = baseChalk.Green
-	Yellow     = baseChalk.Yellow
-	Blue       = baseChalk.Blue
-	Magenta    = baseChalk.Magenta
-	Cyan       = baseChalk.Cyan
-	White      = baseChalk.White
-	ResetColor = baseChalk.ResetColor
+// ColoredDecorator is a decorator which provides decorating strings.
+var ColoredDecorator = Decorator{
+	Black:   chalk.Black.Color,
+	Red:     chalk.Red.Color,
+	Green:   chalk.Green.Color,
+	Yellow:  chalk.Yellow.Color,
+	Blue:    chalk.Blue.Color,
+	Magenta: chalk.Magenta.Color,
+	Cyan:    chalk.Cyan.Color,
+	White:   chalk.White.Color,
+	Bold:    chalk.Bold.TextStyle,
+}
 
-	// Text Styles
-	Bold          = baseChalk.Bold
-	Dim           = baseChalk.Dim
-	Italic        = baseChalk.Italic
-	Underline     = baseChalk.Underline
-	Inverse       = baseChalk.Inverse
-	Hidden        = baseChalk.Hidden
-	Strikethrough = baseChalk.Strikethrough
-
-	Reset = baseChalk.Reset
-)
+// MonoDecorator is a decorator which does not decorate anything.
+var MonoDecorator = Decorator{
+	Black:   NoDetorate,
+	Red:     NoDetorate,
+	Green:   NoDetorate,
+	Yellow:  NoDetorate,
+	Blue:    NoDetorate,
+	Magenta: NoDetorate,
+	Cyan:    NoDetorate,
+	White:   NoDetorate,
+	Bold:    NoDetorate,
+}

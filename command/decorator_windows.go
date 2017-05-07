@@ -1,5 +1,6 @@
+// +build windows
 //
-// command/constant.go
+// command/decorator_windows.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -21,9 +22,18 @@
 
 package command
 
-import "time"
+// MonoDecorator is a decorator which does not decorate anything.
+var MonoDecorator = Decorator{
+	Black:   NoDetorate,
+	Red:     NoDetorate,
+	Green:   NoDetorate,
+	Yellow:  NoDetorate,
+	Blue:    NoDetorate,
+	Magenta: NoDetorate,
+	Cyan:    NoDetorate,
+	White:   NoDetorate,
+	Bold:    NoDetorate,
+}
 
-const (
-	// DefaultSleepTime defines a default sleep time.
-	DefaultSleepTime = 30 * time.Second
-)
+// ColoredDecorator also doesn't decorate anything in Windows.
+var ColoredDecorator = MonoDecorator

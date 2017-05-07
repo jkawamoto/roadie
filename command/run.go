@@ -26,7 +26,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jkawamoto/roadie/chalk"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/urfave/cli"
@@ -60,7 +59,7 @@ type runOpt struct {
 func CmdRun(c *cli.Context) error {
 
 	if c.NArg() != 1 {
-		fmt.Printf(chalk.Red.Color("expected 1 argument. (%d given)\n"), c.NArg())
+		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
@@ -142,7 +141,7 @@ func cmdRun(opt *runOpt) (err error) {
 	// }
 	// s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
 
-	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", chalk.Bold.TextStyle(s.Name))
+	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", opt.Decorator.Bold(s.Name))
 	opt.Spinner.FinalMSG = fmt.Sprintf("Instance created.\n")
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
@@ -154,7 +153,7 @@ func cmdRun(opt *runOpt) (err error) {
 
 	err = instanceManager.CreateInstance(opt.Context, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+		opt.Spinner.FinalMSG = fmt.Sprintf(opt.Decorator.Red("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
 	}
 	return
 

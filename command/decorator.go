@@ -1,5 +1,5 @@
 //
-// chalk/doc.go
+// command/decorator.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,6 +19,25 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// Package chalk is a wrapper of "github.com/ttacon/chalk".
-// The aim f this package is to disable origina chalk package in Windows.
-package chalk
+package command
+
+// Decorate defines a function to decorate a string.
+type Decorate func(string) string
+
+// NoDetorate returns a given string itself wihtout any decoration.
+func NoDetorate(v string) string {
+	return v
+}
+
+// Decorator defines a set of decorate functions.
+type Decorator struct {
+	Black   Decorate
+	Red     Decorate
+	Green   Decorate
+	Yellow  Decorate
+	Blue    Decorate
+	Magenta Decorate
+	Cyan    Decorate
+	White   Decorate
+	Bold    Decorate
+}
