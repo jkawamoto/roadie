@@ -1,3 +1,13 @@
+## 0.3.8 (2017-05-06)
+### Updated
+- Support `--no-color` option to output messages without color information.
+
+### Fixed
+- Path problems in Windows
+- result commands shows not only results of asking instance but also results of
+  instances which has the requested name as a prefix
+
+
 ## 0.3.7 (2017-05-03)
 ### Updated
 - Use better authentication protocol.
