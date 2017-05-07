@@ -205,7 +205,7 @@ func (s *StorageService) List(ctx context.Context, container, prefix string, han
 	defer client.Close()
 
 	iter := client.Bucket(s.Config.Bucket).Objects(ctx, &storage.Query{
-		Prefix:   path.Join(StoragePrefix, container, prefix),
+		Prefix:   path.Join(StoragePrefix, container, prefix) + "/",
 		Versions: false,
 	})
 	for {
