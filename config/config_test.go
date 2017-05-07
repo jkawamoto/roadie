@@ -140,31 +140,4 @@ func TestLookup(t *testing.T) {
 		t.Errorf("%s shoult be %s", test, ans)
 	}
 
-	// Lookup to a directory which has a configuration file.
-	ans = filepath.Join(temp, "..", ConfigureFile)
-	if err = ioutil.WriteFile(ans, []byte{}, 0644); err != nil {
-		t.Error(err.Error())
-		return
-	}
-	test, err = filepath.Abs(lookup())
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if ans != test {
-		t.Errorf("%s shoult be %s", test, ans)
-	}
-	os.Remove(ans)
-
-	// Lookup to a directory which has a git repository.
-	os.Mkdir(filepath.Join(temp, "..", ".git"), 755)
-	test, err = filepath.Abs(lookup())
-	if err != nil {
-		t.Error(err.Error())
-		return
-	}
-	if ans != test {
-		t.Errorf("%s shoult be %s", test, ans)
-	}
-
 }
