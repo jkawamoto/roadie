@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -266,7 +266,7 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 			return
 		}
 
-		dir := filepath.Base(filepath.Dir(info.Path))
+		dir := path.Base(path.Dir(info.Path))
 		if prev != dir {
 			if _, exist := instances[dir]; !exist {
 				handler(dir, StatusTerminated)

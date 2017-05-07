@@ -111,7 +111,7 @@ func CmdDataPut(c *cli.Context) error {
 	}
 	storedName := ""
 	if n == 2 {
-		storedName = c.Args()[1]
+		storedName = filepath.ToSlash(c.Args()[1])
 	}
 	opt := &optDataPut{
 		Metadata:   m,

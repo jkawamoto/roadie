@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -251,7 +252,7 @@ func setSource(s *script.Script, file string) {
 		file += ".tar.gz"
 	}
 
-	url := script.RoadieSchemePrefix + filepath.Join(script.SourcePrefix, file)
+	url := script.RoadieSchemePrefix + path.Join(script.SourcePrefix, file)
 	if s.Source != "" {
 		fmt.Printf("Source section will be overwritten to '%s' since a filename is given.\n", url)
 	}
@@ -263,7 +264,7 @@ func setSource(s *script.Script, file string) {
 func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 
 	if s.Result == "" || overwrite {
-		s.Result = script.RoadieSchemePrefix + filepath.Join(script.ResultPrefix, s.Name)
+		s.Result = script.RoadieSchemePrefix + path.Join(script.ResultPrefix, s.Name)
 	} else {
 		fmt.Fprintf(
 			warning,
@@ -284,9 +285,8 @@ func uploadFiles(m *Metadata, path, name string, excludes []string) (location st
 	}
 
 	var filename string      // File name on a cloud storage.
-	var uploadingPath string // File path to be uploaded.
-
-	if info.IsDir() { // Directory will be archived.
+	var uploadingFile string // File path to be uploaded.
+	if info.IsDir() {        // Directory will be archived.
 
 		if name == "" {
 			var abs string
@@ -296,22 +296,22 @@ func uploadFiles(m *Metadata, path, name string, excludes []string) (location st
 			name = filepath.Base(abs)
 		}
 		filename = fmt.Sprintf("%v.tar.gz", strings.TrimSuffix(name, ".tar.gz"))
-		uploadingPath = filepath.Join(os.TempDir(), filename)
+		uploadingFile = filepath.Join(os.TempDir(), filename)
 
-		m.Spinner.Prefix = fmt.Sprint("Creating archived file", uploadingPath)
-		m.Spinner.FinalMSG = fmt.Sprint("Finished creating archived file", uploadingPath)
+		m.Spinner.Prefix = fmt.Sprint("Creating archived file", uploadingFile)
+		m.Spinner.FinalMSG = fmt.Sprint("Finished creating archived file", uploadingFile)
 		m.Spinner.Start()
 
-		if err = util.Archive(path, uploadingPath, excludes); err != nil {
+		if err = util.Archive(path, uploadingFile, excludes); err != nil {
 			m.Spinner.Stop()
 			return
 		}
-		defer os.Remove(uploadingPath)
+		defer os.Remove(uploadingFile)
 		m.Spinner.Stop()
 
 	} else { // One source file just will be uploaded.
 
-		uploadingPath = path
+		uploadingFile = path
 		if name == "" {
 			filename = filepath.Base(path)
 		} else {
@@ -325,7 +325,7 @@ func uploadFiles(m *Metadata, path, name string, excludes []string) (location st
 		return
 	}
 	storage := cloud.NewStorage(service, nil)
-	location, err = storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingPath)
+	location, err = storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingFile)
 	return
 
 }

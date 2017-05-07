@@ -43,7 +43,7 @@ const (
 	// QueueKind defines kind of entries stored in cloud datastore.
 	QueueKind = "roadie-queue"
 	// QueueManagerVersion defines the version of queue manager to be used.
-	QueueManagerVersion = "0.2.1"
+	QueueManagerVersion = "0.2.2"
 )
 
 // QueueName is a structure to obtaine QueueName attribute from entities

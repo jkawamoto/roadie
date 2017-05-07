@@ -22,7 +22,7 @@
 package gcp
 
 import (
-	"path/filepath"
+	"path"
 
 	"golang.org/x/oauth2"
 )
@@ -97,20 +97,20 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 
 // normalizedZone returns the normalized zone string of Zone property.
 func (cfg *Config) normalizedZone() string {
-	return filepath.Join("projects", cfg.Project, "zones", cfg.Zone)
+	return path.Join("projects", cfg.Project, "zones", cfg.Zone)
 }
 
 // normalizedMachineType returns the normalized instance type of MachineType property.
 func (cfg *Config) normalizedMachineType() string {
-	return filepath.Join(cfg.normalizedZone(), "machineTypes", cfg.MachineType)
+	return path.Join(cfg.normalizedZone(), "machineTypes", cfg.MachineType)
 }
 
 // diskType returns default disk type.
 func (cfg *Config) diskType() string {
-	return filepath.Join(cfg.normalizedZone(), "/diskTypes/pd-standard")
+	return path.Join(cfg.normalizedZone(), "/diskTypes/pd-standard")
 }
 
 // network returns default network name
 func (cfg *Config) network() string {
-	return filepath.Join("projects", cfg.Project, "/global/networks/default")
+	return path.Join("projects", cfg.Project, "/global/networks/default")
 }
