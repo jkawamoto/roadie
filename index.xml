@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Roadie</title>
-    <link>https://jkawamoto.github.io/roadie/</link>
+    <link>https://jkawamoto.github.io/roadie/index.xml</link>
     <description>Recent content on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
@@ -45,7 +45,7 @@
 
 &lt;p&gt;This software is released under the GPLv3.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;Copyright (C) 2016-2017 Junpei Kawamoto
+&lt;pre&gt;&lt;code class=&#34;language-txt&#34;&gt;Copyright (C) 2016-2017 Junpei Kawamoto
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,11 +61,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see &amp;lt;http://www.gnu.org/licenses/&amp;gt;.
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;notices-for-libraries:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;Notices for libraries&lt;/h2&gt;
+&lt;h2 id=&#34;notices-for-libraries&#34;&gt;Notices for libraries&lt;/h2&gt;
 
 &lt;p&gt;This software uses the following open source libraries:&lt;/p&gt;
 
-&lt;h3 id=&#34;chalk-https-github-com-ttacon-chalk:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/ttacon/chalk&#34;&gt;chalk&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;chalk-https-github-com-ttacon-chalk&#34;&gt;&lt;a href=&#34;https://github.com/ttacon/chalk&#34;&gt;chalk&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2014 Trey Tacon&lt;/p&gt;
 
@@ -89,7 +89,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.&lt;/p&gt;
 
-&lt;h3 id=&#34;cli-https-github-com-urfave-cli:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/urfave/cli&#34;&gt;cli&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;cli-https-github-com-urfave-cli&#34;&gt;&lt;a href=&#34;https://github.com/urfave/cli&#34;&gt;cli&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2016 Jeremy Saenz &amp;amp; Contributors&lt;/p&gt;
 
@@ -113,7 +113,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.&lt;/p&gt;
 
-&lt;h3 id=&#34;google-apis-client-library-for-go-https-github-com-google-google-api-go-client:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/google/google-api-go-client&#34;&gt;Google APIs Client Library for Go&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;google-apis-client-library-for-go-https-github-com-google-google-api-go-client&#34;&gt;&lt;a href=&#34;https://github.com/google/google-api-go-client&#34;&gt;Google APIs Client Library for Go&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2011 Google Inc. All rights reserved.&lt;/p&gt;
 
@@ -145,7 +145,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.&lt;/p&gt;
 
-&lt;h3 id=&#34;google-cloud-for-go-https-github-com-googlecloudplatform-google-cloud-go:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/GoogleCloudPlatform/google-cloud-go&#34;&gt;Google Cloud for Go&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;google-cloud-for-go-https-github-com-googlecloudplatform-google-cloud-go&#34;&gt;&lt;a href=&#34;https://github.com/GoogleCloudPlatform/google-cloud-go&#34;&gt;Google Cloud for Go&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright 2014 Google Inc. All Rights Reserved.&lt;/p&gt;
 
@@ -161,7 +161,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.&lt;/p&gt;
 
-&lt;h3 id=&#34;interact-https-github-com-deiwin-interact:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/deiwin/interact&#34;&gt;Interact&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;interact-https-github-com-deiwin-interact&#34;&gt;&lt;a href=&#34;https://github.com/deiwin/interact&#34;&gt;Interact&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2015 Deiwin Sarjas&lt;/p&gt;
 
@@ -173,7 +173,7 @@ limitations under the License.&lt;/p&gt;
 
 &lt;p&gt;THE SOFTWARE IS PROVIDED &amp;ldquo;AS IS&amp;rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.&lt;/p&gt;
 
-&lt;h3 id=&#34;spinner-https-github-com-briandowns-spinner:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/briandowns/spinner&#34;&gt;Spinner&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;spinner-https-github-com-briandowns-spinner&#34;&gt;&lt;a href=&#34;https://github.com/briandowns/spinner&#34;&gt;Spinner&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright Brian Downs.&lt;/p&gt;
 
@@ -189,7 +189,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.&lt;/p&gt;
 
-&lt;h3 id=&#34;uitable-https-github-com-gosuri-uitable:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/gosuri/uitable&#34;&gt;uitable&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;uitable-https-github-com-gosuri-uitable&#34;&gt;&lt;a href=&#34;https://github.com/gosuri/uitable&#34;&gt;uitable&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2015, Greg Osuri&lt;/p&gt;
 
@@ -201,7 +201,7 @@ limitations under the License.&lt;/p&gt;
 
 &lt;p&gt;THE SOFTWARE IS PROVIDED &amp;ldquo;AS IS&amp;rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.&lt;/p&gt;
 
-&lt;h3 id=&#34;pb-https-github-com-cheggaaa-pb:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/cheggaaa/pb&#34;&gt;pb&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;pb-https-github-com-cheggaaa-pb&#34;&gt;&lt;a href=&#34;https://github.com/cheggaaa/pb&#34;&gt;pb&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright &amp;copy; 2012-2015, Sergey Cherepanov
 All rights reserved.&lt;/p&gt;
@@ -218,7 +218,7 @@ All rights reserved.&lt;/p&gt;
 
 &lt;p&gt;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &amp;ldquo;AS IS&amp;rdquo; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.&lt;/p&gt;
 
-&lt;h3 id=&#34;yaml-support-for-the-go-language-https-github-com-go-yaml-yaml:066a44a3ef946eeb40375cef0248ec8a&#34;&gt;&lt;a href=&#34;https://github.com/go-yaml/yaml&#34;&gt;YAML support for the Go language&lt;/a&gt;&lt;/h3&gt;
+&lt;h3 id=&#34;yaml-support-for-the-go-language-https-github-com-go-yaml-yaml&#34;&gt;&lt;a href=&#34;https://github.com/go-yaml/yaml&#34;&gt;YAML support for the Go language&lt;/a&gt;&lt;/h3&gt;
 
 &lt;p&gt;Copyright 2011-2016 Canonical Ltd.&lt;/p&gt;
 
@@ -255,19 +255,19 @@ instances, and manage outputs.&lt;/p&gt;
 
 &lt;p&gt;For example,&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name analyze-wowah script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --local . --name analyze-wowah script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;uploads your source codes in current directory, and run them in such a manner
 that &lt;code&gt;script.yml&lt;/code&gt; specifies. The &lt;code&gt;script.yml&lt;/code&gt; is a simple YAML file like&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- analyze WoWAH
+  - unrar x -r wowah.rar
+  - analyze WoWAH
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;The above &lt;code&gt;script.yml&lt;/code&gt; asks roadie to install apt package &lt;code&gt;unrar&lt;/code&gt; and
@@ -278,31 +278,31 @@ data files.&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; uploads results of such commands to a cloud storage after they finish.
 You can access those results by&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Then, &lt;code&gt;roadie&lt;/code&gt; downloads all result files into &lt;code&gt;./res&lt;/code&gt; directory.&lt;/p&gt;
 
-&lt;h2 id=&#34;installation:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Installation&lt;/h2&gt;
+&lt;h2 id=&#34;installation&#34;&gt;Installation&lt;/h2&gt;
 
 &lt;p&gt;Compiled binary files for some platforms are uploaded in
 &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;For mac user, &lt;code&gt;roadie&lt;/code&gt; is available in &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;initialization:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;Initialization&lt;/h2&gt;
+&lt;h2 id=&#34;initialization&#34;&gt;Initialization&lt;/h2&gt;
 
 &lt;p&gt;After installing &lt;code&gt;roadie&lt;/code&gt;, the following initialization is required in order to
 authorize &lt;code&gt;roadie&lt;/code&gt; to access cloud services.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie init
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;license:04c6e90faac2675aa89e2176d2eec7d8&#34;&gt;License&lt;/h2&gt;
+&lt;h2 id=&#34;license&#34;&gt;License&lt;/h2&gt;
 
 &lt;p&gt;This software except files in &lt;code&gt;docker&lt;/code&gt; folder is released under The GNU General Public License Version 3,
 see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&lt;/p&gt;
@@ -317,7 +317,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.1/</guid>
       <description>
 
-&lt;h3 id=&#34;added:6022f483dfe2c1a0a74ee56dd54173b9&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Creating instance function waits until operation done message appears in log.&lt;/li&gt;
@@ -336,7 +336,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.2/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:3529b2e3c50c23e0e7c8936aa5266511&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;roadie result show&lt;/code&gt; command won&amp;rsquo;t output escape sequences.&lt;/li&gt;
@@ -354,7 +354,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.7/</guid>
       <description>
 
-&lt;h3 id=&#34;update:fc4659b12c47b894e2879db98c3e8dbd&#34;&gt;Update&lt;/h3&gt;
+&lt;h3 id=&#34;update&#34;&gt;Update&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Startup script waits until fluentd is ready.&lt;/li&gt;
@@ -372,7 +372,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.0/</guid>
       <description>
 
-&lt;h3 id=&#34;added:c5eec36ccef092f447a72957698738ae&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support queue based task management.&lt;/li&gt;
@@ -390,7 +390,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.6/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:a59e2327c101eff05065767d9fc15b68&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Not specifying default zone and machine type.&lt;/li&gt;
@@ -408,7 +408,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.5/</guid>
       <description>
 
-&lt;h3 id=&#34;added:83e12cb3ed139ce3327a4e1dd5e8103a&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support parallel uploading data files.&lt;/li&gt;
@@ -426,7 +426,7 @@ see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&l
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.4/</guid>
       <description>
 
-&lt;h3 id=&#34;added:84e3b12fa11815dbe1b8ac895870f643&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support a new URL scheme &lt;code&gt;roadie://&lt;/code&gt; which is a shortcut to
@@ -449,7 +449,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.3/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:57fe7d4a866532e145b4390f706cdc86&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Output log entries of old instances when reusing same instance name.&lt;/li&gt;
@@ -467,13 +467,13 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.2/</guid>
       <description>
 
-&lt;h3 id=&#34;added:075dc458079080f834017b5958439d76&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support to restart program after rebooting containers.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;fixed:075dc458079080f834017b5958439d76&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Retry number in run command.&lt;/li&gt;
@@ -491,7 +491,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.1/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:5afe01b3bbb286603bc6f538419b6941&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Issue #15: Delete old container before retrying.&lt;/li&gt;
@@ -509,7 +509,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.0/</guid>
       <description>
 
-&lt;h3 id=&#34;added:074128bf366c2e3c58208bc63536f530&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support &lt;code&gt;--retry&lt;/code&gt; option by default it is set to 10.&lt;/li&gt;

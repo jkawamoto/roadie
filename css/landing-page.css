@@ -206,3 +206,7 @@ p.copyright {
 .github-btn {
     margin-top: 10px;
 }
+
+pre {
+  padding: 5px;
+}

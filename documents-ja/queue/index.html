@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>キュー: A easy way to run your programs on Google Cloud Platform.</title>
+  <title>キュー</title>
   
 
   
@@ -22,7 +22,7 @@
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="キュー: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:title" content="キュー"/>
   
 
   
@@ -30,17 +30,10 @@
   
 
   
-  <meta property="og:site_name"  content="Roadie: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:site_name"  content="Roadie"/>
   
-  
-  <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png"/>
   
 
-  
-    
-    <meta name="twitter:card" content="A easy way to run your programs on Google Cloud Platform."/>
-    
-  <meta name="twitter:site" content="@junkawamoto"/>
   
 
   <!-- Bootstrap Core CSS -->
@@ -137,21 +130,22 @@ body {
   </div>
 </nav>
 
-    <section id="services">
-      <div class="content-section-a">
-        <div class="container">
-          <div class="row">
-            <div>
-              <hr class="section-heading-spacer">
-              <div class="clearfix"></div>
-              <h2 class="section-heading">キュー</h2>
-              
+    
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">キュー</h2>
+          
 
 <p>Roadie はキューを用いたタスク処理にも対応しています．
 デフォルトでは，キューに入れられたタスクは一つのインタンスによって処理されますが，
 必要に応じてインスタンスを追加することもできます．</p>
 
-<h3 id="キューにタスクを追加する:a064e0801a0aed21b8b1af86d077fb3c">キューにタスクを追加する</h3>
+<h3 id="キューにタスクを追加する">キューにタスクを追加する</h3>
 
 <p>タスクの追加は，<code>roadie run</code> コマンドに <code>--queue</code> フラグを追加することで行います．
 <code>--queue</code> フラグには，タスクを追加するキューの名前を指定します．
@@ -160,9 +154,9 @@ body {
 
 <p>また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．</p>
 
-<h4 id="例:a064e0801a0aed21b8b1af86d077fb3c">例</h4>
+<h4 id="例">例</h4>
 
-<pre><code>$ roadie run --local . --name task-1 --queue queue-1 script.yml
+<pre><code class="language-shell">$ roadie run --local . --name task-1 --queue queue-1 script.yml
 </code></pre>
 
 <p>上記のコマンドでは，<code>script.yml</code> を <code>queue-1</code> に追加します．
@@ -172,7 +166,7 @@ body {
 <p>このスクリプトには，<code>task-1</code> という名前を付けていますので，
 この名前を使って出力の取得やログの閲覧が可能です．</p>
 
-<h3 id="キューの管理:a064e0801a0aed21b8b1af86d077fb3c">キューの管理</h3>
+<h3 id="キューの管理">キューの管理</h3>
 
 <p><code>roadie queue list</code> コマンドは現在存在しているキューの一覧を表示します．
 また，<code>roadie queue show &lt;queue name&gt;</code> コマンドは，<code>&lt;queue name&gt;</code> キューに
@@ -186,7 +180,7 @@ body {
 <code>roadie queue restart &lt;queue name&gt;</code> コマンドを使用します．
 このコマンドは，キューの実行のために新しいインスタンスを一台作成します．</p>
 
-<h3 id="インスタンスの管理:a064e0801a0aed21b8b1af86d077fb3c">インスタンスの管理</h3>
+<h3 id="インスタンスの管理">インスタンスの管理</h3>
 
 <p>デフォルトでは，キューのタスクは一台のインスタンスで処理されます．
 複数のインスタンスで処理したい場合，インスタンスの追加を行う必要があります．</p>
@@ -200,46 +194,48 @@ body {
 <p>現在，あるキューの処理のために稼働しているインスタンス数を調べる場合，
 <code>roadie queue instance list &lt;queue name&gt;</code> コマンドを使用できます．</p>
 
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <div class="content-section-a">
-      <div class="container">
-        <div class="row">
-          <!-- AdSense -->
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
     <!-- Footer -->
 <footer>
   <div class="container">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>
+
+  <div class="container">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-3">
+        <h4>Contact information</h4>
+        <div class="addthis_inline_follow_toolbox"></div>
+      </div>
+      <div class="col-md-7">
         <p class="copyright text-muted small">
         Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
         The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
-        </p>
-      </div>
-      <div class="col-md-6">
         Built with <a href="http://gohugo.io">Hugo</a> and the
         <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
         theme.
+        </p>
+      </div>
+      <div class="col-md-2">
+        <script data-gratipay-username="jkawamoto" src="//grtp.co/v1.js"></script>
       </div>
     </div>
   </div>
@@ -258,18 +254,10 @@ body {
 
 
 
-<!-- Google Analytics -->
-<script>
- (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
-   Date();a=s.createElement(o),
-   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
- })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
- ga('create', 'UA-82315630-1', 'auto');
- ga('send', 'pageview');
-</script>
-
-
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/agate.min.css" type="text/css" />
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57f529147128b1fb"></script>
 
   </body>

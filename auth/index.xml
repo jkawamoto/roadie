@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Auths on Roadie</title>
-    <link>https://jkawamoto.github.io/roadie/auth/</link>
+    <link>https://jkawamoto.github.io/roadie/auth/index.xml</link>
     <description>Recent content in Auths on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>

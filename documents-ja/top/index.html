@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>ドキュメント: A easy way to run your programs on Google Cloud Platform.</title>
+  <title>ドキュメント</title>
   
 
   
@@ -22,7 +22,7 @@
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="ドキュメント: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:title" content="ドキュメント"/>
   
 
   
@@ -30,17 +30,10 @@
   
 
   
-  <meta property="og:site_name"  content="Roadie: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:site_name"  content="Roadie"/>
   
-  
-  <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png"/>
   
 
-  
-    
-    <meta name="twitter:card" content="A easy way to run your programs on Google Cloud Platform."/>
-    
-  <meta name="twitter:site" content="@junkawamoto"/>
   
 
   <!-- Bootstrap Core CSS -->
@@ -137,15 +130,16 @@ body {
   </div>
 </nav>
 
-    <section id="services">
-      <div class="content-section-a">
-        <div class="container">
-          <div class="row">
-            <div>
-              <hr class="section-heading-spacer">
-              <div class="clearfix"></div>
-              <h2 class="section-heading">ドキュメント</h2>
-              
+    
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">ドキュメント</h2>
+          
 
 <p><code>roadie</code> は <a href="https://cloud.google.com/">Google Cloud Platform</a>
 でプログラムを実行する手助けをします．
@@ -155,7 +149,7 @@ body {
 <p><code>roadie</code> を使うことで，Google Cloud Platform の詳しい仕組みを知らなくても，
 また仮想マシンにログインして作業することなく簡単にクラウド環境でプログラムを実行することができます．</p>
 
-<h3 id="項目:aeaecdd37942e8924d7f7cb1f903f73d">項目</h3>
+<h3 id="項目">項目</h3>
 
 <ul>
 <li><a href="documents-ja/installation">インストール</a></li>
@@ -166,14 +160,14 @@ body {
 <li><a href="documents-ja/queue">タスクキュー</a></li>
 </ul>
 
-<h3 id="簡単な使用例:aeaecdd37942e8924d7f7cb1f903f73d">簡単な使用例</h3>
+<h3 id="簡単な使用例">簡単な使用例</h3>
 
 <p><code>roadie</code> では，<a href="https://ja.wikipedia.org/wiki/YAML">YAML</a> 形式のスクリプトファイル
 を使って，クラウドで実行する手順を指定します．
 このスクリプトファイルが <code>script.yml</code> だとすると，
 次のようにしてプログラムをクラウドで実行させることができます．</p>
 
-<pre><code class="language-sh">$ roadie run --local . --name analyze-wowah script.yml
+<pre><code class="language-shell">$ roadie run --local . --name analyze-wowah script.yml
 </code></pre>
 
 <p>このコマンドでは，<code>--local .</code> によって現在のディレクトリにあるソースコードを
@@ -183,14 +177,14 @@ body {
 <p>ここで実行した <code>script.yml</code> は，次のようなフォーマットになっています．</p>
 
 <pre><code class="language-yaml">apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 </code></pre>
 
 <p>このスクリプトファイルでは，次のことを指定しています．</p>
@@ -209,58 +203,60 @@ upload:
 
 <p>作成した仮想マシンの状態は，次のコマンドで確認することができます．</p>
 
-<pre><code class="language-sh">$ roadie status
+<pre><code class="language-shell">$ roadie status
 </code></pre>
 
 <p>プログラムが終了し，アップロードされた出力結果を取得するには，
 次のコマンドを利用します．</p>
 
-<pre><code class="language-sh">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
+<pre><code class="language-shell">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
 </code></pre>
 
 <p>このコマンドは，先ほど名前を付けた <code>analyze-wowah</code> の出力のうち，
 &ldquo;*&rdquo; にマッチする，つまりすべてのファイルを <code>./res</code> ディレクトリにコピーします．</p>
 
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <div class="content-section-a">
-      <div class="container">
-        <div class="row">
-          <!-- AdSense -->
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
     <!-- Footer -->
 <footer>
   <div class="container">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>
+
+  <div class="container">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-3">
+        <h4>Contact information</h4>
+        <div class="addthis_inline_follow_toolbox"></div>
+      </div>
+      <div class="col-md-7">
         <p class="copyright text-muted small">
         Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
         The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
-        </p>
-      </div>
-      <div class="col-md-6">
         Built with <a href="http://gohugo.io">Hugo</a> and the
         <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
         theme.
+        </p>
+      </div>
+      <div class="col-md-2">
+        <script data-gratipay-username="jkawamoto" src="//grtp.co/v1.js"></script>
       </div>
     </div>
   </div>
@@ -279,18 +275,10 @@ upload:
 
 
 
-<!-- Google Analytics -->
-<script>
- (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
-   Date();a=s.createElement(o),
-   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
- })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
- ga('create', 'UA-82315630-1', 'auto');
- ga('send', 'pageview');
-</script>
-
-
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/agate.min.css" type="text/css" />
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57f529147128b1fb"></script>
 
   </body>

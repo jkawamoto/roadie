@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Roadie: A easy way to run your programs on Google Cloud Platform.</title>
+  <title>Roadie</title>
   
 
   
@@ -22,7 +22,7 @@
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Roadie: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:title" content="Roadie"/>
   
 
   
@@ -30,17 +30,10 @@
   
 
   
-  <meta property="og:site_name"  content="Roadie: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:site_name"  content="Roadie"/>
   
-  
-  <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png"/>
   
 
-  
-    
-    <meta name="twitter:card" content="A easy way to run your programs on Google Cloud Platform."/>
-    
-  <meta name="twitter:site" content="@junkawamoto"/>
   
 
   <!-- Bootstrap Core CSS -->
@@ -137,7 +130,8 @@ body {
   </div>
 </nav>
 
-    <section id="intro">
+    
+<section id="intro">
 	<!-- Header -->
 	<div class="intro-header">
 
@@ -152,7 +146,6 @@ body {
 					
 					
 					
-
 					<iframe class="github-btn"
 						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=star&amp;count=true&amp;size=large"
 						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
@@ -168,7 +161,7 @@ body {
 	</div>
 </section>
 
-    <section id="services">
+<section id="services">
   <!-- Page Content -->
   
     
@@ -177,8 +170,6 @@ body {
       <div class="container">
         <div class="row">
           <div>
-          <hr class="section-heading-spacer"/>
-          <div class="clearfix"></div>
             <h2 class="section-heading">Description</h2>
             
 
@@ -193,19 +184,19 @@ instances, and manage outputs.</p>
 
 <p>For example,</p>
 
-<pre><code class="language-sh">$ roadie run --local . --name analyze-wowah script.yml
+<pre><code class="language-shell">$ roadie run --local . --name analyze-wowah script.yml
 </code></pre>
 
 <p>uploads your source codes in current directory, and run them in such a manner
 that <code>script.yml</code> specifies. The <code>script.yml</code> is a simple YAML file like</p>
 
 <pre><code class="language-yaml">apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- analyze WoWAH
+  - unrar x -r wowah.rar
+  - analyze WoWAH
 </code></pre>
 
 <p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
@@ -216,31 +207,31 @@ data files.</p>
 <p><code>roadie</code> uploads results of such commands to a cloud storage after they finish.
 You can access those results by</p>
 
-<pre><code class="language-sh">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
+<pre><code class="language-shell">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
 </code></pre>
 
 <p>Then, <code>roadie</code> downloads all result files into <code>./res</code> directory.</p>
 
-<h2 id="installation:04c6e90faac2675aa89e2176d2eec7d8">Installation</h2>
+<h2 id="installation">Installation</h2>
 
 <p>Compiled binary files for some platforms are uploaded in
 <a href="https://github.com/jkawamoto/roadie/releases">release page</a>.</p>
 
 <p>For mac user, <code>roadie</code> is available in <a href="http://brew.sh/">Homebrew</a>.</p>
 
-<pre><code class="language-sh">$ brew tap jkawamoto/roadie
+<pre><code class="language-shell">$ brew tap jkawamoto/roadie
 $ brew install roadie
 </code></pre>
 
-<h2 id="initialization:04c6e90faac2675aa89e2176d2eec7d8">Initialization</h2>
+<h2 id="initialization">Initialization</h2>
 
 <p>After installing <code>roadie</code>, the following initialization is required in order to
 authorize <code>roadie</code> to access cloud services.</p>
 
-<pre><code class="language-sh">$ roadie init
+<pre><code class="language-shell">$ roadie init
 </code></pre>
 
-<h2 id="license:04c6e90faac2675aa89e2176d2eec7d8">License</h2>
+<h2 id="license">License</h2>
 
 <p>This software except files in <code>docker</code> folder is released under The GNU General Public License Version 3,
 see <a href="info/licenses/">LICENSES</a> for more detail.</p>
@@ -252,41 +243,43 @@ see <a href="info/licenses/">LICENSES</a> for more detail.</p>
   
 </section>
 
-    <div class="content-section-a">
-      <div class="container">
-        <div class="row">
-          <!-- AdSense -->
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-        </div>
-      </div>
-    </div>
+
     <!-- Footer -->
 <footer>
   <div class="container">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>
+
+  <div class="container">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-3">
+        <h4>Contact information</h4>
+        <div class="addthis_inline_follow_toolbox"></div>
+      </div>
+      <div class="col-md-7">
         <p class="copyright text-muted small">
         Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
         The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
-        </p>
-      </div>
-      <div class="col-md-6">
         Built with <a href="http://gohugo.io">Hugo</a> and the
         <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
         theme.
+        </p>
+      </div>
+      <div class="col-md-2">
+        <script data-gratipay-username="jkawamoto" src="//grtp.co/v1.js"></script>
       </div>
     </div>
   </div>
@@ -305,18 +298,10 @@ see <a href="info/licenses/">LICENSES</a> for more detail.</p>
 
 
 
-<!-- Google Analytics -->
-<script>
- (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
-   Date();a=s.createElement(o),
-   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
- })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
- ga('create', 'UA-82315630-1', 'auto');
- ga('send', 'pageview');
-</script>
-
-
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/agate.min.css" type="text/css" />
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57f529147128b1fb"></script>
 
   </body>

@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Configuration: A easy way to run your programs on Google Cloud Platform.</title>
+  <title>Configuration</title>
   
 
   
@@ -22,7 +22,7 @@
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Configuration: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:title" content="Configuration"/>
   
 
   
@@ -30,17 +30,10 @@
   
 
   
-  <meta property="og:site_name"  content="Roadie: A easy way to run your programs on Google Cloud Platform."/>
+  <meta property="og:site_name"  content="Roadie"/>
   
-  
-  <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png"/>
   
 
-  
-    
-    <meta name="twitter:card" content="A easy way to run your programs on Google Cloud Platform."/>
-    
-  <meta name="twitter:site" content="@junkawamoto"/>
   
 
   <!-- Bootstrap Core CSS -->
@@ -137,15 +130,16 @@ body {
   </div>
 </nav>
 
-    <section id="services">
-      <div class="content-section-a">
-        <div class="container">
-          <div class="row">
-            <div>
-              <hr class="section-heading-spacer">
-              <div class="clearfix"></div>
-              <h2 class="section-heading">Configuration</h2>
-              
+    
+<section id="services">
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">Configuration</h2>
+          
 
 <p>To update configuration of roadie, use <code>roadie config</code> command.
 It provides the following sub commands:</p>
@@ -160,50 +154,50 @@ It provides the following sub commands:</p>
 in the current working directory by default.
 You can also update configurations without this command by editing that file.</p>
 
-<h3 id="project:a66b35d20295cb764719ac8bd35837ec">project</h3>
+<h3 id="project">project</h3>
 
 <p>Project ID is an ID registered in Google Cloud Platform.
 You can find your project ID <a href="https://console.cloud.google.com/project">here</a>.</p>
 
 <p>To check the project ID currently set to roadie, run</p>
 
-<pre><code class="language-sh">$ roadie config project
+<pre><code class="language-shell">$ roadie config project
 </code></pre>
 
 <p>and to set another project ID <code>PROJECT</code>, run</p>
 
-<pre><code class="language-sh">$ roadie config project set PROJECT
+<pre><code class="language-shell">$ roadie config project set PROJECT
 </code></pre>
 
 <p>Valid project ID is required to access Google Cloud Platform.</p>
 
-<h3 id="region:a66b35d20295cb764719ac8bd35837ec">region</h3>
+<h3 id="region">region</h3>
 
 <p>In Google Cloud Platform, the platform is divided into several zones
 based on actual locations where virtual machine will run.
 You can find current available zones by running</p>
 
-<pre><code class="language-sh">$ roadie config region list
+<pre><code class="language-shell">$ roadie config region list
 </code></pre>
 
 <p>By default, <code>us-central1-b</code> is chosen.
 To check current zone, run</p>
 
-<pre><code class="language-sh">$ roadie config region
+<pre><code class="language-shell">$ roadie config region
 </code></pre>
 
 <p>and to set another <code>ZONE</code>, run</p>
 
-<pre><code class="language-sh">$ roadie config region set ZONE
+<pre><code class="language-shell">$ roadie config region set ZONE
 </code></pre>
 
-<h3 id="machine:a66b35d20295cb764719ac8bd35837ec">machine</h3>
+<h3 id="machine">machine</h3>
 
 <p>There are some options about machine type on which your program runs.
 Each machine type has different number of virtual CPUs and RAM.
 You can find available machine types by running</p>
 
-<pre><code class="language-sh">$ roadie config machine list
+<pre><code class="language-shell">$ roadie config machine list
 </code></pre>
 
 <p>and <a href="https://cloud.google.com/compute/pricing">here</a> is more information about
@@ -214,54 +208,56 @@ You should set zone before checking machine types.</p>
 <p>By default, <code>n1-standard-1</code>, which has 1 vCPU and 3.75 GB RAM, is selected.
 To check current machine type, run</p>
 
-<pre><code class="language-sh">$ roadie config machine
+<pre><code class="language-shell">$ roadie config machine
 </code></pre>
 
 <p>and to set another <code>TYPE</code>, run</p>
 
-<pre><code class="language-sh">$ roadie config machine set TYPE
+<pre><code class="language-shell">$ roadie config machine set TYPE
 </code></pre>
 
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <div class="content-section-a">
-      <div class="container">
-        <div class="row">
-          <!-- AdSense -->
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
     <!-- Footer -->
 <footer>
   <div class="container">
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+  <ins class="adsbygoogle"
+       style="display:inline-block;width:336px;height:280px"
+       data-ad-client="ca-pub-4734862314145555"
+       data-ad-slot="4875187824"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>
+
+  <div class="container">
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-3">
+        <h4>Contact information</h4>
+        <div class="addthis_inline_follow_toolbox"></div>
+      </div>
+      <div class="col-md-7">
         <p class="copyright text-muted small">
         Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
         The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
-        </p>
-      </div>
-      <div class="col-md-6">
         Built with <a href="http://gohugo.io">Hugo</a> and the
         <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
         theme.
+        </p>
+      </div>
+      <div class="col-md-2">
+        <script data-gratipay-username="jkawamoto" src="//grtp.co/v1.js"></script>
       </div>
     </div>
   </div>
@@ -280,18 +276,10 @@ To check current machine type, run</p>
 
 
 
-<!-- Google Analytics -->
-<script>
- (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
-   Date();a=s.createElement(o),
-   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
- })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
- ga('create', 'UA-82315630-1', 'auto');
- ga('send', 'pageview');
-</script>
-
-
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/agate.min.css" type="text/css" />
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
 <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-57f529147128b1fb"></script>
 
   </body>

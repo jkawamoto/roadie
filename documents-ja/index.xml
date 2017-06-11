@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Documents-jas on Roadie</title>
-    <link>https://jkawamoto.github.io/roadie/documents-ja/</link>
+    <link>https://jkawamoto.github.io/roadie/documents-ja/index.xml</link>
     <description>Recent content in Documents-jas on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
@@ -16,7 +16,7 @@
       <guid>https://jkawamoto.github.io/roadie/documents-ja/installation/</guid>
       <description>
 
-&lt;h3 id=&#34;インストール:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;インストール&lt;/h3&gt;
+&lt;h3 id=&#34;インストール&#34;&gt;インストール&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; のコンパイル済みバイナリは，GitHub の
 &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;リリースページ&lt;/a&gt;
@@ -26,11 +26,11 @@
 
 &lt;p&gt;また，mac の場合は &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; でもインストールできます．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h3 id=&#34;初期設定:4c40a97dcf30b230e73eabba1323c21c&#34;&gt;初期設定&lt;/h3&gt;
+&lt;h3 id=&#34;初期設定&#34;&gt;初期設定&lt;/h3&gt;
 
 &lt;p&gt;Google Cloud Platform では，プロジェクトという単位でリソースを管理しています．
 &lt;code&gt;roadie&lt;/code&gt; を利用する前に，どのプロジェクトを利用するか &lt;code&gt;roadie&lt;/code&gt; に設定する必要があります．
@@ -40,7 +40,7 @@ $ brew install roadie
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; の初期設定には，次のコマンドを利用します．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie init
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;初期設定では，上記のプロジェクト ID の他，データの保存先やプログラムを実行するリージョンや
@@ -65,7 +65,7 @@ $ brew install roadie
 デフォルトでは，キューに入れられたタスクは一つのインタンスによって処理されますが，
 必要に応じてインスタンスを追加することもできます．&lt;/p&gt;
 
-&lt;h3 id=&#34;キューにタスクを追加する:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;キューにタスクを追加する&lt;/h3&gt;
+&lt;h3 id=&#34;キューにタスクを追加する&#34;&gt;キューにタスクを追加する&lt;/h3&gt;
 
 &lt;p&gt;タスクの追加は，&lt;code&gt;roadie run&lt;/code&gt; コマンドに &lt;code&gt;--queue&lt;/code&gt; フラグを追加することで行います．
 &lt;code&gt;--queue&lt;/code&gt; フラグには，タスクを追加するキューの名前を指定します．
@@ -74,9 +74,9 @@ $ brew install roadie
 
 &lt;p&gt;また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．&lt;/p&gt;
 
-&lt;h4 id=&#34;例:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;例&lt;/h4&gt;
+&lt;h4 id=&#34;例&#34;&gt;例&lt;/h4&gt;
 
-&lt;pre&gt;&lt;code&gt;$ roadie run --local . --name task-1 --queue queue-1 script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --local . --name task-1 --queue queue-1 script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;上記のコマンドでは，&lt;code&gt;script.yml&lt;/code&gt; を &lt;code&gt;queue-1&lt;/code&gt; に追加します．
@@ -86,7 +86,7 @@ $ brew install roadie
 &lt;p&gt;このスクリプトには，&lt;code&gt;task-1&lt;/code&gt; という名前を付けていますので，
 この名前を使って出力の取得やログの閲覧が可能です．&lt;/p&gt;
 
-&lt;h3 id=&#34;キューの管理:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;キューの管理&lt;/h3&gt;
+&lt;h3 id=&#34;キューの管理&#34;&gt;キューの管理&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie queue list&lt;/code&gt; コマンドは現在存在しているキューの一覧を表示します．
 また，&lt;code&gt;roadie queue show &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドは，&lt;code&gt;&amp;lt;queue name&amp;gt;&lt;/code&gt; キューに
@@ -100,7 +100,7 @@ $ brew install roadie
 &lt;code&gt;roadie queue restart &amp;lt;queue name&amp;gt;&lt;/code&gt; コマンドを使用します．
 このコマンドは，キューの実行のために新しいインスタンスを一台作成します．&lt;/p&gt;
 
-&lt;h3 id=&#34;インスタンスの管理:a064e0801a0aed21b8b1af86d077fb3c&#34;&gt;インスタンスの管理&lt;/h3&gt;
+&lt;h3 id=&#34;インスタンスの管理&#34;&gt;インスタンスの管理&lt;/h3&gt;
 
 &lt;p&gt;デフォルトでは，キューのタスクは一台のインスタンスで処理されます．
 複数のインスタンスで処理したい場合，インスタンスの追加を行う必要があります．&lt;/p&gt;
@@ -133,7 +133,7 @@ $ brew install roadie
 &lt;li&gt;&lt;strong&gt;log&lt;/strong&gt; はログの表示を行います．&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;status-コマンド:3f3af53408cff75953b33723c0b061bb&#34;&gt;status コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;status-コマンド&#34;&gt;status コマンド&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie status&lt;/code&gt; コマンドは，各仮想マシンが実行中か終了済みかを表示します．
 もし，仮想マシンインスタンスが終了済みで計算結果も削除されている場合，
@@ -147,19 +147,19 @@ $ brew install roadie
 &lt;p&gt;&lt;code&gt;status&lt;/code&gt; コマンドの別の機能は，インスタンスを途中で削除することです．
 &lt;code&gt;INSTANCE&lt;/code&gt; というインスタンスを何らかの理由で途中削除する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie status kill INSTANCE
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie status kill INSTANCE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
 
 &lt;p&gt;実行途中にインスタンスを削除した場合，計算結果はクラウドストレージに保存されないことがあります．&lt;/p&gt;
 
-&lt;h3 id=&#34;log-コマンド:3f3af53408cff75953b33723c0b061bb&#34;&gt;log コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;log-コマンド&#34;&gt;log コマンド&lt;/h3&gt;
 
 &lt;p&gt;ログコマンドは，各インスタンスのログ出力を取得します．
 &lt;code&gt;INSTANCE&lt;/code&gt; というインスタンスのログを取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie log INSTANCE
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie log INSTANCE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
@@ -180,7 +180,7 @@ $ brew install roadie
 標準エラー出力への書き込みは，その都度通信を発生させるため，
 巨大なデータの書き込みは避けた方が良いでしょう．&lt;/p&gt;
 
-&lt;h4 id=&#34;オプション:3f3af53408cff75953b33723c0b061bb&#34;&gt;オプション&lt;/h4&gt;
+&lt;h4 id=&#34;オプション&#34;&gt;オプション&lt;/h4&gt;
 
 &lt;p&gt;ログコマンドには幾つかのオプションがあります．&lt;/p&gt;
 
@@ -207,7 +207,7 @@ $ brew install roadie
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; を使うことで，Google Cloud Platform の詳しい仕組みを知らなくても，
 また仮想マシンにログインして作業することなく簡単にクラウド環境でプログラムを実行することができます．&lt;/p&gt;
 
-&lt;h3 id=&#34;項目:aeaecdd37942e8924d7f7cb1f903f73d&#34;&gt;項目&lt;/h3&gt;
+&lt;h3 id=&#34;項目&#34;&gt;項目&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;documents-ja/installation&#34;&gt;インストール&lt;/a&gt;&lt;/li&gt;
@@ -218,14 +218,14 @@ $ brew install roadie
 &lt;li&gt;&lt;a href=&#34;documents-ja/queue&#34;&gt;タスクキュー&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;簡単な使用例:aeaecdd37942e8924d7f7cb1f903f73d&#34;&gt;簡単な使用例&lt;/h3&gt;
+&lt;h3 id=&#34;簡単な使用例&#34;&gt;簡単な使用例&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; では，&lt;a href=&#34;https://ja.wikipedia.org/wiki/YAML&#34;&gt;YAML&lt;/a&gt; 形式のスクリプトファイル
 を使って，クラウドで実行する手順を指定します．
 このスクリプトファイルが &lt;code&gt;script.yml&lt;/code&gt; だとすると，
 次のようにしてプログラムをクラウドで実行させることができます．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name analyze-wowah script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --local . --name analyze-wowah script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;このコマンドでは，&lt;code&gt;--local .&lt;/code&gt; によって現在のディレクトリにあるソースコードを
@@ -235,14 +235,14 @@ $ brew install roadie
 &lt;p&gt;ここで実行した &lt;code&gt;script.yml&lt;/code&gt; は，次のようなフォーマットになっています．&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;このスクリプトファイルでは，次のことを指定しています．&lt;/p&gt;
@@ -261,13 +261,13 @@ upload:
 
 &lt;p&gt;作成した仮想マシンの状態は，次のコマンドで確認することができます．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie status
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie status
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;プログラムが終了し，アップロードされた出力結果を取得するには，
 次のコマンドを利用します．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;このコマンドは，先ほど名前を付けた &lt;code&gt;analyze-wowah&lt;/code&gt; の出力のうち，
@@ -287,62 +287,62 @@ upload:
 それらのデータを管理するために，&lt;code&gt;source&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;result&lt;/code&gt; の
 3コマンドが用意されています．&lt;/p&gt;
 
-&lt;h3 id=&#34;source-コマンド:494b4c66d4128fe395a8c9607fab3629&#34;&gt;source コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;source-コマンド&#34;&gt;source コマンド&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;source&lt;/code&gt; コマンドは &lt;code&gt;roadie run&lt;/code&gt; に &lt;code&gt;--local&lt;/code&gt; フラッグを付けてアップロードした
 ソースコードの管理を行います．&lt;/p&gt;
 
 &lt;p&gt;これまでにアップロードされたソースコードアーカイブの一覧を取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie source list
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie source list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行します．また，その中から &lt;code&gt;FILENAME&lt;/code&gt; というファイルを削除する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie source delete FILENAME
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie source delete FILENAME
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行します．&lt;/p&gt;
 
-&lt;h3 id=&#34;data-コマンド:494b4c66d4128fe395a8c9607fab3629&#34;&gt;data コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;data-コマンド&#34;&gt;data コマンド&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;data&lt;/code&gt; コマンドは，スクリプトファイルの &lt;code&gt;data&lt;/code&gt; セクションで利用する
 データファイルの管理を行います．&lt;/p&gt;
 
 &lt;p&gt;あるファイル &lt;code&gt;FILENAME&lt;/code&gt; を &lt;code&gt;data&lt;/code&gt; セクションで利用するためにアップロードする場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data put FILENAME
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie data put FILENAME
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．アップロードされたファイルの URL が表示されます．
 また，これまでにアップロードしたファイルと，その URL を取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data list --url
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie data list --url
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
 
 &lt;p&gt;アップロード済みのデータファイル &lt;code&gt;FILENAME&lt;/code&gt; を削除するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie data delete FILENAME
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie data delete FILENAME
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
 
-&lt;h3 id=&#34;result-コマンド:494b4c66d4128fe395a8c9607fab3629&#34;&gt;result コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;result-コマンド&#34;&gt;result コマンド&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;result&lt;/code&gt; コマンドは計算結果としてアップロードされたファイルを管理し，
 ローカル PC へのダウンロード機能を提供します．&lt;/p&gt;
 
 &lt;p&gt;実行が終了したインスタンスの一覧を取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result list
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．また，各インスタンス &lt;code&gt;INSTANCE&lt;/code&gt; がアップロードした
 計算結果のファイルを調べるには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result INSTANCE
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result INSTANCE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
@@ -351,7 +351,7 @@ upload:
 それらのファイルのうち与えられた Glob パタンにマッチするファイルをダウンロードします．
 ワイルドカードを用いてすべての結果を取得する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie result get INSTANCE &amp;quot;*&amp;quot; -o ./res
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result get INSTANCE &amp;quot;*&amp;quot; -o ./res
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;code&gt;-o&lt;/code&gt; フラッグによりダウンロードしたファイルの保存先を指定できます．&lt;/p&gt;
@@ -366,7 +366,7 @@ upload:
       <guid>https://jkawamoto.github.io/roadie/documents-ja/execution/</guid>
       <description>
 
-&lt;h3 id=&#34;プログラムの実行モデル:e52f646d428c71e9ec4e13be59006055&#34;&gt;プログラムの実行モデル&lt;/h3&gt;
+&lt;h3 id=&#34;プログラムの実行モデル&#34;&gt;プログラムの実行モデル&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; は，与えらえたプログラムをコンテナを用いて実行します．
 このコンテナのイメージには，
@@ -411,7 +411,7 @@ upload:
 &lt;code&gt;roadie&lt;/code&gt; にどのファイルを実行結果として扱い永続的なストレージへ保存すべきか教えるためには，
 スクリプトの &lt;code&gt;upload&lt;/code&gt; セクションを使ってください．&lt;/p&gt;
 
-&lt;h3 id=&#34;run-コマンド:e52f646d428c71e9ec4e13be59006055&#34;&gt;run コマンド&lt;/h3&gt;
+&lt;h3 id=&#34;run-コマンド&#34;&gt;run コマンド&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;roadie run&lt;/code&gt; コマンドは，新しい仮想マシンを作成しその上でプログラムを実行します．
 このコマンドは，次の節で説明するスクリプトファイルを引数として受け取ります．
@@ -425,27 +425,27 @@ upload:
 &lt;p&gt;スクリプトファイルが &lt;code&gt;script.yml&lt;/code&gt; で名前が &lt;code&gt;instance1&lt;/code&gt;
 である仮想マシンを作成するためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --name instance1 script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --name instance1 script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行します．&lt;/p&gt;
 
-&lt;h3 id=&#34;スクリプトファイル:e52f646d428c71e9ec4e13be59006055&#34;&gt;スクリプトファイル&lt;/h3&gt;
+&lt;h3 id=&#34;スクリプトファイル&#34;&gt;スクリプトファイル&lt;/h3&gt;
 
 &lt;p&gt;スクリプトファイルは，&lt;code&gt;apt&lt;/code&gt;, &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;run&lt;/code&gt;, &lt;code&gt;upload&lt;/code&gt; の 5要素からなる
 YAML ファイルです．
 簡単なサンプルファイルは次のようになります．&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
-- unrar
+  - unrar
 source: https://github.com/abcdefg/some-program.git
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;大雑把にいうと，上記のスクリプトファイルは次のことを実行します．&lt;/p&gt;
@@ -461,21 +461,21 @@ upload:
 
 &lt;p&gt;なお，スクリプトファイルでは，不要なセクションは省略できます．&lt;/p&gt;
 
-&lt;h4 id=&#34;apt-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;apt セクション&lt;/h4&gt;
+&lt;h4 id=&#34;apt-セクション&#34;&gt;apt セクション&lt;/h4&gt;
 
 &lt;p&gt;&lt;code&gt;apt&lt;/code&gt; セクションはプログラムの実行に必要な apt パッケージのリストを設定します．&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;apt:
-- python-numpy
-- python-scipy
-- python-matplotlib
+  - python-numpy
+  - python-scipy
+  - python-matplotlib
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;上の例では，科学技術計算によく用いられる Python パッケージをインストールしています．
 もし，何らかのコマンドを実行した後で apt パッケージのインストールが必要な場合は，
 &lt;code&gt;run&lt;/code&gt; セクションい &lt;code&gt;apt-get install&lt;/code&gt; コマンドを追加してください．&lt;/p&gt;
 
-&lt;h4 id=&#34;source-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;source セクション&lt;/h4&gt;
+&lt;h4 id=&#34;source-セクション&#34;&gt;source セクション&lt;/h4&gt;
 
 &lt;p&gt;&lt;code&gt;source&lt;/code&gt; セクションでは，プログラムで必要となるデータファイルの URL リストを指摘できます．
 これらの URL には次の拡張が利用できます．&lt;/p&gt;
@@ -518,7 +518,7 @@ upload:
 &lt;code&gt;requirements.txt&lt;/code&gt; か &lt;code&gt;requirements.in&lt;/code&gt; ファイルを含む場合，
 依存パッケージは自動でインストールされます．&lt;/p&gt;
 
-&lt;h4 id=&#34;data-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;data セクション&lt;/h4&gt;
+&lt;h4 id=&#34;data-セクション&#34;&gt;data セクション&lt;/h4&gt;
 
 &lt;p&gt;&lt;code&gt;data&lt;/code&gt; セクションでは，プログラムの実行に必要なデータファイルの取得先
 URL リストを指定します．
@@ -533,7 +533,7 @@ URL に &lt;code&gt;:&lt;/code&gt; に続けて保存先パスを与えること
 例えば，&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;data:
-- https://www.sample.com/program.zip:/data/input
+  - https://www.sample.com/program.zip:/data/input
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;は，&lt;code&gt;program.zip&lt;/code&gt; をダウンロードし，
@@ -542,7 +542,7 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 例えば，&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-yaml&#34;&gt;data:
-- gs://your-project/dataset/some_data_v2.json:some_data.json
+  - gs://your-project/dataset/some_data_v2.json:some_data.json
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;は，&lt;code&gt;somr_data_v2.json&lt;/code&gt; を Google Cloud Storage からダウンロードし，
@@ -554,7 +554,7 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 ここで，&lt;code&gt;gs://&amp;lt;your bucket&amp;gt;/.roadie/data/&lt;/code&gt; は &lt;code&gt;roadie data put&lt;/code&gt; コマンドにて
 アップロードしたデータファイルのデフォルトの格納先です．&lt;/p&gt;
 
-&lt;h4 id=&#34;run-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;run セクション&lt;/h4&gt;
+&lt;h4 id=&#34;run-セクション&#34;&gt;run セクション&lt;/h4&gt;
 
 &lt;p&gt;&lt;code&gt;run&lt;/code&gt; セクションには，実行するコマンドを順に記述します．
 ここには，任意のコマンドを列挙することができます．
@@ -575,16 +575,16 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 &lt;em&gt;i&lt;/em&gt; 番目のコマンドの出力は &lt;code&gt;stdout{i}.txt&lt;/code&gt; としてクラウドストレージに保存されます．
 これらのファイルは &lt;code&gt;roadie result&lt;/code&gt; コマンドで取得できます．&lt;/p&gt;
 
-&lt;h4 id=&#34;upload-セクション:e52f646d428c71e9ec4e13be59006055&#34;&gt;upload セクション&lt;/h4&gt;
+&lt;h4 id=&#34;upload-セクション&#34;&gt;upload セクション&lt;/h4&gt;
 
 &lt;p&gt;&lt;code&gt;upload&lt;/code&gt; セクションには，
-&lt;a href=&#34;https://en.wikipedia.org/wiki/Glob_(programming&#34;&gt;glob&lt;/a&gt;)
+&lt;a href=&#34;https://en.wikipedia.org/wiki/Glob_(programming)&#34;&gt;glob&lt;/a&gt;
 パタンのリストを設定します.
 いずれかのパタンにマッチしたファイルは，
 プログラムの実行結果としてクラウドストレージで保存されます．
 これらのファイルも &lt;code&gt;roadie result&lt;/code&gt; コマンドで取得できます．&lt;/p&gt;
 
-&lt;h3 id=&#34;ローカルファイルをソースコードとして使用する:e52f646d428c71e9ec4e13be59006055&#34;&gt;ローカルファイルをソースコードとして使用する&lt;/h3&gt;
+&lt;h3 id=&#34;ローカルファイルをソースコードとして使用する&#34;&gt;ローカルファイルをソースコードとして使用する&lt;/h3&gt;
 
 &lt;p&gt;&lt;code&gt;source&lt;/code&gt; セクションでは，Web 上の様々なところから
 ソースコードを取得できるようになっています．
@@ -598,7 +598,7 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;例えば，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name instance-1 script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --local . --name instance-1 script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;では，カレントディレクトリ以下のファイルがソースコードとして扱われます．
@@ -615,12 +615,12 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;例えば，&lt;code&gt;--local&lt;/code&gt; フラッグを使って，次のようにプログラムを実行したとします．&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --local . --name instance-1 script.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --local . --name instance-1 script.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;この時にアップロードされたソースコードを再利用する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie run --source instance-1 --name instance2 script2.yml
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie run --source instance-1 --name instance2 script2.yml
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;上記のように指定します．&lt;/p&gt;
@@ -647,7 +647,7 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 &lt;p&gt;すべての設定は，カレントディレクトリの &lt;code&gt;roadie.yml&lt;/code&gt; ファイルに保存されます．
 このファイルはテキストファイルなので，手作業で編集できます．&lt;/p&gt;
 
-&lt;h3 id=&#34;project:a66b35d20295cb764719ac8bd35837ec&#34;&gt;project&lt;/h3&gt;
+&lt;h3 id=&#34;project&#34;&gt;project&lt;/h3&gt;
 
 &lt;p&gt;プロジェクト ID は Google Cloud Platform に登録されている ID です．
 利用可能なプロジェクト ID の一覧は &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;ここ&lt;/a&gt;
@@ -655,29 +655,29 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;現在 &lt;code&gt;roadie&lt;/code&gt; に設定されているプロジェクト ID を調べるには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config project
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config project
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行します．また，プロジェクト ID &lt;code&gt;PROJECT&lt;/code&gt; を設定するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config project set PROJECT
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config project set PROJECT
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行します．&lt;/p&gt;
 
-&lt;h3 id=&#34;region:a66b35d20295cb764719ac8bd35837ec&#34;&gt;region&lt;/h3&gt;
+&lt;h3 id=&#34;region&#34;&gt;region&lt;/h3&gt;
 
 &lt;p&gt;Google Cloud Platform では，仮想マシンを実行するデータセンターが幾つか提供されています．
 仮想マシンの利用料金はゾーンごとに異なっています．
 利用可能なゾーンを取得するためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region list
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config region list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
 現在設定されているゾーンを調べるためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config region
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
@@ -685,18 +685,18 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 &lt;p&gt;最後に，ゾーンをある値 &lt;code&gt;ZONE&lt;/code&gt; に変更するためには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config region set ZONE
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config region set ZONE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;
 
-&lt;h3 id=&#34;machine:a66b35d20295cb764719ac8bd35837ec&#34;&gt;machine&lt;/h3&gt;
+&lt;h3 id=&#34;machine&#34;&gt;machine&lt;/h3&gt;
 
 &lt;p&gt;プログラムを実行する仮想マシンのスペックにはいくつかの種類が用意されています．
 各マシンタイプには異なる仮想 CPU 数やメモリサイズが設定されています．
 利用可能な仮想マシンタイプを取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine list
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config machine list
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
@@ -710,13 +710,13 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 &lt;code&gt;n1-standard-1&lt;/code&gt; が選ばれています．
 現在設定されている仮想マシンタイプを取得するには，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config machine
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．
 また，仮想マシンタイプを &lt;code&gt;TYPE&lt;/code&gt; へ変更する場合，&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ roadie config machine set TYPE
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie config machine set TYPE
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;を実行してください．&lt;/p&gt;

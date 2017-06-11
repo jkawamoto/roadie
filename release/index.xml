@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Releases on Roadie</title>
-    <link>https://jkawamoto.github.io/roadie/release/</link>
+    <link>https://jkawamoto.github.io/roadie/release/index.xml</link>
     <description>Recent content in Releases on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
@@ -17,7 +17,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.1/</guid>
       <description>
 
-&lt;h3 id=&#34;added:6022f483dfe2c1a0a74ee56dd54173b9&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Creating instance function waits until operation done message appears in log.&lt;/li&gt;
@@ -36,7 +36,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.2/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:3529b2e3c50c23e0e7c8936aa5266511&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;roadie result show&lt;/code&gt; command won&amp;rsquo;t output escape sequences.&lt;/li&gt;
@@ -54,7 +54,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.7/</guid>
       <description>
 
-&lt;h3 id=&#34;update:fc4659b12c47b894e2879db98c3e8dbd&#34;&gt;Update&lt;/h3&gt;
+&lt;h3 id=&#34;update&#34;&gt;Update&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Startup script waits until fluentd is ready.&lt;/li&gt;
@@ -72,7 +72,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.3.0/</guid>
       <description>
 
-&lt;h3 id=&#34;added:c5eec36ccef092f447a72957698738ae&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support queue based task management.&lt;/li&gt;
@@ -90,7 +90,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.6/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:a59e2327c101eff05065767d9fc15b68&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Not specifying default zone and machine type.&lt;/li&gt;
@@ -108,7 +108,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.5/</guid>
       <description>
 
-&lt;h3 id=&#34;added:83e12cb3ed139ce3327a4e1dd5e8103a&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support parallel uploading data files.&lt;/li&gt;
@@ -126,7 +126,7 @@
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.4/</guid>
       <description>
 
-&lt;h3 id=&#34;added:84e3b12fa11815dbe1b8ac895870f643&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support a new URL scheme &lt;code&gt;roadie://&lt;/code&gt; which is a shortcut to
@@ -149,7 +149,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.3/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:57fe7d4a866532e145b4390f706cdc86&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Output log entries of old instances when reusing same instance name.&lt;/li&gt;
@@ -167,13 +167,13 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.2/</guid>
       <description>
 
-&lt;h3 id=&#34;added:075dc458079080f834017b5958439d76&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support to restart program after rebooting containers.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;fixed:075dc458079080f834017b5958439d76&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Retry number in run command.&lt;/li&gt;
@@ -191,7 +191,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.1/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:5afe01b3bbb286603bc6f538419b6941&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Issue #15: Delete old container before retrying.&lt;/li&gt;
@@ -209,7 +209,7 @@ It will reduce your types to make script files.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.2.0/</guid>
       <description>
 
-&lt;h3 id=&#34;added:074128bf366c2e3c58208bc63536f530&#34;&gt;Added&lt;/h3&gt;
+&lt;h3 id=&#34;added&#34;&gt;Added&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Support &lt;code&gt;--retry&lt;/code&gt; option by default it is set to 10.&lt;/li&gt;
@@ -230,7 +230,7 @@ when GCP error happens.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.1.4/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:3ce5f2778e724d327f8a7f2865a19883&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Look for configuration files.&lt;/li&gt;
@@ -253,13 +253,13 @@ when GCP error happens.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.1.3/</guid>
       <description>
 
-&lt;h3 id=&#34;feature:4a8c8644fbfeec8969f57592dec005a2&#34;&gt;Feature&lt;/h3&gt;
+&lt;h3 id=&#34;feature&#34;&gt;Feature&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;In addition to &lt;code&gt;--name&lt;/code&gt; flag, support &lt;code&gt;-n&lt;/code&gt; flag as a short version.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;fixed:4a8c8644fbfeec8969f57592dec005a2&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;A bug of uploaded file names that all uploaded files were saved as a same name.&lt;/li&gt;
@@ -277,7 +277,7 @@ when GCP error happens.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.1.2/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:10c76f3e14bc843b34cc24bf79b833f8&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Disable font color and style in Windows.&lt;/li&gt;
@@ -298,7 +298,7 @@ From this version, in windows, such escape sequences are not used.&lt;/p&gt;
       <guid>https://jkawamoto.github.io/roadie/release/v0.1.1/</guid>
       <description>
 
-&lt;h3 id=&#34;fixed:fb0d63431563f6933a942b8995aadd1d&#34;&gt;Fixed&lt;/h3&gt;
+&lt;h3 id=&#34;fixed&#34;&gt;Fixed&lt;/h3&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Fixed a bug when gcloud does not return any project IDs.&lt;/li&gt;
