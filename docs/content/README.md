@@ -18,7 +18,7 @@ instances, and manage outputs.
 
 For example,
 
-```sh
+```shell
 $ roadie run --local . --name analyze-wowah script.yml
 ```
 
@@ -27,12 +27,12 @@ that `script.yml` specifies. The `script.yml` is a simple YAML file like
 
 ```yaml
 apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- analyze WoWAH
+  - unrar x -r wowah.rar
+  - analyze WoWAH
 ```
 
 The above `script.yml` asks roadie to install apt package `unrar` and
@@ -43,7 +43,7 @@ data files.
 `roadie` uploads results of such commands to a cloud storage after they finish.
 You can access those results by
 
-```sh
+```shell
 $ roadie result get analyze-wowah "*" -o ./res
 ```
 
@@ -55,7 +55,7 @@ Compiled binary files for some platforms are uploaded in
 
 For mac user, `roadie` is available in [Homebrew](http://brew.sh/).
 
-```sh
+```shell
 $ brew tap jkawamoto/roadie
 $ brew install roadie
 ```
@@ -64,7 +64,7 @@ $ brew install roadie
 After installing `roadie`, the following initialization is required in order to
 authorize `roadie` to access cloud services.
 
-```sh
+```shell
 $ roadie init
 ```
 

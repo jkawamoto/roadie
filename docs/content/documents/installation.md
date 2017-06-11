@@ -9,7 +9,7 @@ a directory in your `$PATH`, or put it as same directory as your current project
 
 If you are a mac user, you can install `roadie` via [Homebrew](http://brew.sh/).
 
-```sh
+```shell
 $ brew tap jkawamoto/roadie
 $ brew install roadie
 ```
@@ -20,7 +20,7 @@ Project ID is an ID registered in Google Cloud Platform.
 You can find your project ID [here](https://console.cloud.google.com/project).
 Note that *project name* is different from project ID.
 
-```sh
+```shell
 $ roadie init
 ```
 

@@ -18,7 +18,7 @@ However, status of old instances will be deleted after a certain period of time.
 The another property of status command is to kill some instance.
 To kill instance `INSTANCE`, run
 
-```sh
+```shell
 $ roadie status kill INSTANCE
 ```
 
@@ -29,7 +29,7 @@ If you kill an instance, outputs from the instance might not be stored.
 Log command prints log messages from an instance.
 To see log messages from instance `INSTANCE`, run
 
-```sh
+```shell
 $ roadie log INSTANCE
 ```
 

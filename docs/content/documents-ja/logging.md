@@ -21,7 +21,7 @@ title: ステータスとログ
 `status` コマンドの別の機能は，インスタンスを途中で削除することです．
 `INSTANCE` というインスタンスを何らかの理由で途中削除する場合，
 
-```sh
+```shell
 $ roadie status kill INSTANCE
 ```
 
@@ -34,7 +34,7 @@ $ roadie status kill INSTANCE
 ログコマンドは，各インスタンスのログ出力を取得します．
 `INSTANCE` というインスタンスのログを取得するには，
 
-```sh
+```shell
 $ roadie log INSTANCE
 ```
 

@@ -23,7 +23,7 @@ title: ドキュメント
 このスクリプトファイルが `script.yml` だとすると，
 次のようにしてプログラムをクラウドで実行させることができます．
 
-```sh
+```shell
 $ roadie run --local . --name analyze-wowah script.yml
 ```
 
@@ -35,14 +35,14 @@ $ roadie run --local . --name analyze-wowah script.yml
 
 ```yaml
 apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 ```
 
 このスクリプトファイルでは，次のことを指定しています．
@@ -59,14 +59,14 @@ upload:
 
 作成した仮想マシンの状態は，次のコマンドで確認することができます．
 
-```sh
+```shell
 $ roadie status
 ```
 
 プログラムが終了し，アップロードされた出力結果を取得するには，
 次のコマンドを利用します．
 
-```sh
+```shell
 $ roadie result get analyze-wowah "*" -o ./res
 ```
 

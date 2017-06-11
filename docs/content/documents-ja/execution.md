@@ -59,7 +59,7 @@ title: プログラムの実行
 スクリプトファイルが `script.yml` で名前が `instance1`
 である仮想マシンを作成するためには，
 
-```sh
+```shell
 $ roadie run --name instance1 script.yml
 ```
 
@@ -73,15 +73,15 @@ YAML ファイルです．
 
 ```yaml
 apt:
-- unrar
+  - unrar
 source: https://github.com/abcdefg/some-program.git
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 ```
 
 大雑把にいうと，上記のスクリプトファイルは次のことを実行します．
@@ -101,9 +101,9 @@ upload:
 
 ```yaml
 apt:
-- python-numpy
-- python-scipy
-- python-matplotlib
+  - python-numpy
+  - python-scipy
+  - python-matplotlib
 ```
 
 上の例では，科学技術計算によく用いられる Python パッケージをインストールしています．
@@ -168,7 +168,7 @@ URL に `:` に続けて保存先パスを与えることができます．
 
 ```yaml
 data:
-- https://www.sample.com/program.zip:/data/input
+  - https://www.sample.com/program.zip:/data/input
 ```
 
 は，`program.zip` をダウンロードし，
@@ -178,7 +178,7 @@ URL が指すファイルがアーカイブでない場合，別名保存にな�
 
 ```yaml
 data:
-- gs://your-project/dataset/some_data_v2.json:some_data.json
+  - gs://your-project/dataset/some_data_v2.json:some_data.json
 ```
 
 は，`somr_data_v2.json` を Google Cloud Storage からダウンロードし，
@@ -234,7 +234,7 @@ data:
 
 例えば，
 
-```sh
+```shell
 $ roadie run --local . --name instance-1 script.yml
 ```
 
@@ -252,13 +252,13 @@ $ roadie run --local . --name instance-1 script.yml
 
 例えば，`--local` フラッグを使って，次のようにプログラムを実行したとします．
 
-```sh
+```shell
 $ roadie run --local . --name instance-1 script.yml
 ```
 
 この時にアップロードされたソースコードを再利用する場合，
 
-```sh
+```shell
 $ roadie run --source instance-1 --name instance2 script2.yml
 ```
 

@@ -1,50 +1,14 @@
-<!DOCTYPE html>
-<html>
-  {{ partial "head.html" . }}
-  <body>
-    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-    <script>
-      (adsbygoogle = window.adsbygoogle || []).push({
-        google_ad_client: "ca-pub-4734862314145555",
-        enable_page_level_ads: true
-      });
-    </script>
-    {{ partial "nav.html" . }}
-    {{ partial "header.html" . }}
-
-    <div class="content-section-a">
-      <div class="container">
-        <div class="row">
-          <div>
-            <div class="clearfix"></div>
-            <h2 class="section-heading">{{ .Title }}</h2>
-            {{ .Content }}
-          </div>
-        </div>
+{{ define "main" }}
+{{ partial "header" . }}
+<div class="content-section-a">
+  <div class="container">
+    <div class="row">
+      <div>
+        <div class="clearfix"></div>
+        <h2 class="section-heading">{{ .Title }}</h2>
+        {{ .Content }}
       </div>
     </div>
-
-    <div class="content-section-b">
-      <div class="container">
-        <div class="row">
-          {{ "<!-- AdSense -->" | safeHTML }}
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-          <ins class="adsbygoogle"
-               style="display:inline-block;width:336px;height:280px"
-               data-ad-client="ca-pub-4734862314145555"
-               data-ad-slot="4875187824"></ins>
-          <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-          </script>
-        </div>
-      </div>
-    </div>
-    {{ partial "footer.html" . }}
-  </body>
-</html>
+  </div>
+</div>
+{{ end }}

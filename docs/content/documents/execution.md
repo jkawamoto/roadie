@@ -54,7 +54,7 @@ which sets a given name to the creating instance.
 So, suppose you will create an instance named `instance1`
 with script file `script.yml`, run
 
-```sh
+```shell
 $ roadie run --name instance1 script.yml
 ```
 
@@ -70,15 +70,15 @@ Here is a simple example of the script.
 
 ```yaml
 apt:
-- unrar
+  - unrar
 source: https://github.com/abcdefg/some-program.git
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- ./analyze WoWAH
+  - unrar x -r wowah.rar
+  - ./analyze WoWAH
 upload:
-- *.png
+  - *.png
 ```
 
 Roughly speaking, the above script means
@@ -95,9 +95,9 @@ Roughly speaking, the above script means
 
 ```yaml
 apt:
-- python-numpy
-- python-scipy
-- python-matplotlib
+  - python-numpy
+  - python-scipy
+  - python-matplotlib
 ```
 
 The above example installs three major python packages.
@@ -156,7 +156,7 @@ For example,
 
 ```yaml
 data:
-- https://www.sample.com/program.zip:/data/input
+  - https://www.sample.com/program.zip:/data/input
 ```
 
 downloads `program.zip` and stored files in the zip into `/data/input`.
@@ -164,7 +164,7 @@ Here is another example,
 
 ```yaml
 data:
-- gs://your-project/dataset/some_data_v2.json:some_data.json
+  - gs://your-project/dataset/some_data_v2.json:some_data.json
 ```
 
 downloads `somr_data_v2.json` into `/data` from a bucket in
@@ -214,7 +214,7 @@ If you use this function, you can omit `source` section in your script file.
 `--local` flag of `roadie run` command takes a path of your source codes.
 For example,
 
-```sh
+```shell
 $ roadie run --local . --name instance-1 script.yml
 ```
 
@@ -232,13 +232,13 @@ If the previous instance created with `--local` flag,
 the created new instance will use same uploaded source file.
 For example, you created an instance by
 
-```sh
+```shell
 $ roadie run --local . --name instance-1 script.yml
 ```
 
 and now you are creating another instance by
 
-```sh
+```shell
 $ roadie run --source instance-1 --name instance2 script2.yml
 ```
 

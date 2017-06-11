@@ -12,13 +12,13 @@ title: ファイルの管理
 
 これまでにアップロードされたソースコードアーカイブの一覧を取得するには，
 
-```sh
+```shell
 $ roadie source list
 ```
 
 を実行します．また，その中から `FILENAME` というファイルを削除する場合，
 
-```sh
+```shell
 $ roadie source delete FILENAME
 ```
 
@@ -31,14 +31,14 @@ $ roadie source delete FILENAME
 
 あるファイル `FILENAME` を `data` セクションで利用するためにアップロードする場合，
 
-```sh
+```shell
 $ roadie data put FILENAME
 ```
 
 を実行してください．アップロードされたファイルの URL が表示されます．
 また，これまでにアップロードしたファイルと，その URL を取得するには，
 
-```sh
+```shell
 $ roadie data list --url
 ```
 
@@ -46,7 +46,7 @@ $ roadie data list --url
 
 アップロード済みのデータファイル `FILENAME` を削除するには，
 
-```sh
+```shell
 $ roadie data delete FILENAME
 ```
 
@@ -59,14 +59,14 @@ $ roadie data delete FILENAME
 
 実行が終了したインスタンスの一覧を取得するには，
 
-```sh
+```shell
 $ roadie result list
 ```
 
 を実行してください．また，各インスタンス `INSTANCE` がアップロードした
 計算結果のファイルを調べるには，
 
-```sh
+```shell
 $ roadie result INSTANCE
 ```
 
@@ -76,7 +76,7 @@ $ roadie result INSTANCE
 それらのファイルのうち与えられた Glob パタンにマッチするファイルをダウンロードします．
 ワイルドカードを用いてすべての結果を取得する場合，
 
-```sh
+```shell
 $ roadie result get INSTANCE "*" -o ./res
 ```
 

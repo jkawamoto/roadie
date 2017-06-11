@@ -12,13 +12,13 @@ uploaded by `roadie run` command with `--local` flag.
 
 To check source files uploaded, run
 
-```sh
+```shell
 $ roadie source list
 ```
 
 and to delete some file named `FILENAME`, run
 
-```sh
+```shell
 $ roadie source delete FILENAME
 ```
 
@@ -28,13 +28,13 @@ $ roadie source delete FILENAME
 
 To upload a data file `FILENAME`, run
 
-```sh
+```shell
 $ roadie data put FILENAME
 ```
 
 To check uploaded files and their URL, run
 
-```sh
+```shell
 $ roadie data list --url
 ```
 
@@ -43,7 +43,7 @@ can be used in `data` section in your script file.
 
 To delete some file `FILENAME`, run
 
-```sh
+```shell
 $ roadie data delete FILENAME
 ```
 
@@ -52,18 +52,18 @@ $ roadie data delete FILENAME
 
 To check instance names which have results, run
 
-```sh
+```shell
 $ roadie result list
 ```
 
 and to check file names which instance `INSTANCE` has as its result, run
 
-```sh
+```shell
 $ roadie result INSTANCE
 ```
 
 To download those files into directory `./res`, run
 
-```sh
+```shell
 $ roadie result get INSTANCE "*" -o ./res
 ```

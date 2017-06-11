@@ -18,13 +18,13 @@ title: 設定
 
 現在 `roadie` に設定されているプロジェクト ID を調べるには，
 
-```sh
+```shell
 $ roadie config project
 ```
 
 を実行します．また，プロジェクト ID `PROJECT` を設定するには，
 
-```sh
+```shell
 $ roadie config project set PROJECT
 ```
 
@@ -36,14 +36,14 @@ Google Cloud Platform では，仮想マシンを実行するデータセンタ�
 仮想マシンの利用料金はゾーンごとに異なっています．
 利用可能なゾーンを取得するためには，
 
-```sh
+```shell
 $ roadie config region list
 ```
 
 を実行してください．
 現在設定されているゾーンを調べるためには，
 
-```sh
+```shell
 $ roadie config region
 ```
 
@@ -52,7 +52,7 @@ $ roadie config region
 
 最後に，ゾーンをある値 `ZONE` に変更するためには，
 
-```sh
+```shell
 $ roadie config region set ZONE
 ```
 
@@ -63,7 +63,7 @@ $ roadie config region set ZONE
 各マシンタイプには異なる仮想 CPU 数やメモリサイズが設定されています．
 利用可能な仮想マシンタイプを取得するには，
 
-```sh
+```shell
 $ roadie config machine list
 ```
 
@@ -78,14 +78,14 @@ $ roadie config machine list
 `n1-standard-1` が選ばれています．
 現在設定されている仮想マシンタイプを取得するには，
 
-```sh
+```shell
 $ roadie config machine
 ```
 
 を実行してください．
 また，仮想マシンタイプを `TYPE` へ変更する場合，
 
-```sh
+```shell
 $ roadie config machine set TYPE
 ```
 

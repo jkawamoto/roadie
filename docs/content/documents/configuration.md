@@ -18,13 +18,13 @@ You can find your project ID [here](https://console.cloud.google.com/project).
 
 To check the project ID currently set to roadie, run
 
-```sh
+```shell
 $ roadie config project
 ```
 
 and to set another project ID `PROJECT`, run
 
-```sh
+```shell
 $ roadie config project set PROJECT
 ```
 
@@ -35,20 +35,20 @@ In Google Cloud Platform, the platform is divided into several zones
 based on actual locations where virtual machine will run.
 You can find current available zones by running
 
-```sh
+```shell
 $ roadie config region list
 ```
 
 By default, `us-central1-b` is chosen.
 To check current zone, run
 
-```sh
+```shell
 $ roadie config region
 ```
 
 and to set another `ZONE`, run
 
-```sh
+```shell
 $ roadie config region set ZONE
 ```
 
@@ -57,7 +57,7 @@ There are some options about machine type on which your program runs.
 Each machine type has different number of virtual CPUs and RAM.
 You can find available machine types by running
 
-```sh
+```shell
 $ roadie config machine list
 ```
 
@@ -69,12 +69,12 @@ You should set zone before checking machine types.
 By default, `n1-standard-1`, which has 1 vCPU and 3.75 GB RAM, is selected.
 To check current machine type, run
 
-```sh
+```shell
 $ roadie config machine
 ```
 
 and to set another `TYPE`, run
 
-```sh
+```shell
 $ roadie config machine set TYPE
 ```

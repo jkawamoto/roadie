@@ -7,7 +7,7 @@ slug: licenses
 ---
 This software is released under the GPLv3.
 
-~~~
+~~~txt
 Copyright (C) 2016-2017 Junpei Kawamoto
 
 This program is free software: you can redistribute it and/or modify

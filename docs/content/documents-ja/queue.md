@@ -15,7 +15,7 @@ Roadie はキューを用いたタスク処理にも対応しています．
 また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．
 
 #### 例
-```
+```shell
 $ roadie run --local . --name task-1 --queue queue-1 script.yml
 ```
 

@@ -16,7 +16,7 @@ instances, and manage outputs.
 Suppose your are in a directory which has your source codes and `script.yml`,
 then run
 
-```sh
+```shell
 $ roadie run --local . --name analyze-wowah script.yml
 ```
 
@@ -27,14 +27,14 @@ The `script.yml` is a simple YAML file like
 
 ```yaml
 apt:
-- unrar
+  - unrar
 data:
-- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
 run:
-- unrar x -r wowah.rar
-- analyze WoWAH
+  - unrar x -r wowah.rar
+  - analyze WoWAH
 upload:
-- *.png
+  - *.png
 ```
 
 The above `script.yml` asks roadie to install apt package `unrar` and
@@ -44,7 +44,7 @@ data files.
 
 You can check your program is still running or ends by
 
-```sh
+```shell
 $ roadie status
 ```
 
@@ -52,7 +52,7 @@ After the program finishes,
 `roadie` uploads results of such commands to a cloud storage.
 You can access those results by
 
-```sh
+```shell
 $ roadie result get analyze-wowah "*" -o ./res
 ```
 

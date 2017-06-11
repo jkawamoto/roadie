@@ -15,7 +15,7 @@ The other flags in `roadie run` command are as same as the case of starting
 script without queue.
 
 #### example
-```
+```shell
 $ roadie run --local . --name instance-1 --queue queue-1 script.yml
 ```
 
