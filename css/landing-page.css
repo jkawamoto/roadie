@@ -152,8 +152,12 @@ h6 {
     }
 }
 
+pre {
+  padding: 5px;
+}
+
 footer {
-    padding: 50px 0;
+    padding-bottom: 50px;
     background-color: #f8f8f8;
 }
 
@@ -207,6 +211,6 @@ p.copyright {
     margin-top: 10px;
 }
 
-pre {
-  padding: 5px;
+.logo {
+  padding: 0 10px;
 }
