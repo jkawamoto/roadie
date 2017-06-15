@@ -23,7 +23,7 @@
   {{ end }}
 
   <meta property="og:type" content="article"/>
-  {{ if isset .Site.Params "SubTitle" }}
+  {{ if isset .Site.Params "subtitle" }}
   <meta property="og:title" content="{{ .Title }}: {{ .Site.Params.SubTitle}}"/>
   {{ else }}
   <meta property="og:title" content="{{ .Title }}"/>
@@ -35,16 +35,16 @@
   <meta property="og:description" content="{{ .Site.Params.Description }}"/>
   {{ end }}
 
-  {{ if isset .Site.Params "SubTitle" }}
+  {{ if isset .Site.Params "subtitle" }}
   <meta property="og:site_name"  content="{{ .Site.Title }}: {{ .Site.Params.SubTitle }}"/>
   {{ else }}
   <meta property="og:site_name"  content="{{ .Site.Title }}"/>
   {{ end }}
-  {{ if isset .Site.Params "Image" }}
+  {{ if isset .Site.Params "image" }}
   <meta property="og:image" content="{{ .Site.BaseURL }}{{ .Site.Params.Image }}"/>
   {{ end }}
 
-  {{ if isset .Site.Params "Twitter" }}
+  {{ if isset .Site.Params "twitter" }}
     {{ if isset .Params "description" }}
     <meta name="twitter:card" content="{{ .Params.description }}"/>
     {{ else }}
@@ -66,6 +66,7 @@
   {{ with .Site.Params.Icon96 }}
   <link rel="icon" type="image/png" href="{{ $base }}{{ . }}" sizes="96x96"/>
   {{ end }}
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" type="text/css">
 
   {{ "<!-- Bootstrap Core CSS -->" | safeHTML }}
   <link href="css/bootstrap.min.css" rel="stylesheet"/>
