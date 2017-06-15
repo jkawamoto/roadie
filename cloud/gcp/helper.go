@@ -29,6 +29,13 @@ import (
 	"github.com/jkawamoto/roadie/script"
 )
 
+var (
+	// truePtr is a pointer of a true value.
+	truePtr = toBoolPtr(true)
+	// falsePtr is a pointer of a false value.
+	falsePtr = toBoolPtr(false)
+)
+
 // ReplaceURLScheme replaced URLs which start with "roadie://".
 // Those URLs are modified to "gs://<bucketname>/.roadie/".
 func ReplaceURLScheme(cfg *Config, task *script.Script) {
@@ -62,4 +69,9 @@ func CreateURL(cfg *Config, name string) string {
 	}
 	return u.String()
 
+}
+
+// toBoolPtr returns a pointer of the given boolean.
+func toBoolPtr(b bool) *bool {
+	return &b
 }

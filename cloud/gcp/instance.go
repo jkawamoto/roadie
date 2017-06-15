@@ -324,7 +324,7 @@ func (s *ComputeService) createInstance(ctx context.Context, instanceName string
 		Scheduling: &compute.Scheduling{
 			Preemptible:       false,
 			OnHostMaintenance: "MIGRATE",
-			AutomaticRestart:  true,
+			AutomaticRestart:  truePtr,
 		},
 		ServiceAccounts: []*compute.ServiceAccount{
 			&compute.ServiceAccount{
