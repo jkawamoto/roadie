@@ -1,0 +1,12 @@
+{{ if and (isset .Site.Params "googleadsenseclient") (isset .Site.Params "googleadsenseslot") }}
+<div class="container">
+  <ins class="adsbygoogle"
+      style="display:block"
+       data-ad-client="{{ .Site.Params.GoogleAdSenseClient }}"
+       data-ad-slot="{{ .Site.Params.GoogleAdSenseSlot }}"
+       data-ad-format="auto"></ins>
+  <script>
+  (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
+</div>
+{{ end }}

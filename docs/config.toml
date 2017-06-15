@@ -43,5 +43,5 @@ theme = "github-project-landing-page"
   header_link_hover_color="rgb(51, 51, 51)"
 
   Docs = "./documents/top/"
-  Docs_Ja = "./documents-ja/top/"
+  Docs_Ja = "./ja/top/"
   Release = "https://github.com/jkawamoto/roadie/releases"

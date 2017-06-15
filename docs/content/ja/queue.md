@@ -1,22 +1,26 @@
 ---
 title: キュー
+description: >-
+  本ドキュメントでは，roadie におけるタスクキューの利用方法について説明します．
+date: 2016-08-14
+lastmod: 2017-06-15
+slug: queue
 ---
-Roadie はキューを用いたタスク処理にも対応しています．
+`roadie` はキューを用いたタスク処理にも対応しています．
 デフォルトでは，キューに入れられたタスクは一つのインタンスによって処理されますが，
 必要に応じてインスタンスを追加することもできます．
 
 
 ### キューにタスクを追加する
-タスクの追加は，`roadie run` コマンドに `--queue` フラグを追加することで行います．
-`--queue` フラグには，タスクを追加するキューの名前を指定します．
-存在しないキューの名前を指定した場合は，新しいキューが作成されます．
-キューはタスクがすべて処理されると削除されます．
+タスクの追加は，`roadie queue add` コマンドを使用します．
+このコマンドは，タスクを追加するキューの名前とスクリプトファイルの二つを受け取ります．
+また，`roadie run` コマンドと同じオプション引数を指定できます．
 
-また，キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．
+キューを処理しているインスタンスが無い場合，新しいインスタンスが一台作成されます．
 
 #### 例
 ```shell
-$ roadie run --local . --name task-1 --queue queue-1 script.yml
+$ roadie queue add --local . --name task-1 queue-1 script.yml
 ```
 
 上記のコマンドでは，`script.yml` を `queue-1` に追加します．
@@ -28,8 +32,8 @@ $ roadie run --local . --name task-1 --queue queue-1 script.yml
 
 
 ### キューの管理
-`roadie queue list` コマンドは現在存在しているキューの一覧を表示します．
-また，`roadie queue show <queue name>` コマンドは，`<queue name>` キューに
+`roadie queue status` コマンドは現在存在しているキューの一覧を表示します．
+また，`roadie queue status <queue name>` コマンドは，`<queue name>` キューに
 入っているタスクの名前一覧を表示します．
 
 キューの処理を一時停止させるには，`roadie queue stop <queue name>` コマンドを使用します．
@@ -39,6 +43,9 @@ $ roadie run --local . --name task-1 --queue queue-1 script.yml
 一時停止したキューを再実行するためには，
 `roadie queue restart <queue name>` コマンドを使用します．
 このコマンドは，キューの実行のために新しいインスタンスを一台作成します．
+
+キューを削除する場合は，`roadie queue delete <queue name>` コマンドを使用します．
+キューを削除した場合，実行が完了していないタスクの出力は失われることがあります．
 
 
 ### インスタンスの管理
