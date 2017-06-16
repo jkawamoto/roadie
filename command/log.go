@@ -23,6 +23,7 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -40,6 +41,8 @@ type optLog struct {
 	Follow bool
 	// SleepTime defines sleep time.
 	SleepTime time.Duration
+	// From defines the time retriving log entries from.
+	From time.Time
 }
 
 // CmdLog shows logs of a given instance.
@@ -69,6 +72,7 @@ func CmdLog(c *cli.Context) error {
 	return nil
 }
 
+// cmdLog retrieves and prints log entries according to the given options.
 func cmdLog(opt *optLog) (err error) {
 
 	log, err := opt.LogManager()
@@ -76,10 +80,9 @@ func cmdLog(opt *optLog) (err error) {
 		return
 	}
 
-	var from time.Time
 	for {
 
-		err = log.Get(opt.Context, opt.InstanceName, from, func(timestamp time.Time, line string, stderr bool) error {
+		err = log.Get(opt.Context, opt.InstanceName, opt.From, func(timestamp time.Time, line string, stderr bool) error {
 
 			var msg string
 			if opt.Timestamp {
@@ -94,15 +97,12 @@ func cmdLog(opt *optLog) (err error) {
 				fmt.Fprintln(os.Stderr, msg)
 			}
 
-			from = timestamp
+			opt.From = timestamp
 			return nil
 
 		})
-		if err != nil {
-			return
-		}
 
-		if !opt.Follow {
+		if err != nil || !opt.Follow {
 			break
 		}
 
@@ -112,6 +112,10 @@ func cmdLog(opt *optLog) (err error) {
 		case <-time.After(opt.SleepTime):
 		}
 
+	}
+
+	if err == io.EOF {
+		err = nil
 	}
 	return
 

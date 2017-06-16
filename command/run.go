@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
@@ -48,11 +49,6 @@ type runOpt struct {
 	// If true, result section will be overwritten so that roadie can manage
 	// result data. Otherwise, users require to manage them by their self.
 	OverWriteResultSection bool
-	// If true, do not create any instances but show startup script.
-	// This flag is for debugging.
-	Dry bool
-	// The number of times retry roadie-gcp container when GCP's error happens.
-	Retry int64
 }
 
 // CmdRun specifies the behavior of `run` command.
@@ -82,19 +78,33 @@ func CmdRun(c *cli.Context) error {
 		InstanceName: c.String("name"),
 		Image:        c.String("image"),
 		OverWriteResultSection: c.Bool("overwrite-result-section"),
-		Dry:   c.Bool("dry"),
-		Retry: c.Int64("retry") + 1,
 	}
+
+	currentTime := time.Now()
 	if err := cmdRun(opt); err != nil {
 		return cli.NewExitError(err.Error(), 2)
 	}
 	if c.Bool("follow") {
+
+		opt.Spinner.Prefix = "Waiting logging information..."
+		opt.Spinner.FinalMSG = ""
+		opt.Spinner.Start()
+		defer opt.Spinner.Stop()
+
+		select {
+		case <-opt.Context.Done():
+			return opt.Context.Err()
+		case <-time.After(3 * time.Minute):
+			opt.Spinner.Stop()
+		}
+
 		return cmdLog(&optLog{
 			Metadata:     m,
 			InstanceName: opt.InstanceName,
 			Timestamp:    true,
 			Follow:       true,
 			SleepTime:    DefaultSleepTime,
+			From:         currentTime,
 		})
 	}
 	return nil
@@ -135,14 +145,8 @@ func cmdRun(opt *runOpt) (err error) {
 	// Debugging info.
 	opt.Logger.Printf("Script to be run:\n%s\n", s.String())
 
-	// // Prepare options.
-	// if opt.Retry <= 0 {
-	// 	opt.Retry = 10
-	// }
-	// s.Options = append(s.Options, fmt.Sprintf("retry:%d", opt.Retry))
-
-	opt.Spinner.Prefix = fmt.Sprintf("Creating an instance named %s...", opt.Decorator.Bold(s.Name))
-	opt.Spinner.FinalMSG = fmt.Sprintf("Instance created.\n")
+	opt.Spinner.Prefix = fmt.Sprintf("Creating instance %v...", opt.Decorator.Bold(s.Name))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Instance %v created.\n", opt.Decorator.Bold(s.Name))
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 

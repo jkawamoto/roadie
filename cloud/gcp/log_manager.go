@@ -24,6 +24,7 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -88,6 +89,10 @@ func (s *LogManager) Get(ctx context.Context, instanceName string, from time.Tim
 
 	// Request log entries.
 	return s.InstanceLogEntries(ctx, instanceName, from, func(timestamp time.Time, payload string) (err error) {
+
+		if payload == instanceName {
+			return io.EOF
+		}
 		return handler(timestamp, payload, false)
 	})
 

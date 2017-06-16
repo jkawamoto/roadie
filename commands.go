@@ -113,15 +113,10 @@ var Commands = []cli.Command{
 				Name:  "image",
 				Usage: "customize the base image which given program will run on.",
 			},
-			// cli.BoolFlag{
-			// 	Name:  "follow, f",
-			// 	Usage: "after creating instance, keep watching logs.",
-			// },
-			// cli.Int64Flag{
-			// 	Name:  "retry",
-			// 	Usage: "retry the program a given times when GCP's error happens.",
-			// 	Value: 10,
-			// },
+			cli.BoolFlag{
+				Name:  "follow, f",
+				Usage: "after creating instance, keep watching logs.",
+			},
 		},
 	},
 	{
