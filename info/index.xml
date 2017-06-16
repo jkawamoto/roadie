@@ -19,21 +19,22 @@
 
 &lt;p&gt;This software is released under the GPLv3.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-txt&#34;&gt;Copyright (C) 2016-2017 Junpei Kawamoto
+&lt;blockquote&gt;
+&lt;p&gt;Copyright &amp;copy; 2016-2017 Junpei Kawamoto&lt;/p&gt;
 
-This program is free software: you can redistribute it and/or modify
+&lt;p&gt;This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+(at your option) any later version.&lt;/p&gt;
 
-This program is distributed in the hope that it will be useful,
+&lt;p&gt;This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU General Public License for more details.&lt;/p&gt;
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see &amp;lt;http://www.gnu.org/licenses/&amp;gt;.
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;a href=&#34;http://www.gnu.org/licenses/&#34;&gt;http://www.gnu.org/licenses/&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h2 id=&#34;notices-for-libraries&#34;&gt;Notices for libraries&lt;/h2&gt;
 
@@ -41,6 +42,7 @@ along with this program.  If not, see &amp;lt;http://www.gnu.org/licenses/&amp;g
 
 &lt;h3 id=&#34;chalk-https-github-com-ttacon-chalk&#34;&gt;&lt;a href=&#34;https://github.com/ttacon/chalk&#34;&gt;chalk&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2014 Trey Tacon&lt;/p&gt;
 
 &lt;p&gt;Licensed under the MIT License.&lt;/p&gt;
@@ -62,9 +64,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;cli-https-github-com-urfave-cli&#34;&gt;&lt;a href=&#34;https://github.com/urfave/cli&#34;&gt;cli&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2016 Jeremy Saenz &amp;amp; Contributors&lt;/p&gt;
 
 &lt;p&gt;Licensed under the MIT License.&lt;/p&gt;
@@ -86,9 +90,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;google-apis-client-library-for-go-https-github-com-google-google-api-go-client&#34;&gt;&lt;a href=&#34;https://github.com/google/google-api-go-client&#34;&gt;Google APIs Client Library for Go&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2011 Google Inc. All rights reserved.&lt;/p&gt;
 
 &lt;p&gt;Redistribution and use in source and binary forms, with or without
@@ -118,9 +124,11 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;google-cloud-for-go-https-github-com-googlecloudplatform-google-cloud-go&#34;&gt;&lt;a href=&#34;https://github.com/GoogleCloudPlatform/google-cloud-go&#34;&gt;Google Cloud for Go&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright 2014 Google Inc. All Rights Reserved.&lt;/p&gt;
 
 &lt;p&gt;Licensed under the Apache License, Version 2.0 (the &amp;ldquo;License&amp;rdquo;);
@@ -134,9 +142,11 @@ distributed under the License is distributed on an &amp;ldquo;AS IS&amp;rdquo; B
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;interact-https-github-com-deiwin-interact&#34;&gt;&lt;a href=&#34;https://github.com/deiwin/interact&#34;&gt;Interact&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2015 Deiwin Sarjas&lt;/p&gt;
 
 &lt;p&gt;Licensed under the MIT License.&lt;/p&gt;
@@ -146,9 +156,11 @@ limitations under the License.&lt;/p&gt;
 &lt;p&gt;The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.&lt;/p&gt;
 
 &lt;p&gt;THE SOFTWARE IS PROVIDED &amp;ldquo;AS IS&amp;rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;spinner-https-github-com-briandowns-spinner&#34;&gt;&lt;a href=&#34;https://github.com/briandowns/spinner&#34;&gt;Spinner&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright Brian Downs.&lt;/p&gt;
 
 &lt;p&gt;Licensed under the Apache License, Version 2.0 (the &amp;ldquo;License&amp;rdquo;);
@@ -162,9 +174,11 @@ distributed under the License is distributed on an &amp;ldquo;AS IS&amp;rdquo; B
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;uitable-https-github-com-gosuri-uitable&#34;&gt;&lt;a href=&#34;https://github.com/gosuri/uitable&#34;&gt;uitable&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2015, Greg Osuri&lt;/p&gt;
 
 &lt;p&gt;Licensed under the MIT License.&lt;/p&gt;
@@ -174,9 +188,11 @@ limitations under the License.&lt;/p&gt;
 &lt;p&gt;The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.&lt;/p&gt;
 
 &lt;p&gt;THE SOFTWARE IS PROVIDED &amp;ldquo;AS IS&amp;rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;pb-https-github-com-cheggaaa-pb&#34;&gt;&lt;a href=&#34;https://github.com/cheggaaa/pb&#34;&gt;pb&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright &amp;copy; 2012-2015, Sergey Cherepanov
 All rights reserved.&lt;/p&gt;
 
@@ -191,9 +207,11 @@ All rights reserved.&lt;/p&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &amp;ldquo;AS IS&amp;rdquo; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h3 id=&#34;yaml-support-for-the-go-language-https-github-com-go-yaml-yaml&#34;&gt;&lt;a href=&#34;https://github.com/go-yaml/yaml&#34;&gt;YAML support for the Go language&lt;/a&gt;&lt;/h3&gt;
 
+&lt;blockquote&gt;
 &lt;p&gt;Copyright 2011-2016 Canonical Ltd.&lt;/p&gt;
 
 &lt;p&gt;Licensed under the Apache License, Version 2.0 (the &amp;ldquo;License&amp;rdquo;);
@@ -207,6 +225,7 @@ distributed under the License is distributed on an &amp;ldquo;AS IS&amp;rdquo; B
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.&lt;/p&gt;
+&lt;/blockquote&gt;
 </description>
     </item>
     
