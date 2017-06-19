@@ -65,6 +65,10 @@ $ roadie run --name instance1 script.yml
 
 を実行します．
 
+`roadie run` コマンドに `-f` または `--follow` フラッグをセットすると，
+インスタンスを作成したのち，プログラムの実行が終了するまでログを出力します．
+これは，`roadie log --follow` コマンドをベット実行するのと同じです．
+
 
 ### スクリプトファイル
 スクリプトファイルは，`apt`, `source`, `data`, `run`, `upload` の 5要素からなる

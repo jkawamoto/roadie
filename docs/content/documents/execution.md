@@ -63,6 +63,10 @@ After creating the instance, roadie shows the name of the instance.
 Such name is used to check instance status, see logs,
 and download computation results.
 
+If `-f` or `--follow` flag is set, `roadie run` command will print logs from the
+created instance until it ends, as same as `roadie log` command with `-f` or
+`--follow` flag.
+
 ### Script file
 Script file is a YAML file which consists of five sections;
 `apt`, `source`, `data`, `run`, `upload`.
