@@ -19,6 +19,7 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 VERSION = snapshot
+GHRFLAGS =
 
 default: build
 
@@ -36,7 +37,7 @@ build: asset
 
 .PHONY: release
 release:
-	ghr  -u jkawamoto  v$(VERSION) pkg/$(VERSION)
+	ghr  -u jkawamoto $(GHRFLAGS) v$(VERSION) pkg/$(VERSION)
 
 
 .PHONY: get-deps
