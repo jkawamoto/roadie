@@ -302,6 +302,10 @@ After creating the instance, roadie shows the name of the instance.
 Such name is used to check instance status, see logs,
 and download computation results.&lt;/p&gt;
 
+&lt;p&gt;If &lt;code&gt;-f&lt;/code&gt; or &lt;code&gt;--follow&lt;/code&gt; flag is set, &lt;code&gt;roadie run&lt;/code&gt; command will print logs from the
+created instance until it ends, as same as &lt;code&gt;roadie log&lt;/code&gt; command with &lt;code&gt;-f&lt;/code&gt; or
+&lt;code&gt;--follow&lt;/code&gt; flag.&lt;/p&gt;
+
 &lt;h3 id=&#34;script-file&#34;&gt;Script file&lt;/h3&gt;
 
 &lt;p&gt;Script file is a YAML file which consists of five sections;

@@ -430,6 +430,10 @@ upload:
 
 &lt;p&gt;を実行します．&lt;/p&gt;
 
+&lt;p&gt;&lt;code&gt;roadie run&lt;/code&gt; コマンドに &lt;code&gt;-f&lt;/code&gt; または &lt;code&gt;--follow&lt;/code&gt; フラッグをセットすると，
+インスタンスを作成したのち，プログラムの実行が終了するまでログを出力します．
+これは，&lt;code&gt;roadie log --follow&lt;/code&gt; コマンドをベット実行するのと同じです．&lt;/p&gt;
+
 &lt;h3 id=&#34;スクリプトファイル&#34;&gt;スクリプトファイル&lt;/h3&gt;
 
 &lt;p&gt;スクリプトファイルは，&lt;code&gt;apt&lt;/code&gt;, &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;run&lt;/code&gt;, &lt;code&gt;upload&lt;/code&gt; の 5要素からなる
