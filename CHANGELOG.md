@@ -1,3 +1,8 @@
+## 0.3.10 (2017-06-19)
+### Fixed
+- `-f` and `--follow` flag in `roadie run` command.
+
+
 ## 0.3.9 (2017-06-15)
 ### Updated
 - Follow the update of Google APIs Client Library for Go.
