@@ -33,7 +33,7 @@ import (
 // GlobalFlags manages global flags.
 var GlobalFlags = []cli.Flag{
 	cli.StringFlag{
-		Name:  "config, c",
+		Name:  "c, config",
 		Usage: "specify a config `FILE`",
 	},
 	cli.BoolFlag{
@@ -63,58 +63,64 @@ var Commands = []cli.Command{
 	{
 		Name:  "run",
 		Usage: "run a script on Google Cloud Platform.",
-		Description: "Create an instance and run a given script on it. " +
-			"`git`, `url`, `local` flags help to deploy source files to the instance. " +
-			"Although source section in script file is used to specify where source files are, " +
-			"those flags overwrite such configuration, " +
-			"and `local` flag uploads local files so that the instance can access it. " +
-			"With the `local` flag, you don't need to make zip files and upload them to somewhere. " +
-			"Script file might have some variables, i.e. parameters. " +
-			"`e` option replaces placeholders by given key-value pairs. " +
-			"A placeholder named `name` looks like {{name}} in script. " +
-			"Option `-e name=abcdefg` replaces {{name}} as abcdefg.",
+		Description: `Create an instance and run a given script on it.
+
+   'git', 'url', 'local', and 'source' flags help to deploy source files to the
+   instance. Although source section in script file is used to specify where
+   source files are, those flags overwrite such configuration.
+
+   If 'local' flag is given, local files will be uploaded so that the instance
+   can access it. With the 'local' flag, you don't need to make zip files and
+   upload them to somewhere.
+
+   'source' flag takes a file name already uploaded by previous 'run' command
+   or 'source' command. 'source list' command shows available source file names.
+
+   Script file might have some variables, i.e. parameters. 'e' option replaces
+   placeholders by given key-value pairs. A placeholder named 'name' looks like
+   {{name}} in scripts. Option '-e name=abcdefg' replaces {{name}} as abcdefg.`,
 		Category:  "Execution",
 		ArgsUsage: "<script file>",
 		Action:    command.CmdRun,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "git",
-				Usage: "git repository `URL`. Souce files will be cloned from there.",
+				Usage: "git repository `URL` to be cloned as source files",
 			},
 			cli.StringFlag{
 				Name:  "url",
-				Usage: "source files will be downloaded from `URL`.",
+				Usage: "`URL` to be downloded as source files",
 			},
 			cli.StringFlag{
 				Name:  "local",
-				Usage: "upload source files from given `PATH` and use it the new instance.",
+				Usage: "Local `PATH` to be uploaded as source files",
 			},
 			cli.StringSliceFlag{
 				Name:  "exclude",
-				Usage: "`path` to be excluded to upload as the source files. This flag can be set multiply but only works with --local.",
+				Usage: "`PATH` to be excluded from uploading files (can be set multiply)",
 			},
 			cli.StringFlag{
 				Name:  "source",
-				Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
+				Usage: "pre-uploaded `FILE` to be used as source files",
 			},
 			cli.StringFlag{
-				Name:  "name, n",
-				Usage: "new instance uses the given `NAME`.",
+				Name:  "n, name",
+				Usage: "`NAME` of the new instance to be created",
 			},
 			cli.StringSliceFlag{
 				Name:  "e",
-				Usage: "`VALUE` must be key=value form which will be set in place holders of the script. This flag can be set multiply.",
+				Usage: "`KEY=VALUE` to be set to place holders of the script (can be set multiply)",
 			},
 			cli.BoolFlag{
 				Name:  "overwrite-result-section",
-				Usage: "if set, result section in a given script will be overwritten to default value.",
+				Usage: "overwrite result section in the given script to default value",
 			},
 			cli.StringFlag{
 				Name:  "image",
-				Usage: "customize the base image which given program will run on.",
+				Usage: "custom image `NAME` to be used as the base image the given program will run on",
 			},
 			cli.BoolFlag{
-				Name:  "follow, f",
+				Name:  "f, follow",
 				Usage: "after creating instance, keep watching logs.",
 			},
 		},
@@ -122,18 +128,17 @@ var Commands = []cli.Command{
 	{
 		Name:  "status",
 		Usage: "show instance status.",
-		Description: "Show status of instances. Stopped instances will be deleted from the output after certain time. " +
-			"Without `--all` flag, this command shows status of instances of which results are not deleted.",
+		Description: `Show status of instances.
+
+   Stopped instances will be deleted from the output after certain time.
+   Without '-a or '--all' flag, this command shows status of instances of which
+   results are not deleted.`,
 		Category:  "Execution",
 		ArgsUsage: " ",
 		Action:    command.CmdStatus,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "help, h",
-				Usage: "show help",
-			},
-			cli.BoolFlag{
-				Name:  "all",
+				Name:  "a, all",
 				Usage: "show all instance status.",
 			},
 		},
@@ -149,10 +154,12 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:  "log",
-		Usage: "show logs.",
-		Description: "Show logs for a given instance name. Logs consists of messages from the framework and messages written to stderr. " +
-			"To see messages written stdout from script, use 'result' command. This command required project ID is required. " +
-			"To set project ID, use 'config project set' command. To find instance names, use 'status' command.",
+		Usage: "Show logs outputted from a given instance",
+		Description: `show logs outputted from a given instance.
+
+   Logs consists of messages your program outputs to stderr as well as messages
+   cloud platforms output. To receive messages your program outputs to stdout,
+   use 'result' command instead.`,
 		Category:  "Execution",
 		ArgsUsage: "<instance name>",
 		Action:    command.CmdLog,
@@ -162,7 +169,7 @@ var Commands = []cli.Command{
 				Usage: "not print time stamps.",
 			},
 			cli.BoolFlag{
-				Name:  "follow, f",
+				Name:  "f, follow",
 				Usage: "keep waiting new logs coming.",
 			},
 		},
@@ -173,24 +180,19 @@ var Commands = []cli.Command{
 		Description: "list up, show, and download computation results.",
 		Category:    "Data handling",
 		Action:      command.CmdResult,
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "help, h",
-				Usage: "show help",
-			},
-		},
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
 				Usage: "list up result files for a given instance.",
-				Description: "List up instance names or result file names. " +
-					"If instance name is given, show result file names belonging to the instance. " +
-					"Otherwise show instance names which have result files.",
+				Description: `List up instance names or result file names.
+
+   If instance name is given, show result file names belonging to the instance.
+   Otherwise show instance names which have result files.`,
 				ArgsUsage: "[<instance name>]",
 				Action:    command.CmdResultList,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "quiet, q",
+						Name:  "q, quiet",
 						Usage: "only display file names",
 					},
 					cli.BoolFlag{
@@ -202,30 +204,35 @@ var Commands = []cli.Command{
 			{
 				Name:  "show",
 				Usage: "show massages written in stdout.",
-				Description: "print messages written in stdout." +
-					"If an index is given, only messages associated with the index will be printed. " +
-					"Otherwise, all messages will be printed. " +
-					"The index is 0-origin and associated with the steps in running scripts. " +
-					"For example, suppose your script has 4 steps in run section, " +
-					"there will be messages indexed 0 to 3.",
+				Description: `print messages written in stdout.
+
+   If an index is given, only messages associated with the index will be printed.
+   Otherwise, all messages will be printed.
+
+   The index is 0-origin and associated with the steps in running scripts. For
+   example, suppose your script has 4 steps in run section, there will be
+   messages indexed 0 to 3.`,
 				ArgsUsage: "<instance name> [<index>]",
 				Action:    command.CmdResultShow,
 			},
 			{
 				Name:  "get",
 				Usage: "get result files.",
-				Description: "download result files from a given instance and matching given file names. " +
-					"File names accept wild-card characters. " +
-					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					"Note that your shell may expand wild-cards in unexpected way. " +
-					"To avoid this problem, quote each file name.",
+				Description: `download result files from a given instance and matching given file names.
+
+   File names accept wild-card characters.
+
+   Downloaded file will be stored in the current working directory. If '-o'
+   flag is given, downloaded file will be stored in that directory.
+
+   Note that your shell may expand wild-cards in unexpected way.
+   To avoid this problem, quote each file name.`,
 				ArgsUsage: "<instance name> <file name>...",
 				Action:    command.CmdResultGet,
 				Flags: []cli.Flag{
 					cli.StringFlag{
-						Name:  "o",
-						Usage: "output directory. Files will be stored in `DIRECTORY`. If not exists, it will be made.",
+						Name:  "o, output",
+						Usage: "`DIRECTORY` where downloaded files to be stored",
 						Value: ".",
 					},
 				},
@@ -244,8 +251,10 @@ files belonging to the instance.`,
 	{
 		Name:  "config",
 		Usage: "show and update configuration.",
-		Description: "Show and update configurations. Every configurations are stored to 'roadie.yml' in the current working directory. " +
-			"You can also update configurations without this command by editing that file.",
+		Description: `Show and update configurations.
+
+   Every configurations are stored to 'roadie.yml' in the current working directory.
+   You can also update configurations without this command by editing that file.`,
 		Category: "Configuration",
 		Subcommands: cli.Commands{
 			cli.Command{
@@ -255,17 +264,19 @@ files belonging to the instance.`,
 				Action:    command.CmdConfigProject,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "help, h",
+						Name:  "h, help",
 						Usage: "show help",
 					},
 				},
 				Subcommands: cli.Commands{
 					{
-						Name:        "set",
-						Usage:       "set project ID",
-						Description: "Set a new name to the current project. project ID should start with alphabet and not have spaces.",
-						ArgsUsage:   "<project ID>",
-						Action:      command.CmdConfigProjectSet,
+						Name:  "set",
+						Usage: "set project ID",
+						Description: `Set a new ID to the current project.
+
+   A project ID has to start with alphabet and not have spaces.`,
+						ArgsUsage: "<project ID>",
+						Action:    command.CmdConfigProjectSet,
 					},
 					{
 						Name:        "show",
@@ -282,24 +293,27 @@ files belonging to the instance.`,
 				Action: command.CmdConfigMachineType,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "help, h",
+						Name:  "h, help",
 						Usage: "show help",
 					},
 				},
 				Subcommands: cli.Commands{
 					{
-						Name:        "set",
-						Usage:       "set machine type.",
-						Description: "Set a new machine type. Available machine types are shown in 'list' command.",
-						ArgsUsage:   "<machine type>",
-						Action:      command.CmdConfigMachineTypeSet,
+						Name:  "set",
+						Usage: "set machine type.",
+						Description: `Set a new machine type.
+
+   Available machine types are shown in 'list' command.`,
+						ArgsUsage: "<machine type>",
+						Action:    command.CmdConfigMachineTypeSet,
 					},
 					{
 						Name:  "list",
 						Usage: "show available machine types.",
-						Description: "Show a list of available machine types for the current project. " +
-							"To receive available machine types, project ID must be set. See 'roadie config project'. " +
-							"This command takes no arguments.",
+						Description: `show a list of available machine types for the current project.
+
+   To receive available machine types, project ID must be set. See 'roadie config project'.
+   This command takes no arguments.`,
 						ArgsUsage: " ",
 						Action:    command.CmdConfigMachineTypeList,
 					},
@@ -319,7 +333,7 @@ files belonging to the instance.`,
 				Action: command.CmdConfigRegion,
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "help, h",
+						Name:  "h, help",
 						Usage: "show help",
 					},
 				},
@@ -352,22 +366,27 @@ files belonging to the instance.`,
 	{
 		Name:  "source",
 		Usage: "manage source files uploaded by this command.",
-		Description: "If running scripts with --local flag, source files are uploaded to Google Cloud Storage. " +
-			"This command lists up those scripts and delete them if necessary.",
+		Description: `If running scripts with --local flag,
+   source files are uploaded to Google Cloud Storage.
+   This command lists up those scripts and delete them if necessary.`,
 		Category: "Data handling",
 		Action:   command.GenerateListAction(script.SourcePrefix),
 		Subcommands: cli.Commands{
 			{
 				Name:  "list",
 				Usage: "list up source files.",
-				Description: "List up source files in Google Cloud Storage. Those files can be reused for other scripts. " +
-					"To reuse them, use URL like 'gs://<bucket name>/.roadie/source/<filename>'. " +
-					"Otherwise, those files are not used automatically. To reduce storage size, use delete command.",
+				Description: `List up source files in Google Cloud Storage.
+
+   Those files can be reused for other scripts.
+   To reuse them, use URL like 'roadie://source/<filename>'.
+   Otherwise, those files are not used automatically.
+
+   To reduce storage size, use delete command.`,
 				ArgsUsage: " ",
 				Action:    command.GenerateListAction(script.SourcePrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "quiet, q",
+						Name:  "q, quiet",
 						Usage: "only display file names",
 					},
 					cli.BoolFlag{
@@ -387,12 +406,14 @@ files belonging to the instance.`,
 			{
 				Name:  "get",
 				Usage: "get source files.",
-				Description: "download source files which match given file names. " +
-					"File names accept wild card characters. " +
-					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					"Note that your shell may expand wild cards in unexpected way. " +
-					"To avoid this problem, quote each file name.",
+				Description: `download source files which match given file names.
+
+   File names accept wild card characters.
+   Downloaded file will be stored in the current working directory.
+   If '-o' option is given, downloaded file will be stored in that directory.
+
+   Note that your shell may expand wild cards in unexpected way.
+   To avoid this problem, quote each file name.`,
 				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(script.SourcePrefix),
 				Flags: []cli.Flag{
@@ -406,15 +427,17 @@ files belonging to the instance.`,
 			{
 				Name:  "put",
 				Usage: "put source files.",
-				Description: "upload a given path as source code to be run. If the given \n" +
-					"path points a directory, files in the directory are tarballed; in this case \n" +
-					"uploaded file name is the directory name followd by `.tar.gz`. \n" +
-					"If name option is given, uploaded file is renamed to the given name.",
+				Description: `upload a given path as source code to be run.
+
+   If the given path points a directory, files in the directory are tarballed;
+   in this case uploaded file name is the directory name followd by '.tar.gz'.
+
+   If name option is given, uploaded file is renamed to the given name.`,
 				ArgsUsage: "<filepath> [<name>]",
 				Action:    command.CmdSourcePut,
 				Flags: []cli.Flag{
 					cli.StringSliceFlag{
-						Name:  "exclude, e",
+						Name:  "e, exclude",
 						Usage: "specify excluding `PATH`. This flag can be set multiply.",
 					},
 				},
@@ -424,9 +447,11 @@ files belonging to the instance.`,
 	{
 		Name:  "data",
 		Usage: "manage data files.",
-		Description: "Manage data files. Data files can be loaded from instance using their url, " +
-			"such url is based on 'gs://<bucket name>/.roadie/data/<filename>'. '" +
-			"Use data section in your script to load data files in your instance.",
+		Description: `Manage data files.
+
+   Data files can be loaded from instance using their url,
+   such url is based on 'roadie://data/<filename>'.
+   Use data section in your script to load data files in your instance.`,
 		Category: "Data handling",
 		Action:   command.GenerateListAction(script.DataPrefix),
 		Subcommands: cli.Commands{
@@ -438,7 +463,7 @@ files belonging to the instance.`,
 				Action:      command.GenerateListAction(script.DataPrefix),
 				Flags: []cli.Flag{
 					cli.BoolFlag{
-						Name:  "quiet, q",
+						Name:  "q, quiet",
 						Usage: "only display file names",
 					},
 					cli.BoolFlag{
@@ -450,31 +475,36 @@ files belonging to the instance.`,
 			{
 				Name:  "put",
 				Usage: "put a data file.",
-				Description: "Upload a data file. " +
-					"If stored name is given, uploaded file will be renamed and stored as the given name. " +
-					"Otherwise, basename of original file will be used. " +
-					"File path accepts wild card characters, but if the given file path matches more than 2, " +
-					"stored name will be ignored.",
+				Description: `Upload a data file.
+
+   If stored name is given, uploaded file will be renamed and stored as the given name.
+   Otherwise, basename of original file will be used.
+
+   File path accepts wild card characters, but if the given file path matches more than 2,
+   stored name will be ignored.`,
 				ArgsUsage: "<file path> [<stored name>]",
 				Action:    command.CmdDataPut,
 			},
 			{
 				Name:  "delete",
 				Usage: "delete data files.",
-				Description: "delete data files which match given file names. " +
-					"File names accept wild card characters. ",
+				Description: `delete data files which match given file names.
+
+   File names accept wild card characters. `,
 				ArgsUsage: "<file name>...",
 				Action:    command.GenerateDeleteAction(script.DataPrefix),
 			},
 			{
 				Name:  "get",
 				Usage: "get data files.",
-				Description: "download data files which match given file names. " +
-					"File names accept wild card characters. " +
-					"Downloaded file will be stored in the current working directory. " +
-					"If '-o' option is given, downloaded file will be stored in that directory.\n\n" +
-					"Note that your shell may expand wild cards in unexpected way. " +
-					"To avoid this problem, quote each file name.",
+				Description: `download data files which match given file names.
+
+File names accept wild card characters. Downloaded file will be stored in the
+current working directory. If '-o' option is given, downloaded file will be
+stored in that directory.
+
+Note that your shell may expand wild cards in unexpected way.
+To avoid this problem, quote each file name.`,
 				ArgsUsage: "<file name>...",
 				Action:    command.GenerateGetAction(script.DataPrefix),
 				Flags: []cli.Flag{
@@ -497,8 +527,10 @@ files belonging to the instance.`,
 			{
 				Name:  "add",
 				Usage: "add a new task to a queue.",
-				Description: "add a new task to a queue. If the specified queue does not\n" +
-					"exist, a new queue and one worker instance are created for the task.",
+				Description: `add a new task to a queue.
+
+   If the specified queue does not exist, a new queue and one worker instance
+   will be created for the task.`,
 				ArgsUsage: "<queue name> <script file>",
 				Action:    command.CmdQueueAdd,
 				Flags: []cli.Flag{
@@ -523,7 +555,7 @@ files belonging to the instance.`,
 						Usage: "use `FILE` in source, shown in `roadie source list`, as source codes.",
 					},
 					cli.StringFlag{
-						Name:  "name, n",
+						Name:  "n, name",
 						Usage: "new instance uses the given `NAME`.",
 					},
 					cli.StringSliceFlag{
