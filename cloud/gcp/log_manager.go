@@ -135,8 +135,15 @@ func (s *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler
 func (s *LogManager) Entries(ctx context.Context, filter string, handler EntryHandler) (err error) {
 
 	s.Logger.Println("Retrieving log:", filter)
-	cfg := NewAuthorizationConfig(0)
-	client, err := logging.NewClient(ctx, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
+
+	var client *logging.Client
+	if s.Config.Token == nil || s.Config.Token.AccessToken == "" {
+		// If any token is not given, use a default client.
+		client, err = logging.NewClient(ctx)
+	} else {
+		cfg := NewAuthorizationConfig(0)
+		client, err = logging.NewClient(ctx, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
+	}
 	if err != nil {
 		return
 	}

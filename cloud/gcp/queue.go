@@ -78,6 +78,11 @@ func NewQueueService(ctx context.Context, cfg *Config, logger *log.Logger) (*Que
 // newClient creates a new datastore client.
 func (s *QueueService) newClient(ctx context.Context) (*datastore.Client, error) {
 
+	// If any token is not given, use a normal client.
+	if s.Config.Token == nil || s.Config.Token.AccessToken == "" {
+		return datastore.NewClient(ctx, s.Config.Project)
+	}
+
 	cfg := NewAuthorizationConfig(0)
 	return datastore.NewClient(ctx, s.Config.Project, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
 

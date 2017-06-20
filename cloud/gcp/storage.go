@@ -56,8 +56,14 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
-	c := NewAuthorizationConfig(0)
-	cli, err := storage.NewClient(ctx, option.WithTokenSource(c.TokenSource(ctx, cfg.Token)))
+	var cli *storage.Client
+	if cfg.Token == nil || cfg.Token.AccessToken == "" {
+		// If any token is not given, use a normal client.
+		cli, err = storage.NewClient(ctx)
+	} else {
+		c := NewAuthorizationConfig(0)
+		cli, err = storage.NewClient(ctx, option.WithTokenSource(c.TokenSource(ctx, cfg.Token)))
+	}
 	if err != nil {
 		return
 	}

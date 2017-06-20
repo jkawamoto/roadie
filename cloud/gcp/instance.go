@@ -26,10 +26,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"path"
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2/google"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
@@ -73,8 +76,17 @@ func NewComputeService(cfg *Config, logger *log.Logger) *ComputeService {
 func (s *ComputeService) newService(ctx context.Context) (*compute.Service, error) {
 
 	// Create a client.
-	cfg := NewAuthorizationConfig(0)
-	client := cfg.Client(ctx, s.Config.Token)
+	var client *http.Client
+	var err error
+	if s.Config.Token == nil || s.Config.Token.AccessToken == "" {
+		client, err = google.DefaultClient(ctx, gcpScope)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cfg := NewAuthorizationConfig(0)
+		client = cfg.Client(ctx, s.Config.Token)
+	}
 
 	// Create a servicer.
 	return compute.New(client)
