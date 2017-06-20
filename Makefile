@@ -1,7 +1,7 @@
 #
 # Makefile.go
 #
-# Copyright (c) 2016 Junpei Kawamoto
+# Copyright (c) 2016-2017 Junpei Kawamoto
 #
 # This file is part of Roadie.
 #
@@ -21,30 +21,31 @@
 VERSION = snapshot
 GHRFLAGS =
 
+.PHONY: asset build release get-deps test
 default: build
 
-
-.PHONY: asset
 asset:
 	rm assets/assets.go
 	go-bindata -pkg assets -o assets/assets.go -nometadata assets/*
 
-
-.PHONY: build
 build: asset
 	goxc -os="darwin linux windows" -d=pkg -pv=$(VERSION)
 
-
-.PHONY: release
 release:
 	ghr  -u jkawamoto $(GHRFLAGS) v$(VERSION) pkg/$(VERSION)
 
-
-.PHONY: get-deps
 get-deps:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -d -t -v .
 
-.PHONY: test
 test: asset
 	go test -v ./... -tags=dummy
+
+local-test: asset
+	go run *.go -c gcp.cfg.yml --verbose run sss.script.yml --name sss --follow
+
+queue-test: asset
+	go run *.go -c gcp.cfg.yml --verbose queue add sssq sss.script.yml --name sssq-1
+	go run *.go -c gcp.cfg.yml --verbose queue add sssq sss.script.yml --name sssq-2
+	go run *.go -c gcp.cfg.yml --verbose queue add sssq sss.script.yml --name sssq-3
+	go run *.go -c gcp.cfg.yml --verbose queue add sssq sss.script.yml --name sssq-4
