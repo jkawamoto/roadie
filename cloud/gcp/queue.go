@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -386,7 +387,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, h
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < n; i++ {
 
-		name := fmt.Sprintf("%s-%d%d", queue, time.Now().Unix(), i)
+		name := fmt.Sprintf("queue-%s-%s", queue, strconv.FormatInt(time.Now().Unix()*10+int64(i), 36))
 		eg.Go(func() (err error) {
 
 			err = cService.createInstance(ctx, name, []*compute.MetadataItems{
@@ -419,8 +420,8 @@ func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.
 
 	s.Logger.Println("Retrieving workers in queue", queue)
 	cService := NewComputeService(s.Config, s.Logger)
-	prefix := fmt.Sprintf("%v-", queue)
-	err = cService.Instances(ctx, func(name, status string) error {
+	prefix := fmt.Sprintf("queue-%v-", queue)
+	err = cService.instances(ctx, func(name, status string) error {
 		if strings.HasPrefix(name, prefix) && status == StatusRunning {
 			s.Logger.Println("Worker", name, "is working for queue", queue)
 			return handler(name)
