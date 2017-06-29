@@ -27,7 +27,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"path"
 	"sort"
 	"strings"
 	"time"
@@ -223,26 +222,21 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 // Instances returns a list of running instances
 func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
 
-	s.Logger.Println("Retrieving running instances")
-	instances := make(map[string]struct{})
+	s.Logger.Println("Retrieving running and terminated instances")
+
+	// key: instance name, value: true if the instance is still running.
+	instances := make(map[string]bool)
+
 	log := NewLogManager(s.Config, s.Logger)
 	err = log.OperationLogEntries(ctx, time.Time{}, func(_ time.Time, payload *ActivityPayload) error {
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
 		switch payload.EventSubtype {
 		case LogEventSubtypeInsert:
-			instances[payload.Resource.Name] = struct{}{}
+			instances[payload.Resource.Name] = true
 
 		case LogEventSubtypeDelete:
-			delete(instances, payload.Resource.Name)
+			instances[payload.Resource.Name] = false
 		}
 		return nil
-
 	})
 	if err != nil {
 		return
@@ -254,41 +248,14 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 	}
 	sort.Strings(instanceNames)
 	for _, name := range instanceNames {
-		err = handler(name, StatusRunning)
+		if instances[name] {
+			err = handler(name, StatusRunning)
+		} else {
+			err = handler(name, StatusTerminated)
+		}
 		if err != nil {
 			return
 		}
-	}
-
-	s.Logger.Println("Retrieving terminated instances")
-	storage, err := NewStorageService(ctx, s.Config, s.Logger)
-	if err != nil {
-		return err
-	}
-
-	var prev string
-	err = storage.List(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) (err error) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		if info.Name == "" {
-			return
-		}
-
-		dir := path.Base(path.Dir(info.Path))
-		if prev != dir {
-			if _, exist := instances[dir]; !exist {
-				handler(dir, StatusTerminated)
-			}
-			prev = dir
-		}
-		return
-	})
-	if err != nil {
-		return
 	}
 
 	s.Logger.Println("Finished retrieving instances")
