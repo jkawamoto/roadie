@@ -219,8 +219,21 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 	return
 }
 
-// Instances returns a list of running instances
+// Instances is different from instances and sends names of instances which are
+// not working for any queue into the given handler.
 func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
+
+	return s.instances(ctx, func(name, status string) error {
+		if strings.HasPrefix(name, "queue-") {
+			return nil
+		}
+		return handler(name, status)
+	})
+
+}
+
+// instances sends names of instances with their status into the given handler.
+func (s *ComputeService) instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
 
 	s.Logger.Println("Retrieving running and terminated instances")
 
