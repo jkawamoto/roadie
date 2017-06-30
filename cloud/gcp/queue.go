@@ -26,6 +26,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -46,13 +48,6 @@ const (
 	// QueueManagerVersion defines the version of queue manager to be used.
 	QueueManagerVersion = "0.2.2"
 )
-
-// QueueName is a structure to obtaine QueueName attribute from entities
-// in cloud datastore.
-type QueueName struct {
-	// Queue name.
-	QueueName string
-}
 
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
@@ -228,42 +223,81 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueStatusHandler) (err error) {
 
 	s.Logger.Println("Retrieving queue names")
-	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
+	statusSet := make(map[string]cloud.QueueStatus)
+
+	// Retrieving status of worker instances.
+	cService := NewComputeService(s.Config, s.Logger)
+	e := regexp.MustCompile(`queue-(.+)-[0-9a-z]+`)
+	err = cService.instances(ctx, func(name, status string) error {
+		if m := e.FindStringSubmatch(name); m != nil {
+			s := statusSet[m[1]]
+			if status == StatusRunning {
+				s.Worker++
+			}
+			statusSet[m[1]] = s
+		}
+		return nil
+	})
+	if err != nil {
+		return
+	}
 
 	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
 	defer client.Close()
-
+	query := datastore.NewQuery(QueueKind)
 	res := client.Run(ctx, query)
-	var name QueueName
+	var task Task
 	for {
 
 		select {
 		case <-ctx.Done():
 			s.Logger.Println("Retrieving queue names is canceled")
 			return ctx.Err()
-
 		default:
 		}
 
-		_, err = res.Next(&name)
-		if err == iterator.Done {
-			s.Logger.Println("Retrieved queue names")
-			return nil
-		} else if err != nil {
+		_, err = res.Next(&task)
+		if err != nil {
+			if err == iterator.Done {
+				s.Logger.Println("Retrieved queue names")
+				err = nil
+			}
 			break
 		}
 
-		err = handler(name.QueueName)
-		if err != nil {
-			break
+		s := statusSet[task.QueueName]
+		switch task.Status {
+		case TaskStatusWaiting:
+			s.Waiting++
+		case TaskStatusPending:
+			s.Pending++
+		case TaskStatusRunning:
+			s.Running++
 		}
+		statusSet[task.QueueName] = s
 
 	}
 
-	s.Logger.Println("Stopped retrieving queue names:", err.Error())
+	if err != nil {
+		s.Logger.Println("Stopped retrieving queue names:", err.Error())
+		return
+	}
+
+	var queueNames []string
+	for key := range statusSet {
+		queueNames = append(queueNames, key)
+	}
+	sort.Strings(queueNames)
+	for _, key := range queueNames {
+		err = handler(key, statusSet[key])
+		if err != nil {
+			return
+		}
+	}
+
 	return
 
 }

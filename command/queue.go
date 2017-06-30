@@ -173,9 +173,9 @@ func cmdQueueStatus(m *Metadata) (err error) {
 	}
 
 	table := uitable.New()
-	table.AddRow("QUEUE NAME")
-	err = queue.Queues(m.Context, func(name string) error {
-		table.AddRow(name)
+	table.AddRow("QUEUE NAME", "RUNNING", "WAITING", "PENDING", "WORKER")
+	err = queue.Queues(m.Context, func(name string, status cloud.QueueStatus) error {
+		table.AddRow(name, status.Running, status.Waiting, status.Pending, status.Worker)
 		return nil
 	})
 	if err != nil {

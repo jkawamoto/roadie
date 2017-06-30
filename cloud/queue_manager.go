@@ -27,11 +27,24 @@ import (
 	"github.com/jkawamoto/roadie/script"
 )
 
+// QueueStatus holds the numbers of waiting, pending, and running tasks in a queue.
+// It also has the number of workers working for the queue, too.
+type QueueStatus struct {
+	// The number of waiting tasks.
+	Waiting int
+	// The number of pending tasks.
+	Pending int
+	// The number of running tasks.
+	Running int
+	// The number of worker instances.
+	Worker int
+}
+
 // QueueManagerNameHandler is a type of handler function to retrieve names.
 type QueueManagerNameHandler func(string) error
 
 // QueueStatusHandler is a type of handler function to retrieve queues' stauts.
-type QueueStatusHandler func(name string) error
+type QueueStatusHandler func(name string, status QueueStatus) error
 
 // QueueManagerTaskHandler is a type of handler function to retrieve tasks.
 type QueueManagerTaskHandler func(name string, status string) error
