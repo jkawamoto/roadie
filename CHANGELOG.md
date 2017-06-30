@@ -1,3 +1,12 @@
+## 0.3.11 (2017-06-30)
+### Update
+- Use go-colorable to implement color/no-color mode
+
+### Fixed
+- Several bugs in queue command.
+- If any OAuth token is not given, use a default client to access GCP.
+
+
 ## 0.3.10 (2017-06-19)
 ### Fixed
 - `-f` and `--follow` flag in `roadie run` command.

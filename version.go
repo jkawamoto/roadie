@@ -31,4 +31,4 @@ const Version string = "0.3.10"
 const Author string = "Junpei Kawamoto"
 
 // Email defines an email address of the author.
-const Email string = "kawamoto.junpei@gmail.com"
+const Email string = "junpei.kawamoto@acm.com"
