@@ -26,10 +26,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"path"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2/google"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
@@ -73,8 +75,17 @@ func NewComputeService(cfg *Config, logger *log.Logger) *ComputeService {
 func (s *ComputeService) newService(ctx context.Context) (*compute.Service, error) {
 
 	// Create a client.
-	cfg := NewAuthorizationConfig(0)
-	client := cfg.Client(ctx, s.Config.Token)
+	var client *http.Client
+	var err error
+	if s.Config.Token == nil || s.Config.Token.AccessToken == "" {
+		client, err = google.DefaultClient(ctx, gcpScope)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cfg := NewAuthorizationConfig(0)
+		client = cfg.Client(ctx, s.Config.Token)
+	}
 
 	// Create a servicer.
 	return compute.New(client)
@@ -208,29 +219,37 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 	return
 }
 
-// Instances returns a list of running instances
+// Instances is different from instances and sends names of instances which are
+// not working for any queue into the given handler.
 func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
 
-	s.Logger.Println("Retrieving running instances")
-	instances := make(map[string]struct{})
+	return s.instances(ctx, func(name, status string) error {
+		if strings.HasPrefix(name, "queue-") {
+			return nil
+		}
+		return handler(name, status)
+	})
+
+}
+
+// instances sends names of instances with their status into the given handler.
+func (s *ComputeService) instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
+
+	s.Logger.Println("Retrieving running and terminated instances")
+
+	// key: instance name, value: true if the instance is still running.
+	instances := make(map[string]bool)
+
 	log := NewLogManager(s.Config, s.Logger)
 	err = log.OperationLogEntries(ctx, time.Time{}, func(_ time.Time, payload *ActivityPayload) error {
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
 		switch payload.EventSubtype {
 		case LogEventSubtypeInsert:
-			instances[payload.Resource.Name] = struct{}{}
+			instances[payload.Resource.Name] = true
 
 		case LogEventSubtypeDelete:
-			delete(instances, payload.Resource.Name)
+			instances[payload.Resource.Name] = false
 		}
 		return nil
-
 	})
 	if err != nil {
 		return
@@ -242,41 +261,14 @@ func (s *ComputeService) Instances(ctx context.Context, handler cloud.InstanceHa
 	}
 	sort.Strings(instanceNames)
 	for _, name := range instanceNames {
-		err = handler(name, StatusRunning)
+		if instances[name] {
+			err = handler(name, StatusRunning)
+		} else {
+			err = handler(name, StatusTerminated)
+		}
 		if err != nil {
 			return
 		}
-	}
-
-	s.Logger.Println("Retrieving terminated instances")
-	storage, err := NewStorageService(ctx, s.Config, s.Logger)
-	if err != nil {
-		return err
-	}
-
-	var prev string
-	err = storage.List(ctx, script.ResultPrefix, "", func(info *cloud.FileInfo) (err error) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		if info.Name == "" {
-			return
-		}
-
-		dir := path.Base(path.Dir(info.Path))
-		if prev != dir {
-			if _, exist := instances[dir]; !exist {
-				handler(dir, StatusTerminated)
-			}
-			prev = dir
-		}
-		return
-	})
-	if err != nil {
-		return
 	}
 
 	s.Logger.Println("Finished retrieving instances")

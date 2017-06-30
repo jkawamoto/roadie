@@ -32,6 +32,7 @@ import (
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -111,27 +112,27 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 	storage := cloud.NewStorage(service, nil)
 
 	// Update source section.
-	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage, os.Stdout)
+	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage)
 	if err != nil {
 		return
 	}
 
 	// Update result section
-	UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+	UpdateResultSection(s, opt.OverWriteResultSection, opt.Stdout)
 
 	queueManager, err := opt.QueueManager()
 	if err != nil {
 		return
 	}
 
-	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", opt.Decorator.Bold(s.Name), opt.Decorator.Bold(opt.QueueName))
+	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.Name), chalk.Bold.TextStyle(opt.QueueName))
 	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.Name, opt.QueueName)
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
 	err = queueManager.Enqueue(opt.Context, opt.QueueName, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprint(opt.Decorator.Bold("Cannot add the task:"), s.Name, ":", err.Error())
+		opt.Spinner.FinalMSG = fmt.Sprint(chalk.Bold.TextStyle("Cannot add the task:"), s.Name, ":", err.Error())
 	}
 	return
 
@@ -173,9 +174,9 @@ func cmdQueueStatus(m *Metadata) (err error) {
 	}
 
 	table := uitable.New()
-	table.AddRow("QUEUE NAME")
-	err = queue.Queues(m.Context, func(name string) error {
-		table.AddRow(name)
+	table.AddRow("QUEUE NAME", "RUNNING", "WAITING", "PENDING", "WORKER")
+	err = queue.Queues(m.Context, func(name string, status cloud.QueueStatus) error {
+		table.AddRow(name, status.Running, status.Waiting, status.Pending, status.Worker)
 		return nil
 	})
 	if err != nil {

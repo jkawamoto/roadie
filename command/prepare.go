@@ -24,6 +24,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
+	colorable "github.com/mattn/go-colorable"
 	"github.com/urfave/cli"
 )
 
@@ -47,15 +49,15 @@ type Metadata struct {
 	Context context.Context
 	// Config for running a command.
 	Config *config.Config
-	// Provider of a cloud service.
-	provider cloud.Provider
+	// Stdout is an io.Writer to output messages to the standard output.
+	Stdout io.Writer
 	// Logger to output logs.
 	Logger *log.Logger
 	// Spinner for decorating output standard message; not logging information.
 	// If verbose mode is set, the spinner will be disabled.
 	Spinner *spinner.Spinner
-
-	Decorator *Decorator
+	// Provider of a cloud service.
+	provider cloud.Provider
 }
 
 // InstanceManager returns an instance manager interface.
@@ -103,6 +105,12 @@ func getMetadata(c *cli.Context) (meta *Metadata, err error) {
 func PrepareCommand(c *cli.Context) (err error) {
 	meta := new(Metadata)
 
+	if c.GlobalBool("no-color") {
+		meta.Stdout = colorable.NewNonColorable(os.Stdout)
+	} else {
+		meta.Stdout = colorable.NewColorableStdout()
+	}
+
 	// Get a context from main function.
 	meta.Context, _ = c.App.Metadata["context"].(context.Context)
 
@@ -110,20 +118,15 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	var logger *log.Logger
 	if c.GlobalBool("verbose") {
-		logger = log.New(os.Stderr, "", log.LstdFlags)
+		logger = log.New(colorable.NewColorableStderr(), "", log.LstdFlags)
 		// If verbose mode, spinner is disabled, since it may conflict logging information.
 		meta.Spinner.Writer = ioutil.Discard
 	} else {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+		meta.Spinner.Writer = meta.Stdout
 
 	}
 	meta.Logger = logger
-
-	if c.GlobalBool("no-color") {
-		meta.Decorator = &MonoDecorator
-	} else {
-		meta.Decorator = &ColoredDecorator
-	}
 
 	// Load the configuration file.
 	var cfg *config.Config

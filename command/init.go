@@ -28,6 +28,7 @@ import (
 
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
+	"github.com/ttacon/chalk"
 
 	"github.com/deiwin/interact"
 	"github.com/urfave/cli"
@@ -52,7 +53,7 @@ See "roadie config --help", for more detail.
 	m.Config = new(config.Config)
 	m.Config.FileName = "roadie.yml"
 
-	fmt.Println(m.Decorator.Green("Initialize Roadie"))
+	fmt.Fprintln(m.Stdout, chalk.Green.Color("Initialize Roadie"))
 
 	var project string
 	project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
@@ -61,14 +62,14 @@ See "roadie config --help", for more detail.
 	}
 	m.Config.GcpConfig.Project = project
 
-	fmt.Println("")
-	fmt.Println(m.Decorator.Green("Cheking authorization..."))
+	fmt.Fprintln(m.Stdout, "")
+	fmt.Fprintln(m.Stdout, chalk.Green.Color("Cheking authorization..."))
 	_, err = gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, true)
 	if err != nil {
 		return
 	}
 
-	fmt.Println(m.Decorator.Green("Saving configuarions..."))
+	fmt.Fprintln(m.Stdout, chalk.Green.Color("Saving configuarions..."))
 	return m.Config.Save()
 
 }

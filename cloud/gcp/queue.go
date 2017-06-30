@@ -26,6 +26,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,15 +46,8 @@ const (
 	// QueueKind defines kind of entries stored in cloud datastore.
 	QueueKind = "roadie-queue"
 	// QueueManagerVersion defines the version of queue manager to be used.
-	QueueManagerVersion = "0.2.2"
+	QueueManagerVersion = "0.2.3"
 )
-
-// QueueName is a structure to obtaine QueueName attribute from entities
-// in cloud datastore.
-type QueueName struct {
-	// Queue name.
-	QueueName string
-}
 
 // QueueService implements cloud.QueueManager based on Google Cloud
 // Datastore.
@@ -77,6 +73,11 @@ func NewQueueService(ctx context.Context, cfg *Config, logger *log.Logger) (*Que
 
 // newClient creates a new datastore client.
 func (s *QueueService) newClient(ctx context.Context) (*datastore.Client, error) {
+
+	// If any token is not given, use a normal client.
+	if s.Config.Token == nil || s.Config.Token.AccessToken == "" {
+		return datastore.NewClient(ctx, s.Config.Project)
+	}
 
 	cfg := NewAuthorizationConfig(0)
 	return datastore.NewClient(ctx, s.Config.Project, option.WithTokenSource(cfg.TokenSource(ctx, s.Config.Token)))
@@ -222,42 +223,81 @@ func (s *QueueService) Tasks(ctx context.Context, queue string, handler cloud.Qu
 func (s *QueueService) Queues(ctx context.Context, handler cloud.QueueStatusHandler) (err error) {
 
 	s.Logger.Println("Retrieving queue names")
-	query := datastore.NewQuery(QueueKind).Project("QueueName").Distinct()
+	statusSet := make(map[string]cloud.QueueStatus)
+
+	// Retrieving status of worker instances.
+	cService := NewComputeService(s.Config, s.Logger)
+	e := regexp.MustCompile(`queue-(.+)-[0-9a-z]+`)
+	err = cService.instances(ctx, func(name, status string) error {
+		if m := e.FindStringSubmatch(name); m != nil {
+			s := statusSet[m[1]]
+			if status == StatusRunning {
+				s.Worker++
+			}
+			statusSet[m[1]] = s
+		}
+		return nil
+	})
+	if err != nil {
+		return
+	}
 
 	client, err := s.newClient(ctx)
 	if err != nil {
 		return
 	}
 	defer client.Close()
-
+	query := datastore.NewQuery(QueueKind)
 	res := client.Run(ctx, query)
-	var name QueueName
+	var task Task
 	for {
 
 		select {
 		case <-ctx.Done():
 			s.Logger.Println("Retrieving queue names is canceled")
 			return ctx.Err()
-
 		default:
 		}
 
-		_, err = res.Next(&name)
-		if err == iterator.Done {
-			s.Logger.Println("Retrieved queue names")
-			return nil
-		} else if err != nil {
+		_, err = res.Next(&task)
+		if err != nil {
+			if err == iterator.Done {
+				s.Logger.Println("Retrieved queue names")
+				err = nil
+			}
 			break
 		}
 
-		err = handler(name.QueueName)
-		if err != nil {
-			break
+		s := statusSet[task.QueueName]
+		switch task.Status {
+		case TaskStatusWaiting:
+			s.Waiting++
+		case TaskStatusPending:
+			s.Pending++
+		case TaskStatusRunning:
+			s.Running++
 		}
+		statusSet[task.QueueName] = s
 
 	}
 
-	s.Logger.Println("Stopped retrieving queue names:", err.Error())
+	if err != nil {
+		s.Logger.Println("Stopped retrieving queue names:", err.Error())
+		return
+	}
+
+	var queueNames []string
+	for key := range statusSet {
+		queueNames = append(queueNames, key)
+	}
+	sort.Strings(queueNames)
+	for _, key := range queueNames {
+		err = handler(key, statusSet[key])
+		if err != nil {
+			return
+		}
+	}
+
 	return
 
 }
@@ -381,7 +421,7 @@ func (s *QueueService) CreateWorkers(ctx context.Context, queue string, n int, h
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i < n; i++ {
 
-		name := fmt.Sprintf("%s-%d%d", queue, time.Now().Unix(), i)
+		name := fmt.Sprintf("queue-%s-%s", queue, strconv.FormatInt(time.Now().Unix()*10+int64(i), 36))
 		eg.Go(func() (err error) {
 
 			err = cService.createInstance(ctx, name, []*compute.MetadataItems{
@@ -414,8 +454,8 @@ func (s *QueueService) Workers(ctx context.Context, queue string, handler cloud.
 
 	s.Logger.Println("Retrieving workers in queue", queue)
 	cService := NewComputeService(s.Config, s.Logger)
-	prefix := fmt.Sprintf("%v-", queue)
-	err = cService.Instances(ctx, func(name, status string) error {
+	prefix := fmt.Sprintf("queue-%v-", queue)
+	err = cService.instances(ctx, func(name, status string) error {
 		if strings.HasPrefix(name, prefix) && status == StatusRunning {
 			s.Logger.Println("Worker", name, "is working for queue", queue)
 			return handler(name)

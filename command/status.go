@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	"github.com/gosuri/uitable"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -111,7 +112,7 @@ func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
 	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
 		m.Spinner.FinalMSG = fmt.Sprintf(
-			m.Decorator.Red("Cannot kill instance %s (%s)\n"), instanceName, err.Error())
+			chalk.Red.Color("Cannot kill instance %s (%s)\n"), instanceName, err.Error())
 	}
 	return
 
