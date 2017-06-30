@@ -23,12 +23,12 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -134,19 +134,19 @@ func cmdRun(opt *runOpt) (err error) {
 	storage := cloud.NewStorage(service, nil)
 
 	// Update source section.
-	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage, os.Stdout)
+	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage)
 	if err != nil {
 		return
 	}
 
 	// Update result section
-	UpdateResultSection(s, opt.OverWriteResultSection, os.Stdout)
+	UpdateResultSection(s, opt.OverWriteResultSection, opt.Stdout)
 
 	// Debugging info.
 	opt.Logger.Printf("Script to be run:\n%s\n", s.String())
 
-	opt.Spinner.Prefix = fmt.Sprintf("Creating instance %v...", opt.Decorator.Bold(s.Name))
-	opt.Spinner.FinalMSG = fmt.Sprintf("Instance %v created.\n", opt.Decorator.Bold(s.Name))
+	opt.Spinner.Prefix = fmt.Sprintf("Creating instance %v...", chalk.Bold.TextStyle(s.Name))
+	opt.Spinner.FinalMSG = fmt.Sprintf("Instance %v created.\n", chalk.Bold.TextStyle(s.Name))
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
@@ -157,7 +157,7 @@ func cmdRun(opt *runOpt) (err error) {
 
 	err = instanceManager.CreateInstance(opt.Context, s)
 	if err != nil {
-		opt.Spinner.FinalMSG = fmt.Sprintf(opt.Decorator.Red("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
+		opt.Spinner.FinalMSG = fmt.Sprintf(chalk.Red.Color("\n%s\rCannot create instance.\n"), strings.Repeat(" ", len(opt.Spinner.Prefix)+2))
 	}
 	return
 

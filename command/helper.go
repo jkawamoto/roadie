@@ -34,6 +34,7 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -149,15 +150,15 @@ type SourceOpt struct {
 
 // UpdateSourceSection updates source secrion of the given script according to
 // the given option.
-func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage *cloud.Storage, warning io.Writer) (err error) {
+func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage *cloud.Storage) (err error) {
 
 	// Check source section.
 	switch {
 	case opt.Git != "":
 		if s.Source != "" {
 			fmt.Fprintf(
-				warning,
-				m.Decorator.Red("The source section of the script will be overwritten to '%s' since a Git repository is given.\n"),
+				m.Stdout,
+				chalk.Red.Color("The source section of the script will be overwritten to '%s' since a Git repository is given.\n"),
 				opt.Git)
 		}
 		if err = setGitSource(s, opt.Git); err != nil {
@@ -167,8 +168,8 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 	case opt.URL != "":
 		if s.Source != "" {
 			fmt.Fprintf(
-				warning,
-				m.Decorator.Red("The source section the script will be overwritten to '%s' since a repository URL is given.\n"),
+				m.Stdout,
+				chalk.Red.Color("The source section the script will be overwritten to '%s' since a repository URL is given.\n"),
 				opt.URL)
 		}
 		s.Source = opt.URL
@@ -182,7 +183,7 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		setSource(s, opt.Source)
 
 	case s.Source == "":
-		fmt.Println(m.Decorator.Red("No source section and source flags are given."))
+		fmt.Fprintln(m.Stdout, chalk.Red.Color("No source section and source flags are given."))
 	}
 
 	return

@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -56,7 +57,7 @@ func cmdSourcePut(m *Metadata, path, name string, excludes []string) (err error)
 	if err != nil {
 		return
 	}
-	fmt.Println("Source files are uploaded to", m.Decorator.Bold(location))
+	fmt.Fprintln(m.Stdout, "Source files are uploaded to", chalk.Bold.TextStyle(location))
 	return
 
 }

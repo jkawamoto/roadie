@@ -30,6 +30,7 @@ import (
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -161,9 +162,9 @@ func CmdResultDelete(c *cli.Context) (err error) {
 	if c.NArg() == 1 {
 
 		var deleteAll bool
-		actor := interact.NewActor(os.Stdin, os.Stdout)
+		actor := interact.NewActor(os.Stdin, m.Stdout)
 		deleteAll, err = actor.Confirm(
-			m.Decorator.Red("File names are not given. Do you want to delete all files?"),
+			chalk.Red.Color("File names are not given. Do you want to delete all files?"),
 			interact.ConfirmDefaultToNo)
 
 		if err != nil {

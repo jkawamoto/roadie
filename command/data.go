@@ -30,6 +30,7 @@ import (
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -83,7 +84,7 @@ func (o *optDataPut) run() (err error) {
 					if err != nil {
 						return
 					}
-					fmt.Printf("File uploaded to %s.\n", o.Decorator.Bold(location))
+					fmt.Fprintf(o.Stdout, "File uploaded to %s.\n", chalk.Bold.TextStyle(location))
 					return
 
 				})
