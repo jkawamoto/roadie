@@ -46,7 +46,7 @@ const (
 	// QueueKind defines kind of entries stored in cloud datastore.
 	QueueKind = "roadie-queue"
 	// QueueManagerVersion defines the version of queue manager to be used.
-	QueueManagerVersion = "0.2.2"
+	QueueManagerVersion = "0.2.3"
 )
 
 // QueueService implements cloud.QueueManager based on Google Cloud
