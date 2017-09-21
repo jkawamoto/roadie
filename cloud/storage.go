@@ -28,7 +28,9 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -37,7 +39,6 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/ulikunitz/xz"
-	"github.com/urfave/cli"
 )
 
 // Storage provides APIs to access a cloud storage.
@@ -64,14 +65,8 @@ func NewStorage(servicer StorageManager, log io.Writer) (s *Storage) {
 
 }
 
-// UploadFile uploads a file to a bucket associated with a project under a given
-// context. Uploaded file will have a given name. This function returns a URL
-// for the uploaded file with error object.
-func (s *Storage) UploadFile(ctx context.Context, container, name, input string) (uri string, err error) {
-
-	if name == "" {
-		name = filepath.Base(input)
-	}
+// UploadFile uploads a file where a given URL points.
+func (s *Storage) UploadFile(ctx context.Context, loc *url.URL, input string) (err error) {
 
 	file, err := os.Open(input)
 	if err != nil {
@@ -84,40 +79,30 @@ func (s *Storage) UploadFile(ctx context.Context, container, name, input string)
 		return
 	}
 
-	select {
-	case <-ctx.Done():
-		return "", ctx.Err()
-	default:
-	}
-
 	fmt.Fprintln(s.Log, "Uploading...")
-	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(name)
+	bar := pb.New64(int64(info.Size())).SetUnits(pb.U_BYTES).Prefix(path.Base(loc.Path))
 	bar.Output = s.Log
 	bar.AlwaysUpdate = true
 	bar.Start()
 	defer bar.Finish()
 
-	if uri, err = s.service.Upload(ctx, container, name, bar.NewProxyReader(file)); err != nil {
-		return "", cli.NewExitError(err.Error(), 2)
-	}
-	return
+	return s.service.Upload(ctx, loc, bar.NewProxyReader(file))
 
 }
 
-// ListupFiles lists up files in a bucket associated with a project and which
-// have a prefix under a given context. Information of found files will be passed to a handler.
+// ListupFiles lists up files which location is matching to a given URL.
+// Information of found files will be passed to a handler.
 // If the handler returns non nil value, the listing up will be canceled.
 // In this case, this function also returns the given error value.
-func (s *Storage) ListupFiles(ctx context.Context, container, prefix string, handler FileInfoHandler) (err error) {
+func (s *Storage) ListupFiles(ctx context.Context, loc *url.URL, handler FileInfoHandler) (err error) {
 
-	return s.service.List(ctx, container, prefix, handler)
+	return s.service.List(ctx, loc, handler)
 
 }
 
-// DownloadFiles downloads files in a bucket associated with a project,
-// which has a prefix and satisfies a query under a given context.
+// DownloadFiles downloads files matching a given prefix and queries.
 // Downloaded files will be put in a given directory.
-func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir string, queries []string) (err error) {
+func (s *Storage) DownloadFiles(ctx context.Context, prefix *url.URL, dir string, queries []string) (err error) {
 
 	var info os.FileInfo
 	if info, err = os.Stat(dir); err != nil {
@@ -144,7 +129,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
-	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
+	err = s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -177,7 +162,12 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 				writer := bufio.NewWriter(f)
 				defer writer.Flush()
 
-				goerr = s.service.Download(ctx, container, info.Path, io.MultiWriter(writer, bar))
+				loc, goerr := url.Parse(info.Path)
+				if goerr != nil {
+					return goerr
+				}
+
+				goerr = s.service.Download(ctx, loc, io.MultiWriter(writer, bar))
 				if goerr != nil {
 					bar.FinishPrint(fmt.Sprintf("Cannot download %s (%s)", info.Name, goerr.Error()))
 				} else {
@@ -197,16 +187,14 @@ func (s *Storage) DownloadFiles(ctx context.Context, container, prefix, dir stri
 
 }
 
-// DeleteFiles deletes files in a bucket associated with a project,
-// which has a prefix and satisfies a query. This request will be done under a
-// given context.
-func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, queries []string) (err error) {
+// DeleteFiles deletes files matching a given URL prefix and queries.
+func (s *Storage) DeleteFiles(ctx context.Context, prefix *url.URL, queries []string) (err error) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
-	err = s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
+	err = s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -222,7 +210,13 @@ func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, que
 		if match(queries, info.Name) {
 
 			eg.Go(func() (err error) {
-				err = s.service.Delete(ctx, container, info.Path)
+
+				loc, err := url.Parse(info.Path)
+				if err != nil {
+					return
+				}
+
+				err = s.service.Delete(ctx, loc)
 				if err != nil {
 					fmt.Fprintf(s.Log, "Cannot delete %s (%s)\n", info.Path, err.Error())
 				} else {
@@ -243,11 +237,11 @@ func (s *Storage) DeleteFiles(ctx context.Context, container, prefix string, que
 
 }
 
-// PrintFileBody prints file bodies which has a prefix and satisfies query under a context.
+// PrintFileBody prints file bodies which has a prefix and satisfies query.
 // If header is ture, additional messages well be printed.
-func (s *Storage) PrintFileBody(ctx context.Context, container, prefix, query string, output io.Writer, header bool) error {
+func (s *Storage) PrintFileBody(ctx context.Context, prefix *url.URL, query string, output io.Writer, header bool) error {
 
-	return s.ListupFiles(ctx, container, prefix, func(info *FileInfo) error {
+	return s.ListupFiles(ctx, prefix, func(info *FileInfo) error {
 
 		select {
 		case <-ctx.Done():
@@ -274,7 +268,11 @@ func (s *Storage) PrintFileBody(ctx context.Context, container, prefix, query st
 				output = pipeWriter
 			}
 
-			return s.service.Download(ctx, container, info.Path, output)
+			loc, err := url.Parse(info.Path)
+			if err != nil {
+				return err
+			}
+			return s.service.Download(ctx, loc, output)
 		}
 
 		return nil
