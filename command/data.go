@@ -23,6 +23,8 @@ package command
 
 import (
 	"fmt"
+	"net/url"
+	"path"
 	"path/filepath"
 	"runtime"
 
@@ -37,23 +39,25 @@ import (
 // optDataPut defines options for data put command.
 type optDataPut struct {
 	*Metadata
-	Filename   string
+	// Filename is a path for an actual file or a glob pattern.
+	Filename string
+	// StoredName is a path where the file to be stored.
+	// If Filename is a glob pattern, matched files will be uploaded in a
+	// directory named by this argument.
 	StoredName string
 }
 
 // run defines process of data put command.
 func (o *optDataPut) run() (err error) {
 
-	if o.Filename == "" {
-		return fmt.Errorf("Given filename is empty")
-	}
-
 	filenames, err := filepath.Glob(o.Filename)
 	if err != nil {
 		return
+	} else if len(filenames) == 0 {
+		return fmt.Errorf("no files matching %q", o.Filename)
 	}
 
-	service, err := o.Metadata.StorageManager()
+	service, err := o.StorageManager()
 	if err != nil {
 		return
 	}
@@ -73,23 +77,29 @@ func (o *optDataPut) run() (err error) {
 					defer func() { <-semaphore }()
 
 					var output string
-					if o.StoredName != "" && len(filenames) == 1 {
+					if o.StoredName == "" {
+						output = filepath.Base(target)
+					} else if len(filenames) == 1 {
 						output = o.StoredName
 					} else {
-						output = filepath.Base(target)
+						output = path.Join(o.StoredName, filepath.Base(target))
 					}
 
-					var location string
-					location, err = storage.UploadFile(ctx, script.DataPrefix, output, target)
+					var loc *url.URL
+					loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(script.DataPrefix, output))
 					if err != nil {
 						return
 					}
-					fmt.Fprintf(o.Stdout, "File uploaded to %s.\n", chalk.Bold.TextStyle(location))
+					err = storage.UploadFile(ctx, loc, target)
+					if err != nil {
+						return
+					}
+					fmt.Fprintf(o.Stdout, "%v -> %v\n", target, chalk.Bold.TextStyle(loc.String()))
 					return
 
 				})
-
 			}(target)
+
 		}
 	}
 
@@ -98,31 +108,32 @@ func (o *optDataPut) run() (err error) {
 }
 
 // CmdDataPut uploads a given file.
-func CmdDataPut(c *cli.Context) error {
+func CmdDataPut(c *cli.Context) (err error) {
 
+	// Checn the number of arguments.
 	n := c.NArg()
 	if n < 1 || n > 2 {
-		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", c.NArg())
+		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", n)
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	// Get metadata.
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return
 	}
-	storedName := ""
-	if n == 2 {
-		storedName = filepath.ToSlash(c.Args()[1])
-	}
+
+	// Set up options.
 	opt := &optDataPut{
 		Metadata:   m,
 		Filename:   c.Args().First(),
-		StoredName: storedName,
+		StoredName: filepath.ToSlash(c.Args().Get(1)),
 	}
 
+	// Execute the command.
 	if err := opt.run(); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		err = cli.NewExitError(err.Error(), 2)
 	}
-	return nil
+	return
 
 }
