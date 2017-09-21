@@ -65,6 +65,12 @@ func (s *StorageManager) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 		return ErrServiceFailure
 	}
 
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	body, err := ioutil.ReadAll(in)
 	if err != nil {
 		return
@@ -85,6 +91,12 @@ func (s *StorageManager) Download(ctx context.Context, loc *url.URL, out io.Writ
 		return ErrServiceFailure
 	}
 
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	body, ok := s.storage[loc.String()]
 	if !ok {
 		return fmt.Errorf("%v is not found", loc)
@@ -99,6 +111,12 @@ func (s *StorageManager) GetFileInfo(ctx context.Context, loc *url.URL) (*cloud.
 
 	if s.Failure {
 		return nil, ErrServiceFailure
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
 	}
 
 	v, ok := s.storage[loc.String()]
@@ -118,6 +136,16 @@ func (s *StorageManager) GetFileInfo(ctx context.Context, loc *url.URL) (*cloud.
 
 // List lists up files in this storage and passes each information to a given handler.
 func (s *StorageManager) List(ctx context.Context, loc *url.URL, handler cloud.FileInfoHandler) (err error) {
+
+	if s.Failure {
+		return ErrServiceFailure
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 
 	query := loc.String()
 	dirs := make(map[string]struct{})
@@ -167,6 +195,12 @@ func (s *StorageManager) Delete(ctx context.Context, loc *url.URL) error {
 
 	if s.Failure {
 		return ErrServiceFailure
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
 	}
 
 	s.mutex.Lock()
