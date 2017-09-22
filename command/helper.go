@@ -48,11 +48,11 @@ func GenerateListAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return err
+			return cli.NewExitError(err, 3)
 		}
 		err = PrintFileList(m, container, "", c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
-			return cli.NewExitError(err.Error(), 2)
+			return cli.NewExitError(err, 2)
 		}
 		return nil
 
@@ -73,21 +73,33 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return
+			return cli.NewExitError(err, 3)
 		}
-		service, err := m.StorageManager()
+
+		err = cmdGet(m, container, c.Args(), c.String("o"))
 		if err != nil {
-			return
+			return cli.NewExitError(err, 2)
 		}
-		storage := cloud.NewStorage(service, nil)
-
-		if err := storage.DownloadFiles(m.Context, container, "", c.String("o"), c.Args()); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-
 		return
 
 	}
+
+}
+
+// cmdGet implements a general get command.
+func cmdGet(m *Metadata, container string, queries []string, dir string) (err error) {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, m.Stdout)
+
+	loc, err := url.Parse(script.RoadieSchemePrefix + container)
+	if err != nil {
+		return
+	}
+	return storage.DownloadFiles(m.Context, loc, dir, queries)
 
 }
 
@@ -104,25 +116,37 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return
+			return cli.NewExitError(err, 3)
 		}
-		service, err := m.StorageManager()
+
+		err = cmdDelete(m, container, c.Args())
 		if err != nil {
-			return
+			return cli.NewExitError(err, 2)
 		}
-		storage := cloud.NewStorage(service, ioutil.Discard)
-
-		m.Spinner.Prefix = "Delete files..."
-		m.Spinner.Start()
-		defer m.Spinner.Stop()
-
-		if err := storage.DeleteFiles(m.Context, container, "", c.Args()); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-
 		return
 
 	}
+
+}
+
+// cmdDelete implements a general delete command.
+func cmdDelete(m *Metadata, container string, queries []string) (err error) {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, ioutil.Discard)
+
+	loc, err := url.Parse(script.RoadieSchemePrefix + container)
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Prefix = "Delete files..."
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+	return storage.DeleteFiles(m.Context, loc, queries)
 
 }
 

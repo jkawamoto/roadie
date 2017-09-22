@@ -22,11 +22,143 @@
 package command
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/url"
+	"os"
+	"path"
+	"strings"
 	"testing"
 
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 )
+
+// TestCmdGet tests cmdGet.
+func TestCmdGet(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	files := []string{
+		"roadie://container1/stdout1.txt",
+		"roadie://container1/stdout2.txt",
+		"roadie://container1/fig3.png",
+		"roadie://container2/stdout1.txt",
+		"roadie://container2/stdout2.txt",
+	}
+
+	m := testMetadata(&output)
+	err = uploadDummyFiles(m, files)
+	if err != nil {
+		t.Fatalf("uploadDummyFiles returns an error: %v", err)
+	}
+
+	cases := []struct {
+		container string
+		queries   []string
+		expected  []string
+	}{
+		{"container1", []string{"stdout*"}, files[:2]},
+		{"container1", []string{"stdout*", "fig*"}, files[:3]},
+	}
+
+	for _, c := range cases {
+
+		tmp, err := ioutil.TempDir("", "")
+		if err != nil {
+			t.Fatalf("TempDir returns an error: %v", err)
+		}
+		defer os.RemoveAll(tmp)
+
+		err = cmdGet(m, c.container, c.queries, tmp)
+		if err != nil {
+			t.Fatalf("cmdGet returns an error: %v", err)
+		}
+
+		var data []byte
+		for _, f := range c.expected {
+			data, err = ioutil.ReadFile(path.Join(tmp, path.Base(f)))
+			if err != nil {
+				t.Fatalf("cannot read a expected file %v: %v", f, err)
+			}
+			if string(data) != f {
+				t.Errorf("downloaded file is %v, want %v", string(data), f)
+			}
+
+		}
+
+	}
+
+}
+
+// TestCmdDelete tests cmdDelete.
+func TestCmdDelete(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	files := []string{
+		"roadie://container1/stdout1.txt",
+		"roadie://container1/stdout2.txt",
+		"roadie://container1/fig3.png",
+		"roadie://container2/stdout1.txt",
+		"roadie://container2/stdout2.txt",
+	}
+
+	m := testMetadata(&output)
+	err = uploadDummyFiles(m, files)
+	if err != nil {
+		t.Fatalf("uploadDummyFiles returns an error: %v", err)
+	}
+
+	s, err := m.StorageManager()
+	if err != nil {
+		t.Fatalf("cannot get a storage manager: %v", err)
+	}
+
+	loc, err := url.Parse("roadie://")
+	if err != nil {
+		t.Fatalf("cannot parse a URL: %v", err)
+	}
+
+	cases := []struct {
+		container string
+		queries   []string
+		reminings []string
+	}{
+		{"container1", []string{"stdout*"}, files[2:]},
+		{"container2", []string{"*"}, files[2:3]},
+	}
+
+	for _, c := range cases {
+
+		err = cmdDelete(m, c.container, c.queries)
+		if err != nil {
+			t.Fatalf("cmdDelete returns an error: %v", err)
+		}
+
+		reminings := make(map[string]struct{})
+		err = s.List(m.Context, loc, func(info *cloud.FileInfo) error {
+			if !strings.HasSuffix(info.URL.Path, "/") {
+				reminings[info.URL.String()] = struct{}{}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("List returns an error: %v", err)
+		}
+
+		if len(reminings) != len(c.reminings) {
+			t.Errorf("remining data files %v, want %v", len(reminings), len(c.reminings))
+		}
+		for _, f := range c.reminings {
+			if _, exist := reminings[f]; !exist {
+				t.Errorf("%v is not found", f)
+			}
+		}
+
+	}
+
+}
 
 // TestSetGitSource checks setGitSource sets correct repository URL.
 // setGitSource takes several types of URLs for a git repository such as
