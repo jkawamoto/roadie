@@ -27,6 +27,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 
@@ -65,6 +66,7 @@ func (o *optDataPut) run() (err error) {
 
 	wg, ctx := errgroup.WithContext(o.Context)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
+	var streamLock sync.Mutex
 	for _, target := range filenames {
 
 		select {
@@ -94,6 +96,9 @@ func (o *optDataPut) run() (err error) {
 					if err != nil {
 						return
 					}
+
+					streamLock.Lock()
+					defer streamLock.Unlock()
 					fmt.Fprintf(o.Stdout, "%v -> %v\n", target, chalk.Bold.TextStyle(loc.String()))
 					return
 
