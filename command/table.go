@@ -23,11 +23,14 @@ package command
 
 import (
 	"fmt"
+	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/script"
 )
 
 // AddRecorder is a callback to add file information to a table.
@@ -55,7 +58,7 @@ func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err 
 				} else {
 					size = fmt.Sprintf("%dKB", info.Size/1024)
 				}
-				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.Path)
+				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
 			} else {
 				var size string
 				if info.Size < 1024 {
@@ -81,19 +84,19 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 	}
 
 	// Storing previous folder name.
-	prev := ""
+	shownDirs := make(map[string]struct{})
 	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-		dir := path.Dir(info.Path)
-		if dir != "." && dir != prev {
+		dir := strings.TrimPrefix(path.Dir(info.URL.Path), "/")
+		if _, exist := shownDirs[dir]; dir != "." && !exist {
 			if quiet {
 				table.AddRow(dir)
 			} else if url {
-				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), dir)
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
 			} else {
 				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
-			prev = dir
+			shownDirs[dir] = struct{}{}
 		}
 
 	})
@@ -120,7 +123,11 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 	}
 
 	storage := cloud.NewStorage(service, nil)
-	err = storage.ListupFiles(m.Context, container, prefix, func(info *cloud.FileInfo) error {
+	query, err := url.Parse(script.RoadieSchemePrefix + path.Join(container, prefix))
+	if err != nil {
+		return
+	}
+	err = storage.ListupFiles(m.Context, query, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})
@@ -129,7 +136,7 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 	}
 
 	m.Spinner.Stop()
-	fmt.Println(table.String())
+	fmt.Fprintln(m.Stdout, table.String())
 	return
 
 }
