@@ -30,7 +30,29 @@ import (
 	"testing"
 )
 
-func TestPrintFileList(t *testing.T) {
+func uploadDummyFiles(m *Metadata, files []string) (err error) {
+
+	s, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+
+	var loc *url.URL
+	for _, f := range files {
+		loc, err = url.Parse(f)
+		if err != nil {
+			return
+		}
+		err = s.Upload(m.Context, loc, strings.NewReader(f))
+		if err != nil {
+			return
+		}
+	}
+	return
+
+}
+
+func TestUploadDummyFiles(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
@@ -42,6 +64,41 @@ func TestPrintFileList(t *testing.T) {
 
 	files := []string{
 		"roadie://test/instance1/stdout1.txt",
+		"roadie://another/instance1/stdout3.txt",
+	}
+
+	err = uploadDummyFiles(m, files)
+	if err != nil {
+		t.Fatalf("uploadDummyFiles returns an error: %v", err)
+	}
+
+	var loc *url.URL
+	for _, f := range files {
+		loc, err = url.Parse(f)
+		if err != nil {
+			t.Fatalf("cannot parse a URL: %v", err)
+		}
+
+		var buf bytes.Buffer
+		err = s.Download(m.Context, loc, &buf)
+		if err != nil {
+			t.Fatalf("Download returns an error: %v", err)
+		}
+
+		if buf.String() != f {
+			t.Errorf("uploaded file is %v, want %v", buf, f)
+		}
+
+	}
+
+}
+
+func TestPrintFileList(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	files := []string{
+		"roadie://test/instance1/stdout1.txt",
 		"roadie://test/instance1/stdout2.txt",
 		"roadie://test/instance1/stdout3.txt",
 		"roadie://test/instance2/stdout1.txt",
@@ -50,16 +107,11 @@ func TestPrintFileList(t *testing.T) {
 		"roadie://another/instance1/stdout2.txt",
 		"roadie://another/instance1/stdout3.txt",
 	}
-	for _, f := range files {
-		var loc *url.URL
-		loc, err = url.Parse(f)
-		if err != nil {
-			t.Fatalf("cannot parse a URL: %v", err)
-		}
-		err = s.Upload(m.Context, loc, strings.NewReader(f))
-		if err != nil {
-			t.Fatalf("Upload returns an error: %v", err)
-		}
+
+	m := testMetadata(&output)
+	err = uploadDummyFiles(m, files)
+	if err != nil {
+		t.Fatalf("uploadDummyFiles returns an error: %v", err)
 	}
 
 	expected := files[:3]
@@ -144,12 +196,6 @@ func TestPrintDirList(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
-	m := testMetadata(&output)
-	s, err := m.StorageManager()
-	if err != nil {
-		t.Fatalf("cannot get a storage manager: %v", err)
-	}
-
 	files := []string{
 		"roadie://test/instance1/stdout1.txt",
 		"roadie://test/instance1/stdout2.txt",
@@ -160,16 +206,11 @@ func TestPrintDirList(t *testing.T) {
 		"roadie://another/instance1/stdout2.txt",
 		"roadie://another/instance1/stdout3.txt",
 	}
-	for _, f := range files {
-		var loc *url.URL
-		loc, err = url.Parse(f)
-		if err != nil {
-			t.Fatalf("cannot parse a URL: %v", err)
-		}
-		err = s.Upload(m.Context, loc, strings.NewReader(f))
-		if err != nil {
-			t.Fatalf("Upload returns an error: %v", err)
-		}
+
+	m := testMetadata(&output)
+	err = uploadDummyFiles(m, files)
+	if err != nil {
+		t.Fatalf("uploadDummyFiles returns an error: %v", err)
 	}
 
 	expected := []string{

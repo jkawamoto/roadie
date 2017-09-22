@@ -35,6 +35,9 @@ import (
 
 // testMetadata creates metadata for testings.
 func testMetadata(output io.Writer) (m *Metadata) {
+	if output == nil {
+		output = ioutil.Discard
+	}
 	m = &Metadata{
 		Config:   &config.Config{},
 		Context:  context.Background(),

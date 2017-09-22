@@ -26,4 +26,6 @@ import "time"
 const (
 	// DefaultSleepTime defines a default sleep time.
 	DefaultSleepTime = 30 * time.Second
+	// PrintTimeFormat defines time format to be used to print logs.
+	PrintTimeFormat = "2006/01/02 15:04:05"
 )
