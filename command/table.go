@@ -48,26 +48,24 @@ func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err 
 
 	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-		if info.Name != "" {
-			if quiet {
-				table.AddRow(info.Name)
-			} else if url {
-				var size string
-				if info.Size < 1024 {
-					size = fmt.Sprintf("%dB", info.Size)
-				} else {
-					size = fmt.Sprintf("%dKB", info.Size/1024)
-				}
-				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
+		if quiet {
+			table.AddRow(info.Name)
+		} else if url {
+			var size string
+			if info.Size < 1024 {
+				size = fmt.Sprintf("%dB", info.Size)
 			} else {
-				var size string
-				if info.Size < 1024 {
-					size = fmt.Sprintf("%dB", info.Size)
-				} else {
-					size = fmt.Sprintf("%dKB", info.Size/1024)
-				}
-				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
+				size = fmt.Sprintf("%dKB", info.Size/1024)
 			}
+			table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
+		} else {
+			var size string
+			if info.Size < 1024 {
+				size = fmt.Sprintf("%dB", info.Size)
+			} else {
+				size = fmt.Sprintf("%dKB", info.Size/1024)
+			}
+			table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 		}
 
 	})
@@ -92,7 +90,9 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 			if quiet {
 				table.AddRow(dir)
 			} else if url {
-				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
+				u := *info.URL
+				u.Path = path.Dir(u.Path) + "/"
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), u.String())
 			} else {
 				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}

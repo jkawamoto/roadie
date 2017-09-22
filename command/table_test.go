@@ -207,7 +207,7 @@ func TestPrintDirList(t *testing.T) {
 				}
 				for _, e := range expected {
 					if urls[path.Base(e)] != e {
-						t.Errorf("URL of %v is %v, want %v", e, urls[path.Base(e)], e)
+						t.Errorf("URL of %v is %q, want %v", e, urls[path.Base(e)], e)
 					}
 				}
 			}

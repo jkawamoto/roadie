@@ -148,33 +148,11 @@ func (s *StorageManager) List(ctx context.Context, loc *url.URL, handler cloud.F
 	}
 
 	query := loc.String()
-	dirs := make(map[string]struct{})
 	for filename, body := range s.storage {
 
 		if strings.HasPrefix(filename, query) {
 
 			var u *url.URL
-			dir := filename[:strings.LastIndex(filename, "/")] + "/"
-			if _, exist := dirs[dir]; !exist && strings.HasPrefix(dir, query) {
-
-				// Represent a directory.
-				u, err = url.Parse(dir)
-				if err != nil {
-					return
-				}
-				err = handler(&cloud.FileInfo{
-					Name:        "",
-					URL:         u,
-					TimeCreated: time.Now(),
-					Size:        0,
-				})
-				if err != nil {
-					return
-				}
-				dirs[dir] = struct{}{}
-
-			}
-
 			u, err = url.Parse(filename)
 			if err != nil {
 				return

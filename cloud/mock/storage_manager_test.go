@@ -189,8 +189,8 @@ func TestList(t *testing.T) {
 		expected []string
 	}{
 		{"roadie://mock/test", files[:2]},
-		{"roadie://mock/", append(files, "roadie://mock/", "roadie://mock/dir/")},
-		{"roadie://mock/dir", append(files[2:], "roadie://mock/dir/")},
+		{"roadie://mock/", files},
+		{"roadie://mock/dir", files[2:]},
 		{"roadie://mock/dummy", []string{}},
 	}
 
