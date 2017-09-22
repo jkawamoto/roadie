@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/cloud"
@@ -83,6 +84,9 @@ func cmdResultList(m *Metadata, instance string, showURL, quiet bool) error {
 	if instance == "" {
 		return PrintDirList(m, script.ResultPrefix, "", showURL, quiet)
 	}
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
 	return PrintFileList(m, script.ResultPrefix, instance, showURL, quiet)
 
 }
@@ -122,6 +126,9 @@ func cmdResultShow(m *Metadata, instance, prefix string) error {
 	}
 	storage := cloud.NewStorage(service, m.Stdout)
 
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
 	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
 		return err
@@ -170,6 +177,10 @@ func cmdResultGet(m *Metadata, instance string, queries []string, dir string) (e
 	storage := cloud.NewStorage(service, m.Stdout)
 	if len(queries) == 0 {
 		queries = []string{"*"}
+	}
+
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
 	}
 	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
@@ -243,6 +254,9 @@ func cmdResultDelete(m *Metadata, instance string, queries []string) (err error)
 		queries = []string{"*"}
 	}
 
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
 	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
 		return

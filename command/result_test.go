@@ -42,8 +42,8 @@ func TestCmdResultList(t *testing.T) {
 		"roadie://result/instance1/stdout1.txt",
 		"roadie://result/instance1/stdout2.txt",
 		"roadie://result/instance1/stdout3.txt",
-		"roadie://result/instance2/stdout1.txt",
-		"roadie://result/instance2/stdout2.txt",
+		"roadie://result/instance11/stdout11.txt",
+		"roadie://result/instance11/stdout12.txt",
 	}
 
 	m := testMetadata(&output)
@@ -57,7 +57,7 @@ func TestCmdResultList(t *testing.T) {
 		expected []string
 	}{
 		{"instance1", []string{"stdout1.txt", "stdout2.txt", "stdout3.txt"}},
-		{"", []string{"instance1", "instance2"}},
+		{"", []string{"instance1", "instance11"}},
 	}
 
 	for _, c := range cases {
@@ -98,8 +98,8 @@ func TestCmdResultShow(t *testing.T) {
 		"roadie://result/instance1/stdout1.txt",
 		"roadie://result/instance1/stdout2.txt",
 		"roadie://result/instance1/fig1.png",
-		"roadie://result/instance2/stdout1.txt",
-		"roadie://result/instance2/stdout2.txt",
+		"roadie://result/instance11/stdout11.txt",
+		"roadie://result/instance11/stdout12.txt",
 	}
 
 	m := testMetadata(&output)
@@ -152,8 +152,8 @@ func TestCmdResultGet(t *testing.T) {
 		"roadie://result/instance1/stdout1.txt",
 		"roadie://result/instance1/stdout2.txt",
 		"roadie://result/instance1/fig1.png",
-		"roadie://result/instance2/stdout1.txt",
-		"roadie://result/instance2/stdout2.txt",
+		"roadie://result/instance11/stdout11.txt",
+		"roadie://result/instance11/stdout12.txt",
 	}
 
 	m := testMetadata(nil)
@@ -208,8 +208,8 @@ func TestCmdResultDelete(t *testing.T) {
 		"roadie://result/instance1/stdout1.txt",
 		"roadie://result/instance1/stdout2.txt",
 		"roadie://result/instance1/fig1.png",
-		"roadie://result/instance2/stdout1.txt",
-		"roadie://result/instance2/stdout2.txt",
+		"roadie://result/instance11/stdout11.txt",
+		"roadie://result/instance11/stdout12.txt",
 	}
 
 	m := testMetadata(nil)
@@ -234,7 +234,7 @@ func TestCmdResultDelete(t *testing.T) {
 		reminings []string
 	}{
 		{"instance1", []string{"stdout*"}, files[2:]},
-		{"instance2", nil, files[2:3]},
+		{"instance11", nil, files[2:3]},
 	}
 
 	for _, c := range cases {
