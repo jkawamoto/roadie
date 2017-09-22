@@ -22,155 +22,113 @@
 package command
 
 import (
-	"context"
-	"io/ioutil"
-	"log"
-	"strings"
+	"net/url"
 	"testing"
-	"time"
 
-	"github.com/briandowns/spinner"
-	"github.com/jkawamoto/roadie/cloud/mock"
 	"github.com/jkawamoto/roadie/script"
 )
 
 // TestSetGitSource checks setGitSource sets correct repository URL.
+// setGitSource takes several types of URLs for a git repository such as
+// - https://github.com/user/repos.git (via https)
+// - git@github.com:user/repos.git (via ssl)
+// - github.com/user/repos (ambiguous)
+// It parses all of the above formats and sets a https URL to the given script.
 func TestSetGitSource(t *testing.T) {
 
+	var err error
 	var s script.Script
-
-	s = script.Script{}
-	setGitSource(&s, "https://github.com/jkawamoto/roadie.git")
-	if s.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", s.Source)
+	cases := []string{
+		"https://github.com/jkawamoto/roadie.git",
+		"git@github.com:jkawamoto/roadie.git",
+		"github.com/jkawamoto/roadie",
 	}
+	expect := "https://github.com/jkawamoto/roadie.git"
 
-	s = script.Script{}
-	setGitSource(&s, "git@github.com:jkawamoto/roadie.git")
-	if s.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", s.Source)
-	}
-
-	s = script.Script{}
-	setGitSource(&s, "github.com/jkawamoto/roadie")
-	if s.Source != "https://github.com/jkawamoto/roadie.git" {
-		t.Errorf("source section is not correct: %s", s.Source)
+	for _, v := range cases {
+		s = script.Script{}
+		err = setGitSource(&s, v)
+		if err != nil {
+			t.Fatalf("error with setGitSource(%v, %v): %v", s, v, err)
+		}
+		if s.Source != expect {
+			t.Errorf("Source = %v, want %v", s.Source, expect)
+		}
 	}
 
 }
 
-// TestSetLocalSource checks setLocalSource sets correct url with any directories,
-// and file paths. This test doesn't check excludes parameters since those parameters
+// TestSetLocalSource checks setLocalSource sets correct URLs.
+// setLocalSource takes a directory path or a file path.
+// If a directory path is given, it makes a tarball named the script name
+// with `.tar.gz` suffix and uploads the tarball to the cloud storage.
+// If a file path is given, setLocalSource uploads it to the cloud storage.
+// setLocalSource, then, sets a URL for the uploaded file to the source section.
+// The URL must have `roadie://source` prefix so that cloud providers can modify
+// it to their specific forms.
+//
+// Note that this test doesn't check excludes parameters since those parameters
 // are tested in tests for util.Archive.
 func TestSetLocalSource(t *testing.T) {
 
-	provider := mock.NewProvider()
-	m := &Metadata{
-		Context:  context.Background(),
-		provider: provider,
-		Logger:   log.New(ioutil.Discard, "", log.LstdFlags),
-		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+	var err error
+	m := testMetadata(nil)
+	storage, err := m.StorageManager()
+	if err != nil {
+		t.Fatalf("cannot get a storage manager: %v", err)
 	}
-	m.Spinner.Writer = ioutil.Discard
 
 	var s script.Script
-	var err error
-
-	// Test with directories.
-	for _, target := range []string{".", "../command"} {
+	var loc *url.URL
+	expected := script.RoadieSchemePrefix + script.SourcePrefix + "/test.tar.gz"
+	for _, target := range []string{".", "../command", "run.go"} {
 
 		s = script.Script{
 			Name: "test",
 		}
 
-		t.Logf("Trying target %s", target)
-		if err = setLocalSource(m, &s, target, nil); err != nil {
-			t.Error(err.Error())
+		err = setLocalSource(m, &s, target, nil)
+		if err != nil {
+			t.Fatalf("error with setLocalSource of %v: %v", target, err)
 		}
-		if !strings.HasSuffix(s.Source, "test.tar.gz") {
-			t.Error("source section is not correct:", s.Source)
+		if s.Source != expected {
+			t.Errorf("Source = %v, want %v", s.Source, expected)
+		}
+
+		loc, err = url.Parse(s.Source)
+		if err != nil {
+			t.Fatalf("cannot parse %q: %v", s.Source, err)
+		}
+		_, err = storage.GetFileInfo(m.Context, loc)
+		if err != nil {
+			t.Errorf("%v doesn't exist", s.Source)
 		}
 
 	}
 
-	// Test with a file.
-	s = script.Script{
-		Name: "test",
+	// Test with an unexisting file.
+	err = setLocalSource(m, &s, "abcd.efg", nil)
+	if err == nil {
+		t.Error("setLocalSource with an unexisting path doesn't return any errors")
 	}
-	if err = setLocalSource(m, &s, "run.go", nil); err != nil {
-		t.Error(err.Error())
-	}
-	if !strings.HasSuffix(s.Source, "run.go") {
-		t.Error("source section is not correct:", s.Source)
-	}
-
-	// Test with unexisting file.
-	if err = setLocalSource(m, &s, "abcd.efg", nil); err == nil {
-		t.Error("Give an unexisting path but no error occurs.")
-	}
-	t.Logf("Give an unexisting path to setLocalSource and got an error: %s", err.Error())
 
 }
 
-// TestSetSource checks setSource sets correct url from a given filename.
+// TestSetUploadedSource checks setSource sets correct url from a given filename.
 // Since all source files are archived by tar.gz, if the given filename doesn't
 // have extension .tar.gz, it should be added.
-func TestSetSource(t *testing.T) {
+func TestSetUploadedSource(t *testing.T) {
 
 	var s script.Script
+	cases := []string{"abc.tar.gz", "abc"}
+	expected := script.RoadieSchemePrefix + script.SourcePrefix + "/abc.tar.gz"
 
-	s = script.Script{}
-	setSource(&s, "abc.tar.gz")
-	if s.Source != script.RoadieSchemePrefix+"source/abc.tar.gz" {
-		t.Errorf("source section is not correct: %s", s.Source)
-	}
-
-	s = script.Script{}
-	setSource(&s, "abc")
-	if s.Source != script.RoadieSchemePrefix+"source/abc.tar.gz" {
-		t.Errorf("source section is not correct: %s", s.Source)
-	}
-
-}
-
-func TestUploadFiles(t *testing.T) {
-
-	provider := mock.NewProvider()
-	m := Metadata{
-		Context:  context.Background(),
-		provider: provider,
-		Logger:   log.New(ioutil.Discard, "", log.LstdFlags),
-		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
-	}
-	m.Spinner.Writer = ioutil.Discard
-
-	var err error
-	// Test uploading a directory without renaming.
-	if _, err = uploadFiles(&m, ".", "", nil); err != nil {
-		t.Error(err.Error())
-	} else if _, exist := provider.MockStorageManager.Storage["command.tar.gz"]; !exist {
-		t.Error("Failed to upload a directory")
-	}
-
-	// Test uploading a directory with a file name.
-	if _, err = uploadFiles(&m, ".", "dir", nil); err != nil {
-		t.Error(err.Error())
-	} else if _, exist := provider.MockStorageManager.Storage["dir.tar.gz"]; !exist {
-		t.Error("Faild to upload a directory with a file name")
-	}
-
-	// Test uploading a file without renaming.
-	if _, err = uploadFiles(&m, "source.go", "", nil); err != nil {
-		t.Error(err.Error())
-	} else if _, exist := provider.MockStorageManager.Storage["source.go"]; !exist {
-		t.Error("Faild tp upload a file")
-	}
-
-	// Test uploading a file with renaming.
-	if _, err = uploadFiles(&m, "helper_test.go", "another_test.go", nil); err != nil {
-		t.Error(err.Error())
-	} else if _, exist := provider.MockStorageManager.Storage["another_test.go"]; !exist {
-		t.Error("Faild to upload a file with renaming")
+	for _, c := range cases {
+		s = script.Script{}
+		setUploadedSource(&s, c)
+		if s.Source != expected {
+			t.Errorf("Source = %v, want %v", s.Source, expected)
+		}
 	}
 
 }
