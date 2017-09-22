@@ -23,9 +23,7 @@ package command
 
 import (
 	"fmt"
-	"net/url"
 	"os"
-	"path"
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/cloud"
@@ -124,7 +122,7 @@ func cmdResultShow(m *Metadata, instance, prefix string) error {
 	}
 	storage := cloud.NewStorage(service, m.Stdout)
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(script.ResultPrefix, instance))
+	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
 		return err
 	}
@@ -173,7 +171,7 @@ func cmdResultGet(m *Metadata, instance string, queries []string, dir string) (e
 	if len(queries) == 0 {
 		queries = []string{"*"}
 	}
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(script.ResultPrefix, instance))
+	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
 		return
 	}
@@ -245,7 +243,7 @@ func cmdResultDelete(m *Metadata, instance string, queries []string) (err error)
 		queries = []string{"*"}
 	}
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(script.ResultPrefix, instance))
+	loc, err := createURL(script.ResultPrefix, instance)
 	if err != nil {
 		return
 	}

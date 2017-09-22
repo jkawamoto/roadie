@@ -100,6 +100,30 @@ func TestUploadDummyFiles(t *testing.T) {
 
 }
 
+func TestCreateURL(t *testing.T) {
+
+	cases := []struct {
+		container string
+		path      string
+		expect    string
+	}{
+		{"container", "", script.RoadieSchemePrefix + "container/"},
+		{"container", "file", script.RoadieSchemePrefix + "container/file"},
+		{"container", "dir/", script.RoadieSchemePrefix + "container/dir/"},
+	}
+
+	for _, c := range cases {
+		loc, err := createURL(c.container, c.path)
+		if err != nil {
+			t.Fatalf("createURL(%q, %q) returns an error: %v", c.container, c.path, err)
+		}
+		if loc.String() != c.expect {
+			t.Errorf("createURL(%q, %q) = %q, want %v", c.container, c.path, loc, c.expect)
+		}
+	}
+
+}
+
 // TestCmdGet tests cmdGet.
 func TestCmdGet(t *testing.T) {
 

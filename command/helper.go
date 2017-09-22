@@ -35,6 +35,18 @@ import (
 	"github.com/urfave/cli"
 )
 
+// createURL returns a URL of which scheme is roadie:// and represents a path
+// in a container.
+func createURL(container, p string) (loc *url.URL, err error) {
+
+	loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(container, p))
+	if p == "" || strings.HasSuffix(p, "/") {
+		loc.Path = loc.Path + "/"
+	}
+	return
+
+}
+
 // GenerateListAction generates an action which prints list of files in a given
 // container. If url is true, show urls, too.
 func GenerateListAction(container string) func(*cli.Context) error {
@@ -95,7 +107,7 @@ func cmdGet(m *Metadata, container string, queries []string, dir string) (err er
 	}
 	storage := cloud.NewStorage(service, m.Stdout)
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + container)
+	loc, err := createURL(container, "")
 	if err != nil {
 		return
 	}
@@ -138,7 +150,7 @@ func cmdDelete(m *Metadata, container string, queries []string) (err error) {
 	}
 	storage := cloud.NewStorage(service, ioutil.Discard)
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + container)
+	loc, err := createURL(container, "")
 	if err != nil {
 		return
 	}
@@ -198,7 +210,10 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		}
 
 	case opt.Source != "":
-		setUploadedSource(s, opt.Source)
+		err = setUploadedSource(s, opt.Source)
+		if err != nil {
+			return
+		}
 
 	case s.Source == "":
 		fmt.Fprintln(m.Stdout, chalk.Red.Color("No source section and source flags are given."))
@@ -255,25 +270,34 @@ func setLocalSource(m *Metadata, s *script.Script, path string, excludes []strin
 // setUploadedSource sets a URL to a `file` in source directory to a given `script`.
 // Source codes will be downloaded from the URL. If overwriting the source
 // section, it prints warning, too.
-func setUploadedSource(s *script.Script, file string) {
+func setUploadedSource(s *script.Script, file string) (err error) {
 
 	if !strings.HasSuffix(file, ".tar.gz") {
 		file += ".tar.gz"
 	}
 
-	url := script.RoadieSchemePrefix + path.Join(script.SourcePrefix, file)
+	url, err := createURL(script.SourcePrefix, file)
+	if err != nil {
+		return
+	}
 	if s.Source != "" {
 		fmt.Printf("Source section will be overwritten to '%s' since a filename is given.\n", url)
 	}
-	s.Source = url
+	s.Source = url.String()
+	return
 
 }
 
 // UpdateResultSection updates result section of the given script file.
-func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
+func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) (err error) {
 
 	if s.Result == "" || overwrite {
-		s.Result = script.RoadieSchemePrefix + path.Join(script.ResultPrefix, s.Name)
+		var loc *url.URL
+		loc, err = createURL(script.ResultPrefix, s.Name)
+		if err != nil {
+			return
+		}
+		s.Result = loc.String()
 	} else {
 		fmt.Fprintf(
 			warning,
@@ -281,5 +305,6 @@ func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 Those buckets might not be retrieved from this program and manually downloading results is required.
 To manage outputs by this program, delete result section or set --overwrite-result-section flag.`, s.Result)
 	}
+	return
 
 }

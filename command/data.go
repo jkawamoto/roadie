@@ -88,7 +88,7 @@ func (o *optDataPut) run() (err error) {
 					}
 
 					var loc *url.URL
-					loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(script.DataPrefix, output))
+					loc, err = createURL(script.DataPrefix, output)
 					if err != nil {
 						return
 					}

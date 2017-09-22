@@ -23,14 +23,12 @@ package command
 
 import (
 	"fmt"
-	"net/url"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/script"
 )
 
 // AddRecorder is a callback to add file information to a table.
@@ -123,7 +121,7 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 	}
 
 	storage := cloud.NewStorage(service, nil)
-	query, err := url.Parse(script.RoadieSchemePrefix + path.Join(container, prefix))
+	query, err := createURL(container, prefix)
 	if err != nil {
 		return
 	}

@@ -26,7 +26,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -128,7 +127,7 @@ func uploadSourceFiles(m *Metadata, fpath, name string, excludes []string) (loca
 	}
 	storage := cloud.NewStorage(service, nil)
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(script.SourcePrefix, name))
+	loc, err := createURL(script.SourcePrefix, name)
 	if err != nil {
 		return
 	}
