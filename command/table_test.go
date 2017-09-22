@@ -23,34 +23,18 @@ package command
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"path"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/briandowns/spinner"
-	"github.com/jkawamoto/roadie/cloud/mock"
-	"github.com/jkawamoto/roadie/config"
-	colorable "github.com/mattn/go-colorable"
 )
 
 func TestPrintFileList(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
-	m := Metadata{
-		Config:   &config.Config{},
-		Context:  context.Background(),
-		provider: mock.NewProvider(),
-		Stdout:   colorable.NewNonColorable(&output),
-		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
-	}
-	m.Spinner.Writer = ioutil.Discard
-
+	m := testMetadata(&output)
 	s, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)
@@ -91,7 +75,7 @@ func TestPrintFileList(t *testing.T) {
 
 	for _, c := range cases {
 
-		err = PrintFileList(&m, "test", "instance1", c.url, c.quiet)
+		err = PrintFileList(m, "test", "instance1", c.url, c.quiet)
 		if err != nil {
 			t.Fatalf("PrintFileList returns an error: %v", err)
 		}
@@ -160,15 +144,7 @@ func TestPrintDirList(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
-	m := Metadata{
-		Config:   &config.Config{},
-		Context:  context.Background(),
-		provider: mock.NewProvider(),
-		Stdout:   colorable.NewNonColorable(&output),
-		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
-	}
-	m.Spinner.Writer = ioutil.Discard
-
+	m := testMetadata(&output)
 	s, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)
@@ -212,7 +188,7 @@ func TestPrintDirList(t *testing.T) {
 
 	for _, c := range cases {
 
-		err = PrintDirList(&m, "test", "", c.url, c.quiet)
+		err = PrintDirList(m, "test", "", c.url, c.quiet)
 		if err != nil {
 			t.Fatalf("PrintFileList returns an error: %v", err)
 		}

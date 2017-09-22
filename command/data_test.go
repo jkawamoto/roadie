@@ -23,16 +23,11 @@ package command
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/jkawamoto/roadie/cloud/mock"
-	"github.com/jkawamoto/roadie/config"
-	colorable "github.com/mattn/go-colorable"
 )
 
 // locationURLs parses a multi-lines text and retuens a map from file names to
@@ -105,12 +100,7 @@ func TestCmdDataPut(t *testing.T) {
 	var err error
 	var output bytes.Buffer
 	opt := optDataPut{
-		Metadata: &Metadata{
-			Config:   &config.Config{},
-			Context:  context.Background(),
-			provider: mock.NewProvider(),
-			Stdout:   colorable.NewNonColorable(&output),
-		},
+		Metadata: testMetadata(&output),
 	}
 	s, err := opt.StorageManager()
 	if err != nil {
