@@ -21,14 +21,17 @@
 
 package cloud
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
 // FileInfo defines file information structure.
 type FileInfo struct {
 	// Name of the file, which means the base name.
 	Name string
-	// Path of the file.
-	Path string
+	// URL of the file. The scheme should be roadie://.
+	URL *url.URL
 	// TimeCreated is the time when the file was created.
 	TimeCreated time.Time
 	// Size of the file.

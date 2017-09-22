@@ -126,7 +126,7 @@ func (s *StorageManager) GetFileInfo(ctx context.Context, loc *url.URL) (*cloud.
 
 	info := cloud.FileInfo{
 		Name:        path.Base(loc.Path),
-		Path:        loc.Path,
+		URL:         loc,
 		TimeCreated: time.Now(),
 		Size:        int64(len(v)),
 	}
@@ -153,13 +153,18 @@ func (s *StorageManager) List(ctx context.Context, loc *url.URL, handler cloud.F
 
 		if strings.HasPrefix(filename, query) {
 
+			var u *url.URL
 			dir := filename[:strings.LastIndex(filename, "/")] + "/"
 			if _, exist := dirs[dir]; !exist && strings.HasPrefix(dir, query) {
 
 				// Represent a directory.
+				u, err = url.Parse(dir)
+				if err != nil {
+					return
+				}
 				err = handler(&cloud.FileInfo{
 					Name:        "",
-					Path:        dir,
+					URL:         u,
 					TimeCreated: time.Now(),
 					Size:        0,
 				})
@@ -170,9 +175,13 @@ func (s *StorageManager) List(ctx context.Context, loc *url.URL, handler cloud.F
 
 			}
 
+			u, err = url.Parse(filename)
+			if err != nil {
+				return
+			}
 			err = handler(&cloud.FileInfo{
 				Name:        path.Base(filename),
-				Path:        filename,
+				URL:         u,
 				TimeCreated: time.Now(),
 				Size:        int64(len(body)),
 			})

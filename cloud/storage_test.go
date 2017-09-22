@@ -174,8 +174,8 @@ func TestListupFiles(t *testing.T) {
 		if info.Name == "" {
 			return nil
 		}
-		if !strings.HasPrefix(info.Path, prefix) {
-			t.Errorf("a wrong file is listed up: %v", info.Path)
+		if !strings.HasPrefix(info.URL.String(), prefix) {
+			t.Errorf("a wrong file is listed up: %v", info.URL)
 		}
 		return nil
 	})
@@ -302,8 +302,8 @@ func TestDeleteFiles(t *testing.T) {
 		if info.Name == "" {
 			return nil
 		}
-		if info.Path != loc.String()+"/caa.txt" {
-			t.Errorf("a wrong file is still in the storage %v", info.Path)
+		if info.URL.String() != loc.String()+"/caa.txt" {
+			t.Errorf("a wrong file is still in the storage %v", info.URL)
 		}
 		return nil
 	})

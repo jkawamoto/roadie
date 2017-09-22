@@ -134,8 +134,8 @@ func TestGetFileInfo(t *testing.T) {
 	if info.Name != path.Base(loc.Path) {
 		t.Errorf("Name = %v, want %v", info.Name, path.Base(loc.Path))
 	}
-	if info.Path != loc.Path {
-		t.Errorf("Path = %v, want %v", info.Path, loc.Path)
+	if info.URL != loc {
+		t.Errorf("URL = %v, want %v", info.URL, loc)
 	}
 	if info.Size != int64(len(data)) {
 		t.Errorf("Size = %v, want %v", info.Size, len(data))
@@ -203,7 +203,7 @@ func TestList(t *testing.T) {
 		}
 		res := make(map[string]struct{})
 		m.List(ctx, query, func(info *cloud.FileInfo) error {
-			res[info.Path] = struct{}{}
+			res[info.URL.String()] = struct{}{}
 			return nil
 		})
 		if len(res) != len(c.expected) {

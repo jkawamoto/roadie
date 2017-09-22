@@ -162,12 +162,7 @@ func (s *Storage) DownloadFiles(ctx context.Context, prefix *url.URL, dir string
 				writer := bufio.NewWriter(f)
 				defer writer.Flush()
 
-				loc, goerr := url.Parse(info.Path)
-				if goerr != nil {
-					return goerr
-				}
-
-				goerr = s.service.Download(ctx, loc, io.MultiWriter(writer, bar))
+				goerr = s.service.Download(ctx, info.URL, io.MultiWriter(writer, bar))
 				if goerr != nil {
 					bar.FinishPrint(fmt.Sprintf("Cannot download %s (%s)", info.Name, goerr.Error()))
 				} else {
@@ -211,16 +206,11 @@ func (s *Storage) DeleteFiles(ctx context.Context, prefix *url.URL, queries []st
 
 			eg.Go(func() (err error) {
 
-				loc, err := url.Parse(info.Path)
+				err = s.service.Delete(ctx, info.URL)
 				if err != nil {
-					return
-				}
-
-				err = s.service.Delete(ctx, loc)
-				if err != nil {
-					fmt.Fprintf(s.Log, "Cannot delete %s (%s)\n", info.Path, err.Error())
+					fmt.Fprintf(s.Log, "Cannot delete %v: %v\n", info.URL, err.Error())
 				} else {
-					fmt.Fprintln(s.Log, info.Path)
+					fmt.Fprintln(s.Log, info.URL)
 				}
 				return
 			})
@@ -268,11 +258,7 @@ func (s *Storage) PrintFileBody(ctx context.Context, prefix *url.URL, query stri
 				output = pipeWriter
 			}
 
-			loc, err := url.Parse(info.Path)
-			if err != nil {
-				return err
-			}
-			return s.service.Download(ctx, loc, output)
+			return s.service.Download(ctx, info.URL, output)
 		}
 
 		return nil
