@@ -85,9 +85,9 @@ func TestUploadSourceFiles(t *testing.T) {
 		reader, writer := io.Pipe()
 		ch := make(chan error)
 		go func(out io.WriteCloser) {
-			err := s.Download(m.Context, loc, out)
+			goerr := s.Download(m.Context, loc, out)
 			out.Close()
-			ch <- err
+			ch <- goerr
 		}(writer)
 
 		var gzReader *gzip.Reader
@@ -136,7 +136,7 @@ func TestUploadSourceFiles(t *testing.T) {
 
 		err = <-ch
 		if err != nil {
-			t.Fatal("Download returns an error: %v", err)
+			t.Fatalf("Download returns an error: %v", err)
 		}
 		close(ch)
 

@@ -141,8 +141,9 @@ func TestCmdDataPut(t *testing.T) {
 			t.Fatalf("run returns an error: %v", err)
 		}
 
+		var matches []string
 		locations := locationURLs(output.String())
-		matches, err := filepath.Glob(opt.Filename)
+		matches, err = filepath.Glob(opt.Filename)
 		if err != nil {
 			t.Fatalf("Glob returns an error: %v", err)
 		}
@@ -152,7 +153,8 @@ func TestCmdDataPut(t *testing.T) {
 				t.Errorf("uploaded location of %v is %v, want %v", f, locations[f], c.expected[f])
 			}
 
-			loc, err := url.Parse(locations[f])
+			var loc *url.URL
+			loc, err = url.Parse(locations[f])
 			if err != nil {
 				t.Fatalf("cannot parse a URL: %v", err)
 			}
@@ -163,9 +165,10 @@ func TestCmdDataPut(t *testing.T) {
 				t.Fatalf("Download returns an error: %v", err)
 			}
 
-			original, err := ioutil.ReadFile(f)
+			var original []byte
+			original, err = ioutil.ReadFile(f)
 			if err != nil {
-				t.Fatal("ReadFile(%v) returns an error: %v", f, err)
+				t.Fatalf("ReadFile(%v) returns an error: %v", f, err)
 			}
 			if data.String() != string(original) {
 				t.Errorf("uploaded file is broken %v, want %v", data.String(), string(original))
