@@ -1,3 +1,8 @@
+## 0.3.12 (2017-09-22)
+### Fixed
+- source URLs when source files are uploaded by `--local` flag (#24)
+
+
 ## 0.3.11 (2017-06-30)
 ### Update
 - Use go-colorable to implement color/no-color mode
