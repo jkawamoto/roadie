@@ -13,7 +13,7 @@ A easy way to run your programs on
 See [documents](https://jkawamoto.github.io/roadie/) for more information.
 
 ## Description
-`roadie` helps you to upload your source codes to the cloud, create and delete
+Roadie helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.
 
 For example,
@@ -37,23 +37,24 @@ run:
 
 The above `script.yml` asks roadie to install apt package `unrar` and
 download a data file from such URL as the preparation. Then, it directs
-to run those two commands; unrar the downloaded file, analyze the obtained
+to run those two commands: unrar the downloaded file, analyze the obtained
 data files.
 
-`roadie` uploads results of such commands to a cloud storage after they finish.
+Roadie uploads results of such commands to a cloud storage after they finish.
 You can access those results by
 
 ```sh
 $ roadie result get analyze-wowah "*" -o ./res
 ```
 
-Then, `roadie` downloads all result files into `./res` directory.
+Then, Roadie downloads all result files into `./res` directory.
 
 ## Installation
 Compiled binary files for some platforms are uploaded in
 [release page](https://github.com/jkawamoto/roadie/releases).
 
-For mac user, `roadie` is available in [Homebrew](http://brew.sh/).
+If you're a [Homebrew](http://brew.sh/) or [Linuxbrew](http://linuxbrew.sh/)
+user, you can install Roadie by the following commands:
 
 ```sh
 $ brew tap jkawamoto/roadie
@@ -61,8 +62,8 @@ $ brew install roadie
 ```
 
 ## Initialization
-After installing `roadie`, the following initialization is required in order to
-authorize `roadie` to access cloud services.
+After installing Roadie, the following initialization is required in order to
+authorize Roadie to access cloud services.
 
 ```sh
 $ roadie init

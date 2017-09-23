@@ -1,5 +1,7 @@
 ---
 title: Installation
+date: 2016-12-20
+lastmod: 2017-09-22
 ---
 ### Install
 Roadie's compiled binary files for some platforms are found in Github's
@@ -7,9 +9,10 @@ Roadie's compiled binary files for some platforms are found in Github's
 Download one of them according to your environment and put the binary into
 a directory in your `$PATH`, or put it as same directory as your current project.
 
-If you are a mac user, you can install `roadie` via [Homebrew](http://brew.sh/).
+If you're a [Homebrew](http://brew.sh/) or [Linuxbrew](http://linuxbrew.sh/)
+user, you can install Roadie by the following commands:
 
-```shell
+```sh
 $ brew tap jkawamoto/roadie
 $ brew install roadie
 ```

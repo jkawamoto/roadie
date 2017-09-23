@@ -1,5 +1,7 @@
 ---
 title: インストールと初期設定
+date: 2016-12-20
+lastmod: 2017-09-22
 ---
 ### インストール
 `roadie` のコンパイル済みバイナリは，GitHub の
@@ -8,7 +10,8 @@ title: インストールと初期設定
 アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
 一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．
 
-また，mac の場合は [Homebrew](http://brew.sh/) でもインストールできます．
+[Homebrew](http://brew.sh/) または [Linuxbrew](http://linuxbrew.sh/) を
+お使いの場合は，下記のコマンドでもインストールできます．
 
 ```shell
 $ brew tap jkawamoto/roadie
