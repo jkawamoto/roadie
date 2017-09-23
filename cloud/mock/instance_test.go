@@ -97,6 +97,12 @@ func TestDeleteInstance(t *testing.T) {
 		t.Error("script of the deleted instance is still remining")
 	}
 
+	// Delete a deleted instance.
+	err = m.DeleteInstance(ctx, s.Name)
+	if err == nil {
+		t.Error("deleting a not existing instance but no errors are returned")
+	}
+
 	// Delete not existing instance.
 	err = m.DeleteInstance(ctx, "another_instance")
 	if err == nil {

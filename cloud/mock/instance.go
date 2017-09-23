@@ -75,8 +75,10 @@ func (m *InstanceManager) DeleteInstance(ctx context.Context, name string) (err 
 	if m.Failure {
 		return ErrServiceFailure
 	}
-	if _, exist := m.Status[name]; !exist {
+	if status, exist := m.Status[name]; !exist {
 		return fmt.Errorf("instance %q doesn't exist", name)
+	} else if status == StatusTerminated {
+		return fmt.Errorf("instance %q is already terminated", name)
 	}
 
 	m.Status[name] = StatusTerminated
