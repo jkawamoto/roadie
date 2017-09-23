@@ -25,20 +25,17 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 // Archive makes a tar.gz file consists of file tree
-func Archive(root string, filename string, excludes []string) error {
+func Archive(root string, filename string, excludes []string) (err error) {
 
 	writeFile, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		return
 	}
 	defer writeFile.Close()
 
@@ -47,22 +44,17 @@ func Archive(root string, filename string, excludes []string) error {
 
 	zipWriter, err := gzip.NewWriterLevel(writer, gzip.BestCompression)
 	if err != nil {
-		log.Fatalln(err)
-		return err
+		return
 	}
 	defer zipWriter.Close()
 
 	tarWriter := tar.NewWriter(zipWriter)
 	defer tarWriter.Close()
 
-	return filepath.Walk(root, tarballing(tarWriter, excludes))
-
-}
-
-// Create a call back to add founded files to a given archive.
-func tarballing(writer *tar.Writer, excludes []string) filepath.WalkFunc {
-
-	return func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 
 		// Directory won't include the archive.
 		if info.IsDir() {
@@ -73,47 +65,41 @@ func tarballing(writer *tar.Writer, excludes []string) filepath.WalkFunc {
 		}
 
 		// Check the found path matches exclude rules.
-		if m, e := excludePath(path, excludes); e != nil {
-			return e
-		} else if m {
+		matched, err := excludePath(path, excludes)
+		if err != nil {
+			return err
+		} else if matched {
 			return nil
 		}
 
-		// For Windows: Replace path delimiters.
-		path = filepath.ToSlash(path)
-
-		// Write a file header.
-		header, err := tar.FileInfoHeader(info, path)
+		// Write a file header. (for Windows: path should be slashed)
+		header, err := tar.FileInfoHeader(info, "")
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
-
-		if strings.HasPrefix(path, "../") {
-			header.Name = path[3:]
-		} else {
-			header.Name = path
+		if root != path {
+			var rel string
+			rel, err = filepath.Rel(root, path)
+			if err != nil {
+				return err
+			}
+			header.Name = filepath.ToSlash(rel)
 		}
-		writer.WriteHeader(header)
+		tarWriter.WriteHeader(header)
 
 		// Prepare to write a file body.
 		fp, err := os.Open(path)
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
 		defer fp.Close()
 
 		// Write the body.
 		reader := bufio.NewReader(fp)
-		if _, err := reader.WriteTo(writer); err != nil {
-			fmt.Println(err.Error())
-			return err
-		}
+		_, err = reader.WriteTo(tarWriter)
+		return err
 
-		return nil
-
-	}
+	})
 
 }
 

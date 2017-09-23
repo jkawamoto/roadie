@@ -1,5 +1,5 @@
 //
-// cloud/fileinfo.go
+// cloud/mock/provider_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,21 +19,23 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package cloud
+package mock
 
 import (
-	"net/url"
-	"time"
+	"context"
+	"testing"
 )
 
-// FileInfo defines file information structure.
-type FileInfo struct {
-	// Name of the file, which means the base name.
-	Name string
-	// URL of the file. The scheme should be roadie://.
-	URL *url.URL
-	// TimeCreated is the time when the file was created.
-	TimeCreated time.Time
-	// Size of the file.
-	Size int64
+func TestStorageManager(t *testing.T) {
+
+	p := NewProvider()
+	m, err := p.StorageManager(context.Background())
+	if err != nil {
+		t.Fatalf("StorageManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*StorageManager); !ok {
+		t.Errorf("StorageManager doesn't return a mock manager: %T", m)
+	}
+
 }

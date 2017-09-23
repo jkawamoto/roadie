@@ -24,6 +24,7 @@ package command
 import (
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/gosuri/uitable"
@@ -45,26 +46,24 @@ func PrintFileList(m *Metadata, container, prefix string, url, quiet bool) (err 
 
 	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-		if info.Name != "" {
-			if quiet {
-				table.AddRow(info.Name)
-			} else if url {
-				var size string
-				if info.Size < 1024 {
-					size = fmt.Sprintf("%dB", info.Size)
-				} else {
-					size = fmt.Sprintf("%dKB", info.Size/1024)
-				}
-				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.Path)
+		if quiet {
+			table.AddRow(info.Name)
+		} else if url {
+			var size string
+			if info.Size < 1024 {
+				size = fmt.Sprintf("%dB", info.Size)
 			} else {
-				var size string
-				if info.Size < 1024 {
-					size = fmt.Sprintf("%dB", info.Size)
-				} else {
-					size = fmt.Sprintf("%dKB", info.Size/1024)
-				}
-				table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
+				size = fmt.Sprintf("%dKB", info.Size/1024)
 			}
+			table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), info.URL)
+		} else {
+			var size string
+			if info.Size < 1024 {
+				size = fmt.Sprintf("%dB", info.Size)
+			} else {
+				size = fmt.Sprintf("%dKB", info.Size/1024)
+			}
+			table.AddRow(info.Name, size, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 		}
 
 	})
@@ -81,19 +80,21 @@ func PrintDirList(m *Metadata, container, prefix string, url, quiet bool) (err e
 	}
 
 	// Storing previous folder name.
-	prev := ""
+	shownDirs := make(map[string]struct{})
 	return printList(m, container, prefix, quiet, headers, func(table *uitable.Table, info *cloud.FileInfo, quiet bool) {
 
-		dir := path.Dir(info.Path)
-		if dir != "." && dir != prev {
+		dir := strings.TrimPrefix(path.Dir(info.URL.Path), "/")
+		if _, exist := shownDirs[dir]; dir != "." && !exist {
 			if quiet {
 				table.AddRow(dir)
 			} else if url {
-				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), dir)
+				u := *info.URL
+				u.Path = path.Dir(u.Path) + "/"
+				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat), u.String())
 			} else {
 				table.AddRow(dir, info.TimeCreated.In(time.Local).Format(PrintTimeFormat))
 			}
-			prev = dir
+			shownDirs[dir] = struct{}{}
 		}
 
 	})
@@ -119,8 +120,12 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 		return err
 	}
 
-	storage := cloud.NewStorage(service, nil)
-	err = storage.ListupFiles(m.Context, container, prefix, func(info *cloud.FileInfo) error {
+	storage := cloud.NewStorage(service, m.Stdout)
+	query, err := createURL(container, prefix)
+	if err != nil {
+		return
+	}
+	err = storage.ListupFiles(m.Context, query, func(info *cloud.FileInfo) error {
 		addRecorder(table, info, quiet)
 		return nil
 	})
@@ -129,7 +134,7 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 	}
 
 	m.Spinner.Stop()
-	fmt.Println(table.String())
+	fmt.Fprintln(m.Stdout, table.String())
 	return
 
 }

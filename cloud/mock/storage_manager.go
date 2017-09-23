@@ -26,7 +26,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"path/filepath"
+	"net/url"
+	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -39,10 +41,10 @@ var ErrServiceFailure = fmt.Errorf("this service is out of order")
 
 // StorageManager is a memory based mock storage manager.
 type StorageManager struct {
-	// Represent a key-value storage.
-	Storage map[string]string
 	// If true, all method returns an error.
 	Failure bool
+	// Represent a key-value storage.
+	storage map[string]string
 	// Lock.
 	mutex *sync.Mutex
 }
@@ -50,17 +52,23 @@ type StorageManager struct {
 // NewStorageManager creates a new mock storage manager.
 func NewStorageManager() *StorageManager {
 	return &StorageManager{
-		Storage: make(map[string]string),
+		storage: make(map[string]string),
 		mutex:   new(sync.Mutex),
 	}
 }
 
-// Upload is a mock function to check uploaded file is correct or not.
-func (s *StorageManager) Upload(ctx context.Context, container, filename string, in io.Reader) (uri string, err error) {
+// Upload reads bytes from a given stream and stores it in the map storage
+// with a given location as the key.
+func (s *StorageManager) Upload(ctx context.Context, loc *url.URL, in io.Reader) (err error) {
 
 	if s.Failure {
-		err = ErrServiceFailure
-		return
+		return ErrServiceFailure
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
 	}
 
 	body, err := ioutil.ReadAll(in)
@@ -71,59 +79,92 @@ func (s *StorageManager) Upload(ctx context.Context, container, filename string,
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.Storage[filename] = string(body)
-	uri = fmt.Sprint("file://mock/", filepath.Join(container, filename))
+	s.storage[loc.String()] = string(body)
 	return
 
 }
 
-// Download writes a file in a container to a writer.
-func (s *StorageManager) Download(ctx context.Context, container, filename string, out io.Writer) error {
+// Download writes bytes from the map storage with a given key loc to a given writer.
+func (s *StorageManager) Download(ctx context.Context, loc *url.URL, out io.Writer) error {
 
 	if s.Failure {
 		return ErrServiceFailure
 	}
 
-	body, ok := s.Storage[filename]
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	body, ok := s.storage[loc.String()]
 	if !ok {
-		return fmt.Errorf("File %s is not found", filename)
+		return fmt.Errorf("%v is not found", loc)
 	}
 	_, err := out.Write([]byte(body))
 	return err
 
 }
 
-// GetFileInfo returns information of a file.
-func (s *StorageManager) GetFileInfo(ctx context.Context, container, filename string) (*cloud.FileInfo, error) {
-	return nil, nil
-}
+// GetFileInfo returns information of a file pointed by a given URL.
+func (s *StorageManager) GetFileInfo(ctx context.Context, loc *url.URL) (*cloud.FileInfo, error) {
 
-// List is a mock function of List.
-func (s *StorageManager) List(ctx context.Context, container, prefix string, handler cloud.FileInfoHandler) error {
-
-	// Represent a directory.
-	err := handler(&cloud.FileInfo{
-		Name:        "",
-		Path:        prefix,
-		TimeCreated: time.Now(),
-		Size:        0,
-	})
-	if err != nil {
-		return err
+	if s.Failure {
+		return nil, ErrServiceFailure
 	}
 
-	for filename, body := range s.Storage {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 
-		if strings.HasPrefix(filename, prefix) {
+	v, ok := s.storage[loc.String()]
+	if !ok {
+		return nil, os.ErrNotExist
+	}
 
-			err := handler(&cloud.FileInfo{
-				Name:        filepath.Base(filename),
-				Path:        filename,
+	info := cloud.FileInfo{
+		Name:        path.Base(loc.Path),
+		URL:         loc,
+		TimeCreated: time.Now(),
+		Size:        int64(len(v)),
+	}
+	return &info, nil
+
+}
+
+// List lists up files in this storage and passes each information to a given handler.
+func (s *StorageManager) List(ctx context.Context, loc *url.URL, handler cloud.FileInfoHandler) (err error) {
+
+	if s.Failure {
+		return ErrServiceFailure
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	query := loc.String()
+	for filename, body := range s.storage {
+
+		if strings.HasPrefix(filename, query) {
+
+			var u *url.URL
+			u, err = url.Parse(filename)
+			if err != nil {
+				return
+			}
+			err = handler(&cloud.FileInfo{
+				Name:        path.Base(filename),
+				URL:         u,
 				TimeCreated: time.Now(),
 				Size:        int64(len(body)),
 			})
 			if err != nil {
-				return err
+				return
 			}
 
 			if s.Failure {
@@ -136,20 +177,26 @@ func (s *StorageManager) List(ctx context.Context, container, prefix string, han
 	return nil
 }
 
-// Delete deletes a file.
-func (s *StorageManager) Delete(ctx context.Context, container, filename string) error {
+// Delete deletes a file pointed by a given URL.
+func (s *StorageManager) Delete(ctx context.Context, loc *url.URL) error {
 
 	if s.Failure {
 		return ErrServiceFailure
 	}
 
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if _, ok := s.Storage[filename]; !ok {
-		return fmt.Errorf("Given file is not found: %v", filename)
+	if _, ok := s.storage[loc.String()]; !ok {
+		return os.ErrNotExist
 	}
 
-	delete(s.Storage, filename)
+	delete(s.storage, loc.String())
 	return nil
 }

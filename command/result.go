@@ -23,9 +23,8 @@ package command
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/deiwin/interact"
 	"github.com/jkawamoto/roadie/cloud"
@@ -50,115 +49,161 @@ func CmdResult(c *cli.Context) error {
 
 }
 
-// CmdResultList shows a list of instance names or result files belonging to an instance.
+// CmdResultList shows a list of instance names or result files belonging to an
+// instance.
+// This command takes one optional argument, instance name.
+// If an instance name is given, this command shows result files associated with
+// the given instance.
+// If any instance names are not given, this command shows names of instances of
+// which results are stored in a cloud storage.
 func CmdResultList(c *cli.Context) (err error) {
 
-	m, err := getMetadata(c)
-	if err != nil {
-		return
-	}
-
-	switch c.NArg() {
-	case 0:
-		err = PrintDirList(m, script.ResultPrefix, "", c.Bool("url"), c.Bool("quiet"))
-	case 1:
-		instance := c.Args().First()
-		err = PrintFileList(m, script.ResultPrefix, instance, c.Bool("url"), c.Bool("quiet"))
-	default:
+	n := c.NArg()
+	if n > 1 {
 		fmt.Printf("expected at most 1 argument. (%d given)\n", c.NArg())
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m, err := getMetadata(c)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return cli.NewExitError(err, 3)
+	}
+	err = cmdResultList(m, c.Args().First(), c.Bool("url"), c.Bool("quiet"))
+	if err != nil {
+		return cli.NewExitError(err, 2)
 	}
 	return
 
 }
 
-// CmdResultShow shows results of stdout for a given instance names or result files belonging to an instance.
+// cmdResultList implements result list command.
+// If showURL is true, the URLs of each file will be shown.
+// If quiet is true, only file names will be shown.
+func cmdResultList(m *Metadata, instance string, showURL, quiet bool) error {
+
+	if instance == "" {
+		return PrintDirList(m, script.ResultPrefix, "", showURL, quiet)
+	}
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
+	return PrintFileList(m, script.ResultPrefix, instance, showURL, quiet)
+
+}
+
+// CmdResultShow shows results of a given named instance.
+// This command takes two arguments, instance name and file name; and prints
+// the body of the given named file belonging to the given named instance.
+// File name argument can be omitted and then all files which have prefix
+// `stdout` will be printed.
 func CmdResultShow(c *cli.Context) (err error) {
 
-	m, err := getMetadata(c)
-	if err != nil {
-		return
-	}
-
-	service, err := m.StorageManager()
-	if err != nil {
-		return err
-	}
-
-	storage := cloud.NewStorage(service, nil)
-	switch c.NArg() {
-	case 1:
-		instance := c.Args().First()
-		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, StdoutFilePrefix, os.Stdout, true)
-
-	case 2:
-		instance := c.Args().First()
-		filePrefix := StdoutFilePrefix + c.Args().Get(1)
-		err = storage.PrintFileBody(m.Context, script.ResultPrefix, instance, filePrefix, os.Stdout, false)
-
-	default:
-		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", c.NArg())
+	n := c.NArg()
+	if n < 1 || n > 2 {
+		fmt.Printf("expected 1 or 2 arguments. (%d given)\n", n)
 		return cli.ShowSubcommandHelp(c)
 	}
 
+	m, err := getMetadata(c)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return cli.NewExitError(err, 3)
+	}
+
+	err = cmdResultShow(m, c.Args().First(), c.Args().Get(1))
+	if err != nil {
+		return cli.NewExitError(err, 2)
 	}
 	return nil
 
 }
 
-// CmdResultGet downloads results for a given instance and file names are matched to queries.
+// cmdResultShow implements result show command.
+func cmdResultShow(m *Metadata, instance, prefix string) error {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return err
+	}
+	storage := cloud.NewStorage(service, m.Stdout)
+
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
+	loc, err := createURL(script.ResultPrefix, instance)
+	if err != nil {
+		return err
+	}
+
+	var header bool
+	if prefix == "" {
+		prefix = StdoutFilePrefix
+		header = true
+	}
+	return storage.PrintFileBody(m.Context, loc, prefix, m.Stdout, header)
+
+}
+
+// CmdResultGet downloads results files which belong to a given named instance
+// and matches one of given queries.
+// If no queries are given, the wild card * will be used instead.
 func CmdResultGet(c *cli.Context) error {
 
 	if c.NArg() == 0 {
-		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
+		fmt.Println("expected at least 1 argument. (0 given)")
 		return cli.ShowSubcommandHelp(c)
 	}
 
-	instance := c.Args().First()
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 3)
 	}
 
-	service, err := m.StorageManager()
+	err = cmdResultGet(m, c.Args().First(), c.Args().Tail(), c.String("o"))
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 2)
 	}
-
-	storage := cloud.NewStorage(service, nil)
-	pattern := c.Args().Tail()
-	if len(pattern) == 0 {
-		pattern = append(pattern, "*")
-	}
-	if err := storage.DownloadFiles(m.Context, script.ResultPrefix, instance, c.String("o"), pattern); err != nil {
-		return cli.NewExitError(err.Error(), 2)
-	}
-
 	return nil
 
 }
 
-// CmdResultDelete deletes results for a given instance and file names are matched to queries.
+// cmdResultGet implements result get command.
+func cmdResultGet(m *Metadata, instance string, queries []string, dir string) (err error) {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+
+	storage := cloud.NewStorage(service, m.Stdout)
+	if len(queries) == 0 {
+		queries = []string{"*"}
+	}
+
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
+	}
+	loc, err := createURL(script.ResultPrefix, instance)
+	if err != nil {
+		return
+	}
+	return storage.DownloadFiles(m.Context, loc, dir, queries)
+
+}
+
+// CmdResultDelete deletes result files which belong to a given instance and
+// matches given queries.
 func CmdResultDelete(c *cli.Context) (err error) {
 
 	if c.NArg() == 0 {
-		fmt.Printf("expected at least 1 argument. (%d given)\n", c.NArg())
+		fmt.Println("expected at least 1 argument. (0 given)")
 		return cli.ShowSubcommandHelp(c)
 	}
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return
+		return cli.NewExitError(err, 3)
 	}
 
-	instance := c.Args().First()
-	var patterns []string
 	if c.NArg() == 1 {
 
 		var deleteAll bool
@@ -168,46 +213,54 @@ func CmdResultDelete(c *cli.Context) (err error) {
 			interact.ConfirmDefaultToNo)
 
 		if err != nil {
-			return cli.NewExitError(err.Error(), -1)
+			return cli.NewExitError(err, -1)
 
 		} else if deleteAll {
-			patterns = []string{"*"}
 
 			var logManager cloud.LogManager
 			logManager, err = m.LogManager()
 			if err != nil {
 				return
 			}
-			err = logManager.Delete(m.Context, instance)
+			err = logManager.Delete(m.Context, c.Args().First())
 			if err != nil {
-				return
+				return cli.NewExitError(err, 2)
 			}
 
 		} else {
 			return nil
 		}
 
-	} else {
-		patterns = c.Args().Tail()
 	}
+
+	err = cmdResultDelete(m, c.Args().First(), c.Args().Tail())
+	if err != nil {
+		return cli.NewExitError(err, 2)
+	}
+	return
+
+}
+
+// cmdResultDelete implements resutl delete command.
+func cmdResultDelete(m *Metadata, instance string, queries []string) (err error) {
 
 	service, err := m.StorageManager()
 	if err != nil {
 		return
 	}
 
-	var msg io.Writer
-	if c.GlobalBool("verbose") {
-		msg = ioutil.Discard
-	} else {
-		msg = os.Stdout
+	storage := cloud.NewStorage(service, m.Stdout)
+	if len(queries) == 0 {
+		queries = []string{"*"}
 	}
 
-	storage := cloud.NewStorage(service, msg)
-	err = storage.DeleteFiles(m.Context, script.ResultPrefix, instance, patterns)
-	if err != nil {
-		return cli.NewExitError(err.Error(), 2)
+	if !strings.HasSuffix(instance, "/") {
+		instance += "/"
 	}
-	return
+	loc, err := createURL(script.ResultPrefix, instance)
+	if err != nil {
+		return
+	}
+	return storage.DeleteFiles(m.Context, loc, queries)
 
 }

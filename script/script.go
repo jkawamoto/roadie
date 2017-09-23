@@ -94,7 +94,7 @@ func NewScriptTemplate(filename string, args []string) (res *Script, err error) 
 		sp := strings.Split(v, "=")
 		if len(sp) >= 2 {
 			funcs[sp[0]] = func() string {
-				return sp[1]
+				return strings.Join(sp[1:], "=")
 			}
 		}
 	}

@@ -26,20 +26,26 @@ import (
 	"io"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/command/util"
 	"github.com/jkawamoto/roadie/script"
 	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
-// PrintTimeFormat defines time format to be used to print logs.
-const PrintTimeFormat = "2006/01/02 15:04:05"
+// createURL returns a URL of which scheme is roadie:// and represents a path
+// in a container.
+func createURL(container, p string) (loc *url.URL, err error) {
+
+	loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(container, p))
+	if p == "" || strings.HasSuffix(p, "/") {
+		loc.Path = loc.Path + "/"
+	}
+	return
+
+}
 
 // GenerateListAction generates an action which prints list of files in a given
 // container. If url is true, show urls, too.
@@ -54,11 +60,11 @@ func GenerateListAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return err
+			return cli.NewExitError(err, 3)
 		}
 		err = PrintFileList(m, container, "", c.Bool("url"), c.Bool("quiet"))
 		if err != nil {
-			return cli.NewExitError(err.Error(), 2)
+			return cli.NewExitError(err, 2)
 		}
 		return nil
 
@@ -79,21 +85,33 @@ func GenerateGetAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return
+			return cli.NewExitError(err, 3)
 		}
-		service, err := m.StorageManager()
+
+		err = cmdGet(m, container, c.Args(), c.String("o"))
 		if err != nil {
-			return
+			return cli.NewExitError(err, 2)
 		}
-		storage := cloud.NewStorage(service, nil)
-
-		if err := storage.DownloadFiles(m.Context, container, "", c.String("o"), c.Args()); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-
 		return
 
 	}
+
+}
+
+// cmdGet implements a general get command.
+func cmdGet(m *Metadata, container string, queries []string, dir string) (err error) {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, m.Stdout)
+
+	loc, err := createURL(container, "")
+	if err != nil {
+		return
+	}
+	return storage.DownloadFiles(m.Context, loc, dir, queries)
 
 }
 
@@ -110,25 +128,37 @@ func GenerateDeleteAction(container string) func(*cli.Context) error {
 
 		m, err := getMetadata(c)
 		if err != nil {
-			return
+			return cli.NewExitError(err, 3)
 		}
-		service, err := m.StorageManager()
+
+		err = cmdDelete(m, container, c.Args())
 		if err != nil {
-			return
+			return cli.NewExitError(err, 2)
 		}
-		storage := cloud.NewStorage(service, ioutil.Discard)
-
-		m.Spinner.Prefix = "Delete files..."
-		m.Spinner.Start()
-		defer m.Spinner.Stop()
-
-		if err := storage.DeleteFiles(m.Context, container, "", c.Args()); err != nil {
-			return cli.NewExitError(err.Error(), 2)
-		}
-
 		return
 
 	}
+
+}
+
+// cmdDelete implements a general delete command.
+func cmdDelete(m *Metadata, container string, queries []string) (err error) {
+
+	service, err := m.StorageManager()
+	if err != nil {
+		return
+	}
+	storage := cloud.NewStorage(service, ioutil.Discard)
+
+	loc, err := createURL(container, "")
+	if err != nil {
+		return
+	}
+
+	m.Spinner.Prefix = "Delete files..."
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
+	return storage.DeleteFiles(m.Context, loc, queries)
 
 }
 
@@ -180,7 +210,10 @@ func UpdateSourceSection(m *Metadata, s *script.Script, opt *SourceOpt, storage 
 		}
 
 	case opt.Source != "":
-		setSource(s, opt.Source)
+		err = setUploadedSource(s, opt.Source)
+		if err != nil {
+			return
+		}
 
 	case s.Source == "":
 		fmt.Fprintln(m.Stdout, chalk.Red.Color("No source section and source flags are given."))
@@ -225,47 +258,46 @@ func setGitSource(s *script.Script, repo string) (err error) {
 // To upload files to GCS, `conf` is used.
 func setLocalSource(m *Metadata, s *script.Script, path string, excludes []string) (err error) {
 
-	info, err := os.Stat(path)
+	location, err := uploadSourceFiles(m, path, s.Name, excludes)
 	if err != nil {
 		return
 	}
-
-	var name string
-	if info.IsDir() {
-		name = s.Name
-	}
-
-	location, err := uploadFiles(m, path, name, excludes)
-	if err != nil {
-		return
-	}
-	s.Source = location
+	s.Source = location.String()
 	return
 
 }
 
-// setSource sets a URL to a `file` in source directory to a given `script`.
+// setUploadedSource sets a URL to a `file` in source directory to a given `script`.
 // Source codes will be downloaded from the URL. If overwriting the source
 // section, it prints warning, too.
-func setSource(s *script.Script, file string) {
+func setUploadedSource(s *script.Script, file string) (err error) {
 
 	if !strings.HasSuffix(file, ".tar.gz") {
 		file += ".tar.gz"
 	}
 
-	url := script.RoadieSchemePrefix + path.Join(script.SourcePrefix, file)
+	url, err := createURL(script.SourcePrefix, file)
+	if err != nil {
+		return
+	}
 	if s.Source != "" {
 		fmt.Printf("Source section will be overwritten to '%s' since a filename is given.\n", url)
 	}
-	s.Source = url
+	s.Source = url.String()
+	return
 
 }
 
 // UpdateResultSection updates result section of the given script file.
-func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
+func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) (err error) {
 
 	if s.Result == "" || overwrite {
-		s.Result = script.RoadieSchemePrefix + path.Join(script.ResultPrefix, s.Name)
+		var loc *url.URL
+		loc, err = createURL(script.ResultPrefix, s.Name)
+		if err != nil {
+			return
+		}
+		s.Result = loc.String()
 	} else {
 		fmt.Fprintf(
 			warning,
@@ -273,60 +305,6 @@ func UpdateResultSection(s *script.Script, overwrite bool, warning io.Writer) {
 Those buckets might not be retrieved from this program and manually downloading results is required.
 To manage outputs by this program, delete result section or set --overwrite-result-section flag.`, s.Result)
 	}
-
-}
-
-// uploadFiles uploads a file or directory specified by path and store them with
-// a given name.
-func uploadFiles(m *Metadata, path, name string, excludes []string) (location string, err error) {
-
-	info, err := os.Stat(path)
-	if err != nil {
-		return
-	}
-
-	var filename string      // File name on a cloud storage.
-	var uploadingFile string // File path to be uploaded.
-	if info.IsDir() {        // Directory will be archived.
-
-		if name == "" {
-			var abs string
-			if abs, err = filepath.Abs(path); err != nil {
-				return
-			}
-			name = filepath.Base(abs)
-		}
-		filename = fmt.Sprintf("%v.tar.gz", strings.TrimSuffix(name, ".tar.gz"))
-		uploadingFile = filepath.Join(os.TempDir(), filename)
-
-		m.Spinner.Prefix = fmt.Sprint("Creating archived file", uploadingFile)
-		m.Spinner.FinalMSG = fmt.Sprint("Finished creating archived file", uploadingFile)
-		m.Spinner.Start()
-
-		if err = util.Archive(path, uploadingFile, excludes); err != nil {
-			m.Spinner.Stop()
-			return
-		}
-		defer os.Remove(uploadingFile)
-		m.Spinner.Stop()
-
-	} else { // One source file just will be uploaded.
-
-		uploadingFile = path
-		if name == "" {
-			filename = filepath.Base(path)
-		} else {
-			filename = name
-		}
-
-	}
-
-	service, err := m.StorageManager()
-	if err != nil {
-		return
-	}
-	storage := cloud.NewStorage(service, nil)
-	location, err = storage.UploadFile(m.Context, script.SourcePrefix, filename, uploadingFile)
 	return
 
 }

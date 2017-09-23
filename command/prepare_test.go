@@ -1,5 +1,5 @@
 //
-// cloud/fileinfo.go
+// command/prepare_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,21 +19,32 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package cloud
+package command
 
 import (
-	"net/url"
+	"context"
+	"io"
+	"io/ioutil"
 	"time"
+
+	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/cloud/mock"
+	"github.com/jkawamoto/roadie/config"
+	colorable "github.com/mattn/go-colorable"
 )
 
-// FileInfo defines file information structure.
-type FileInfo struct {
-	// Name of the file, which means the base name.
-	Name string
-	// URL of the file. The scheme should be roadie://.
-	URL *url.URL
-	// TimeCreated is the time when the file was created.
-	TimeCreated time.Time
-	// Size of the file.
-	Size int64
+// testMetadata creates metadata for testings.
+func testMetadata(output io.Writer) (m *Metadata) {
+	if output == nil {
+		output = ioutil.Discard
+	}
+	m = &Metadata{
+		Config:   &config.Config{},
+		Context:  context.Background(),
+		provider: mock.NewProvider(),
+		Stdout:   colorable.NewNonColorable(output),
+		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+	}
+	m.Spinner.Writer = ioutil.Discard
+	return
 }

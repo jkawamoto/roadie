@@ -24,28 +24,34 @@ package cloud
 import (
 	"context"
 	"io"
+	"net/url"
 )
 
-// StorageManager defines API which a storage service provider must have.
+// StorageManager defines methods which a storage service provider must provides.
+// Each method takes a URL to point a file stored in this storage.
+// The URL should be
+// - roadie://category/path
+// where category is one of
+// - script.SourcePrefix
+// - script.DataPrefix
+// - script.ResultPrefix
 type StorageManager interface {
 
-	// Upload a given stream with a given container and file name; returned string
-	// represents a URI associated with the uploaded file.
-	Upload(ctx context.Context, container, filename string, in io.Reader) (string, error)
+	// Upload a given stream to a given URL.
+	Upload(ctx context.Context, loc *url.URL, in io.Reader) error
 
-	// Download a file associated with a given container and file name and write
-	// it to a given writer.
-	Download(ctx context.Context, container, filename string, out io.Writer) error
+	// Download a file pointed by a given URL and write it to a given stream.
+	Download(ctx context.Context, loc *url.URL, out io.Writer) error
 
-	// GetFileInfo gets file information of a given container and filename.
-	GetFileInfo(ctx context.Context, container, filename string) (*FileInfo, error)
+	// GetFileInfo retrieves information of a file pointed by a given URL.
+	GetFileInfo(ctx context.Context, loc *url.URL) (*FileInfo, error)
 
-	// List up files matching a given prefix in a given container.
+	// List up files of which URLs start with a given URL.
 	// It takes a handler; information of found files are sent to it.
-	List(ctx context.Context, container, prefix string, handler FileInfoHandler) error
+	List(ctx context.Context, loc *url.URL, handler FileInfoHandler) error
 
-	// Delete a given file in a given container.
-	Delete(ctx context.Context, container, filename string) error
+	// Delete a file pointed by a given URL.
+	Delete(ctx context.Context, loc *url.URL) error
 }
 
 // FileInfoHandler is a handler to receive a file info.
