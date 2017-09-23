@@ -125,7 +125,7 @@ func uploadSourceFiles(m *Metadata, fpath, name string, excludes []string) (loca
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, nil)
+	storage := cloud.NewStorage(service, m.Stdout)
 
 	loc, err := createURL(script.SourcePrefix, name)
 	if err != nil {

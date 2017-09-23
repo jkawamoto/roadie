@@ -120,7 +120,7 @@ func printList(m *Metadata, container, prefix string, quiet bool, headers []stri
 		return err
 	}
 
-	storage := cloud.NewStorage(service, nil)
+	storage := cloud.NewStorage(service, m.Stdout)
 	query, err := createURL(container, prefix)
 	if err != nil {
 		return

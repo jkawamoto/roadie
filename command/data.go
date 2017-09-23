@@ -33,7 +33,6 @@ import (
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
-	"github.com/ttacon/chalk"
 	"github.com/urfave/cli"
 )
 
@@ -62,7 +61,7 @@ func (o *optDataPut) run() (err error) {
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, nil)
+	storage := cloud.NewStorage(service, o.Stdout)
 
 	wg, ctx := errgroup.WithContext(o.Context)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
@@ -99,7 +98,7 @@ func (o *optDataPut) run() (err error) {
 
 					streamLock.Lock()
 					defer streamLock.Unlock()
-					fmt.Fprintf(o.Stdout, "%v -> %v\n", target, chalk.Bold.TextStyle(loc.String()))
+					fmt.Fprintf(o.Stdout, "%v -> %v\n", target, loc)
 					return
 
 				})
