@@ -35,10 +35,10 @@ apt:
 - python-numpy
 source: https://github.com/jkawamoto/roadie
 data:
-- gs://somebucket/somedata
+- roadie://somebucket/somedata
 run:
 - abc def
-result: gs://somebucket/result
+result: roadie://somebucket/result
 upload:
 - xyz
 `
@@ -49,10 +49,10 @@ apt:
 - python-numpy
 source: https://github.com/jkawamoto/roadie
 data:
-- gs://somebucket/somedata
+- roadie://somebucket/somedata
 run:
 - abc {{args}}
-result: gs://somebucket/result
+result: roadie://somebucket/result
 upload:
 - xyz
 `
@@ -67,22 +67,22 @@ func TestLoadScript(t *testing.T) {
 	filename := path.Join(os.TempDir(), "test.yaml")
 	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot open file %q: %v", filename, err)
 	}
 	_, err = fp.WriteString(simpleScript)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot write a sample script: %v", err)
 	}
 	if err = fp.Close(); err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot close the file: %v", err)
 	}
-	t.Logf("Create a test script file in %s", filename)
+	t.Logf("script file created in %s", filename)
 	defer os.Remove(filename)
 
 	// Loading test.
 	script, err := NewScriptTemplate(filename, nil)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot read script file %q: %v", filename, err)
 	}
 
 	// Tests
@@ -102,7 +102,7 @@ func TestLoadScript(t *testing.T) {
 		t.Errorf("source section is not correct: %s", script.Source)
 	}
 
-	if len(script.Data) != 1 || script.Data[0] != "gs://somebucket/somedata" {
+	if len(script.Data) != 1 || script.Data[0] != "roadie://somebucket/somedata" {
 		t.Errorf("data section is not correct: %s", script.Data)
 	}
 
@@ -110,7 +110,7 @@ func TestLoadScript(t *testing.T) {
 		t.Errorf("run section is not correct: %s", script.Run)
 	}
 
-	if script.Result != "gs://somebucket/result" {
+	if script.Result != "roadie://somebucket/result" {
 		t.Errorf("result section is not correct: %s", script.Result)
 	}
 
@@ -129,34 +129,46 @@ func TestLoadScriptWithPlaceholders(t *testing.T) {
 	filename := path.Join(os.TempDir(), "test.yaml")
 	fp, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot create %q: %v", filename, err)
 	}
 	_, err = fp.WriteString(complexScript)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot write to file %q: %v", filename, err)
 	}
 	if err = fp.Close(); err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot close the script file: %v", err)
 	}
-	t.Logf("Create a test script file in %s", filename)
+	t.Logf("script file is created in %s", filename)
 	defer os.Remove(filename)
 
-	// Loading test.
-	script, err := NewScriptTemplate(filename, []string{"args=xyz"})
-	if err != nil {
-		t.Error(err.Error())
+	cases := []struct {
+		params   string
+		expected string
+	}{
+		{"args=xyz", "abc xyz"},
+		{"args=param=x", "abc param=x"},
 	}
 
-	// Tests
-	if len(script.Run) != 1 || script.Run[0] != "abc xyz" {
-		t.Errorf("run section is not correct: %s", script.Run)
+	var script *Script
+	for _, c := range cases {
+
+		// Loading test.
+		script, err = NewScriptTemplate(filename, []string{c.params})
+		if err != nil {
+			t.Fatalf("cannot read script %q: %v", filename, err)
+		}
+
+		// Tests
+		if len(script.Run) != 1 || script.Run[0] != c.expected {
+			t.Errorf("run section is not correct: %q, want %q", script.Run, c.expected)
+		}
+
 	}
 
-	// Loading without parameters test.
+	// Loading without parameters.
 	_, err = NewScriptTemplate(filename, nil)
 	if err == nil {
 		t.Error("Placeholders are not given but script is created.")
 	}
-	t.Logf("Load script w/o arguments gets an error: %s", err.Error())
 
 }
