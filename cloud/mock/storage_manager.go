@@ -36,9 +36,6 @@ import (
 	"github.com/jkawamoto/roadie/cloud"
 )
 
-// ErrServiceFailure is an error used in tests.
-var ErrServiceFailure = fmt.Errorf("this service is out of order")
-
 // StorageManager is a memory based mock storage manager.
 type StorageManager struct {
 	// If true, all method returns an error.
