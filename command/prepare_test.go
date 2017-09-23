@@ -28,20 +28,24 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/mock"
 	"github.com/jkawamoto/roadie/config"
 	colorable "github.com/mattn/go-colorable"
 )
 
 // testMetadata creates metadata for testings.
-func testMetadata(output io.Writer) (m *Metadata) {
+func testMetadata(output io.Writer, provider cloud.Provider) (m *Metadata) {
 	if output == nil {
 		output = ioutil.Discard
+	}
+	if provider == nil {
+		provider = mock.NewProvider()
 	}
 	m = &Metadata{
 		Config:   &config.Config{},
 		Context:  context.Background(),
-		provider: mock.NewProvider(),
+		provider: provider,
 		Stdout:   colorable.NewNonColorable(output),
 		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
 	}

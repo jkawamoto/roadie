@@ -46,7 +46,7 @@ func TestCmdResultList(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -102,7 +102,7 @@ func TestCmdResultShow(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -156,7 +156,7 @@ func TestCmdResultGet(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -212,7 +212,7 @@ func TestCmdResultDelete(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)

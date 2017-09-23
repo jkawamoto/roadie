@@ -44,7 +44,7 @@ func TestPrintFileList(t *testing.T) {
 		"roadie://another/instance1/stdout3.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -143,7 +143,7 @@ func TestPrintDirList(t *testing.T) {
 		"roadie://another/instance1/stdout3.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)

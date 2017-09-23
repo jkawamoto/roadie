@@ -39,7 +39,7 @@ import (
 func TestUploadSourceFiles(t *testing.T) {
 
 	var err error
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	s, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)

@@ -63,7 +63,7 @@ func TestUploadDummyFiles(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	s, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)
@@ -137,7 +137,7 @@ func TestCmdGet(t *testing.T) {
 		"roadie://container2/stdout2.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -194,7 +194,7 @@ func TestCmdDelete(t *testing.T) {
 		"roadie://container2/stdout2.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -294,7 +294,7 @@ func TestSetGitSource(t *testing.T) {
 func TestSetLocalSource(t *testing.T) {
 
 	var err error
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	storage, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)

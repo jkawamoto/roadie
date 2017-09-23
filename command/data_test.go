@@ -100,7 +100,7 @@ func TestCmdDataPut(t *testing.T) {
 	var err error
 	var output bytes.Buffer
 	opt := optDataPut{
-		Metadata: testMetadata(&output),
+		Metadata: testMetadata(&output, nil),
 	}
 	s, err := opt.StorageManager()
 	if err != nil {
