@@ -296,7 +296,7 @@ limitations under the License.&lt;/p&gt;
 &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases/tag/v0.3.12&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/release-0.3.12-brightgreen.svg&#34; alt=&#34;Release&#34; /&gt;&lt;/a&gt;
 &lt;a href=&#34;http://qiita.com/jkawamoto/items/751558536a597a33ae2a&#34;&gt;&lt;img src=&#34;https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg&#34; alt=&#34;Japanese&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; helps you to upload your source codes to the cloud, create and delete
+&lt;p&gt;Roadie helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.&lt;/p&gt;
 
 &lt;p&gt;For example,&lt;/p&gt;
@@ -318,23 +318,24 @@ run:
 
 &lt;p&gt;The above &lt;code&gt;script.yml&lt;/code&gt; asks roadie to install apt package &lt;code&gt;unrar&lt;/code&gt; and
 download a data file from such URL as the preparation. Then, it directs
-to run those two commands; unrar the downloaded file, analyze the obtained
+to run those two commands: unrar the downloaded file, analyze the obtained
 data files.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; uploads results of such commands to a cloud storage after they finish.
+&lt;p&gt;Roadie uploads results of such commands to a cloud storage after they finish.
 You can access those results by&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie result get analyze-wowah &amp;quot;*&amp;quot; -o ./res
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Then, &lt;code&gt;roadie&lt;/code&gt; downloads all result files into &lt;code&gt;./res&lt;/code&gt; directory.&lt;/p&gt;
+&lt;p&gt;Then, Roadie downloads all result files into &lt;code&gt;./res&lt;/code&gt; directory.&lt;/p&gt;
 
 &lt;h2 id=&#34;installation&#34;&gt;Installation&lt;/h2&gt;
 
 &lt;p&gt;Compiled binary files for some platforms are uploaded in
 &lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;For mac user, &lt;code&gt;roadie&lt;/code&gt; is available in &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If you&amp;rsquo;re a &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; or &lt;a href=&#34;http://linuxbrew.sh/&#34;&gt;Linuxbrew&lt;/a&gt;
+user, you can install Roadie by the following commands:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie
@@ -342,7 +343,7 @@ $ brew install roadie
 
 &lt;h2 id=&#34;initialization&#34;&gt;Initialization&lt;/h2&gt;
 
-&lt;p&gt;After installing &lt;code&gt;roadie&lt;/code&gt;, the following initialization is required in order to
+&lt;p&gt;After installing Roadie, the following initialization is required in order to
 authorize &lt;code&gt;roadie&lt;/code&gt; to access cloud services.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
@@ -352,6 +353,90 @@ authorize &lt;code&gt;roadie&lt;/code&gt; to access cloud services.&lt;/p&gt;
 
 &lt;p&gt;This software except files in &lt;code&gt;docker&lt;/code&gt; folder is released under The GNU General Public License Version 3,
 see &lt;a href=&#34;info/licenses/&#34;&gt;LICENSES&lt;/a&gt; for more detail.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Installation</title>
+      <link>https://jkawamoto.github.io/roadie/documents/installation/</link>
+      <pubDate>Tue, 20 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
+      <description>
+
+&lt;h3 id=&#34;install&#34;&gt;Install&lt;/h3&gt;
+
+&lt;p&gt;Roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
+Download one of them according to your environment and put the binary into
+a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
+
+&lt;p&gt;If you&amp;rsquo;re a &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; or &lt;a href=&#34;http://linuxbrew.sh/&#34;&gt;Linuxbrew&lt;/a&gt;
+user, you can install Roadie by the following commands:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
+$ brew install roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;initialization&#34;&gt;Initialization&lt;/h3&gt;
+
+&lt;p&gt;Each project needs to initialize roadie and sets your &lt;em&gt;project ID&lt;/em&gt;.
+Project ID is an ID registered in Google Cloud Platform.
+You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
+Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Although the configuration file is a text file and you can edit it,
+roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.
+See &lt;a href=&#34;documents/configuration&#34;&gt;configuration page&lt;/a&gt; for more information.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>インストールと初期設定</title>
+      <link>https://jkawamoto.github.io/roadie/documents-ja/installation/</link>
+      <pubDate>Tue, 20 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents-ja/installation/</guid>
+      <description>
+
+&lt;h3 id=&#34;インストール&#34;&gt;インストール&lt;/h3&gt;
+
+&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; のコンパイル済みバイナリは，GitHub の
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;リリースページ&lt;/a&gt;
+から取得できます．
+アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
+一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; または &lt;a href=&#34;http://linuxbrew.sh/&#34;&gt;Linuxbrew&lt;/a&gt; を
+お使いの場合は，下記のコマンドでもインストールできます．&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
+$ brew install roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;初期設定&#34;&gt;初期設定&lt;/h3&gt;
+
+&lt;p&gt;Google Cloud Platform では，プロジェクトという単位でリソースを管理しています．
+&lt;code&gt;roadie&lt;/code&gt; を利用する前に，どのプロジェクトを利用するか &lt;code&gt;roadie&lt;/code&gt; に設定する必要があります．
+なお，利用可能なプロジェクト ID は &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;ここ&lt;/a&gt;
+から調べることができます．
+&lt;strong&gt;プロジェクト名&lt;/strong&gt; ではなく &lt;strong&gt;プロジェクト ID&lt;/strong&gt; を使うことに注意してください．&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; の初期設定には，次のコマンドを利用します．&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;初期設定では，上記のプロジェクト ID の他，データの保存先やプログラムを実行するリージョンや
+仮想マシンのデフォルトなどを設定します．&lt;/p&gt;
+
+&lt;p&gt;設定ファイルは，&lt;code&gt;roadie init&lt;/code&gt; を実行したディレクトリの &lt;code&gt;roadie.yml&lt;/code&gt; です．
+テキスト形式なので後から編集できます．
+また，&lt;code&gt;roadie config&lt;/code&gt; コマンドで対話的に変更することもできます．
+詳しくは &lt;a href=&#34;documents-ja/configuration&#34;&gt;設定について&lt;/a&gt; のページをご覧ください．&lt;/p&gt;
 </description>
     </item>
     
@@ -844,43 +929,6 @@ For example, you created an instance by&lt;/p&gt;
     </item>
     
     <item>
-      <title>Installation</title>
-      <link>https://jkawamoto.github.io/roadie/documents/installation/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
-      <description>
-
-&lt;h3 id=&#34;install&#34;&gt;Install&lt;/h3&gt;
-
-&lt;p&gt;Roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
-Download one of them according to your environment and put the binary into
-a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
-
-&lt;p&gt;If you are a mac user, you can install &lt;code&gt;roadie&lt;/code&gt; via &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
-$ brew install roadie
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&#34;initialization&#34;&gt;Initialization&lt;/h3&gt;
-
-&lt;p&gt;Each project needs to initialize roadie and sets your &lt;em&gt;project ID&lt;/em&gt;.
-Project ID is an ID registered in Google Cloud Platform.
-You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
-Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Although the configuration file is a text file and you can edit it,
-roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.
-See &lt;a href=&#34;documents/configuration&#34;&gt;configuration page&lt;/a&gt; for more information.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
       <title>Logging</title>
       <link>https://jkawamoto.github.io/roadie/documents/logging/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -1002,51 +1050,6 @@ You can modify disk size of instances according to your script.&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;roadie queue instance list &amp;lt;queue name&amp;gt;&lt;/code&gt; shows instances working with the given
 named queue.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>インストールと初期設定</title>
-      <link>https://jkawamoto.github.io/roadie/documents-ja/installation/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/documents-ja/installation/</guid>
-      <description>
-
-&lt;h3 id=&#34;インストール&#34;&gt;インストール&lt;/h3&gt;
-
-&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; のコンパイル済みバイナリは，GitHub の
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;リリースページ&lt;/a&gt;
-から取得できます．
-アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
-一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．&lt;/p&gt;
-
-&lt;p&gt;また，mac の場合は &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; でもインストールできます．&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
-$ brew install roadie
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&#34;初期設定&#34;&gt;初期設定&lt;/h3&gt;
-
-&lt;p&gt;Google Cloud Platform では，プロジェクトという単位でリソースを管理しています．
-&lt;code&gt;roadie&lt;/code&gt; を利用する前に，どのプロジェクトを利用するか &lt;code&gt;roadie&lt;/code&gt; に設定する必要があります．
-なお，利用可能なプロジェクト ID は &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;ここ&lt;/a&gt;
-から調べることができます．
-&lt;strong&gt;プロジェクト名&lt;/strong&gt; ではなく &lt;strong&gt;プロジェクト ID&lt;/strong&gt; を使うことに注意してください．&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;roadie&lt;/code&gt; の初期設定には，次のコマンドを利用します．&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;初期設定では，上記のプロジェクト ID の他，データの保存先やプログラムを実行するリージョンや
-仮想マシンのデフォルトなどを設定します．&lt;/p&gt;
-
-&lt;p&gt;設定ファイルは，&lt;code&gt;roadie init&lt;/code&gt; を実行したディレクトリの &lt;code&gt;roadie.yml&lt;/code&gt; です．
-テキスト形式なので後から編集できます．
-また，&lt;code&gt;roadie config&lt;/code&gt; コマンドで対話的に変更することもできます．
-詳しくは &lt;a href=&#34;documents-ja/configuration&#34;&gt;設定について&lt;/a&gt; のページをご覧ください．&lt;/p&gt;
 </description>
     </item>
     

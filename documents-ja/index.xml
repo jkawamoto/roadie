@@ -6,12 +6,13 @@
     <description>Recent content in Documents-jas on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    <lastBuildDate>Tue, 20 Dec 2016 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://jkawamoto.github.io/roadie/documents-ja/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>インストールと初期設定</title>
       <link>https://jkawamoto.github.io/roadie/documents-ja/installation/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <pubDate>Tue, 20 Dec 2016 00:00:00 +0000</pubDate>
       
       <guid>https://jkawamoto.github.io/roadie/documents-ja/installation/</guid>
       <description>
@@ -24,7 +25,8 @@
 アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください．
 一時的に試してみる場合は，ソースコードのあるディレクトリに置くだけでも良いです．&lt;/p&gt;
 
-&lt;p&gt;また，mac の場合は &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; でもインストールできます．&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; または &lt;a href=&#34;http://linuxbrew.sh/&#34;&gt;Linuxbrew&lt;/a&gt; を
+お使いの場合は，下記のコマンドでもインストールできます．&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
 $ brew install roadie

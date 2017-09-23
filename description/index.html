@@ -10,19 +10,19 @@
 
   <meta name="author" content="Junpei Kawamoto"/>
   
-	<meta name="description" content="roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs."/>
+	<meta name="description" content="Roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs."/>
 	
 
   <meta property="og:type" content="article" />
 	<meta property="og:title" content="Description: A easy way to run your programs on Google Cloud Platform." />
 	
-	<meta name="og:description" content="roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs." />
+	<meta name="og:description" content="Roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs." />
 	
 	<meta property="og:image" content="https://jkawamoto.github.io/roadie/img/image.png" />
 	<meta property="og:site_name"  content="Description: A easy way to run your programs on Google Cloud Platform." />
 
 	
-	<meta name="twitter:card" content="roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs." />
+	<meta name="twitter:card" content="Roadie helps you to upload your source codes to the cloud, create and delete instances, and manage outputs." />
 	
 	<meta name="twitter:site" content="@junkawamoto" />
 
@@ -155,7 +155,7 @@ body {
 <a href="https://github.com/jkawamoto/roadie/releases/tag/v0.3.12"><img src="https://img.shields.io/badge/release-0.3.12-brightgreen.svg" alt="Release" /></a>
 <a href="http://qiita.com/jkawamoto/items/751558536a597a33ae2a"><img src="https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg" alt="Japanese" /></a></p>
 
-<p><code>roadie</code> helps you to upload your source codes to the cloud, create and delete
+<p>Roadie helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.</p>
 
 <p>For example,</p>
@@ -177,23 +177,24 @@ run:
 
 <p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
 download a data file from such URL as the preparation. Then, it directs
-to run those two commands; unrar the downloaded file, analyze the obtained
+to run those two commands: unrar the downloaded file, analyze the obtained
 data files.</p>
 
-<p><code>roadie</code> uploads results of such commands to a cloud storage after they finish.
+<p>Roadie uploads results of such commands to a cloud storage after they finish.
 You can access those results by</p>
 
 <pre><code class="language-shell">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
 </code></pre>
 
-<p>Then, <code>roadie</code> downloads all result files into <code>./res</code> directory.</p>
+<p>Then, Roadie downloads all result files into <code>./res</code> directory.</p>
 
 <h2 id="installation">Installation</h2>
 
 <p>Compiled binary files for some platforms are uploaded in
 <a href="https://github.com/jkawamoto/roadie/releases">release page</a>.</p>
 
-<p>For mac user, <code>roadie</code> is available in <a href="http://brew.sh/">Homebrew</a>.</p>
+<p>If you&rsquo;re a <a href="http://brew.sh/">Homebrew</a> or <a href="http://linuxbrew.sh/">Linuxbrew</a>
+user, you can install Roadie by the following commands:</p>
 
 <pre><code class="language-shell">$ brew tap jkawamoto/roadie
 $ brew install roadie
@@ -201,7 +202,7 @@ $ brew install roadie
 
 <h2 id="initialization">Initialization</h2>
 
-<p>After installing <code>roadie</code>, the following initialization is required in order to
+<p>After installing Roadie, the following initialization is required in order to
 authorize <code>roadie</code> to access cloud services.</p>
 
 <pre><code class="language-shell">$ roadie init

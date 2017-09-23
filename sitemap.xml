@@ -18,7 +18,17 @@
   
   <url>
     <loc>https://jkawamoto.github.io/roadie/description/</loc>
-    <lastmod>2016-12-29T00:00:00+00:00</lastmod>
+    <lastmod>2017-09-22T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents/installation/</loc>
+    <lastmod>2017-09-22T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://jkawamoto.github.io/roadie/documents-ja/installation/</loc>
+    <lastmod>2017-09-22T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -41,11 +51,13 @@
   
   <url>
     <loc>https://jkawamoto.github.io/roadie/documents/</loc>
+    <lastmod>2017-09-22T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
   <url>
     <loc>https://jkawamoto.github.io/roadie/documents-ja/</loc>
+    <lastmod>2017-09-22T00:00:00+00:00</lastmod>
     <priority>0</priority>
   </url>
   
@@ -60,10 +72,6 @@
   </url>
   
   <url>
-    <loc>https://jkawamoto.github.io/roadie/documents/installation/</loc>
-  </url>
-  
-  <url>
     <loc>https://jkawamoto.github.io/roadie/documents/logging/</loc>
   </url>
   
@@ -75,10 +83,6 @@
     <loc>https://jkawamoto.github.io/roadie/</loc>
     <lastmod>2017-05-03T00:00:00+00:00</lastmod>
     <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>https://jkawamoto.github.io/roadie/documents-ja/installation/</loc>
   </url>
   
   <url>

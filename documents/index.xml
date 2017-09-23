@@ -6,7 +6,46 @@
     <description>Recent content in Documents on Roadie</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    <lastBuildDate>Tue, 20 Dec 2016 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://jkawamoto.github.io/roadie/documents/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Installation</title>
+      <link>https://jkawamoto.github.io/roadie/documents/installation/</link>
+      <pubDate>Tue, 20 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
+      <description>
+
+&lt;h3 id=&#34;install&#34;&gt;Install&lt;/h3&gt;
+
+&lt;p&gt;Roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
+&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
+Download one of them according to your environment and put the binary into
+a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
+
+&lt;p&gt;If you&amp;rsquo;re a &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt; or &lt;a href=&#34;http://linuxbrew.sh/&#34;&gt;Linuxbrew&lt;/a&gt;
+user, you can install Roadie by the following commands:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;$ brew tap jkawamoto/roadie
+$ brew install roadie
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;initialization&#34;&gt;Initialization&lt;/h3&gt;
+
+&lt;p&gt;Each project needs to initialize roadie and sets your &lt;em&gt;project ID&lt;/em&gt;.
+Project ID is an ID registered in Google Cloud Platform.
+You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
+Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Although the configuration file is a text file and you can edit it,
+roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.
+See &lt;a href=&#34;documents/configuration&#34;&gt;configuration page&lt;/a&gt; for more information.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Configuration</title>
@@ -493,43 +532,6 @@ For example, you created an instance by&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;the new instance named &lt;code&gt;instance-2&lt;/code&gt; uses same source codes as &lt;code&gt;instance-1&lt;/code&gt;.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Installation</title>
-      <link>https://jkawamoto.github.io/roadie/documents/installation/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://jkawamoto.github.io/roadie/documents/installation/</guid>
-      <description>
-
-&lt;h3 id=&#34;install&#34;&gt;Install&lt;/h3&gt;
-
-&lt;p&gt;Roadie&amp;rsquo;s compiled binary files for some platforms are found in Github&amp;rsquo;s
-&lt;a href=&#34;https://github.com/jkawamoto/roadie/releases&#34;&gt;release page&lt;/a&gt;.
-Download one of them according to your environment and put the binary into
-a directory in your &lt;code&gt;$PATH&lt;/code&gt;, or put it as same directory as your current project.&lt;/p&gt;
-
-&lt;p&gt;If you are a mac user, you can install &lt;code&gt;roadie&lt;/code&gt; via &lt;a href=&#34;http://brew.sh/&#34;&gt;Homebrew&lt;/a&gt;.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ brew tap jkawamoto/roadie
-$ brew install roadie
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h3 id=&#34;initialization&#34;&gt;Initialization&lt;/h3&gt;
-
-&lt;p&gt;Each project needs to initialize roadie and sets your &lt;em&gt;project ID&lt;/em&gt;.
-Project ID is an ID registered in Google Cloud Platform.
-You can find your project ID &lt;a href=&#34;https://console.cloud.google.com/project&#34;&gt;here&lt;/a&gt;.
-Note that &lt;em&gt;project name&lt;/em&gt; is different from project ID.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ roadie init
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Although the configuration file is a text file and you can edit it,
-roadie provides &lt;code&gt;config&lt;/code&gt; command to edit it interactively.
-See &lt;a href=&#34;documents/configuration&#34;&gt;configuration page&lt;/a&gt; for more information.&lt;/p&gt;
 </description>
     </item>
     
