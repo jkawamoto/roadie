@@ -1,5 +1,5 @@
 //
-// cloud/mock/storage_manager_test.go
+// cloud/mock/storage_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
