@@ -72,6 +72,29 @@ func TestStorageManager(t *testing.T) {
 
 }
 
+func TestLogManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.LogManager(ctx)
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*LogManager); !ok {
+		t.Errorf("LogManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.LogManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
 func TestResouceManager(t *testing.T) {
 
 	ctx := context.Background()

@@ -36,7 +36,7 @@ type Provider struct {
 	MockInstanceManager *InstanceManager
 	MockQueueManager    cloud.QueueManager
 	MockStorageManager  *StorageManager
-	MockLogManager      cloud.LogManager
+	MockLogManager      *LogManager
 	MockResourceManager *ResourceManager
 }
 
@@ -45,6 +45,7 @@ func NewProvider() *Provider {
 	return &Provider{
 		MockInstanceManager: NewInstanceManager(),
 		MockStorageManager:  NewStorageManager(),
+		MockLogManager:      NewLogManager(),
 		MockResourceManager: NewResourceManager(),
 	}
 }
