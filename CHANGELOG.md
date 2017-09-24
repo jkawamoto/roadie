@@ -1,3 +1,8 @@
+## 0.3.12 (2017-09-23)
+### Fixed
+- `config` command's help was broken according to the update of cli package.
+
+
 ## 0.3.12 (2017-09-22)
 ### Fixed
 - source URLs when source files are uploaded by `--local` flag (#24)
