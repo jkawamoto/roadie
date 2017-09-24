@@ -25,6 +25,8 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"log"
+	"os"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -46,8 +48,10 @@ func testMetadata(output io.Writer, provider cloud.Provider) (m *Metadata) {
 		Config:   &config.Config{},
 		Context:  context.Background(),
 		provider: provider,
+		Stdin:    os.Stdin,
 		Stdout:   colorable.NewNonColorable(output),
 		Spinner:  spinner.New(spinner.CharSets[14], 100*time.Millisecond),
+		Logger:   log.New(ioutil.Discard, "", log.LstdFlags),
 	}
 	m.Spinner.Writer = ioutil.Discard
 	return
