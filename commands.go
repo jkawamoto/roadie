@@ -262,12 +262,6 @@ files belonging to the instance.`,
 				Usage:     "show and update project ID.",
 				ArgsUsage: "[<project ID>]",
 				Action:    command.CmdConfigProject,
-				Flags: []cli.Flag{
-					cli.BoolFlag{
-						Name:  "h, help",
-						Usage: "show help",
-					},
-				},
 				Subcommands: cli.Commands{
 					{
 						Name:  "set",
@@ -291,12 +285,6 @@ files belonging to the instance.`,
 				Name:   "machine",
 				Usage:  "show and update machine type used to run scripts.",
 				Action: command.CmdConfigMachineType,
-				Flags: []cli.Flag{
-					cli.BoolFlag{
-						Name:  "h, help",
-						Usage: "show help",
-					},
-				},
 				Subcommands: cli.Commands{
 					{
 						Name:  "set",
@@ -331,12 +319,6 @@ files belonging to the instance.`,
 				Name:   "region",
 				Usage:  "show and update region information used to run scripts.",
 				Action: command.CmdConfigRegion,
-				Flags: []cli.Flag{
-					cli.BoolFlag{
-						Name:  "h, help",
-						Usage: "show help",
-					},
-				},
 				Subcommands: cli.Commands{
 					{
 						Name:        "set",
