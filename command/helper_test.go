@@ -23,6 +23,7 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -81,6 +82,7 @@ func TestUploadDummyFiles(t *testing.T) {
 
 	var loc *url.URL
 	for _, f := range files {
+
 		loc, err = url.Parse(f)
 		if err != nil {
 			t.Fatalf("cannot parse a URL: %v", err)
@@ -305,34 +307,38 @@ func TestSetLocalSource(t *testing.T) {
 	expected := script.RoadieSchemePrefix + script.SourcePrefix + "/test.tar.gz"
 	for _, target := range []string{".", "../command", "run.go"} {
 
-		s = script.Script{
-			Name: "test",
-		}
+		t.Run(fmt.Sprintf("target=%q", target), func(t *testing.T) {
 
-		err = setLocalSource(m, &s, target, nil)
-		if err != nil {
-			t.Fatalf("error with setLocalSource of %v: %v", target, err)
-		}
-		if s.Source != expected {
-			t.Errorf("Source = %v, want %v", s.Source, expected)
-		}
+			s = script.Script{
+				Name: "test",
+			}
+			err = setLocalSource(m, &s, target, nil)
+			if err != nil {
+				t.Fatalf("error with setLocalSource of %v: %v", target, err)
+			}
+			if s.Source != expected {
+				t.Errorf("Source = %v, want %v", s.Source, expected)
+			}
 
-		loc, err = url.Parse(s.Source)
-		if err != nil {
-			t.Fatalf("cannot parse %q: %v", s.Source, err)
-		}
-		_, err = storage.GetFileInfo(m.Context, loc)
-		if err != nil {
-			t.Errorf("%v doesn't exist", s.Source)
-		}
+			loc, err = url.Parse(s.Source)
+			if err != nil {
+				t.Fatalf("cannot parse %q: %v", s.Source, err)
+			}
+			_, err = storage.GetFileInfo(m.Context, loc)
+			if err != nil {
+				t.Errorf("%v doesn't exist", s.Source)
+			}
+
+		})
 
 	}
 
-	// Test with an unexisting file.
-	err = setLocalSource(m, &s, "abcd.efg", nil)
-	if err == nil {
-		t.Error("setLocalSource with an unexisting path doesn't return any errors")
-	}
+	t.Run("not existing file", func(t *testing.T) {
+		err = setLocalSource(m, &s, "abcd.efg", nil)
+		if err == nil {
+			t.Error("setLocalSource with an unexisting path doesn't return any errors")
+		}
+	})
 
 }
 

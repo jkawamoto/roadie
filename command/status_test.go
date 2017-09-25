@@ -94,24 +94,28 @@ func TestCmdStatusKill(t *testing.T) {
 		p.MockInstanceManager.Status[name] = status
 	}
 
-	err = cmdStatusKill(m, "instance1")
-	if err != nil {
-		t.Fatalf("cmdStatusKill of instance1 returns an error: %v", err)
-	}
-	if p.MockInstanceManager.Status["instance1"] != mock.StatusTerminated {
-		t.Errorf("killed instance's status %q", p.MockInstanceManager.Status["instance1"])
-	}
+	t.Run("kill an instance", func(t *testing.T) {
+		err = cmdStatusKill(m, "instance1")
+		if err != nil {
+			t.Fatalf("cmdStatusKill of instance1 returns an error: %v", err)
+		}
+		if p.MockInstanceManager.Status["instance1"] != mock.StatusTerminated {
+			t.Errorf("killed instance's status %q", p.MockInstanceManager.Status["instance1"])
+		}
+	})
 
-	// Kill a terminated instance.
-	err = cmdStatusKill(m, "instance11")
-	if err == nil {
-		t.Error("killed a terminated instance but no errors are returned")
-	}
+	t.Run("kill a terminated instance", func(t *testing.T) {
+		err = cmdStatusKill(m, "instance11")
+		if err == nil {
+			t.Error("killed a terminated instance but no errors are returned")
+		}
+	})
 
-	// Kill unknown instance.
-	err = cmdStatusKill(m, "instance42")
-	if err == nil {
-		t.Error("killed not existing instance but no errors are returned")
-	}
+	t.Run("kill an unknown instance", func(t *testing.T) {
+		err = cmdStatusKill(m, "instance42")
+		if err == nil {
+			t.Error("killed not existing instance but no errors are returned")
+		}
+	})
 
 }

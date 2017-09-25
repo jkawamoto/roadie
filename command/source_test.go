@@ -24,6 +24,7 @@ package command
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -74,78 +75,83 @@ func TestUploadSourceFiles(t *testing.T) {
 	var loc *url.URL
 	for _, c := range cases {
 
-		loc, err = uploadSourceFiles(m, c.path, c.rename, nil)
-		if err != nil {
-			t.Errorf("error from uploadFiles of %q and %q: %v", c.path, c.rename, err)
-		}
-		if loc.String() != c.expected {
-			t.Errorf("uploadFiles of %q and %q returns %v, want %v", c.path, c.rename, loc, c.expected)
-		}
+		t.Run(fmt.Sprintf("path=%q,name=%q", c.path, c.rename), func(t *testing.T) {
 
-		reader, writer := io.Pipe()
-		ch := make(chan error)
-		go func(out io.WriteCloser) {
-			goerr := s.Download(m.Context, loc, out)
-			out.Close()
-			ch <- goerr
-		}(writer)
-
-		var gzReader *gzip.Reader
-		gzReader, err = gzip.NewReader(reader)
-		if err != nil {
-			t.Fatalf("cannot create a gzip.Reader: %v", err)
-		}
-		defer gzReader.Close()
-
-		var header *tar.Header
-		tarReader := tar.NewReader(gzReader)
-		for {
-
-			header, err = tarReader.Next()
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				t.Fatalf("reading a tarball returns an error: %v", err)
+			loc, err = uploadSourceFiles(m, c.path, c.rename, nil)
+			if err != nil {
+				t.Errorf("error from uploadFiles of %q and %q: %v", c.path, c.rename, err)
+			}
+			if loc.String() != c.expected {
+				t.Errorf("uploadFiles of %q and %q returns %v, want %v", c.path, c.rename, loc, c.expected)
 			}
 
-			if path, exist := c.files[header.Name]; !exist {
+			reader, writer := io.Pipe()
+			ch := make(chan error)
+			defer close(ch)
+			go func(out io.WriteCloser) {
+				goerr := s.Download(m.Context, loc, out)
+				out.Close()
+				ch <- goerr
+			}(writer)
 
-				t.Errorf("archive file contains wrong file %v", header.Name)
+			var gzReader *gzip.Reader
+			gzReader, err = gzip.NewReader(reader)
+			if err != nil {
+				t.Fatalf("cannot create a gzip.Reader: %v", err)
+			}
+			defer gzReader.Close()
 
-			} else {
+			var header *tar.Header
+			tarReader := tar.NewReader(gzReader)
+			for {
 
-				var original []byte
-				original, err = ioutil.ReadFile(path)
-				if err != nil {
-					t.Fatalf("ReadFile(%v) returns an error: %v", path, err)
+				header, err = tarReader.Next()
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					t.Fatalf("reading a tarball returns an error: %v", err)
 				}
 
-				var data []byte
-				data, err = ioutil.ReadAll(tarReader)
-				if err != nil {
-					t.Fatalf("ReadAll returns an error: %v", err)
-				}
+				if path, exist := c.files[header.Name]; !exist {
 
-				if string(original) != string(data) {
-					t.Errorf("downloaded file %v, want %v", string(data), string(original))
+					t.Errorf("archive file contains wrong file %v", header.Name)
+
+				} else {
+
+					var original []byte
+					original, err = ioutil.ReadFile(path)
+					if err != nil {
+						t.Fatalf("ReadFile(%v) returns an error: %v", path, err)
+					}
+
+					var data []byte
+					data, err = ioutil.ReadAll(tarReader)
+					if err != nil {
+						t.Fatalf("ReadAll returns an error: %v", err)
+					}
+
+					if string(original) != string(data) {
+						t.Errorf("downloaded file %v, want %v", string(data), string(original))
+					}
+
 				}
 
 			}
 
-		}
+			err = <-ch
+			if err != nil {
+				t.Fatalf("Download returns an error: %v", err)
+			}
 
-		err = <-ch
-		if err != nil {
-			t.Fatalf("Download returns an error: %v", err)
-		}
-		close(ch)
+		})
 
 	}
 
-	// Test uploading nonexisting files.
-	_, err = uploadSourceFiles(m, "_source.go", "", nil)
-	if _, ok := err.(*os.PathError); !ok {
-		t.Errorf("no os.PathError returned for an invalid file: %v", err)
-	}
+	t.Run("not existing file", func(t *testing.T) {
+		_, err = uploadSourceFiles(m, "_source.go", "", nil)
+		if _, ok := err.(*os.PathError); !ok {
+			t.Errorf("no os.PathError returned for an invalid file: %v", err)
+		}
+	})
 
 }
