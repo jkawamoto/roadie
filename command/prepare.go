@@ -63,6 +63,8 @@ type Metadata struct {
 	Stdin io.Reader
 	// Stdout is an io.Writer to output messages to the standard output.
 	Stdout io.Writer
+	// Stderr is an io.Writer to output messages to the standard error.
+	Stderr io.Writer
 	// Logger to output logs.
 	Logger *log.Logger
 	// Spinner for decorating output standard message; not logging information.
@@ -142,8 +144,10 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Stdin = os.Stdin
 	if c.GlobalBool("no-color") {
 		meta.Stdout = colorable.NewNonColorable(os.Stdout)
+		meta.Stderr = colorable.NewNonColorable(os.Stderr)
 	} else {
 		meta.Stdout = colorable.NewColorableStdout()
+		meta.Stderr = colorable.NewColorableStderr()
 	}
 
 	// Get a context from main function.
@@ -153,13 +157,12 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	var logger *log.Logger
 	if c.GlobalBool("verbose") {
-		logger = log.New(colorable.NewColorableStderr(), "", log.LstdFlags)
+		logger = log.New(meta.Stderr, "", log.LstdFlags)
 		// If verbose mode, spinner is disabled, since it may conflict logging information.
 		meta.Spinner.Writer = ioutil.Discard
 	} else {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 		meta.Spinner.Writer = meta.Stdout
-
 	}
 	meta.Logger = logger
 

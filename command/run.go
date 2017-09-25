@@ -104,7 +104,7 @@ func CmdRun(c *cli.Context) error {
 			Timestamp:    true,
 			Follow:       true,
 			SleepTime:    DefaultSleepTime,
-			From:         currentTime,
+			After:        currentTime,
 		})
 	}
 	return nil
