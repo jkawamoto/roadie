@@ -360,3 +360,163 @@ func TestSetUploadedSource(t *testing.T) {
 	}
 
 }
+
+// TestUpdateSourceSection tests UpdateSourceSection
+func TestUpdateSourceSection(t *testing.T) {
+
+	var err error
+	m := testMetadata(nil, nil)
+	storageManager, err := m.StorageManager()
+	if err != nil {
+		t.Fatalf("cannot get a storage manager: %v", err)
+	}
+	storage := cloud.NewStorage(storageManager, ioutil.Discard)
+
+	testScript := script.Script{
+		Name: "test-script",
+	}
+
+	t.Run("git option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Git: "git@github.com:jkawamoto/roadie.git",
+		}
+		expect := "https://github.com/jkawamoto/roadie.git"
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		if s.Source != expect {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+	t.Run("url option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			URL: "https://github.com/jkawamoto/roadie.git",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		if s.Source != opt.URL {
+			t.Errorf("source section is %q, want %q", s.Source, opt.URL)
+		}
+	})
+
+	t.Run("local option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Local: "util",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		var expect *url.URL
+		expect, err = createURL("source", s.Name+".tar.gz")
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Source != expect.String() {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+	t.Run("source option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Source: "somefile",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		var expect *url.URL
+		expect, err = createURL("source", opt.Source+".tar.gz")
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Source != expect.String() {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+}
+
+// TestUpdateResultSection tests UpdateResultSection.
+func TestUpdateResultSection(t *testing.T) {
+
+	var output bytes.Buffer
+	testScript := script.Script{
+		Name:   "test-script",
+		Result: "roadie://result/somewhere",
+	}
+
+	for _, overwitten := range []bool{true, false} {
+
+		t.Run(fmt.Sprintf("result is not given and overwritten=%v", overwitten), func(t *testing.T) {
+			defer output.Reset()
+
+			s := testScript
+			s.Result = ""
+			err := UpdateResultSection(&s, overwitten, &output)
+			if err != nil {
+				t.Fatalf("UpdateResultSection returns an error: %v", err)
+			}
+			expect, err := createURL("result", s.Name)
+			if err != nil {
+				t.Fatalf("createURL returns an error: %v", err)
+			}
+			if s.Result != expect.String() {
+				t.Errorf("updated result section is %q, want %q", s.Result, expect)
+			}
+			if output.Len() != 0 {
+				t.Errorf("unexpected messages are outputted: %v", output.String())
+			}
+
+		})
+
+	}
+
+	t.Run("result is given but overwritten", func(t *testing.T) {
+		defer output.Reset()
+
+		s := testScript
+		err := UpdateResultSection(&s, true, &output)
+		if err != nil {
+			t.Fatalf("UpdateResultSection returns an error: %v", err)
+		}
+		expect, err := createURL("result", s.Name)
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Result != expect.String() {
+			t.Errorf("updated result is %q, want %q", s.Result, expect)
+		}
+		if output.Len() != 0 {
+			t.Error("warning messages are expected but notthing is outputted")
+		}
+
+	})
+
+	t.Run("result is given and not overwritten", func(t *testing.T) {
+
+		defer output.Reset()
+
+		s := testScript
+		err := UpdateResultSection(&s, false, &output)
+		if err != nil {
+			t.Fatalf("UpdateResultSection returns an error: %v", err)
+		}
+		if s.Result != testScript.Result {
+			t.Errorf("updated result section is %q, want %q", s.Result, testScript.Result)
+		}
+		if output.Len() == 0 {
+			t.Errorf("unexpected messages are outputted: %v", output.String())
+		}
+
+	})
+
+}

@@ -52,7 +52,7 @@ type runOpt struct {
 }
 
 // CmdRun specifies the behavior of `run` command.
-func CmdRun(c *cli.Context) error {
+func CmdRun(c *cli.Context) (err error) {
 
 	if c.NArg() != 1 {
 		fmt.Printf("expected 1 argument. (%d given)\n", c.NArg())
@@ -61,7 +61,7 @@ func CmdRun(c *cli.Context) error {
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 3)
 	}
 
 	opt := &runOpt{
@@ -81,8 +81,9 @@ func CmdRun(c *cli.Context) error {
 	}
 
 	currentTime := time.Now()
-	if err := cmdRun(opt); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+	err = cmdRun(opt)
+	if err != nil {
+		return cli.NewExitError(err, 2)
 	}
 	if c.Bool("follow") {
 
@@ -94,7 +95,7 @@ func CmdRun(c *cli.Context) error {
 		select {
 		case <-opt.Context.Done():
 			return opt.Context.Err()
-		case <-time.After(3 * time.Minute):
+		case <-time.After(DefaultWaitTimeOfInstanceCreation):
 			opt.Spinner.Stop()
 		}
 
@@ -106,8 +107,9 @@ func CmdRun(c *cli.Context) error {
 			SleepTime:    DefaultSleepTime,
 			After:        currentTime,
 		})
+
 	}
-	return nil
+	return
 
 }
 
@@ -129,7 +131,7 @@ func cmdRun(opt *runOpt) (err error) {
 	// Check a specified bucket exists and create it if not.
 	service, err := opt.StorageManager()
 	if err != nil {
-		return err
+		return
 	}
 	storage := cloud.NewStorage(service, opt.Stdout)
 

@@ -30,4 +30,7 @@ const (
 	PrintTimeFormat = "2006/01/02 15:04:05"
 	// ConfigFile defines the default configuration file name.
 	ConfigFile = "roadie.yml"
+	// DefaultWaitTimeOfInstanceCreation defines the default waiting time
+	// for creating an instance.
+	DefaultWaitTimeOfInstanceCreation = 3 * time.Minute
 )
