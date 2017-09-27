@@ -29,13 +29,6 @@ import (
 	"github.com/jkawamoto/roadie/script"
 )
 
-const (
-	// StatusRunning means an instance is still running.
-	StatusRunning = "running"
-	// StatusTerminated means an instance has been terminated.
-	StatusTerminated = "terminated"
-)
-
 // InstanceManager is a mock instance manager.
 type InstanceManager struct {
 	// Failure is set ture, all methods return ErrServiceFailure.

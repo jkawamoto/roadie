@@ -49,6 +49,29 @@ func TestInstanceManager(t *testing.T) {
 
 }
 
+func TestQueueManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.QueueManager(ctx)
+	if err != nil {
+		t.Fatalf("QueueManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*QueueManager); !ok {
+		t.Errorf("QueueManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.InstanceManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
 func TestStorageManager(t *testing.T) {
 
 	ctx := context.Background()

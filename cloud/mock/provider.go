@@ -23,18 +23,14 @@ package mock
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jkawamoto/roadie/cloud"
 )
 
-// ErrServiceFailure is an error used in tests.
-var ErrServiceFailure = fmt.Errorf("this service is out of order")
-
 // Provider is a mock provider for tests.
 type Provider struct {
 	MockInstanceManager *InstanceManager
-	MockQueueManager    cloud.QueueManager
+	MockQueueManager    *QueueManager
 	MockStorageManager  *StorageManager
 	MockLogManager      *LogManager
 	MockResourceManager *ResourceManager
@@ -44,6 +40,7 @@ type Provider struct {
 func NewProvider() *Provider {
 	return &Provider{
 		MockInstanceManager: NewInstanceManager(),
+		MockQueueManager:    NewQueueManager(),
 		MockStorageManager:  NewStorageManager(),
 		MockLogManager:      NewLogManager(),
 		MockResourceManager: NewResourceManager(),
