@@ -85,8 +85,8 @@ func NewScript(filename string) (s *Script, err error) {
 
 }
 
-// NewScriptTemplate loads a given script file and apply arguments.
-func NewScriptTemplate(filename string, args []string) (res *Script, err error) {
+// NewScriptWithArgs loads a given script file and apply arguments.
+func NewScriptWithArgs(filename string, args []string) (res *Script, err error) {
 
 	// Define function map to replace place holders.
 	funcs := template.FuncMap{}
