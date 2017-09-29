@@ -1,4 +1,4 @@
-## 0.3.12 (2017-09-23)
+## 0.3.13 (2017-09-23)
 ### Fixed
 - `config` command's help was broken according to the update of cli package.
 
