@@ -22,6 +22,7 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"path"
@@ -71,11 +72,9 @@ func TestPrintFileList(t *testing.T) {
 		if c.quiet {
 
 			files := make(map[string]struct{})
-			for _, v := range strings.Split(output.String(), "\n") {
-				v = strings.TrimSpace(v)
-				if v != "" {
-					files[v] = struct{}{}
-				}
+			scanner := bufio.NewScanner(&output)
+			for scanner.Scan() {
+				files[strings.TrimSpace(scanner.Text())] = struct{}{}
 			}
 
 			if len(files) != len(expected) {
@@ -173,11 +172,9 @@ func TestPrintDirList(t *testing.T) {
 		if c.quiet {
 
 			files := make(map[string]struct{})
-			for _, v := range strings.Split(output.String(), "\n") {
-				v = strings.TrimSpace(v)
-				if v != "" {
-					files[v] = struct{}{}
-				}
+			scanner := bufio.NewScanner(&output)
+			for scanner.Scan() {
+				files[strings.TrimSpace(scanner.Text())] = struct{}{}
 			}
 
 			if len(files) != len(expected) {

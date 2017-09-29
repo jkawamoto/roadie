@@ -22,10 +22,10 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -69,27 +69,29 @@ func TestCmdLog(t *testing.T) {
 			t.Fatalf("cmdLog returns an error: %v", err)
 		}
 
-		var msgs []string
 		// Stdout
-		msgs = strings.Split(strings.TrimRight(stdout.String(), "\n"), "\n")
-		if len(msgs) != 2 {
-			t.Errorf("%v log entries written to stdout, want %v", len(msgs), 2)
-		}
-		for i, e := range msgs {
-			if expect := p.MockLogManager.Logs[opt.InstanceName][i].Body; expect != e {
-				t.Errorf("log entry of %v is %q, want %q", i, e, expect)
+		var c int
+		scanner := bufio.NewScanner(&stdout)
+		for c = 0; scanner.Scan(); c++ {
+			msg := scanner.Text()
+			if expect := p.MockLogManager.Logs[opt.InstanceName][c].Body; expect != msg {
+				t.Errorf("log entry of %v is %q, want %q", c, msg, expect)
 			}
+		}
+		if c != 2 {
+			t.Errorf("%v log entries written to stdout, want %v", c, 2)
 		}
 
 		// Stderr
-		msgs = strings.Split(strings.TrimRight(stderr.String(), "\n"), "\n")
-		if len(msgs) != 1 {
-			t.Errorf("%v log entries written to stderr, want %v", len(msgs), 1)
-		}
-		for i, e := range msgs {
-			if expect := p.MockLogManager.Logs[opt.InstanceName][i+2].Body; expect != e {
-				t.Errorf("log entry of %v is %q, want %q", i, e, expect)
+		scanner = bufio.NewScanner(&stderr)
+		for c = 0; scanner.Scan(); c++ {
+			msg := scanner.Text()
+			if expect := p.MockLogManager.Logs[opt.InstanceName][c+2].Body; expect != msg {
+				t.Errorf("log entry of %v is %q, want %q", c, msg, expect)
 			}
+		}
+		if c != 1 {
+			t.Errorf("%v log entries written to stderr, want %v", c, 1)
 		}
 
 	})
@@ -108,18 +110,18 @@ func TestCmdLog(t *testing.T) {
 			t.Fatalf("cmdLog returns an error: %v", err)
 		}
 
-		var msgs []string
 		// Stdout
-		msgs = strings.Split(strings.TrimRight(stdout.String(), "\n"), "\n")
-		if len(msgs) != 3 {
-			t.Errorf("%v log entries written to stdout, want %v", len(msgs), 3)
-		}
-		for i, e := range msgs {
-			target := p.MockLogManager.Logs[opt.InstanceName][i]
+		var c int
+		scanner := bufio.NewScanner(&stdout)
+		for c = 0; scanner.Scan(); c++ {
+			target := p.MockLogManager.Logs[opt.InstanceName][c]
 			expect := fmt.Sprintf("%v %v", target.Time.Format(PrintTimeFormat), target.Body)
-			if expect != e {
-				t.Errorf("log entry of %v is %q, want %q", i, e, expect)
+			if expect != scanner.Text() {
+				t.Errorf("log entry of %v is %q, want %q", c, scanner.Text(), expect)
 			}
+		}
+		if c != 3 {
+			t.Errorf("%v log entries written to stdout, want %v", c, 3)
 		}
 
 	})
@@ -138,16 +140,16 @@ func TestCmdLog(t *testing.T) {
 			t.Fatalf("cmdLog returns an error: %v", err)
 		}
 
-		var msgs []string
 		// Stdout
-		msgs = strings.Split(strings.TrimRight(stdout.String(), "\n"), "\n")
-		if len(msgs) != 1 {
-			t.Fatalf("%v log entries written to stdout, want %v", len(msgs), 1)
-		}
-		for i, e := range msgs {
-			if expect := p.MockLogManager.Logs[opt.InstanceName][i+2].Body; expect != e {
-				t.Errorf("log entry of %v is %q, want %q", i, e, expect)
+		var c int
+		scanner := bufio.NewScanner(&stdout)
+		for c = 0; scanner.Scan(); c++ {
+			if expect := p.MockLogManager.Logs[opt.InstanceName][c+2].Body; expect != scanner.Text() {
+				t.Errorf("log entry of %v is %q, want %q", c, scanner.Text(), expect)
 			}
+		}
+		if c != 1 {
+			t.Fatalf("%v log entries written to stdout, want %v", c, 1)
 		}
 
 	})
@@ -162,7 +164,6 @@ func TestCmdLog(t *testing.T) {
 			p.MockLogManager.Break = time.Time{}
 		}()
 
-		var msgs []string
 		opt := optLog{
 			Metadata:     m,
 			InstanceName: "instance11",
@@ -174,14 +175,16 @@ func TestCmdLog(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cmdLog returns an error: %v", err)
 		}
-		msgs = strings.Split(strings.TrimRight(stdout.String(), "\n"), "\n")
-		if len(msgs) != 3 {
-			t.Fatalf("%v log entries written to stdout, want %v", len(msgs), 3)
-		}
-		for i, e := range msgs {
-			if expect := p.MockLogManager.Logs[opt.InstanceName][i].Body; expect != e {
-				t.Errorf("log entry of %v is %q, want %q", i, e, expect)
+
+		var c int
+		scanner := bufio.NewScanner(&stdout)
+		for c = 0; scanner.Scan(); c++ {
+			if expect := p.MockLogManager.Logs[opt.InstanceName][c].Body; expect != scanner.Text() {
+				t.Errorf("log entry of %v is %q, want %q", c, scanner.Text(), expect)
 			}
+		}
+		if c != 3 {
+			t.Fatalf("%v log entries written to stdout, want %v", c, 3)
 		}
 
 	})

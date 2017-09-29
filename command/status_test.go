@@ -22,6 +22,7 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"strings"
 	"testing"
@@ -52,26 +53,26 @@ func TestCmdStatus(t *testing.T) {
 		t.Fatalf("cmdStatus returns an error: %v", err)
 	}
 
-	lines := strings.Split(output.String(), "\n")
-	if !strings.HasPrefix(lines[0], "INSTANCE NAME") {
-		t.Errorf("1st line is not header: %v", lines[0])
-	}
-	if len(lines) != len(statuses)+1 {
-		t.Errorf("%v lines outputted, want %v lines ", len(lines), len(statuses)+1)
-	}
-
-	for _, line := range lines[1:] {
-		kv := strings.Split(line, "\t")
-		if len(kv) < 2 {
-			t.Errorf("line has missing items: %v", line)
-			continue
+	var c int
+	scanner := bufio.NewScanner(&output)
+	for c = 0; scanner.Scan(); c++ {
+		if c == 0 && !strings.HasPrefix(scanner.Text(), "INSTANCE NAME") {
+			t.Errorf("1st line is not header: %v", scanner.Text())
+		} else if c != 0 {
+			kv := strings.Split(scanner.Text(), "\t")
+			if len(kv) < 2 {
+				t.Errorf("line has missing items: %v", scanner.Text())
+				continue
+			}
+			name := strings.TrimSpace(kv[0])
+			status := strings.TrimSpace(kv[1])
+			if statuses[name] != status {
+				t.Errorf("status of %v is %v, want %q", name, status, statuses[name])
+			}
 		}
-
-		name := strings.TrimSpace(kv[0])
-		status := strings.TrimSpace(kv[1])
-		if statuses[name] != status {
-			t.Errorf("status of %v is %v, want %v", name, status, statuses[name])
-		}
+	}
+	if c != len(statuses)+1 {
+		t.Errorf("%v lines outputted, want %v lines ", c, len(statuses)+1)
 	}
 
 }
