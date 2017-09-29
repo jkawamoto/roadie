@@ -36,7 +36,7 @@ import (
 // The multi-lines test should be formatted in
 // > file1.txt -> roadie://data/file1.txt
 // > file2.dat -> roadie://data/file2.data
-// The last line may containes new line.
+// The last line may contains new line.
 func locationURLs(s string) (res map[string]string) {
 
 	res = make(map[string]string)

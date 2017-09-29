@@ -22,6 +22,7 @@
 package script
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -80,7 +81,7 @@ func TestLoadScript(t *testing.T) {
 	defer os.Remove(filename)
 
 	// Loading test.
-	script, err := NewScriptTemplate(filename, nil)
+	script, err := NewScriptWithArgs(filename, nil)
 	if err != nil {
 		t.Fatalf("cannot read script file %q: %v", filename, err)
 	}
@@ -152,23 +153,25 @@ func TestLoadScriptWithPlaceholders(t *testing.T) {
 	var script *Script
 	for _, c := range cases {
 
-		// Loading test.
-		script, err = NewScriptTemplate(filename, []string{c.params})
-		if err != nil {
-			t.Fatalf("cannot read script %q: %v", filename, err)
-		}
-
-		// Tests
-		if len(script.Run) != 1 || script.Run[0] != c.expected {
-			t.Errorf("run section is not correct: %q, want %q", script.Run, c.expected)
-		}
+		t.Run(fmt.Sprintf("args=%v", c.params), func(t *testing.T) {
+			// Loading test.
+			script, err = NewScriptWithArgs(filename, []string{c.params})
+			if err != nil {
+				t.Fatalf("cannot read script %q: %v", filename, err)
+			}
+			// Tests
+			if len(script.Run) != 1 || script.Run[0] != c.expected {
+				t.Errorf("run section is not correct: %q, want %q", script.Run, c.expected)
+			}
+		})
 
 	}
 
-	// Loading without parameters.
-	_, err = NewScriptTemplate(filename, nil)
-	if err == nil {
-		t.Error("Placeholders are not given but script is created.")
-	}
+	t.Run("loading without parameters", func(t *testing.T) {
+		_, err = NewScriptWithArgs(filename, nil)
+		if err == nil {
+			t.Error("Placeholders are not given but script is created.")
+		}
+	})
 
 }
