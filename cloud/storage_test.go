@@ -21,6 +21,8 @@
 
 package cloud_test
 
+// TODO: Add tests for xz compressed files.
+
 import (
 	"bytes"
 	"context"

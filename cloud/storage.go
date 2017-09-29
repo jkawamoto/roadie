@@ -41,6 +41,36 @@ import (
 	"github.com/ulikunitz/xz"
 )
 
+// StorageManager defines methods which a storage service provider must provides.
+// Each method takes a URL to point a file stored in this storage.
+// The URL should be
+// - roadie://category/path
+// where category is one of
+// - script.SourcePrefix
+// - script.DataPrefix
+// - script.ResultPrefix
+type StorageManager interface {
+
+	// Upload a given stream to a given URL.
+	Upload(ctx context.Context, loc *url.URL, in io.Reader) error
+
+	// Download a file pointed by a given URL and write it to a given stream.
+	Download(ctx context.Context, loc *url.URL, out io.Writer) error
+
+	// GetFileInfo retrieves information of a file pointed by a given URL.
+	GetFileInfo(ctx context.Context, loc *url.URL) (*FileInfo, error)
+
+	// List up files of which URLs start with a given URL.
+	// It takes a handler; information of found files are sent to it.
+	List(ctx context.Context, loc *url.URL, handler FileInfoHandler) error
+
+	// Delete a file pointed by a given URL.
+	Delete(ctx context.Context, loc *url.URL) error
+}
+
+// FileInfoHandler is a handler to receive a file info.
+type FileInfoHandler func(*FileInfo) error
+
 // Storage provides APIs to access a cloud storage.
 type Storage struct {
 	// Servicer.
@@ -86,7 +116,7 @@ func (s *Storage) UploadFile(ctx context.Context, loc *url.URL, input string) (e
 	bar.Start()
 	defer bar.Finish()
 
-	return s.service.Upload(ctx, loc, bar.NewProxyReader(file))
+	return s.service.Upload(ctx, loc, bar.NewProxyReader(bufio.NewReader(file)))
 
 }
 

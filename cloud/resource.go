@@ -1,5 +1,5 @@
 //
-// cloud/resource_manager.go
+// cloud/resource.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //

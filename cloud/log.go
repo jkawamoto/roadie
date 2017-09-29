@@ -1,5 +1,5 @@
 //
-// cloud/instance_manager.go
+// cloud/log.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -23,25 +23,20 @@ package cloud
 
 import (
 	"context"
-
-	"github.com/jkawamoto/roadie/script"
+	"time"
 )
 
-// InstanceHandler is a handler function to retrive instances' status.
-type InstanceHandler func(name, status string) error
+// LogHandler defines a hanler function for log entries.
+type LogHandler func(timestamp time.Time, line string, stderr bool) error
 
-// InstanceManager is a service interface of an instance manager.
-type InstanceManager interface {
-	// CreateInstance creates an instance which has a given name.
-	CreateInstance(ctx context.Context, script *script.Script) error
-	// DeleteInstance deletes the given named instance.
-	DeleteInstance(ctx context.Context, name string) error
-	// Instances returns a list of running instances
-	Instances(ctx context.Context, handler InstanceHandler) error
-}
-
-// MetadataItem has Key and Value properties.
-type MetadataItem struct {
-	Key   string
-	Value string
+// LogManager defines a service interface for obtaining log entries.
+type LogManager interface {
+	// Get instance log.
+	Get(ctx context.Context, instanceName string, after time.Time, handler LogHandler) error
+	// Delete instance log.
+	Delete(ctx context.Context, instanceName string) error
+	// GetQueueLog retrievs log entries from a given queue.
+	GetQueueLog(ctx context.Context, queue string, handler LogHandler) error
+	// GetTaskLog retrieves log entries from a task in a queue.
+	GetTaskLog(ctx context.Context, queue, task string, handler LogHandler) error
 }
