@@ -154,7 +154,7 @@ func TestCmdDataPut(t *testing.T) {
 			for _, f := range matches {
 
 				if locations[f] != c.expected[f] {
-					t.Errorf("uploaded location of %v is %q, want %v", f, locations[f], c.expected[f])
+					t.Errorf("uploaded location of %v is %q, want %v (output = %v)", f, locations[f], c.expected[f], output.String())
 				}
 
 				var loc *url.URL
