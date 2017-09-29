@@ -78,9 +78,6 @@ func NewScript(filename string) (s *Script, err error) {
 
 	s = new(Script)
 	err = yaml.Unmarshal(data, s)
-	if err != nil {
-		return
-	}
 	return
 
 }
@@ -126,7 +123,7 @@ func NewScriptWithArgs(filename string, args []string) (res *Script, err error) 
 
 	res.Name = strings.ToLower(
 		strings.Replace(fmt.Sprintf(
-			"%s-%s", basename(filename), time.Now().Format("20060102150405")),
+			"%s-%s", basename(filename), fmt.Sprintf("%x", time.Now().Unix())),
 			".", "-", -1))
 	return
 
