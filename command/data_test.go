@@ -23,6 +23,7 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
@@ -100,7 +101,7 @@ func TestCmdDataPut(t *testing.T) {
 	var err error
 	var output bytes.Buffer
 	opt := optDataPut{
-		Metadata: testMetadata(&output),
+		Metadata: testMetadata(&output, nil),
 	}
 	s, err := opt.StorageManager()
 	if err != nil {
@@ -135,69 +136,75 @@ func TestCmdDataPut(t *testing.T) {
 
 	for _, c := range cases {
 
-		opt.Filename = c.filename
-		opt.StoredName = c.storedName
-		if err = opt.run(); err != nil {
-			t.Fatalf("run returns an error: %v", err)
-		}
+		t.Run(fmt.Sprintf("File=%q,Name=%q", c.filename, c.storedName), func(t *testing.T) {
+			defer output.Reset()
 
-		var matches []string
-		locations := locationURLs(output.String())
-		matches, err = filepath.Glob(opt.Filename)
-		if err != nil {
-			t.Fatalf("Glob returns an error: %v", err)
-		}
-		for _, f := range matches {
-
-			if locations[f] != c.expected[f] {
-				t.Errorf("uploaded location of %v is %v, want %v", f, locations[f], c.expected[f])
+			opt.Filename = c.filename
+			opt.StoredName = c.storedName
+			if err = opt.run(); err != nil {
+				t.Fatalf("run returns an error: %v", err)
 			}
 
-			var loc *url.URL
-			loc, err = url.Parse(locations[f])
+			var matches []string
+			locations := locationURLs(output.String())
+			matches, err = filepath.Glob(opt.Filename)
 			if err != nil {
-				t.Fatalf("cannot parse a URL: %v", err)
+				t.Fatalf("Glob returns an error: %v", err)
 			}
+			for _, f := range matches {
 
-			var data bytes.Buffer
-			err = s.Download(opt.Context, loc, &data)
-			if err != nil {
-				t.Fatalf("Download returns an error: %v", err)
-			}
+				if locations[f] != c.expected[f] {
+					t.Errorf("uploaded location of %v is %q, want %v (output = %v)", f, locations[f], c.expected[f], output.String())
+				}
 
-			var original []byte
-			original, err = ioutil.ReadFile(f)
-			if err != nil {
-				t.Fatalf("ReadFile(%v) returns an error: %v", f, err)
-			}
-			if data.String() != string(original) {
-				t.Errorf("uploaded file is broken %v, want %v", data.String(), string(original))
-			}
+				var loc *url.URL
+				loc, err = url.Parse(locations[f])
+				if err != nil {
+					t.Fatalf("cannot parse a URL: %v", err)
+				}
 
+				var data bytes.Buffer
+				err = s.Download(opt.Context, loc, &data)
+				if err != nil {
+					t.Fatalf("Download returns an error: %v", err)
+				}
+
+				var original []byte
+				original, err = ioutil.ReadFile(f)
+				if err != nil {
+					t.Fatalf("ReadFile(%v) returns an error: %v", f, err)
+				}
+				if data.String() != string(original) {
+					t.Errorf("uploaded file is broken %v, want %v", data.String(), string(original))
+				}
+
+			}
+		})
+
+	}
+
+	t.Run("not existing file", func(t *testing.T) {
+		opt.Filename = "_data.go"
+		opt.StoredName = ""
+		if err = opt.run(); err == nil {
+			t.Error("putting not existing files doesn't return any errors")
 		}
-		output.Reset()
+	})
 
-	}
+	t.Run("invalid glob pattern", func(t *testing.T) {
+		opt.Filename = "[b-a"
+		opt.StoredName = ""
+		if err = opt.run(); err == nil {
+			t.Error("Give a wrong pattern but no errors occur.")
+		}
+	})
 
-	// Test for an not existing file.
-	opt.Filename = "_data.go"
-	opt.StoredName = ""
-	if err = opt.run(); err == nil {
-		t.Error("putting not existing files doesn't return any errors")
-	}
-
-	// Test for a wrong pattern.
-	opt.Filename = "[b-a"
-	opt.StoredName = ""
-	if err = opt.run(); err == nil {
-		t.Error("Give a wrong pattern but no errors occur.")
-	}
-
-	// Test for an empty pattern.
-	opt.Filename = ""
-	opt.StoredName = ""
-	if err = opt.run(); err == nil {
-		t.Error("Give empty pattern but no errors occur.")
-	}
+	t.Run("empty pattern", func(t *testing.T) {
+		opt.Filename = ""
+		opt.StoredName = ""
+		if err = opt.run(); err == nil {
+			t.Error("Give empty pattern but no errors occur.")
+		}
+	})
 
 }

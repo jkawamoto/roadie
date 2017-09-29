@@ -43,14 +43,28 @@ const (
 	metadataKey = "metadata"
 )
 
+var (
+	// ErrNoMetadata is an error raised then no metadata are attached to contexts.
+	ErrNoMetadata = fmt.Errorf("No metadata are attached")
+	// ErrNoConfiguration is an error raised when no configurations are given.
+	ErrNoConfiguration = fmt.Errorf("No configurations are given")
+	// ErrServiceConfiguration is an error raised when the given service
+	// configuration is not correct.
+	ErrServiceConfiguration = fmt.Errorf("Cloud service configuration is not correct")
+)
+
 // Metadata is a set of data used for any commands.
 type Metadata struct {
 	// Context for running a command.
 	Context context.Context
 	// Config for running a command.
 	Config *config.Config
+	// Stdin in an io.Readre to read user's input.
+	Stdin io.Reader
 	// Stdout is an io.Writer to output messages to the standard output.
 	Stdout io.Writer
+	// Stderr is an io.Writer to output messages to the standard error.
+	Stderr io.Writer
 	// Logger to output logs.
 	Logger *log.Logger
 	// Spinner for decorating output standard message; not logging information.
@@ -85,16 +99,38 @@ func (m *Metadata) ResourceManager() (cloud.ResourceManager, error) {
 	return m.provider.ResourceManager(m.Context)
 }
 
+// prepareProvider
+func (m *Metadata) prepareProvider(forceAuth bool) (err error) {
+
+	m.Logger.Println("Checking authentication information")
+	switch {
+	case m.provider != nil:
+		// This case will be used to run tests.
+
+	case m.Config.GcpConfig.Project != "":
+		m.provider, err = gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, forceAuth)
+		if err != nil {
+			return
+		}
+		m.Config.Save()
+
+	default:
+		// return ErrServiceConfiguration
+	}
+	return
+
+}
+
 // getMetadata gets metadata from a cli context.
 func getMetadata(c *cli.Context) (meta *Metadata, err error) {
 
 	meta, ok := c.App.Metadata[metadataKey].(*Metadata)
 	if !ok {
-		err = fmt.Errorf("No metadata is attached")
+		err = ErrNoMetadata
 	} else if meta.Config == nil {
-		err = fmt.Errorf("No configuration is given")
+		err = ErrNoConfiguration
 	} else if meta.provider == nil {
-		err = fmt.Errorf("Cloud service configuration is not correct")
+		err = ErrServiceConfiguration
 	}
 	return
 
@@ -105,10 +141,13 @@ func getMetadata(c *cli.Context) (meta *Metadata, err error) {
 func PrepareCommand(c *cli.Context) (err error) {
 	meta := new(Metadata)
 
+	meta.Stdin = os.Stdin
 	if c.GlobalBool("no-color") {
 		meta.Stdout = colorable.NewNonColorable(os.Stdout)
+		meta.Stderr = colorable.NewNonColorable(os.Stderr)
 	} else {
 		meta.Stdout = colorable.NewColorableStdout()
+		meta.Stderr = colorable.NewColorableStderr()
 	}
 
 	// Get a context from main function.
@@ -118,13 +157,12 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Spinner = spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 	var logger *log.Logger
 	if c.GlobalBool("verbose") {
-		logger = log.New(colorable.NewColorableStderr(), "", log.LstdFlags)
+		logger = log.New(meta.Stderr, "", log.LstdFlags)
 		// If verbose mode, spinner is disabled, since it may conflict logging information.
 		meta.Spinner.Writer = ioutil.Discard
 	} else {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 		meta.Spinner.Writer = meta.Stdout
-
 	}
 	meta.Logger = logger
 
@@ -151,22 +189,10 @@ func PrepareCommand(c *cli.Context) (err error) {
 	meta.Config = cfg
 
 	if meta.Config != nil {
-		// Prepare a service provider.
-		logger.Println("Checking authentication information")
-		var provider cloud.Provider
-		switch {
-		case cfg.GcpConfig.Project != "":
-			provider, err = gcp.NewProvider(meta.Context, &cfg.GcpConfig, logger, c.GlobalBool("auth"))
-			if err != nil {
-				return
-			}
-			cfg.Save()
-
-		default:
-			// return fmt.Errorf("Configuration isn't correct")
+		err = meta.prepareProvider(c.GlobalBool("auth"))
+		if err != nil {
+			return
 		}
-		meta.provider = provider
-
 	}
 
 	c.App.Metadata[metadataKey] = meta

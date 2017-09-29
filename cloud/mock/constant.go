@@ -1,5 +1,5 @@
 //
-// command/constant.go
+// cloud/mock/constant.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -19,18 +19,22 @@
 // along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package command
+package mock
 
-import "time"
+import "fmt"
 
 const (
-	// DefaultSleepTime defines a default sleep time.
-	DefaultSleepTime = 30 * time.Second
-	// PrintTimeFormat defines time format to be used to print logs.
-	PrintTimeFormat = "2006/01/02 15:04:05"
-	// ConfigFile defines the default configuration file name.
-	ConfigFile = "roadie.yml"
-	// DefaultWaitTimeOfInstanceCreation defines the default waiting time
-	// for creating an instance.
-	DefaultWaitTimeOfInstanceCreation = 3 * time.Minute
+	// StatusRunning means an instance is still running.
+	StatusRunning = "running"
+	// StatusTerminated means an instance has been terminated.
+	StatusTerminated = "terminated"
+	// StatusPending means a task is pending now.
+	StatusPending = "pending"
+	// StatusWaiting means a task is waiting to be run.
+	StatusWaiting = "waiting"
+)
+
+var (
+	// ErrServiceFailure is an error used in tests.
+	ErrServiceFailure = fmt.Errorf("this service is out of order")
 )

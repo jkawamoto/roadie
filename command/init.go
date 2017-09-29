@@ -23,10 +23,7 @@ package command
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
-	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
 
@@ -37,34 +34,50 @@ import (
 // CmdInit helps to create a configuration file.
 func CmdInit(c *cli.Context) (err error) {
 
-	actor := interact.NewActor(os.Stdin, os.Stdout)
-
-	// Initialization steps:
-	// 1. Choose cloud service provider (GCP only).
-	// 2. Ask nessesarry information (project id for gcp).
-	// 3. Authentication.
-	// 4. Store configurations.
-
+	// If metadata don't have complete information, it's okay for now.
 	m, _ := getMetadata(c)
-	fmt.Println(`This command will create file "roadie.yml" in current directory.
+
+	err = cmdInit(m)
+	if err != nil {
+		return cli.NewExitError(err, 2)
+	}
+	return
+
+}
+
+// cmdInit initialize Roadie.
+// The initialization steps:
+// 1. Choose cloud service provider (GCP only).
+// 2. Ask nessesarry information (project id for gcp).
+// 3. Authentication.
+// 4. Store configurations.
+func cmdInit(m *Metadata) (err error) {
+
+	fmt.Fprintf(m.Stdout, `%v
+This command will create file %q in current directory.
 Configurations can be updated with "roadie config" command.
 See "roadie config --help", for more detail.
-`)
-	m.Config = new(config.Config)
-	m.Config.FileName = "roadie.yml"
 
-	fmt.Fprintln(m.Stdout, chalk.Green.Color("Initialize Roadie"))
+`, chalk.Green.Color("Initialize Roadie"), ConfigFile)
+
+	actor := interact.NewActor(m.Stdin, m.Stdout)
+	if m.Config == nil {
+		m.Config = new(config.Config)
+	}
+	if m.Config.FileName == "" {
+		m.Config.FileName = ConfigFile
+	}
 
 	var project string
 	project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
 	if err != nil {
-		return cli.NewExitError(err.Error(), 10)
+		return
 	}
+	fmt.Fprintln(m.Stdout, "")
 	m.Config.GcpConfig.Project = project
 
-	fmt.Fprintln(m.Stdout, "")
 	fmt.Fprintln(m.Stdout, chalk.Green.Color("Cheking authorization..."))
-	_, err = gcp.NewProvider(m.Context, &m.Config.GcpConfig, m.Logger, true)
+	err = m.prepareProvider(true)
 	if err != nil {
 		return
 	}
@@ -82,13 +95,15 @@ func checkNotEmpty(value string) error {
 	return nil
 }
 
-func checkOption(options ...string) interact.InputCheck {
-	return func(str string) error {
-		for _, v := range options {
-			if v == str {
-				return nil
-			}
-		}
-		return fmt.Errorf("Input must be one of [%v]", strings.Join(options, ", "))
-	}
-}
+// // checkOption returns InputCheck checks a given string matches at least one of
+// // given options.
+// func checkOption(options ...string) interact.InputCheck {
+// 	return func(str string) error {
+// 		for _, v := range options {
+// 			if v == str {
+// 				return nil
+// 			}
+// 		}
+// 		return fmt.Errorf("Input must be one of [%v]", strings.Join(options, ", "))
+// 	}
+// }

@@ -35,14 +35,18 @@ func CmdStatus(c *cli.Context) error {
 	if c.Bool("help") {
 		return cli.ShowSubcommandHelp(c)
 	}
+	if c.NArg() != 0 {
+		fmt.Printf("expected no arguments. (%d given)\n", c.NArg())
+		return cli.ShowSubcommandHelp(c)
+	}
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 3)
 	}
 
 	if err := cmdStatus(m, c.Bool("all")); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return cli.NewExitError(err, 2)
 	}
 	return nil
 
@@ -65,14 +69,14 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 	table.AddRow("INSTANCE NAME", "STATUS")
 	err = compute.Instances(m.Context, func(name, status string) (err error) {
 		table.AddRow(name, status)
-		return
+		return nil
 	})
 	if err != nil {
 		return
 	}
 
 	m.Spinner.Stop()
-	fmt.Println(table.String())
+	fmt.Fprint(m.Stdout, table.String())
 	return
 
 }
@@ -87,11 +91,11 @@ func CmdStatusKill(c *cli.Context) error {
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 3)
 	}
 
 	if err := cmdStatusKill(m, c.Args().First()); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+		return cli.NewExitError(err, 2)
 	}
 	return nil
 
@@ -100,15 +104,15 @@ func CmdStatusKill(c *cli.Context) error {
 // cmdStatusKill kills a given instance named `instanceName`.
 func cmdStatusKill(m *Metadata, instanceName string) (err error) {
 
-	m.Spinner.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
-	m.Spinner.FinalMSG = fmt.Sprintln("Killed Instance", instanceName)
-	m.Spinner.Start()
-	defer m.Spinner.Stop()
-
 	compute, err := m.InstanceManager()
 	if err != nil {
 		return
 	}
+
+	m.Spinner.Prefix = fmt.Sprintf("Killing instance %s...", instanceName)
+	m.Spinner.FinalMSG = fmt.Sprintln("Killed Instance", instanceName)
+	m.Spinner.Start()
+	defer m.Spinner.Stop()
 
 	if err = compute.DeleteInstance(m.Context, instanceName); err != nil {
 		m.Spinner.FinalMSG = fmt.Sprintf(

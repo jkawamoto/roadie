@@ -22,6 +22,7 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"io/ioutil"
 	"net/url"
@@ -46,7 +47,7 @@ func TestCmdResultList(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -68,13 +69,10 @@ func TestCmdResultList(t *testing.T) {
 		}
 
 		res := make(map[string]struct{})
-		for _, line := range strings.Split(output.String(), "\n") {
-			line = strings.TrimSpace(line)
-			if line != "" {
-				res[strings.TrimSpace(strings.Split(line, "\t")[0])] = struct{}{}
-			}
+		scanner := bufio.NewScanner(&output)
+		for scanner.Scan() {
+			res[strings.TrimSpace(strings.Split(scanner.Text(), "\t")[0])] = struct{}{}
 		}
-
 		if len(res) != len(c.expected) {
 			t.Errorf("%v items are shown, want %v items", len(res), len(c.expected))
 		}
@@ -102,7 +100,7 @@ func TestCmdResultShow(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -156,7 +154,7 @@ func TestCmdResultGet(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -212,7 +210,7 @@ func TestCmdResultDelete(t *testing.T) {
 		"roadie://result/instance11/stdout12.txt",
 	}
 
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)

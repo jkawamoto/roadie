@@ -1,5 +1,5 @@
 //
-// cloud/mock/storage_manager.go
+// cloud/mock/storage.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -35,9 +35,6 @@ import (
 
 	"github.com/jkawamoto/roadie/cloud"
 )
-
-// ErrServiceFailure is an error used in tests.
-var ErrServiceFailure = fmt.Errorf("this service is out of order")
 
 // StorageManager is a memory based mock storage manager.
 type StorageManager struct {

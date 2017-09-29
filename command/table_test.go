@@ -22,6 +22,7 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"path"
@@ -44,7 +45,7 @@ func TestPrintFileList(t *testing.T) {
 		"roadie://another/instance1/stdout3.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -71,11 +72,9 @@ func TestPrintFileList(t *testing.T) {
 		if c.quiet {
 
 			files := make(map[string]struct{})
-			for _, v := range strings.Split(output.String(), "\n") {
-				v = strings.TrimSpace(v)
-				if v != "" {
-					files[v] = struct{}{}
-				}
+			scanner := bufio.NewScanner(&output)
+			for scanner.Scan() {
+				files[strings.TrimSpace(scanner.Text())] = struct{}{}
 			}
 
 			if len(files) != len(expected) {
@@ -143,7 +142,7 @@ func TestPrintDirList(t *testing.T) {
 		"roadie://another/instance1/stdout3.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -173,11 +172,9 @@ func TestPrintDirList(t *testing.T) {
 		if c.quiet {
 
 			files := make(map[string]struct{})
-			for _, v := range strings.Split(output.String(), "\n") {
-				v = strings.TrimSpace(v)
-				if v != "" {
-					files[v] = struct{}{}
-				}
+			scanner := bufio.NewScanner(&output)
+			for scanner.Scan() {
+				files[strings.TrimSpace(scanner.Text())] = struct{}{}
 			}
 
 			if len(files) != len(expected) {

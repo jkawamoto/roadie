@@ -23,6 +23,7 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -63,7 +64,7 @@ func TestUploadDummyFiles(t *testing.T) {
 
 	var err error
 	var output bytes.Buffer
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	s, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)
@@ -81,6 +82,7 @@ func TestUploadDummyFiles(t *testing.T) {
 
 	var loc *url.URL
 	for _, f := range files {
+
 		loc, err = url.Parse(f)
 		if err != nil {
 			t.Fatalf("cannot parse a URL: %v", err)
@@ -137,7 +139,7 @@ func TestCmdGet(t *testing.T) {
 		"roadie://container2/stdout2.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -194,7 +196,7 @@ func TestCmdDelete(t *testing.T) {
 		"roadie://container2/stdout2.txt",
 	}
 
-	m := testMetadata(&output)
+	m := testMetadata(&output, nil)
 	err = uploadDummyFiles(m, files)
 	if err != nil {
 		t.Fatalf("uploadDummyFiles returns an error: %v", err)
@@ -294,7 +296,7 @@ func TestSetGitSource(t *testing.T) {
 func TestSetLocalSource(t *testing.T) {
 
 	var err error
-	m := testMetadata(nil)
+	m := testMetadata(nil, nil)
 	storage, err := m.StorageManager()
 	if err != nil {
 		t.Fatalf("cannot get a storage manager: %v", err)
@@ -305,34 +307,38 @@ func TestSetLocalSource(t *testing.T) {
 	expected := script.RoadieSchemePrefix + script.SourcePrefix + "/test.tar.gz"
 	for _, target := range []string{".", "../command", "run.go"} {
 
-		s = script.Script{
-			Name: "test",
-		}
+		t.Run(fmt.Sprintf("target=%q", target), func(t *testing.T) {
 
-		err = setLocalSource(m, &s, target, nil)
-		if err != nil {
-			t.Fatalf("error with setLocalSource of %v: %v", target, err)
-		}
-		if s.Source != expected {
-			t.Errorf("Source = %v, want %v", s.Source, expected)
-		}
+			s = script.Script{
+				Name: "test",
+			}
+			err = setLocalSource(m, &s, target, nil)
+			if err != nil {
+				t.Fatalf("error with setLocalSource of %v: %v", target, err)
+			}
+			if s.Source != expected {
+				t.Errorf("Source = %v, want %v", s.Source, expected)
+			}
 
-		loc, err = url.Parse(s.Source)
-		if err != nil {
-			t.Fatalf("cannot parse %q: %v", s.Source, err)
-		}
-		_, err = storage.GetFileInfo(m.Context, loc)
-		if err != nil {
-			t.Errorf("%v doesn't exist", s.Source)
-		}
+			loc, err = url.Parse(s.Source)
+			if err != nil {
+				t.Fatalf("cannot parse %q: %v", s.Source, err)
+			}
+			_, err = storage.GetFileInfo(m.Context, loc)
+			if err != nil {
+				t.Errorf("%v doesn't exist", s.Source)
+			}
+
+		})
 
 	}
 
-	// Test with an unexisting file.
-	err = setLocalSource(m, &s, "abcd.efg", nil)
-	if err == nil {
-		t.Error("setLocalSource with an unexisting path doesn't return any errors")
-	}
+	t.Run("not existing file", func(t *testing.T) {
+		err = setLocalSource(m, &s, "abcd.efg", nil)
+		if err == nil {
+			t.Error("setLocalSource with an unexisting path doesn't return any errors")
+		}
+	})
 
 }
 
@@ -352,5 +358,165 @@ func TestSetUploadedSource(t *testing.T) {
 			t.Errorf("Source = %v, want %v", s.Source, expected)
 		}
 	}
+
+}
+
+// TestUpdateSourceSection tests UpdateSourceSection
+func TestUpdateSourceSection(t *testing.T) {
+
+	var err error
+	m := testMetadata(nil, nil)
+	storageManager, err := m.StorageManager()
+	if err != nil {
+		t.Fatalf("cannot get a storage manager: %v", err)
+	}
+	storage := cloud.NewStorage(storageManager, ioutil.Discard)
+
+	testScript := script.Script{
+		Name: "test-script",
+	}
+
+	t.Run("git option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Git: "git@github.com:jkawamoto/roadie.git",
+		}
+		expect := "https://github.com/jkawamoto/roadie.git"
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		if s.Source != expect {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+	t.Run("url option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			URL: "https://github.com/jkawamoto/roadie.git",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		if s.Source != opt.URL {
+			t.Errorf("source section is %q, want %q", s.Source, opt.URL)
+		}
+	})
+
+	t.Run("local option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Local: "util",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		var expect *url.URL
+		expect, err = createURL("source", s.Name+".tar.gz")
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Source != expect.String() {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+	t.Run("source option", func(t *testing.T) {
+		s := testScript
+		opt := SourceOpt{
+			Source: "somefile",
+		}
+		err = UpdateSourceSection(m, &s, &opt, storage)
+		if err != nil {
+			t.Fatalf("UpdateSourceSection returns an error: %v", err)
+		}
+		var expect *url.URL
+		expect, err = createURL("source", opt.Source+".tar.gz")
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Source != expect.String() {
+			t.Errorf("source section is %q, want %q", s.Source, expect)
+		}
+	})
+
+}
+
+// TestUpdateResultSection tests UpdateResultSection.
+func TestUpdateResultSection(t *testing.T) {
+
+	var output bytes.Buffer
+	testScript := script.Script{
+		Name:   "test-script",
+		Result: "roadie://result/somewhere",
+	}
+
+	for _, overwitten := range []bool{true, false} {
+
+		t.Run(fmt.Sprintf("result is not given and overwritten=%v", overwitten), func(t *testing.T) {
+			defer output.Reset()
+
+			s := testScript
+			s.Result = ""
+			err := UpdateResultSection(&s, overwitten, &output)
+			if err != nil {
+				t.Fatalf("UpdateResultSection returns an error: %v", err)
+			}
+			expect, err := createURL("result", s.Name)
+			if err != nil {
+				t.Fatalf("createURL returns an error: %v", err)
+			}
+			if s.Result != expect.String() {
+				t.Errorf("updated result section is %q, want %q", s.Result, expect)
+			}
+			if output.Len() != 0 {
+				t.Errorf("unexpected messages are outputted: %v", output.String())
+			}
+
+		})
+
+	}
+
+	t.Run("result is given but overwritten", func(t *testing.T) {
+		defer output.Reset()
+
+		s := testScript
+		err := UpdateResultSection(&s, true, &output)
+		if err != nil {
+			t.Fatalf("UpdateResultSection returns an error: %v", err)
+		}
+		expect, err := createURL("result", s.Name)
+		if err != nil {
+			t.Fatalf("createURL returns an error: %v", err)
+		}
+		if s.Result != expect.String() {
+			t.Errorf("updated result is %q, want %q", s.Result, expect)
+		}
+		if output.Len() != 0 {
+			t.Error("warning messages are expected but notthing is outputted")
+		}
+
+	})
+
+	t.Run("result is given and not overwritten", func(t *testing.T) {
+
+		defer output.Reset()
+
+		s := testScript
+		err := UpdateResultSection(&s, false, &output)
+		if err != nil {
+			t.Fatalf("UpdateResultSection returns an error: %v", err)
+		}
+		if s.Result != testScript.Result {
+			t.Errorf("updated result section is %q, want %q", s.Result, testScript.Result)
+		}
+		if output.Len() == 0 {
+			t.Errorf("unexpected messages are outputted: %v", output.String())
+		}
+
+	})
 
 }

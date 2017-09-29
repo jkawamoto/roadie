@@ -65,7 +65,8 @@ func (o *optDataPut) run() (err error) {
 
 	wg, ctx := errgroup.WithContext(o.Context)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
-	var streamLock sync.Mutex
+	var outputLock sync.Mutex
+	var outputs []string
 	for _, target := range filenames {
 
 		select {
@@ -96,9 +97,9 @@ func (o *optDataPut) run() (err error) {
 						return
 					}
 
-					streamLock.Lock()
-					defer streamLock.Unlock()
-					fmt.Fprintf(o.Stdout, "%v -> %v\n", target, loc)
+					outputLock.Lock()
+					defer outputLock.Unlock()
+					outputs = append(outputs, fmt.Sprintf("%v -> %v", target, loc))
 					return
 
 				})
@@ -107,7 +108,14 @@ func (o *optDataPut) run() (err error) {
 		}
 	}
 
-	return wg.Wait()
+	err = wg.Wait()
+	if err != nil {
+		return
+	}
+	for _, v := range outputs {
+		fmt.Fprintln(o.Stdout, v)
+	}
+	return
 
 }
 

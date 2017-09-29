@@ -29,41 +29,70 @@ import (
 
 // Provider is a mock provider for tests.
 type Provider struct {
-	MockInstanceManager cloud.InstanceManager
-	MockQueueManager    cloud.QueueManager
+	MockInstanceManager *InstanceManager
+	MockQueueManager    *QueueManager
 	MockStorageManager  *StorageManager
-	MockLogManager      cloud.LogManager
-	MockResourceManager cloud.ResourceManager
+	MockLogManager      *LogManager
+	MockResourceManager *ResourceManager
 }
 
 // NewProvider creates a new mock provider.
 func NewProvider() *Provider {
 	return &Provider{
-		MockStorageManager: NewStorageManager(),
+		MockInstanceManager: NewInstanceManager(),
+		MockQueueManager:    NewQueueManager(),
+		MockStorageManager:  NewStorageManager(),
+		MockLogManager:      NewLogManager(),
+		MockResourceManager: NewResourceManager(),
 	}
 }
 
 // InstanceManager returns an instance manager interface.
-func (m *Provider) InstanceManager(context.Context) (cloud.InstanceManager, error) {
-	return m.MockInstanceManager, nil
+func (m *Provider) InstanceManager(ctx context.Context) (cloud.InstanceManager, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return m.MockInstanceManager, nil
+	}
 }
 
 // QueueManager returns a queue manager interface.
-func (m *Provider) QueueManager(context.Context) (cloud.QueueManager, error) {
-	return m.MockQueueManager, nil
+func (m *Provider) QueueManager(ctx context.Context) (cloud.QueueManager, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return m.MockQueueManager, nil
+	}
 }
 
 // StorageManager returns a storage manager interface.
-func (m *Provider) StorageManager(context.Context) (cloud.StorageManager, error) {
-	return m.MockStorageManager, nil
+func (m *Provider) StorageManager(ctx context.Context) (cloud.StorageManager, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return m.MockStorageManager, nil
+	}
 }
 
 // LogManager returns a log manager interface.
-func (m *Provider) LogManager(context.Context) (cloud.LogManager, error) {
-	return m.MockLogManager, nil
+func (m *Provider) LogManager(ctx context.Context) (cloud.LogManager, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return m.MockLogManager, nil
+	}
 }
 
 // ResourceManager returns a mock resrouce manager.
-func (m *Provider) ResourceManager(context.Context) (cloud.ResourceManager, error) {
-	return m.MockResourceManager, nil
+func (m *Provider) ResourceManager(ctx context.Context) (cloud.ResourceManager, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return m.MockResourceManager, nil
+	}
 }

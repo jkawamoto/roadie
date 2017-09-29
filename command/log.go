@@ -24,7 +24,6 @@ package command
 import (
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/urfave/cli"
@@ -41,12 +40,12 @@ type optLog struct {
 	Follow bool
 	// SleepTime defines sleep time.
 	SleepTime time.Duration
-	// From defines the time retriving log entries from.
-	From time.Time
+	// After defines the time retriving log entries from.
+	After time.Time
 }
 
 // CmdLog shows logs of a given instance.
-func CmdLog(c *cli.Context) error {
+func CmdLog(c *cli.Context) (err error) {
 
 	// Checking the number of arguments.
 	if c.NArg() != 1 {
@@ -56,20 +55,22 @@ func CmdLog(c *cli.Context) error {
 
 	m, err := getMetadata(c)
 	if err != nil {
-		return err
+		return cli.NewExitError(err, 3)
 	}
 
 	// Run the log command.
-	if err := cmdLog(&optLog{
+	err = cmdLog(&optLog{
 		Metadata:     m,
 		InstanceName: c.Args()[0],
 		Timestamp:    !c.Bool("no-timestamp"),
 		Follow:       c.Bool("follow"),
 		SleepTime:    DefaultSleepTime,
-	}); err != nil {
-		return cli.NewExitError(err.Error(), 2)
+	})
+	if err != nil {
+		return cli.NewExitError(err, 2)
 	}
-	return nil
+	return
+
 }
 
 // cmdLog retrieves and prints log entries according to the given options.
@@ -82,7 +83,7 @@ func cmdLog(opt *optLog) (err error) {
 
 	for {
 
-		err = log.Get(opt.Context, opt.InstanceName, opt.From, func(timestamp time.Time, line string, stderr bool) error {
+		err = log.Get(opt.Context, opt.InstanceName, opt.After, func(timestamp time.Time, line string, stderr bool) error {
 
 			var msg string
 			if opt.Timestamp {
@@ -92,12 +93,11 @@ func cmdLog(opt *optLog) (err error) {
 			}
 
 			if !stderr {
-				fmt.Fprintln(os.Stdout, msg)
+				fmt.Fprintln(opt.Stdout, msg)
 			} else {
-				fmt.Fprintln(os.Stderr, msg)
+				fmt.Fprintln(opt.Stderr, msg)
 			}
-
-			opt.From = timestamp
+			opt.After = timestamp
 			return nil
 
 		})

@@ -26,16 +26,117 @@ import (
 	"testing"
 )
 
+func TestInstanceManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.InstanceManager(ctx)
+	if err != nil {
+		t.Fatalf("InstanceManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*InstanceManager); !ok {
+		t.Errorf("InstanceManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.InstanceManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
+func TestQueueManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.QueueManager(ctx)
+	if err != nil {
+		t.Fatalf("QueueManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*QueueManager); !ok {
+		t.Errorf("QueueManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.InstanceManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
 func TestStorageManager(t *testing.T) {
 
+	ctx := context.Background()
 	p := NewProvider()
-	m, err := p.StorageManager(context.Background())
+	m, err := p.StorageManager(ctx)
 	if err != nil {
 		t.Fatalf("StorageManager returns an error: %v", err)
 	}
 
 	if _, ok := m.(*StorageManager); !ok {
 		t.Errorf("StorageManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.StorageManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
+func TestLogManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.LogManager(ctx)
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*LogManager); !ok {
+		t.Errorf("LogManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.LogManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
+	}
+
+}
+
+func TestResouceManager(t *testing.T) {
+
+	ctx := context.Background()
+	p := NewProvider()
+	m, err := p.ResourceManager(ctx)
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	if _, ok := m.(*ResourceManager); !ok {
+		t.Errorf("ResourceManager doesn't return a mock manager: %T", m)
+	}
+
+	// With a canceled context.
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = p.ResourceManager(ctx)
+	if err == nil {
+		t.Error("context is canceled but no errors are returned")
 	}
 
 }

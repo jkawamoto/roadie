@@ -21,8 +21,470 @@
 
 package command
 
-import "testing"
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
 
-func TestCmdConfig(t *testing.T) {
-	// Write your code here
+	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/mock"
+)
+
+var (
+	testMachineTypes = []cloud.MachineType{
+		{Name: "type A", Description: "sample machine type"},
+		{Name: "type B", Description: "another machine type"},
+	}
+	testRegions = []cloud.Region{
+		{Name: "region A", Status: "up"},
+		{Name: "region B", Status: "down"},
+	}
+)
+
+func TestCmdConfigProjectSet(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+
+	resource, err := p.ResourceManager(m.Context)
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("cannot create a temp file: %v", err)
+	}
+	f.Close()
+	m.Config.FileName = f.Name()
+	defer os.Remove(f.Name())
+
+	cases := []struct {
+		input  string
+		expect string
+		output string
+	}{
+		{"sample1", "sample1", "sample1"},
+		{"sample2", "sample2", "sample1 -> sample2"},
+		{"sample-3", "sample-3", "sample2 -> sample-3"},
+		{"sample 4", "sample_4", "sample-3 -> sample_4"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(c.input, func(t *testing.T) {
+			defer output.Reset()
+
+			err = cmdConfigProjectSet(m, c.input)
+			if err != nil {
+				t.Fatalf("cmdConfigProjectSet returns an error: %v", err)
+			}
+			if id := resource.GetProjectID(); id != c.expect {
+				t.Errorf("updated project name is %q, want %q", id, c.expect)
+			}
+			lines := strings.Split(strings.TrimRight(output.String(), "\n"), "\n")
+			if len(lines) < 2 {
+				t.Errorf("output message is too short: %v", lines)
+			}
+			if output := strings.TrimSpace(lines[len(lines)-1]); output != c.output {
+				t.Errorf("output message is %q, want %q", output, c.output)
+			}
+		})
+
+	}
+
+	t.Run("wrong file name", func(t *testing.T) {
+		m.Config.FileName = ""
+		err = cmdConfigProjectSet(m, "sample 1")
+		if err == nil {
+			t.Error("a wrong config file path is used but no errors are returned")
+		}
+	})
+
+}
+
+func TestCmdConfigProjectShow(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+
+	resource, err := m.ResourceManager()
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	cases := []struct {
+		set    string
+		expect string
+	}{
+		{"", MsgNotSet},
+		{"test-id", "test-id"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(fmt.Sprintf("ID=%q", c.set), func(t *testing.T) {
+			defer output.Reset()
+
+			resource.SetProjectID(c.set)
+			err = cmdConfigProjectShow(m)
+			if err != nil {
+				t.Fatalf("cmdConfigProjectShow returns an error: %v", err)
+			}
+			if res := strings.TrimSpace(output.String()); res != c.expect {
+				t.Errorf("printed %q, want %q", res, c.expect)
+			}
+		})
+
+	}
+
+}
+
+func TestConfigMachineTypeSet(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+	p.MockResourceManager.AvailableMachineTypes = testMachineTypes
+
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("cannot create a temp file: %v", err)
+	}
+	f.Close()
+	m.Config.FileName = f.Name()
+	defer os.Remove(f.Name())
+
+	cases := []struct {
+		input  string
+		expect string
+	}{
+		{"type A", "type A"},
+		{"type B", "type A -> type B"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			defer output.Reset()
+
+			err = cmdConfigMachineTypeSet(m, c.input)
+			if err != nil {
+				t.Fatalf("cmdConfigMachineTypeSet with %q returns an error: %v", c.input, err)
+			}
+			lines := strings.Split(strings.TrimRight(output.String(), "\n"), "\n")
+			if len(lines) < 2 {
+				t.Errorf("output message is too short: %v", lines)
+			}
+			if res := strings.TrimSpace(lines[len(lines)-1]); res != c.expect {
+				t.Errorf("output message is %q, want %q", res, c.expect)
+			}
+		})
+	}
+
+	t.Run("wrong machine type", func(t *testing.T) {
+		err = cmdConfigMachineTypeSet(m, "type C")
+		if err == nil {
+			t.Fatal("set a wrong machine type but no errors are returned")
+		}
+	})
+
+	t.Run("out-of-service resource manager", func(t *testing.T) {
+		p.MockResourceManager.Failure = true
+		defer func() { p.MockResourceManager.Failure = false }()
+
+		err = cmdConfigMachineTypeSet(m, "type A")
+		if err == nil {
+			t.Error("failure is true but no errors are returned")
+		}
+	})
+
+	t.Run("wrong file name", func(t *testing.T) {
+		m.Config.FileName = ""
+		err = cmdConfigMachineTypeSet(m, "type A")
+		if err == nil {
+			t.Error("a wrong config file path is used but no errors are returned")
+		}
+	})
+
+}
+
+func TestCmdConfigMachineTypeList(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+	p.MockResourceManager.AvailableMachineTypes = testMachineTypes
+	p.MockResourceManager.SetMachineType("type A")
+
+	t.Run("type A", func(t *testing.T) {
+		defer output.Reset()
+
+		err = cmdConfigMachineTypeList(m)
+		if err != nil {
+			t.Fatalf("cmdConfigMachineTypeList returns an error: %v", err)
+		}
+
+		lines := strings.Split(output.String(), "\n")
+		if !strings.Contains(lines[0], "MACHINE TYPE") || !strings.Contains(lines[0], "DESCRIPTION") {
+			t.Errorf("a wrong table header: %v", lines[0])
+		}
+		if len(lines) < 2 {
+			t.Fatalf("output message is too short: %v", lines)
+		}
+		for _, row := range lines[1:] {
+			if row == "" {
+				continue
+			}
+			kv := strings.Split(row, "\t")
+			if len(kv) < 2 {
+				t.Fatalf("table row doesn't have enough information: %v", kv)
+			}
+			if name := strings.TrimSpace(kv[0]); name != "type A*" && name != "type B" {
+				t.Errorf("machine type name is incorrect: %q", name)
+			}
+			if desc := strings.TrimSpace(kv[1]); desc != "sample machine type" && desc != "another machine type" {
+				t.Errorf("machine description is incorrect: %q", desc)
+			}
+		}
+
+	})
+
+	t.Run("out-of-service resource manager", func(t *testing.T) {
+		p.MockResourceManager.Failure = true
+		defer func() { p.MockResourceManager.Failure = false }()
+		err = cmdConfigMachineTypeList(m)
+		if err == nil {
+			t.Error("resource manager is out-of-service but no errors are returned")
+		}
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		var cancel context.CancelFunc
+		m.Context, cancel = context.WithCancel(context.Background())
+		cancel()
+		if cmdConfigMachineTypeList(m) == nil {
+			t.Error("context is canceled but no errors are returned")
+		}
+	})
+
+}
+
+func TestCmdConfigMachineTypeShow(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+
+	resource, err := m.ResourceManager()
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	cases := []struct {
+		set    string
+		expect string
+	}{
+		{"", MsgNotSet},
+		{"test-type", "test-type"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(fmt.Sprintf("type=%q", c.set), func(t *testing.T) {
+			defer output.Reset()
+
+			resource.SetMachineType(c.set)
+			err = cmdConfigMachineTypeShow(m)
+			if err != nil {
+				t.Fatalf("cmdConfigMachineTypeShow returns an error: %v", err)
+			}
+			if res := strings.TrimSpace(output.String()); res != c.expect {
+				t.Errorf("printed %q, want %q", res, MsgNotSet)
+			}
+		})
+
+	}
+
+}
+
+func TestConfigRegionSet(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+	p.MockResourceManager.AvailableRegions = testRegions
+
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("cannot create a temp file: %v", err)
+	}
+	f.Close()
+	m.Config.FileName = f.Name()
+	defer os.Remove(f.Name())
+
+	cases := []struct {
+		input  string
+		expect string
+	}{
+		{"region A", "region A"},
+		{"region B", "region A -> region B"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(c.input, func(t *testing.T) {
+			defer output.Reset()
+
+			err = cmdConfigRegionSet(m, c.input)
+			if err != nil {
+				t.Fatalf("cmdConfigRegionSet with %q returns an error: %v", c.input, err)
+			}
+			lines := strings.Split(strings.TrimRight(output.String(), "\n"), "\n")
+			if len(lines) < 2 {
+				t.Errorf("output message is too short: %v", lines)
+			}
+			if res := strings.TrimSpace(lines[len(lines)-1]); res != c.expect {
+				t.Errorf("output message is %q, want %q", res, c.expect)
+			}
+		})
+
+	}
+
+	t.Run("wrong machine type", func(t *testing.T) {
+		err = cmdConfigRegionSet(m, "region C")
+		if err == nil {
+			t.Fatal("set a wrong machine type but no errors are returned")
+		}
+	})
+
+	t.Run("out-of-service resource manager", func(t *testing.T) {
+		p.MockResourceManager.Failure = true
+		defer func() { p.MockResourceManager.Failure = false }()
+		err = cmdConfigRegionSet(m, "region A")
+		if err == nil {
+			t.Error("failure is true but no errors are returned")
+		}
+	})
+
+	t.Run("wrong file name", func(t *testing.T) {
+		m.Config.FileName = ""
+		err = cmdConfigRegionSet(m, "region A")
+		if err == nil {
+			t.Error("a wrong config file path is used but no errors are returned")
+		}
+	})
+
+}
+
+func TestCmdConfigRegionList(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+	p.MockResourceManager.AvailableRegions = testRegions
+	p.MockResourceManager.SetRegion("region A")
+
+	t.Run(fmt.Sprintf("region=%q", "region A"), func(t *testing.T) {
+		defer output.Reset()
+
+		err = cmdConfigRegionList(m)
+		if err != nil {
+			t.Fatalf("cmdConfigRegionList returns an error: %v", err)
+		}
+
+		lines := strings.Split(output.String(), "\n")
+		if !strings.Contains(lines[0], "REGION") || !strings.Contains(lines[0], "STATUS") {
+			t.Errorf("a wrong table header: %v", lines[0])
+		}
+		if len(lines) < 2 {
+			t.Fatalf("output message is too short: %v", lines)
+		}
+		for _, row := range lines[1:] {
+			if row == "" {
+				continue
+			}
+			kv := strings.Split(row, "\t")
+			if len(kv) < 2 {
+				t.Fatalf("table row doesn't have enough information: %v", kv)
+			}
+			if name := strings.TrimSpace(kv[0]); name != "region A*" && name != "region B" {
+				t.Errorf("region name is incorrect: %q", name)
+			}
+			if desc := strings.TrimSpace(kv[1]); desc != "up" && desc != "down" {
+				t.Errorf("region status is incorrect: %q", desc)
+			}
+		}
+
+	})
+
+	t.Run("out-of-service resource manager", func(t *testing.T) {
+		p.MockResourceManager.Failure = true
+		defer func() { p.MockResourceManager.Failure = false }()
+		err = cmdConfigRegionList(m)
+		if err == nil {
+			t.Error("resource manager is out-of-service but no errors are returned")
+		}
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		var cancel context.CancelFunc
+		m.Context, cancel = context.WithCancel(context.Background())
+		cancel()
+		if cmdConfigRegionList(m) == nil {
+			t.Error("context is canceled but no errors are returned")
+		}
+	})
+
+}
+
+func TestCmdConfigRegionShow(t *testing.T) {
+
+	var err error
+	var output bytes.Buffer
+	p := mock.NewProvider()
+	m := testMetadata(&output, p)
+
+	resource, err := m.ResourceManager()
+	if err != nil {
+		t.Fatalf("ResourceManager returns an error: %v", err)
+	}
+
+	cases := []struct {
+		set    string
+		expect string
+	}{
+		{"", MsgNotSet},
+		{"test-region", "test-region"},
+	}
+
+	for _, c := range cases {
+
+		t.Run(fmt.Sprintf("region=%q", c.set), func(t *testing.T) {
+			defer output.Reset()
+
+			resource.SetRegion(c.set)
+			err = cmdConfigRegionShow(m)
+			if err != nil {
+				t.Fatalf("cmdConfigRegionShow returns an error: %v", err)
+			}
+			if res := strings.TrimSpace(output.String()); res != c.expect {
+				t.Errorf("printed %q, want %q", res, MsgNotSet)
+			}
+		})
+
+	}
+
 }
