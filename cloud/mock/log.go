@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/jkawamoto/roadie/cloud"
@@ -48,6 +49,8 @@ type LogManager struct {
 	// Onece, the break point is used, it will be removed and KeepAlive will be
 	// false.
 	Break time.Time
+	// QueueLogs holds log entries for queues.
+	QueueLogs map[string][]LogEntry
 }
 
 // LogEntry defines a log entry which has a time and a body.
@@ -117,10 +120,49 @@ func (m *LogManager) Delete(ctx context.Context, instanceName string) error {
 
 }
 
-func (m *LogManager) GetQueueLog(ctx context.Context, queue string, handler cloud.LogHandler) error {
-	return nil
+// GetQueueLog retrievs log entries from a given queue.
+func (m *LogManager) GetQueueLog(ctx context.Context, queue string, handler cloud.LogHandler) (err error) {
+
+	if m.Failure {
+		return ErrServiceFailure
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	for _, e := range m.QueueLogs[queue] {
+		err = handler(e.Time, e.Body, e.Stderr)
+		if err != nil {
+			return
+		}
+	}
+	return
+
 }
 
-func (m *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler cloud.LogHandler) error {
-	return nil
+// GetTaskLog retrieves log entries from a task in a queue.
+func (m *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler cloud.LogHandler) (err error) {
+
+	if m.Failure {
+		return ErrServiceFailure
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	key := task + ":"
+	for _, e := range m.QueueLogs[queue] {
+		if strings.HasPrefix(e.Body, key) {
+			err = handler(e.Time, strings.TrimLeft(strings.TrimPrefix(e.Body, key), " "), e.Stderr)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return
+
 }

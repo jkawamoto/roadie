@@ -271,3 +271,134 @@ func TestLogMamagerDelete(t *testing.T) {
 	})
 
 }
+
+func TestGetQueueLog(t *testing.T) {
+
+	m := NewLogManager()
+	now := time.Now()
+	queue := "test-queue"
+	m.QueueLogs = map[string][]LogEntry{
+		queue: {
+			{Time: now.Add(-30 * time.Minute), Body: "task-1: aaaa"},
+			{Time: now.Add(1 * time.Minute), Body: "task-2: bbbb"},
+			{Time: now.Add(25 * time.Minute), Body: "task-1: aaaa", Stderr: true},
+		},
+	}
+
+	t.Run("retrieve logs", func(t *testing.T) {
+		var c int
+		err := m.GetQueueLog(context.Background(), queue, func(d time.Time, list string, stderr bool) error {
+			if expect := m.QueueLogs[queue][c]; expect.Time != d || expect.Body != list || expect.Stderr != stderr {
+				t.Errorf("(%v, %v, %v), want %v", d, list, stderr, expect)
+			}
+			c++
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("GetQueueLog returns an error: %v", err)
+		}
+	})
+
+	t.Run("handler returns an error", func(t *testing.T) {
+		expect := fmt.Errorf("some error")
+		err := m.GetQueueLog(context.Background(), queue, func(t time.Time, list string, stderr bool) error {
+			return expect
+		})
+		if err != expect {
+			t.Fatalf("GetQueueLog returns %v, want %v", err, expect)
+		}
+	})
+
+	t.Run("out-of-service", func(t *testing.T) {
+		m.Failure = true
+		defer func() { m.Failure = false }()
+
+		err := m.GetQueueLog(context.Background(), "queue", func(t time.Time, list string, stderr bool) error {
+			return nil
+		})
+		if err != ErrServiceFailure {
+			t.Error("out-of-service manager doesn't return ErrServiceFailure")
+		}
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		err := m.GetQueueLog(ctx, "queue", func(t time.Time, list string, stderr bool) error {
+			return nil
+		})
+		if err == nil {
+			t.Error("context is canceled but no errors are returned")
+		}
+	})
+
+}
+
+func TestGetTaskLog(t *testing.T) {
+
+	m := NewLogManager()
+	now := time.Now()
+	queue := "test-queue"
+	m.QueueLogs = map[string][]LogEntry{
+		queue: {
+			{Time: now.Add(-30 * time.Minute), Body: "task-1: aaaa"},
+			{Time: now.Add(1 * time.Minute), Body: "task-2: bbbb"},
+			{Time: now.Add(25 * time.Minute), Body: "task-1: aaaa", Stderr: true},
+		},
+	}
+
+	t.Run("retrieve logs", func(t *testing.T) {
+
+		var c int
+		err := m.GetTaskLog(context.Background(), queue, "task-1", func(d time.Time, list string, stderr bool) error {
+			if list != "aaaa" {
+				t.Errorf("wrong entry: %v", list)
+			}
+			c++
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("GetQueueLog returns an error: %v", err)
+		}
+		if c != 2 {
+			t.Errorf("%v log entries are found, want %v", c, 2)
+		}
+
+	})
+
+	t.Run("handler returns an error", func(t *testing.T) {
+		expect := fmt.Errorf("some error")
+		err := m.GetTaskLog(context.Background(), queue, "task-1", func(t time.Time, list string, stderr bool) error {
+			return expect
+		})
+		if err != expect {
+			t.Fatalf("GetTaskLog returns %v, want %v", err, expect)
+		}
+	})
+
+	t.Run("out-of-service", func(t *testing.T) {
+		m.Failure = true
+		defer func() { m.Failure = false }()
+
+		err := m.GetTaskLog(context.Background(), "queue", "task", func(t time.Time, list string, stderr bool) error {
+			return nil
+		})
+		if err != ErrServiceFailure {
+			t.Error("out-of-service manager doesn't return ErrServiceFailure")
+		}
+	})
+
+	t.Run("canceled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		err := m.GetTaskLog(ctx, "queue", "task", func(t time.Time, list string, stderr bool) error {
+			return nil
+		})
+		if err == nil {
+			t.Error("context is canceled but no errors are returned")
+		}
+	})
+
+}
