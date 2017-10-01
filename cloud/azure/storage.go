@@ -46,9 +46,6 @@ import (
 const (
 	// StorageAPIVersion defines API version of storage service.
 	StorageAPIVersion = "2016-12-01"
-	// StorageServiceContainerName defines the default container name used in
-	// Roadie.
-	StorageServiceContainerName = "roadie"
 )
 
 // StorageService provides an interface for Azure's storage management service.
@@ -59,8 +56,6 @@ type StorageService struct {
 	armClient *client.StorageManagement
 	// Configuration
 	Config *AzureConfig
-	// Container name
-	ContainerName string
 	// Logger
 	Logger *log.Logger
 	// Sleep time
@@ -92,11 +87,10 @@ func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger
 	}
 
 	s = &StorageService{
-		armClient:     manager,
-		Config:        cfg,
-		ContainerName: StorageServiceContainerName,
-		Logger:        logger,
-		SleepTime:     DefaultSleepTime,
+		armClient: manager,
+		Config:    cfg,
+		Logger:    logger,
+		SleepTime: DefaultSleepTime,
 	}
 
 	// Create an account if necessary.
@@ -120,19 +114,6 @@ func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger
 		return
 	}
 	s.blobClient = cli.GetBlobService()
-
-	err = s.prepareContainer()
-	return
-
-}
-
-// PrepareContainer creates the associated container if not exists.
-func (s *StorageService) prepareContainer() (err error) {
-
-	_, err = s.blobClient.GetContainerReference(s.ContainerName).CreateIfNotExists(
-		&storage.CreateContainerOptions{
-			Access: storage.ContainerAccessTypeBlob,
-		})
 	return
 
 }
@@ -140,10 +121,17 @@ func (s *StorageService) prepareContainer() (err error) {
 // Upload a given stream to a given location.
 func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader) (err error) {
 
+	s.Logger.Println("Creating a blob at", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	s.Logger.Println("Creating append blob", filename)
 
-	blob := s.blobClient.GetContainerReference(s.ContainerName).GetBlobReference(filename)
+	container := s.blobClient.GetContainerReference(loc.Hostname())
+	_, err = container.CreateIfNotExists(&storage.CreateContainerOptions{
+		Access: storage.ContainerAccessTypeBlob,
+	})
+	if err != nil {
+		return
+	}
+	blob := container.GetBlobReference(filename)
 	err = blob.CreateBlockBlob(nil)
 	if err != nil {
 		s.Logger.Println("Cannot create append blob", filename)
@@ -171,7 +159,7 @@ func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 	}
 
 	if err != nil {
-		s.Logger.Println("Uploading data didn't finishe")
+		s.Logger.Println("Uploading data didn't finish")
 	} else {
 		s.Logger.Println("Finish uploading data")
 	}
@@ -183,10 +171,9 @@ func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 // writer.
 func (s *StorageService) Download(ctx context.Context, loc *url.URL, out io.Writer) (err error) {
 
+	s.Logger.Println("Downloading a blob from", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	s.Logger.Println("Downloading blob", filename)
-
-	reader, err := s.blobClient.GetContainerReference(s.ContainerName).GetBlobReference(filename).Get(nil)
+	reader, err := s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Get(nil)
 	if err != nil {
 		return
 	}
@@ -201,10 +188,9 @@ func (s *StorageService) Download(ctx context.Context, loc *url.URL, out io.Writ
 // GetFileInfo gets information of file in a given location.
 func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *cloud.FileInfo, err error) {
 
+	s.Logger.Println("Retrieving information of file in", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	s.Logger.Println("Retrieving information of file", filename)
-
-	blob := s.blobClient.GetContainerReference(s.ContainerName).GetBlobReference(filename)
+	blob := s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename)
 	err = blob.GetProperties(
 		&storage.GetBlobPropertiesOptions{})
 	if err != nil {
@@ -227,9 +213,9 @@ func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *c
 // It takes a handler; information of found files are sent to it.
 func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.FileInfoHandler) (err error) {
 
+	s.Logger.Println("Retrieving blobs matching", loc)
 	prefix := strings.TrimPrefix(loc.Path, "/")
-	s.Logger.Println("Retrieving blobs matching ", prefix)
-	res, err := s.blobClient.GetContainerReference(s.ContainerName).ListBlobs(storage.ListBlobsParameters{
+	res, err := s.blobClient.GetContainerReference(loc.Hostname()).ListBlobs(storage.ListBlobsParameters{
 		Prefix: prefix,
 	})
 	if err != nil {
@@ -258,9 +244,9 @@ func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.F
 // Delete a file in a given location.
 func (s *StorageService) Delete(ctx context.Context, loc *url.URL) (err error) {
 
+	s.Logger.Println("Deleting a blob in", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	s.Logger.Println("Deleting blob", filename)
-	err = s.blobClient.GetContainerReference(s.ContainerName).GetBlobReference(filename).Delete(nil)
+	err = s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Delete(nil)
 	if err != nil {
 		s.Logger.Println("Cannot delete blob", filename, ":", err.Error())
 	} else {
@@ -320,12 +306,12 @@ func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
 		err = NewAPIError(err)
 
 	case created != nil || creating != nil:
-		var exist bool
+		var info *models.StorageAccount
 		for {
 			s.Logger.Println("Waiting for creating storage account", s.Config.StorageAccount)
-			if exist, err = s.checkStorageAccount(ctx); err != nil {
+			if info, err = s.getStorageAccountInfo(ctx); err != nil {
 				break
-			} else if exist {
+			} else if info.Properties.ProvisioningState == ProvisioningSucceeded {
 				s.Logger.Println("Created storage account", s.Config.StorageAccount)
 				return
 			}
@@ -344,6 +330,25 @@ func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
 	}
 
 	s.Logger.Println("Cannot create storage account", s.Config.StorageAccount, ":", err.Error())
+	return
+
+}
+
+func (s *StorageService) getStorageAccountInfo(ctx context.Context) (info *models.StorageAccount, err error) {
+
+	s.Logger.Println("Retrieving information of storage account", s.Config.StorageAccount)
+	res, err := s.armClient.StorageAccounts.StorageAccountsGetProperties(
+		storage_accounts.NewStorageAccountsGetPropertiesParamsWithContext(ctx).
+			WithAPIVersion(StorageAPIVersion).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithAccountName(s.Config.StorageAccount))
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Retrieved information of storage account", s.Config.StorageAccount)
+	info = res.Payload
 	return
 
 }

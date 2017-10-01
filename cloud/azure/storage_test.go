@@ -196,7 +196,8 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 		case filename == "" && req.URL.Query().Get("restype") == "container":
 			// Create container.
 			if _, exist := s.Items[container]; exist {
-				res.WriteHeader(http.StatusBadRequest)
+				res.WriteHeader(http.StatusConflict)
+				return
 			}
 			s.Items[container] = make(map[string]string)
 			res.WriteHeader(http.StatusCreated)
@@ -263,32 +264,11 @@ func TestStorageService(t *testing.T) {
 		t.Fatalf("cannot get a client: %v", err)
 	}
 
-	t.Run("prepare container", func(t *testing.T) {
-		testContainer := "prepare-container"
-		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
-		}
-		if _, exist := server.Items[testContainer]; !exist {
-			t.Error("container doesn't exist")
-		}
-	})
-
 	t.Run("upload", func(t *testing.T) {
 		testContainer := "upload"
 		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
 		}
 
 		var loc *url.URL
@@ -312,13 +292,8 @@ func TestStorageService(t *testing.T) {
 	t.Run("download", func(t *testing.T) {
 		testContainer := "download"
 		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
 		}
 
 		var loc *url.URL
@@ -347,13 +322,8 @@ func TestStorageService(t *testing.T) {
 	t.Run("get file info", func(t *testing.T) {
 		testContainer := "fileinfo"
 		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
 		}
 
 		var loc *url.URL
@@ -382,13 +352,8 @@ func TestStorageService(t *testing.T) {
 	t.Run("list", func(t *testing.T) {
 		testContainer := "list"
 		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
 		}
 
 		var loc *url.URL
@@ -425,13 +390,8 @@ func TestStorageService(t *testing.T) {
 	t.Run("delete", func(t *testing.T) {
 		testContainer := "delete"
 		s := &StorageService{
-			blobClient:    cli.GetBlobService(),
-			ContainerName: testContainer,
-			Logger:        log.New(ioutil.Discard, "", log.LstdFlags),
-		}
-		err = s.prepareContainer()
-		if err != nil {
-			t.Fatalf("prepareContainer returns an error: %v", err)
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
 		}
 
 		var loc *url.URL
