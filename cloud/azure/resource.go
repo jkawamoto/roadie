@@ -33,7 +33,6 @@ import (
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/jkawamoto/azure/auth"
 	client "github.com/jkawamoto/roadie/cloud/azure/resource/client"
 	"github.com/jkawamoto/roadie/cloud/azure/resource/client/resource_groups"
 	"github.com/jkawamoto/roadie/cloud/azure/resource/models"
@@ -46,11 +45,10 @@ const (
 
 // ResourceService provides an interface for Azure's resource management service.
 type ResourceService struct {
-	client         *client.ResourceManagementClient
-	token          *auth.Token
-	SubscriptionID string
-	Logger         *log.Logger
-	SleepTime      time.Duration
+	client    *client.ResourceManagementClient
+	Config    *AzureConfig
+	Logger    *log.Logger
+	SleepTime time.Duration
 }
 
 // ResourceGroupSet is a map of which key represents a name of a resource group
@@ -59,18 +57,17 @@ type ResourceGroupSet map[string]*models.ResourceGroup
 
 // NewResourceService creates a resource service associated with a given
 // subscription.
-func NewResourceService(token *auth.Token, subscriptionID string, logger *log.Logger) *ResourceService {
+func NewResourceService(cfg *AzureConfig, logger *log.Logger) *ResourceService {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags|log.Lshortfile)
 	}
 
 	return &ResourceService{
-		client:         client.NewHTTPClient(strfmt.NewFormats()),
-		token:          token,
-		SubscriptionID: subscriptionID,
-		Logger:         logger,
-		SleepTime:      30 * time.Second,
+		client:    client.NewHTTPClient(strfmt.NewFormats()),
+		Config:    cfg,
+		Logger:    logger,
+		SleepTime: DefaultSleepTime,
 	}
 
 }
@@ -78,27 +75,23 @@ func NewResourceService(token *auth.Token, subscriptionID string, logger *log.Lo
 // CreateResourceGroup creates a resource group which has a given name in a
 // given location. The created resource group will belong to the subscription
 // specified whtn this resource service was created.
-func (s *ResourceService) CreateResourceGroup(ctx context.Context, location, name string) (err error) {
+func (s *ResourceService) CreateResourceGroup(ctx context.Context, name string) (err error) {
 
 	s.Logger.Println("Creating resource group", name)
 	created, creating, err := s.client.ResourceGroups.ResourceGroupsCreateOrUpdate(
 		resource_groups.NewResourceGroupsCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(ResourceAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
+			WithSubscriptionID(s.Config.SubscriptionID).
 			WithResourceGroupName(name).
 			WithParameters(&models.ResourceGroup{
-				Location: &location,
-			}), httptransport.BearerToken(s.token.AccessToken))
+				Location: &s.Config.Location,
+			}), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created resource group", name)
-		return
-
-	case creating != nil:
+	case created != nil || creating != nil:
 		var groups ResourceGroupSet
 		for {
 			s.Logger.Println("Waiting for creating resource group", name)
@@ -108,7 +101,13 @@ func (s *ResourceService) CreateResourceGroup(ctx context.Context, location, nam
 				s.Logger.Println("Created resource group", name)
 				return
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -127,8 +126,8 @@ func (s *ResourceService) CheckExistence(ctx context.Context, name string) bool 
 	_, err := s.client.ResourceGroups.ResourceGroupsCheckExistence(
 		resource_groups.NewResourceGroupsCheckExistenceParamsWithContext(ctx).
 			WithAPIVersion(ResourceAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 	return (err == nil)
 
 }
@@ -141,7 +140,7 @@ func (s *ResourceService) ResourceGroups(ctx context.Context) (groups ResourceGr
 	res, err := s.client.ResourceGroups.ResourceGroupsList(
 		resource_groups.NewResourceGroupsListParamsWithContext(ctx).
 			WithAPIVersion(ResourceAPIVersion).
-			WithSubscriptionID(s.SubscriptionID), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve resource groups:", err.Error())
@@ -165,18 +164,14 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 	deleted, deleting, err := s.client.ResourceGroups.ResourceGroupsDelete(
 		resource_groups.NewResourceGroupsDeleteParamsWithContext(ctx).
 			WithAPIVersion(ResourceAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case deleted != nil:
-		s.Logger.Println("Deleted resource group", name)
-		return
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var groups ResourceGroupSet
 		for {
 			s.Logger.Println("Waiting for deleting resource group", name)
@@ -186,7 +181,13 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 				s.Logger.Println("Deleted resource group", name)
 				return
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -202,13 +203,13 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 // CreateResourceGroupIfNotExist checks a given named resource group exists in
 // a given subscription and location. If not exists, this function creates a
 // new resource group.
-func CreateResourceGroupIfNotExist(ctx context.Context, token *auth.Token, subscriptionID, location, name string, logger *log.Logger) (err error) {
+func CreateResourceGroupIfNotExist(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (err error) {
 
-	service := NewResourceService(token, subscriptionID, logger)
-	if service.CheckExistence(ctx, name) {
+	service := NewResourceService(cfg, logger)
+	if service.CheckExistence(ctx, cfg.ResourceGroupName) {
 		return
 	}
 
-	return service.CreateResourceGroup(ctx, location, name)
+	return service.CreateResourceGroup(ctx, cfg.ResourceGroupName)
 
 }

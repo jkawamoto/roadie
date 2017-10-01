@@ -1,6 +1,5 @@
-// +build remote
 //
-// cloud/azure/subscriptions_test.go
+// cloud/azure/startup_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -23,30 +22,38 @@
 package azure
 
 import (
-	"context"
+	"encoding/base64"
+	"strings"
 	"testing"
+
+	"github.com/jkawamoto/roadie/script"
 )
 
-func TestLocations(t *testing.T) {
-	t.SkipNow()
+func TestStartup(t *testing.T) {
 
-	var err error
-	cfg, err := GetTestConfig()
+	cfg := NewAzureConfig()
+	task := &script.Script{
+		Name: "test-instance",
+	}
+
+	res, err := StartupScript(cfg, task)
 	if err != nil {
-		t.Skip("Test configuration is not supplied, skip tests.")
+		t.Fatalf("StartupScript returns an error: %v", err)
 	}
-
-	ctx := context.Background()
-	regions, err := Locations(ctx, &cfg.Token, cfg.SubscriptionID)
+	data, err := base64.StdEncoding.DecodeString(res)
 	if err != nil {
-		t.Fatal(err.Error())
+		t.Fatalf("DecodeString returns an error: %v", err)
 	}
 
-	if len(regions) == 0 {
-		t.Error("There are no available locations")
+	startup := string(data)
+	if strings.Contains(startup, "&lt;") {
+		t.Errorf("URLs are encoded: %v", startup)
 	}
-	for _, v := range regions {
-		t.Log(v.Name)
+	if !strings.Contains(startup, DefaultOSPublisherName) {
+		t.Errorf("doesn't have any configuration: %v", startup)
+	}
+	if !strings.Contains(startup, "name: test-instance") {
+		t.Errorf("doesn't have a script: %v", startup)
 	}
 
 }

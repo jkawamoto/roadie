@@ -30,8 +30,8 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/jkawamoto/azure/auth"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/azure/auth"
 	"github.com/jkawamoto/roadie/cloud/azure/subscriptions/client"
 	"github.com/jkawamoto/roadie/cloud/azure/subscriptions/client/subscriptions"
 )

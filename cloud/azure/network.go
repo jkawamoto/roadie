@@ -33,7 +33,6 @@ import (
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/jkawamoto/azure/auth"
 	client "github.com/jkawamoto/roadie/cloud/azure/network/client"
 	"github.com/jkawamoto/roadie/cloud/azure/network/client/network_interfaces"
 	"github.com/jkawamoto/roadie/cloud/azure/network/client/public_ip_addresses"
@@ -51,26 +50,24 @@ const (
 
 // NetworkService provides an interface for Azure's network service.
 type NetworkService struct {
-	client            *client.NetworkManagementClient
-	token             *auth.Token
-	SubscriptionID    string
-	ResourceGroupName string
-	Location          string
-	AddressPrefix     string
-	Logger            *log.Logger
+	client        *client.NetworkManagementClient
+	Config        *AzureConfig
+	AddressPrefix string
+	Logger        *log.Logger
+	SleepTime     time.Duration
 }
 
 // NewNetworkService creates a new network service interface assosiated with
 // a given subscription id and location; to authorize a authentication token
 // is required.
-func NewNetworkService(ctx context.Context, token *auth.Token, subscriptionID, location string, logger *log.Logger) (service *NetworkService, err error) {
+func NewNetworkService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *NetworkService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags|log.Lshortfile)
 	}
 
 	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, token, subscriptionID, location, ComputeServiceResourceGroupName, logger)
+	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
 	if err != nil {
 		return
 	}
@@ -78,13 +75,11 @@ func NewNetworkService(ctx context.Context, token *auth.Token, subscriptionID, l
 	// Create a management client.
 	cli := client.NewHTTPClient(strfmt.NewFormats())
 	return &NetworkService{
-		client:            cli,
-		token:             token,
-		SubscriptionID:    subscriptionID,
-		Location:          location,
-		ResourceGroupName: ComputeServiceResourceGroupName,
-		AddressPrefix:     DefaultAddressPrefix,
-		Logger:            logger,
+		client:        cli,
+		Config:        cfg,
+		AddressPrefix: DefaultAddressPrefix,
+		Logger:        logger,
+		SleepTime:     DefaultSleepTime,
 	}, nil
 
 }
@@ -98,29 +93,25 @@ func (s *NetworkService) CreatePublicIPAddress(ctx context.Context, name string)
 	created, creating, err := s.client.PublicIPAddresses.PublicIPAddressesCreateOrUpdate(
 		public_ip_addresses.NewPublicIPAddressesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
 			WithPublicIPAddressName(name).
 			WithParameters(&models.PublicIPAddress{
 				Resource: models.Resource{
-					Location: s.Location,
+					Location: s.Config.Location,
 				},
 				Properties: &models.PublicIPAddressPropertiesFormat{
 					PublicIPAddressVersion:   models.PublicIPAddressPropertiesFormatPublicIPAddressVersionIPV4,
 					PublicIPAllocationMethod: models.PublicIPAddressPropertiesFormatPublicIPAllocationMethodDynamic,
 					IDLETimeoutInMinutes:     4,
 				},
-			}), httptransport.BearerToken(s.token.AccessToken))
+			}), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created new public IP address", name)
-		return created.Payload, nil
-
-	case creating != nil:
+	case created != nil || creating != nil:
 		var addresses map[string]*models.PublicIPAddress
 		for {
 			s.Logger.Println("Waiting for creating new public IP address", name)
@@ -130,7 +121,13 @@ func (s *NetworkService) CreatePublicIPAddress(ctx context.Context, name string)
 				s.Logger.Println("Created new public IP address", name)
 				return address, nil
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -151,8 +148,8 @@ func (s *NetworkService) PublicIPAddresses(ctx context.Context) (addresses map[s
 	res, err := s.client.PublicIPAddresses.PublicIPAddressesList(
 		public_ip_addresses.NewPublicIPAddressesListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve existing public IP addresses:", err.Error())
@@ -176,18 +173,15 @@ func (s *NetworkService) DeletePublicIPAddress(ctx context.Context, name string)
 	deleted, deleting, nocontent, err := s.client.PublicIPAddresses.PublicIPAddressesDelete(
 		public_ip_addresses.NewPublicIPAddressesDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithPublicIPAddressName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithPublicIPAddressName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case deleted != nil:
-		s.Logger.Println("Deleted public IP address", name)
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var addresses map[string]*models.PublicIPAddress
 		for {
 			s.Logger.Println("Waiting for deleting public IP address", name)
@@ -196,6 +190,13 @@ func (s *NetworkService) DeletePublicIPAddress(ctx context.Context, name string)
 			} else if _, existing := addresses[name]; !existing {
 				s.Logger.Println("Deleted public IP address", name)
 				return
+			}
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
 			}
 		}
 
@@ -222,12 +223,12 @@ func (s *NetworkService) CreateVirtualNetwork(ctx context.Context, name string) 
 	created, creating, err := s.client.VirtualNetworks.VirtualNetworksCreateOrUpdate(
 		virtual_networks.NewVirtualNetworksCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
 			WithVirtualNetworkName(name).
 			WithParameters(&models.VirtualNetwork{
 				Resource: models.Resource{
-					Location: s.Location,
+					Location: s.Config.Location,
 				},
 				Properties: &models.VirtualNetworkPropertiesFormat{
 					AddressSpace: &models.AddressSpace{
@@ -244,17 +245,13 @@ func (s *NetworkService) CreateVirtualNetwork(ctx context.Context, name string) 
 						},
 					},
 				},
-			}), httptransport.BearerToken(s.token.AccessToken))
+			}), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created virtual network", name)
-		return created.Payload, nil
-
-	case creating != nil:
+	case created != nil || creating != nil:
 		var networks map[string]*models.VirtualNetwork
 		for {
 			s.Logger.Println("Waiting for creating virtual network", name)
@@ -264,7 +261,13 @@ func (s *NetworkService) CreateVirtualNetwork(ctx context.Context, name string) 
 				s.Logger.Println("Created virtual network", name)
 				return vnet, nil
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -286,8 +289,8 @@ func (s *NetworkService) VirtualNetworks(ctx context.Context) (networks map[stri
 	res, err := s.client.VirtualNetworks.VirtualNetworksList(
 		virtual_networks.NewVirtualNetworksListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrive virtual networks:", err.Error())
@@ -310,19 +313,15 @@ func (s *NetworkService) DeleteVirtualNetwork(ctx context.Context, name string) 
 	deleted, deleting, nocontent, err := s.client.VirtualNetworks.VirtualNetworksDelete(
 		virtual_networks.NewVirtualNetworksDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithVirtualNetworkName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithVirtualNetworkName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case deleted != nil:
-		s.Logger.Println("Deleted virtual network", name)
-		return
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var names map[string]*models.VirtualNetwork
 		for {
 			s.Logger.Println("Waiting for deleting virtual network", name)
@@ -332,7 +331,13 @@ func (s *NetworkService) DeleteVirtualNetwork(ctx context.Context, name string) 
 				s.Logger.Println("Deleted virtual network", name)
 				return
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	case nocontent != nil:
@@ -376,12 +381,12 @@ func (s *NetworkService) CreateNetworkInterface(ctx context.Context, name string
 	created, creating, err := s.client.NetworkInterfaces.NetworkInterfacesCreateOrUpdate(
 		network_interfaces.NewNetworkInterfacesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
 			WithNetworkInterfaceName(name).
 			WithParameters(&models.NetworkInterface{
 				Resource: models.Resource{
-					Location: s.Location,
+					Location: s.Config.Location,
 				},
 				Properties: &models.NetworkInterfacePropertiesFormat{
 					IPConfigurations: []*models.NetworkInterfaceIPConfiguration{
@@ -395,17 +400,13 @@ func (s *NetworkService) CreateNetworkInterface(ctx context.Context, name string
 						},
 					},
 				},
-			}), httptransport.BearerToken(s.token.AccessToken))
+			}), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created network interface", name)
-		return created.Payload, nil
-
-	case creating != nil:
+	case created != nil || creating != nil:
 		var interfaces map[string]*models.NetworkInterface
 		for {
 			s.Logger.Println("Waiting for creating network interface", name)
@@ -415,7 +416,13 @@ func (s *NetworkService) CreateNetworkInterface(ctx context.Context, name string
 				s.Logger.Println("Created network interface", name)
 				return nif, nil
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -437,8 +444,8 @@ func (s *NetworkService) NetworkInterfaces(ctx context.Context) (interfaces map[
 	res, err := s.client.NetworkInterfaces.NetworkInterfacesList(
 		network_interfaces.NewNetworkInterfacesListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve network interfaces:", err.Error())
@@ -462,19 +469,16 @@ func (s *NetworkService) DeleteNetworkInterface(ctx context.Context, name string
 	deleted, deleting, nocontent, err := s.client.NetworkInterfaces.NetworkInterfacesDelete(
 		network_interfaces.NewNetworkInterfacesDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithNetworkInterfaceName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithNetworkInterfaceName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot delete network interface", name, ":", err.Error())
 
-	case deleted != nil:
-		s.Logger.Println("Deleted network interface", name)
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var interfaces map[string]*models.NetworkInterface
 		for {
 			s.Logger.Println("Waiting for deleting network interface", name)
@@ -485,7 +489,13 @@ func (s *NetworkService) DeleteNetworkInterface(ctx context.Context, name string
 				s.Logger.Println("Deleted network interface", name)
 				break
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	case nocontent != nil:

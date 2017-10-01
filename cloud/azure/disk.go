@@ -33,7 +33,6 @@ import (
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/jkawamoto/azure/auth"
 	"github.com/jkawamoto/roadie/cloud/azure/disk/client"
 	"github.com/jkawamoto/roadie/cloud/azure/disk/client/disks"
 	"github.com/jkawamoto/roadie/cloud/azure/disk/models"
@@ -46,13 +45,10 @@ const (
 
 // DiskService provides an interface for Azure's disk service.
 type DiskService struct {
-	client            *client.DiskResourceProviderClient
-	token             *auth.Token
-	SubscriptionID    string
-	ResourceGroupName string
-	Location          string
-	Logger            *log.Logger
-	SleepTime         time.Duration
+	client    *client.DiskResourceProviderClient
+	Config    *AzureConfig
+	Logger    *log.Logger
+	SleepTime time.Duration
 }
 
 // DiskSet is a map of which key represents a disk name and value is the
@@ -60,16 +56,16 @@ type DiskService struct {
 type DiskSet map[string]*models.Disk
 
 // NewDiskService creates a new disk service interface assosiated with
-// a given subscription id and location; to authorize a authentication token
+// a given config; to authorize a authentication token
 // is required.
-func NewDiskService(ctx context.Context, token *auth.Token, subscriptionID, location string, logger *log.Logger) (service *DiskService, err error) {
+func NewDiskService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (service *DiskService, err error) {
 
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
 	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, token, subscriptionID, location, ComputeServiceResourceGroupName, logger)
+	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
 	if err != nil {
 		return
 	}
@@ -78,18 +74,15 @@ func NewDiskService(ctx context.Context, token *auth.Token, subscriptionID, loca
 	cli := client.NewHTTPClient(strfmt.NewFormats())
 	switch transport := cli.Transport.(type) {
 	case *httptransport.Runtime:
-		transport.DefaultAuthentication = httptransport.BearerToken(token.AccessToken)
+		transport.DefaultAuthentication = httptransport.BearerToken(cfg.Token.AccessToken)
 		cli.Disks.SetTransport(transport)
 	}
 
 	service = &DiskService{
-		client:            cli,
-		token:             token,
-		SubscriptionID:    subscriptionID,
-		Location:          location,
-		ResourceGroupName: ComputeServiceResourceGroupName,
-		Logger:            logger,
-		SleepTime:         30 * time.Second,
+		client:    cli,
+		Config:    cfg,
+		Logger:    logger,
+		SleepTime: DefaultSleepTime,
 	}
 	return
 
@@ -102,11 +95,11 @@ func (s *DiskService) CreateDiskFromImage(ctx context.Context, name, imageID str
 	created, creating, err := s.client.Disks.DisksCreateOrUpdate(
 		disks.NewDisksCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
 			WithDiskName(name).WithDisk(&models.Disk{
 			Resource: models.Resource{
-				Location: &s.Location,
+				Location: &s.Config.Location,
 			},
 			Properties: &models.DiskProperties{
 				AccountType: models.DiskPropertiesAccountTypePremiumLRS,
@@ -131,15 +124,21 @@ func (s *DiskService) CreateDiskFromImage(ctx context.Context, name, imageID str
 
 	case creating != nil:
 		var info DiskSet
+		s.Logger.Println("Waiting for creating disk", name)
 		for {
-			s.Logger.Println("Waiting for creating disk", name)
 			if info, err = s.Disks(ctx); err != nil {
 				break
 			} else if d, existing := info[name]; existing {
 				s.Logger.Println("Created disk", name)
 				return d, nil
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -159,8 +158,8 @@ func (s *DiskService) Disks(ctx context.Context) (info DiskSet, err error) {
 	res, err := s.client.Disks.DisksListByResourceGroup(
 		disks.NewDisksListByResourceGroupParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve disks")
@@ -183,7 +182,7 @@ func (s *DiskService) DeleteDisk(ctx context.Context, name string) (err error) {
 	deleted, deleting, nocontent, err := s.client.Disks.DisksDelete(
 		disks.NewDisksDeleteParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
+			WithSubscriptionID(s.Config.SubscriptionID).
 			WithDiskName(name))
 
 	switch {
@@ -204,7 +203,13 @@ func (s *DiskService) DeleteDisk(ctx context.Context, name string) (err error) {
 				s.Logger.Panicln("Deleted disk", name)
 				return
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	case nocontent != nil:
@@ -217,6 +222,26 @@ func (s *DiskService) DeleteDisk(ctx context.Context, name string) (err error) {
 	}
 
 	s.Logger.Println("Cannot delete disk", name, ":", err.Error())
+	return
+
+}
+
+// GetDiskInfo retrieves information of a given named disk.
+func (s *DiskService) GetDiskInfo(ctx context.Context, name string) (info *models.Disk, err error) {
+
+	s.Logger.Println("Retrieving information of disk", name)
+	res, err := s.client.Disks.DisksGet(
+		disks.NewDisksGetParamsWithContext(ctx).
+			WithAPIVersion(DiskAPIVersion).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithDiskName(name))
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Retrieved the disk information")
+	info = res.Payload
 	return
 
 }

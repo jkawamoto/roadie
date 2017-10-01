@@ -42,7 +42,7 @@ func TestVirtualNetworks(t *testing.T) {
 
 	ctx := context.Background()
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	service, err := NewNetworkService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", logger)
+	service, err := NewNetworkService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -84,7 +84,7 @@ func TestPublicIPAddress(t *testing.T) {
 
 	ctx := context.Background()
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	service, err := NewNetworkService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", logger)
+	service, err := NewNetworkService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -126,7 +126,7 @@ func TestNetworkInterface(t *testing.T) {
 
 	ctx := context.Background()
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	service, err := NewNetworkService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", logger)
+	service, err := NewNetworkService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

@@ -25,9 +25,12 @@ package azure
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jkawamoto/roadie/script"
 )
 
 func TestCreateInstance(t *testing.T) {
@@ -39,14 +42,23 @@ func TestCreateInstance(t *testing.T) {
 		t.Skip("Test configuration is not supplied, skip tests.")
 	}
 
-	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	if cfg.OS.PublisherName == "" {
+		str, _ := cfg.String()
+		t.Fatal(str)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	name := fmt.Sprintf("test%v-instancd", time.Now().Unix())
-	err = s.CreateInstance(ctx, name, nil, 30)
+	name := fmt.Sprintf("test%v-instance", time.Now().Unix())
+	task := script.Script{}
+	err = s.CreateInstance(ctx, name, &task, 30)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -82,7 +94,8 @@ func TestAvailableMachineTypes(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -111,7 +124,8 @@ func TestImagePublishers(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -140,7 +154,8 @@ func TestImageOffers(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -169,7 +184,8 @@ func TestImageSkus(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -198,7 +214,8 @@ func TestImageVersions(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	s, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", os.Stdout)
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	s, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

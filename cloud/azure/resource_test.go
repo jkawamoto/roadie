@@ -32,7 +32,7 @@ import (
 )
 
 func TestResourceService(t *testing.T) {
-	//t.SkipNow()
+	t.SkipNow()
 
 	var err error
 	cfg, err := GetTestConfig()
@@ -42,11 +42,10 @@ func TestResourceService(t *testing.T) {
 
 	ctx := context.Background()
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	s := NewResourceService(cfg.Token, cfg.SubscriptionID, logger)
+	s := NewResourceService(cfg, logger)
 
-	location := "westus2"
 	name := fmt.Sprintf("resource%v", time.Now().Unix())
-	err = s.CreateResourceGroup(ctx, location, name)
+	err = s.CreateResourceGroup(ctx, name)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

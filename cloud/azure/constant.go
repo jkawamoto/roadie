@@ -1,6 +1,5 @@
-// +build remote
 //
-// cloud/azure/subscriptions_test.go
+// cloud/azure/constant.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -22,31 +21,20 @@
 
 package azure
 
-import (
-	"context"
-	"testing"
+import "time"
+
+const (
+	// DefaultOSPublisherName is the default publisher name of the default OS image.
+	DefaultOSPublisherName = "Canonical"
+	// DefaultOSOffer is the default offer of the default OS image.
+	DefaultOSOffer = "UbuntuServer"
+	// DefaultOSSkus is the default skus of the default OS image.
+	DefaultOSSkus = "16.10"
+	// DefaultOSVersion is the default version of the default version.
+	DefaultOSVersion = "16.10.201703070"
+	// DefaultStorageAccount is the default storage account name.
+	DefaultStorageAccount = "roadie"
+	// DefaultSleepTime is the default sleeping time to wait creating or deleting
+	// objects.
+	DefaultSleepTime = 30 * time.Second
 )
-
-func TestLocations(t *testing.T) {
-	t.SkipNow()
-
-	var err error
-	cfg, err := GetTestConfig()
-	if err != nil {
-		t.Skip("Test configuration is not supplied, skip tests.")
-	}
-
-	ctx := context.Background()
-	regions, err := Locations(ctx, &cfg.Token, cfg.SubscriptionID)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-
-	if len(regions) == 0 {
-		t.Error("There are no available locations")
-	}
-	for _, v := range regions {
-		t.Log(v.Name)
-	}
-
-}

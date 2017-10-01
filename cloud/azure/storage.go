@@ -37,7 +37,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/storage"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/jkawamoto/azure/auth"
 	"github.com/jkawamoto/roadie/cloud"
 	client "github.com/jkawamoto/roadie/cloud/azure/storage/client"
 	"github.com/jkawamoto/roadie/cloud/azure/storage/client/storage_accounts"
@@ -47,11 +46,6 @@ import (
 const (
 	// StorageAPIVersion defines API version of storage service.
 	StorageAPIVersion = "2016-12-01"
-
-	// StorageServiceResourceGroupName defines the default resource group name
-	// used in Roadie.
-	StorageServiceResourceGroupName = "roadie"
-
 	// StorageServiceContainerName defines the default container name used in
 	// Roadie.
 	StorageServiceContainerName = "roadie"
@@ -63,33 +57,28 @@ type StorageService struct {
 	blobClient storage.BlobStorageClient
 	// Client of Azure resource manager
 	armClient *client.StorageManagement
-	// SubscriptID
-	SubscriptionID string
-	// Location
-	Location string
-	// Resource group name
-	ResourceGroupName string
+	// Configuration
+	Config *AzureConfig
+	// Container name
+	ContainerName string
 	// Logger
 	Logger *log.Logger
 	// Sleep time
 	SleepTime time.Duration
-	// Container name
-	ContainerName string
 }
 
 // NewStorageService creates an interface of the storage service which has a
 // given name and belongs to given subscription and location.
-// If io.Writer out is given, verbose mode is on and logging information will
-// be written to the writer.
-func NewStorageService(ctx context.Context, token *auth.Token, subscriptionID, location, account string, out io.Writer) (s *StorageService, err error) {
+// If log.Logger logger is given, verbose mode is on and logging information will
+// be written to the logger.
+func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (s *StorageService, err error) {
 
-	if out == nil {
-		out = ioutil.Discard
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
-	logger := log.New(out, "", log.LstdFlags)
 
 	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, token, subscriptionID, location, StorageServiceResourceGroupName, logger)
+	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
 	if err != nil {
 		return
 	}
@@ -98,37 +87,35 @@ func NewStorageService(ctx context.Context, token *auth.Token, subscriptionID, l
 	manager := client.NewHTTPClient(strfmt.NewFormats())
 	switch transport := manager.Transport.(type) {
 	case *httptransport.Runtime:
-		transport.DefaultAuthentication = httptransport.BearerToken(token.AccessToken)
+		transport.DefaultAuthentication = httptransport.BearerToken(cfg.Token.AccessToken)
 		manager.StorageAccounts.SetTransport(transport)
 	}
 
 	s = &StorageService{
-		armClient:         manager,
-		SubscriptionID:    subscriptionID,
-		Location:          location,
-		ResourceGroupName: StorageServiceResourceGroupName,
-		Logger:            logger,
-		SleepTime:         30 * time.Second,
-		ContainerName:     StorageServiceContainerName,
+		armClient:     manager,
+		Config:        cfg,
+		ContainerName: StorageServiceContainerName,
+		Logger:        logger,
+		SleepTime:     DefaultSleepTime,
 	}
 
 	// Create an account if necessary.
 	var exist bool
-	exist, err = s.checkStorageAccount(ctx, account)
+	exist, err = s.checkStorageAccount(ctx)
 	if err != nil {
 		return
 	} else if !exist {
-		err = s.createStorageAccount(ctx, account)
+		err = s.createStorageAccount(ctx)
 		if err != nil {
 			return
 		}
 	}
 
-	key, err := s.getStorageKey(ctx, account)
+	key, err := s.getStorageKey(ctx)
 	if err != nil {
 		return
 	}
-	cli, err := storage.NewBasicClient(account, key)
+	cli, err := storage.NewBasicClient(s.Config.StorageAccount, key)
 	if err != nil {
 		return
 	}
@@ -284,41 +271,41 @@ func (s *StorageService) Delete(ctx context.Context, loc *url.URL) (err error) {
 }
 
 // checkStorageAccount checks existence of a given account in a given subscription.
-func (s *StorageService) checkStorageAccount(ctx context.Context, account string) (bool, error) {
+func (s *StorageService) checkStorageAccount(ctx context.Context) (bool, error) {
 
-	s.Logger.Println("Checking existence of storage account", account)
+	s.Logger.Println("Checking existence of storage account", s.Config.StorageAccount)
 	list, err := s.armClient.StorageAccounts.StorageAccountsList(
 		storage_accounts.NewStorageAccountsListParamsWithContext(ctx).
 			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.SubscriptionID))
+			WithSubscriptionID(s.Config.SubscriptionID))
 
 	if err == nil {
 		for _, v := range list.Payload.Value {
-			if v.Name == account {
-				s.Logger.Println("Found storage account", account)
+			if v.Name == s.Config.StorageAccount {
+				s.Logger.Println("Found storage account", s.Config.StorageAccount)
 				return true, nil
 			}
 		}
 	}
 
-	s.Logger.Println("Cannot find storage account", account)
+	s.Logger.Println("Cannot find storage account", s.Config.StorageAccount)
 	return false, err
 
 }
 
 // createStorageAccount creates a given account in a given subscription.
-func (s *StorageService) createStorageAccount(ctx context.Context, account string) (err error) {
+func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
 
-	s.Logger.Println("Creating storage account", account)
+	s.Logger.Println("Creating storage account", s.Config.StorageAccount)
 	created, creating, err := s.armClient.StorageAccounts.StorageAccountsCreate(
 		storage_accounts.NewStorageAccountsCreateParamsWithContext(ctx).
 			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithAccountName(account).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithAccountName(s.Config.StorageAccount).
 			WithParameters(&models.StorageAccountCreateParameters{
 				Kind:     toPtr(models.StorageAccountKindBlobStorage),
-				Location: &s.Location,
+				Location: &s.Config.Location,
 				Sku: &models.Sku{
 					Name: toPtr(models.SkuNameStandardRAGRS),
 					Tier: models.SkuTierStandard,
@@ -332,21 +319,23 @@ func (s *StorageService) createStorageAccount(ctx context.Context, account strin
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created storage account", account)
-		return
-
-	case creating != nil:
+	case created != nil || creating != nil:
 		var exist bool
 		for {
-			s.Logger.Println("Waiting for creating storage account", account)
-			if exist, err = s.checkStorageAccount(ctx, account); err != nil {
+			s.Logger.Println("Waiting for creating storage account", s.Config.StorageAccount)
+			if exist, err = s.checkStorageAccount(ctx); err != nil {
 				break
 			} else if exist {
-				s.Logger.Println("Created storage account", account)
+				s.Logger.Println("Created storage account", s.Config.StorageAccount)
 				return
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -354,40 +343,43 @@ func (s *StorageService) createStorageAccount(ctx context.Context, account strin
 
 	}
 
-	s.Logger.Println("Cannot create storage account", account, ":", err.Error())
+	s.Logger.Println("Cannot create storage account", s.Config.StorageAccount, ":", err.Error())
 	return
 
 }
 
 // deleteStorageAccount deletes a given named storage account.
-func (s *StorageService) deleteStorageAccount(ctx context.Context, account string) (err error) {
+func (s *StorageService) deleteStorageAccount(ctx context.Context) (err error) {
 
-	s.Logger.Println("Deleting storage account", account)
+	s.Logger.Println("Deleting storage account", s.Config.StorageAccount)
 	deleted, deleting, err := s.armClient.StorageAccounts.StorageAccountsDelete(
 		storage_accounts.NewStorageAccountsDeleteParamsWithContext(ctx).
 			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithAccountName(account))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithAccountName(s.Config.StorageAccount))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case deleted != nil:
-		s.Logger.Println("Deleted storage account", account)
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var exist bool
 		for {
-			s.Logger.Println("Waiting for deleting storage account", account)
-			if exist, err = s.checkStorageAccount(ctx, account); err != nil {
+			s.Logger.Println("Waiting for deleting storage account", s.Config.StorageAccount)
+			if exist, err = s.checkStorageAccount(ctx); err != nil {
 				break
 			} else if !exist {
-				s.Logger.Println("Deleted storage account", account)
+				s.Logger.Println("Deleted storage account", s.Config.StorageAccount)
 				return
 			}
-			time.Sleep(s.SleepTime)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -395,24 +387,24 @@ func (s *StorageService) deleteStorageAccount(ctx context.Context, account strin
 
 	}
 
-	s.Logger.Println("Cannot delete storage account", account, ":", err.Error())
+	s.Logger.Println("Cannot delete storage account", s.Config.StorageAccount, ":", err.Error())
 	return
 
 }
 
 // getStorageKey returns a storage access key of a given account.
-func (s *StorageService) getStorageKey(ctx context.Context, account string) (key string, err error) {
+func (s *StorageService) getStorageKey(ctx context.Context) (key string, err error) {
 
-	s.Logger.Println("Retrieving access keys for account", account)
+	s.Logger.Println("Retrieving access keys for account", s.Config.StorageAccount)
 	keyList, err := s.armClient.StorageAccounts.StorageAccountsListKeys(
 		storage_accounts.NewStorageAccountsListKeysParamsWithContext(ctx).
 			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithAccountName(account))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithAccountName(s.Config.StorageAccount))
 
 	if err != nil || len(keyList.Payload.Keys) == 0 {
-		keys, err := s.generateStorageKeys(ctx, account)
+		keys, err := s.generateStorageKeys(ctx)
 		if err != nil {
 			s.Logger.Println("Cannot retrieve access keys")
 			return "", err
@@ -430,15 +422,15 @@ func (s *StorageService) getStorageKey(ctx context.Context, account string) (key
 }
 
 // generateStorageKeys generates access keys for a given account.
-func (s *StorageService) generateStorageKeys(ctx context.Context, account string) (keys []*models.StorageAccountKey, err error) {
+func (s *StorageService) generateStorageKeys(ctx context.Context) (keys []*models.StorageAccountKey, err error) {
 
-	s.Logger.Println("Generating access keys for account", account)
+	s.Logger.Println("Generating access keys for account", s.Config.StorageAccount)
 	res, err := s.armClient.StorageAccounts.StorageAccountsRegenerateKey(
 		storage_accounts.NewStorageAccountsRegenerateKeyParamsWithContext(ctx).
 			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithAccountName(account))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithAccountName(s.Config.StorageAccount))
 
 	if err != nil {
 		err = NewAPIError(err)

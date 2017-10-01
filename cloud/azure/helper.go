@@ -24,6 +24,7 @@ package azure
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 const (
@@ -43,4 +44,14 @@ func toJSON(param interface{}) string {
 		return fmt.Sprintln(param)
 	}
 	return string(buf)
+}
+
+// Wait a given duration.
+func wait(d time.Duration) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		time.Sleep(d)
+		close(ch)
+	}()
+	return ch
 }

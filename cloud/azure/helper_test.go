@@ -22,79 +22,49 @@
 package azure
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"log"
 	"net/url"
+	"os"
+	"testing"
 	"time"
 
-	"github.com/jkawamoto/azure/auth"
+	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
 
-type TestConfig struct {
-	SubscriptionID string `json:"subscription_id"`
-	ClientID       string `json:"client_id"`
-	Token          *auth.Token
-}
+func GetTestConfig() (cfg *AzureConfig, err error) {
 
-func GetTestConfig() (cfg *TestConfig, err error) {
+	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile)
 
-	cfg = new(TestConfig)
-	data, err := ioutil.ReadFile("./test_config.json")
+	logger.Println("Loading a configuration file")
+	cfg, err = NewAzureConfigFromFile("./test_config.yml")
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(data, cfg)
-	if err != nil {
-		return
-	}
-
-	redirect, err := url.Parse("http://localhost:53612/")
-	state := "12346"
-	if err != nil {
-		return
-	}
-
+	logger.Println("Loading a token")
 	token, err := auth.NewToken("token.json")
 	if err != nil {
-
-		var authorizer *auth.Authorizer
-		authorizer, err = auth.NewAuthorizer("common", cfg.ClientID, redirect, state)
-		if err != nil {
-			return
-		}
-		defer authorizer.Close()
-
-		fmt.Println(authorizer.GetAuthorizeURL())
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
-		token, err = authorizer.WaitResponse(ctx)
-		if err != nil {
-			return
-		}
-
-		if err = token.Save("token.json", 0644); err != nil {
-			return
-		}
-
-	} else if token.Expired() {
-
-		authorizer := auth.NewManualAuthorizer("common", cfg.ClientID, redirect, state)
-		token, err = authorizer.RefreshToken(token)
-		if err != nil {
-			return
-		}
-
-		if err = token.Save("token.json", 0644); err != nil {
-			return
-		}
-
+		return
 	}
-
-	cfg.Token = token
+	if token.Expired() {
+		logger.Println("Token was expired; refreshing it")
+		token, err = auth.NewManualAuthorizer(cfg.TenantID, cfg.ClientID, &url.URL{}, "0000").RefreshToken(token)
+		if err != nil {
+			return
+		}
+	}
+	cfg.Token = *token
 	return
+
+}
+
+func TestWait(t *testing.T) {
+
+	select {
+	case <-wait(1 * time.Minute):
+		t.Fatal("Returned waiting 1min function first.")
+	case <-wait(1 * time.Second):
+		t.Log("Waiting 1 second returns first.")
+	}
 
 }

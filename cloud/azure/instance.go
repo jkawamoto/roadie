@@ -24,20 +24,19 @@ package azure
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/jkawamoto/azure/auth"
 	"github.com/jkawamoto/roadie/cloud"
 	client "github.com/jkawamoto/roadie/cloud/azure/compute/client"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_images"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_sizes"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machines"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/models"
+	"github.com/jkawamoto/roadie/script"
 )
 
 const (
@@ -45,19 +44,15 @@ const (
 	ComputeAPIVersion = "2016-04-30-preview"
 	// ComputeServiceDefaultMachineType defines the default machine type.
 	ComputeServiceDefaultMachineType = models.HardwareProfileVMSizeStandardDS1V2
+	// ComputeServiceCustomScriptExtension defines the name of custom script
+	// extention.
+	ComputeServiceCustomScriptExtension = "CustomScriptForLinux"
 )
 
 // ComputeService provides an interface for Azure's compute service.
 type ComputeService struct {
-	client *client.ComputeManagementClient
-	token  *auth.Token
-
-	SubscriptionID    string
-	Location          string
-	ResourceGroupName string
-
-	MachineType string
-
+	client    *client.ComputeManagementClient
+	Config    *AzureConfig
 	Logger    *log.Logger
 	SleepTime time.Duration
 }
@@ -69,17 +64,15 @@ type Entry struct {
 }
 
 // NewComputeService creates a new compute service interface assosiated with
-// a given subscription id and location; to authorize a authentication token
-// is required.
-func NewComputeService(ctx context.Context, token *auth.Token, subscriptionID, location string, out io.Writer) (s *ComputeService, err error) {
+// a given configuration.
+func NewComputeService(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (s *ComputeService, err error) {
 
-	if out == nil {
-		out = ioutil.Discard
+	if logger == nil {
+		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
-	logger := log.New(out, "", log.LstdFlags)
 
 	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, token, subscriptionID, location, ComputeServiceResourceGroupName, logger)
+	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
 	if err != nil {
 		return
 	}
@@ -87,33 +80,33 @@ func NewComputeService(ctx context.Context, token *auth.Token, subscriptionID, l
 	// Create a management client.
 	cli := client.NewHTTPClient(strfmt.NewFormats())
 	s = &ComputeService{
-		client:            cli,
-		token:             token,
-		SubscriptionID:    subscriptionID,
-		Location:          location,
-		ResourceGroupName: ComputeServiceResourceGroupName,
-		MachineType:       ComputeServiceDefaultMachineType,
-		Logger:            logger,
-		SleepTime:         30 * time.Second,
+		client:    cli,
+		Config:    cfg,
+		Logger:    logger,
+		SleepTime: DefaultSleepTime,
 	}
 	return
 
 }
 
 // CreateInstance creates an instance which has a given name.
-func (s *ComputeService) CreateInstance(ctx context.Context, name string, metadata []*cloud.MetadataItem, disksize int64) (err error) {
+func (s *ComputeService) CreateInstance(ctx context.Context, name string, script *script.Script, disksize int64) (err error) {
 
-	publisherName := "Canonical"
-	offer := "UbuntuServer"
-	skus := "16.10"
-	version := "16.10.201703070"
+	if script.Name == "" {
+		script.Name = name
+	}
 
-	// Create dependent service interfaces.
-	networkService, err := NewNetworkService(ctx, s.token, s.SubscriptionID, s.Location, s.Logger)
+	startup, err := StartupScript(s.Config, script)
 	if err != nil {
 		return
 	}
-	diskService, err := NewDiskService(ctx, s.token, s.SubscriptionID, s.Location, s.Logger)
+
+	// Create dependent service interfaces.
+	networkService, err := NewNetworkService(ctx, s.Config, s.Logger)
+	if err != nil {
+		return
+	}
+	diskService, err := NewDiskService(ctx, s.Config, s.Logger)
 	if err != nil {
 		return
 	}
@@ -127,18 +120,18 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 	osDiskName := s.osDiskName(name)
 	param := &models.VirtualMachine{
 		Resource: models.Resource{
-			Location: &s.Location,
+			Location: &s.Config.Location,
 		},
 		Properties: &models.VirtualMachineProperties{
 			HardwareProfile: &models.HardwareProfile{
-				VMSize: s.MachineType,
+				VMSize: s.Config.MachineType,
 			},
 			StorageProfile: &models.StorageProfile{
 				ImageReference: &models.ImageReference{
-					Offer:     offer,
-					Publisher: publisherName,
-					Sku:       skus,
-					Version:   version,
+					Publisher: s.Config.OS.PublisherName,
+					Offer:     s.Config.OS.Offer,
+					Sku:       s.Config.OS.Skus,
+					Version:   s.Config.OS.Version,
 				},
 				OsDisk: &models.OSDisk{
 					Name:         osDiskName,
@@ -152,6 +145,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 				ComputerName:  name,
 				AdminUsername: "roadie",
 				AdminPassword: "pass2roadie-A",
+				CustomData:    startup,
 				LinuxConfiguration: &models.LinuxConfiguration{
 					DisablePasswordAuthentication: false,
 				},
@@ -180,29 +174,32 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 	creating, created, err := s.client.VirtualMachines.VirtualMachinesCreateOrUpdate(
 		virtual_machines.NewVirtualMachinesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
 			WithVMName(name).
-			WithParameters(param), httptransport.BearerToken(s.token.AccessToken))
+			WithParameters(param), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 
-	case created != nil:
-		s.Logger.Println("Created virtual machine", name)
-
-	case creating != nil:
-		var instances map[string]struct{}
+	case created != nil || creating != nil:
+		var info *models.VirtualMachine
+		s.Logger.Println("Waiting for creating virtual machine", name)
 		for {
-			s.Logger.Println("Waiting for creating virtual machine", name)
-			if instances, err = s.Instances(ctx); err != nil {
+			info, err = s.GetInstanceInfo(ctx, name)
+			if err != nil {
 				break
-			} else if _, existing := instances[name]; existing {
-				s.Logger.Println("Created virtual machine", name)
+			} else if info.Properties.ProvisioningState == "Succeeded" {
 				break
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	default:
@@ -215,10 +212,16 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, metada
 	for {
 		if diskSet, err = diskService.Disks(ctx); err != nil {
 			break
-		} else if _, exist := diskSet[osDiskName]; exist {
+		} else if info, exist := diskSet[osDiskName]; exist && info.Properties.ProvisioningState == "Succeeded" {
 			break
 		}
-		time.Sleep(s.SleepTime)
+
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			break
+		case <-wait(s.SleepTime):
+		}
 	}
 
 	if err != nil {
@@ -237,19 +240,16 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 	deleted, deleting, nocontent, err := s.client.VirtualMachines.VirtualMachinesDelete(
 		virtual_machines.NewVirtualMachinesDeleteParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName).
-			WithVMName(name), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
 	case err != nil:
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot delete virtual machine", name)
 
-	case deleted != nil:
-		s.Logger.Println("Deleted virtual machine", name)
-
-	case deleting != nil:
+	case deleted != nil || deleting != nil:
 		var instances map[string]struct{}
 		for {
 			s.Logger.Println("Waiting for deleting virtual machine", name)
@@ -260,7 +260,13 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 				s.Logger.Println("Deleted virtual machine", name)
 				break
 			}
-			time.Sleep(30 * time.Second)
+
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				break
+			case <-wait(s.SleepTime):
+			}
 		}
 
 	case nocontent != nil:
@@ -272,14 +278,14 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 
 	}
 
-	networkService, e1 := NewNetworkService(ctx, s.token, s.SubscriptionID, s.Location, s.Logger)
+	networkService, e1 := NewNetworkService(ctx, s.Config, s.Logger)
 	if e1 != nil {
 		s.Logger.Println("Cannote delete a network interface associated with virtual machine", name, ":", err.Error())
 	} else {
 		e1 = networkService.DeleteNetworkInterface(ctx, s.networkInterfaceName(name))
 	}
 
-	diskService, e2 := NewDiskService(ctx, s.token, s.SubscriptionID, s.Location, s.Logger)
+	diskService, e2 := NewDiskService(ctx, s.Config, s.Logger)
 	if e2 != nil {
 		s.Logger.Println("Cannot delete a disk associated with virtual machine", name, ":", err.Error())
 	} else {
@@ -304,8 +310,8 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 	res, err := s.client.VirtualMachines.VirtualMachinesList(
 		virtual_machines.NewVirtualMachinesListParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithResourceGroupName(s.ResourceGroupName), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve instances")
@@ -314,6 +320,7 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 
 	instances = make(map[string]struct{})
 	for _, v := range res.Payload.Value {
+		fmt.Println(v.Properties.ProvisioningState)
 		instances[v.Name] = struct{}{}
 	}
 	s.Logger.Println("Retrieved instances")
@@ -321,10 +328,30 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 
 }
 
+// GetInstanceInfo retrieves information of a given named instance.
+func (s *ComputeService) GetInstanceInfo(ctx context.Context, name string) (info *models.VirtualMachine, err error) {
+
+	s.Logger.Println("Retrieving information of instance", name)
+	res, err := s.client.VirtualMachines.VirtualMachinesGet(
+		virtual_machines.NewVirtualMachinesGetParamsWithContext(ctx).
+			WithAPIVersion(ComputeAPIVersion).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
+	if err != nil {
+		return
+	}
+
+	s.Logger.Println("Retrieved the instance information")
+	info = res.Payload
+	return
+
+}
+
 // AvailableRegions returns a list of available regions.
 func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.Region, err error) {
 	s.Logger.Println("Retrieving available regions")
-	regions, err = Locations(ctx, s.token, s.SubscriptionID)
+	regions, err = Locations(ctx, &s.Config.Token, s.Config.SubscriptionID)
 	if err != nil {
 		s.Logger.Println("Cannot retrieve available regions")
 	} else {
@@ -340,8 +367,8 @@ func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []clo
 	res, err := s.client.VirtualMachineSizes.VirtualMachineSizesList(
 		virtual_machine_sizes.NewVirtualMachineSizesListParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve available machine types:", err.Error())
@@ -367,8 +394,8 @@ func (s *ComputeService) ImagePublishers(ctx context.Context) (publishers []Entr
 	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListPublishers(
 		virtual_machine_images.NewVirtualMachineImagesListPublishersParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve image publishers:", err.Error())
@@ -394,9 +421,9 @@ func (s *ComputeService) ImageOffers(ctx context.Context, publisher string) (off
 	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListOffers(
 		virtual_machine_images.NewVirtualMachineImagesListOffersParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location).
-			WithPublisherName(publisher), httptransport.BearerToken(s.token.AccessToken))
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location).
+			WithPublisherName(publisher), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve image offers:", err.Error())
@@ -422,10 +449,10 @@ func (s *ComputeService) ImageSkus(ctx context.Context, publisherName, offer str
 	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListSkus(
 		virtual_machine_images.NewVirtualMachineImagesListSkusParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location).
 			WithPublisherName(publisherName).
-			WithOffer(offer), httptransport.BearerToken(s.token.AccessToken))
+			WithOffer(offer), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve image skus:", err.Error())
@@ -452,11 +479,11 @@ func (s *ComputeService) ImageVersions(ctx context.Context, publisherName, offer
 	res, err := s.client.VirtualMachineImages.VirtualMachineImagesList(
 		virtual_machine_images.NewVirtualMachineImagesListParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location).
 			WithPublisherName(publisherName).
 			WithOffer(offer).
-			WithSkus(skus), httptransport.BearerToken(s.token.AccessToken))
+			WithSkus(skus), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve image versions:", err.Error())
@@ -482,12 +509,12 @@ func (s *ComputeService) ImageID(ctx context.Context, publisherName, offer, skus
 	res, err := s.client.VirtualMachineImages.VirtualMachineImagesGet(
 		virtual_machine_images.NewVirtualMachineImagesGetParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.SubscriptionID).
-			WithLocation(s.Location).
+			WithSubscriptionID(s.Config.SubscriptionID).
+			WithLocation(s.Config.Location).
 			WithPublisherName(publisherName).
 			WithOffer(offer).
 			WithSkus(skus).
-			WithVersion(version), httptransport.BearerToken(s.token.AccessToken))
+			WithVersion(version), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	if err != nil {
 		err = NewAPIError(err)

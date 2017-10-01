@@ -1,4 +1,3 @@
-// +build remote
 //
 // cloud/azure/storage_remote_test.go
 //
@@ -34,7 +33,8 @@ import (
 	"github.com/jkawamoto/roadie/script"
 )
 
-func TestStorageService(t *testing.T) {
+func TestStorageServiceWithRemoteConnection(t *testing.T) {
+	t.SkipNow()
 
 	var err error
 	cfg, err := GetTestConfig()
@@ -44,12 +44,13 @@ func TestStorageService(t *testing.T) {
 
 	ctx := context.Background()
 	account := fmt.Sprintf("test-storage%v", time.Now().Unix())
-	s, err := NewStorageService(ctx, cfg.Token, cfg.SubscriptionID, "westus2", account, os.Stdout)
+	cfg.StorageAccount = account
+	s, err := NewStorageService(ctx, cfg, nil)
 	if err != nil {
 		t.Fatalf("cannot create a storage service: %v", err)
 	}
 	defer func() {
-		err = s.deleteStorageAccount(ctx, account)
+		err = s.deleteStorageAccount(ctx)
 		if err != nil {
 			t.Errorf("cannot delete storage account: %v", err)
 		}
@@ -58,10 +59,13 @@ func TestStorageService(t *testing.T) {
 	fp, err := os.Open("Makefile")
 	defer fp.Close()
 
-	loc := url.Parse(script.RoadieSchemePrefix + fmt.Sprintf("f%d", time.Now().Unix()))
+	loc, err := url.Parse(script.RoadieSchemePrefix + fmt.Sprintf("f%d", time.Now().Unix()))
+	if err != nil {
+		t.Fatalf("cannot parse a URL: %v", err)
+	}
 	t.Log("uploading...", loc)
 
-	_, err = s.Upload(ctx, loc, fp)
+	err = s.Upload(ctx, loc, fp)
 	if err != nil {
 		t.Fatalf("cannot upload a file: %v", err)
 	}

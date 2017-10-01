@@ -37,13 +37,11 @@ const (
 	// - redirect URI,
 	// - state information.
 	authorizeEndpoint = "https://login.microsoftonline.com/%v/oauth2/authorize?client_id=%v&response_type=code&redirect_uri=%v&response_mode=query&state=%v&resource=%v"
-	// authorizeEndpoint = "https://login.windows.net/%v/oauth2/authorize?client_id=%v&response_type=code&redirect_uri=%v&response_mode=query&state=%v&resource=%v"
 
 	// tokenEndpoint defines a URL to be used for obtaining authorization token.
 	// Ut has the following place holder:
 	// - tenant ID where the application is registered.
 	tokenEndpoint = "https://login.microsoftonline.com/%v/oauth2/token"
-	// tokenEndpoint = "https://login.windows.net/%v/oauth2/token"
 )
 
 // ManualAuthorizer is an authorizer which gets an authorization code manually.
@@ -96,7 +94,7 @@ func (a *ManualAuthorizer) RefreshToken(token *Token) (newToken *Token, err erro
 	request.Add("grant_type", "refresh_token")
 	request.Add("client_id", a.clientID)
 	request.Add("refresh_token", token.RefreshToken)
-	request.Add("resource", "00000002-0000-0000-c000-000000000000")
+	request.Add("resource", "https://management.core.windows.net/")
 	return requestToken(a.tenantID, request)
 
 }

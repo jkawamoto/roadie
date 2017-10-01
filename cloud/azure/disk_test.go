@@ -41,10 +41,8 @@ func TestDiskService(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	location := "westus2"
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-
-	service, err := NewDiskService(ctx, cfg.Token, cfg.SubscriptionID, location, logger)
+	service, err := NewDiskService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -53,7 +51,7 @@ func TestDiskService(t *testing.T) {
 	offer := "UbuntuServer"
 	skus := "16.10"
 	version := "16.10.201703070"
-	compute, err := NewComputeService(ctx, cfg.Token, cfg.SubscriptionID, location, os.Stdout)
+	compute, err := NewComputeService(ctx, cfg, logger)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
