@@ -24,6 +24,7 @@ package azure
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
@@ -84,7 +85,12 @@ func (m *InstanceManager) Instances(ctx context.Context, handler cloud.InstanceH
 	if err != nil {
 		return
 	}
+
 	for name, info := range jobs {
+		// If name has the queue prefix, omit it.
+		if strings.HasPrefix(name, QueuePrefix) {
+			continue
+		}
 		err = handler(name, info.State)
 		if err != nil {
 			return

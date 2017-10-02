@@ -63,4 +63,9 @@ const (
 	ResultContainer = "result"
 	// LogContainer is the name of the container where logs will be stored.
 	LogContainer = "log"
+
+	// QueuePrefix is a prefix a job which is working for a queue must has.
+	QueuePrefix = "queue-"
+	// TaskPrefix is a prefix a task which is working for a queue must has.
+	TaskPrefix = "task-"
 )
