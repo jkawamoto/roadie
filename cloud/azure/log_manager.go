@@ -135,16 +135,8 @@ func (m *LogManager) get(ctx context.Context, urls []*url.URL, handler cloud.Log
 	wg.Go(func() (err error) {
 		defer writer.Close()
 		for _, loc := range urls {
-			err = m.storage.Download(ctx, loc, writer)
+			err = ignoreNotFoundError(m.storage.Download(ctx, loc, writer))
 			if err != nil {
-				switch e := err.(type) {
-				case storage.AzureStorageServiceError:
-					if e.StatusCode == 404 {
-						m.Logger.Printf("Log file %q doesn't exist\n", loc)
-						err = nil
-						continue
-					}
-				}
 				break
 			}
 		}
@@ -157,7 +149,30 @@ func (m *LogManager) get(ctx context.Context, urls []*url.URL, handler cloud.Log
 
 // Delete instance log.
 func (m *LogManager) Delete(ctx context.Context, instanceName string) error {
-	return fmt.Errorf("not implemented")
+
+	var errs []error
+	for _, format := range []string{"%v-init.log", "%v.log"} {
+		loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf(format, instanceName)))
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		err = ignoreNotFoundError(m.storage.Delete(ctx, loc))
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	err := ignoreNotFoundError(m.batch.DeleteJob(ctx, instanceName))
+	if err != nil {
+		//errs = append(errs, err)
+		_ = err
+	}
+
+	if len(errs) != 0 {
+		return errs[0]
+	}
+	return nil
+
 }
 
 // GetQueueLog retrieves log of a given queue.
@@ -199,5 +214,20 @@ func (m *LogManager) GetTaskLog(ctx context.Context, queue, task string, handler
 		return
 	}
 	return m.get(ctx, []*url.URL{loc}, handler)
+
+}
+
+// ignoreNotFoundError is a wrapper function and ignores not found error.
+func ignoreNotFoundError(err error) error {
+
+	if err != nil {
+		switch e := err.(type) {
+		case storage.AzureStorageServiceError:
+			if e.StatusCode == 404 {
+				err = nil
+			}
+		}
+	}
+	return err
 
 }
