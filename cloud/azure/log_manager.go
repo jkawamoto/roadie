@@ -64,11 +64,6 @@ func NewLogManager(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (m
 // Get retrievs log entries.
 func (m *LogManager) Get(ctx context.Context, instanceName string, from time.Time, handler cloud.LogHandler) (err error) {
 
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf("%v.log", instanceName)))
-	if err != nil {
-		return
-	}
-
 	ch := make(chan string)
 	wg, ctx := errgroup.WithContext(ctx)
 	reader, writer := io.Pipe()
@@ -108,9 +103,20 @@ func (m *LogManager) Get(ctx context.Context, instanceName string, from time.Tim
 		}
 	})
 
-	wg.Go(func() error {
+	wg.Go(func() (err error) {
 		defer writer.Close()
-		return m.service.Download(ctx, loc, writer)
+		var loc *url.URL
+		for _, format := range []string{"%v-init.log", "%v.log"} {
+			loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf(format, instanceName)))
+			if err != nil {
+				break
+			}
+			err = m.service.Download(ctx, loc, writer)
+			if err != nil {
+				break
+			}
+		}
+		return
 	})
 
 	return wg.Wait()

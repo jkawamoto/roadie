@@ -58,13 +58,17 @@ func TestLogManagerGet(t *testing.T) {
 	ctx := context.Background()
 	name := "test-name"
 	data := "a\nb\nc\nd\n"
-	loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf("%v.log", name)))
-	if err != nil {
-		t.Fatalf("cannot parse a URL: %v", err)
-	}
-	err = m.service.Upload(ctx, loc, strings.NewReader(data))
-	if err != nil {
-		t.Fatalf("cannot upload a file to %v: %v", loc, err)
+
+	var loc *url.URL
+	for _, format := range []string{"%v-init.log", "%v.log"} {
+		loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf(format, name)))
+		if err != nil {
+			t.Fatalf("cannot parse a URL: %v", err)
+		}
+		err = m.service.Upload(ctx, loc, strings.NewReader(data))
+		if err != nil {
+			t.Fatalf("cannot upload a file to %v: %v", loc, err)
+		}
 	}
 
 	t.Run("retrieve logs", func(t *testing.T) {
@@ -76,7 +80,7 @@ func TestLogManagerGet(t *testing.T) {
 		if err != nil {
 			t.Errorf("Get returns an error: %v", err)
 		}
-		if strings.Join(res, "\n") != strings.TrimRight(data, "\n") {
+		if strings.Join(res, "\n") != strings.TrimRight(data+data, "\n") {
 			t.Errorf("received %v, want %v", res, data)
 		}
 	})
