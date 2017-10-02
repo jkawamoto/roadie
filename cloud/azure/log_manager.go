@@ -29,6 +29,7 @@ import (
 	"log"
 	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -115,7 +116,12 @@ func (m *LogManager) get(ctx context.Context, urls []*url.URL, handler cloud.Log
 					return
 				}
 				if !ignore {
-					err = handler(time.Time{}, line, false)
+					fields := strings.SplitN(line, " ", 3)
+					if len(fields) != 3 {
+						continue
+					}
+					t, _ := time.Parse("2006/01/02 15:04:05", fmt.Sprintf("%v %v", fields[0], fields[1]))
+					err = handler(t.UTC().In(time.Local), fields[2], false)
 					if err != nil {
 						reader.Close()
 						writer.Close()

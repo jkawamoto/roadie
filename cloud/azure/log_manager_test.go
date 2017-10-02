@@ -57,7 +57,10 @@ func TestLogManagerGet(t *testing.T) {
 
 	ctx := context.Background()
 	name := "test-name"
-	data := "a\nb\nc\nd\n"
+	var data []string
+	for i := 0; i != 10; i++ {
+		data = append(data, fmt.Sprintf("%v %v", time.Now().UTC().Format("2006/01/02 15:04:05"), i))
+	}
 
 	var loc *url.URL
 	for _, format := range []string{"%v-init.log", "%v.log"} {
@@ -65,23 +68,30 @@ func TestLogManagerGet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot parse a URL: %v", err)
 		}
-		err = m.storage.Upload(ctx, loc, strings.NewReader(data))
+		err = m.storage.Upload(ctx, loc, strings.NewReader(strings.Join(data, "\n")+"\n"))
 		if err != nil {
 			t.Fatalf("cannot upload a file to %v: %v", loc, err)
 		}
 	}
 
 	t.Run("retrieve logs", func(t *testing.T) {
-		var res []string
-		err = m.Get(ctx, name, time.Now(), func(t time.Time, line string, stderr bool) error {
-			res = append(res, line)
+		var c int
+		now := time.Now()
+		err = m.Get(ctx, name, time.Now(), func(ti time.Time, line string, stderr bool) error {
+			if !now.After(ti) || now.Sub(ti) > 5*time.Minute {
+				t.Errorf("time a log entry issued is %q, now %q", ti, now)
+			}
+			if line != fmt.Sprint(c%10) {
+				t.Errorf("log entry is %q, want %v", line, c%10)
+			}
+			c++
 			return nil
 		})
 		if err != nil {
 			t.Errorf("Get returns an error: %v", err)
 		}
-		if strings.Join(res, "\n") != strings.TrimRight(data+data, "\n") {
-			t.Errorf("received %v, want %v", res, data)
+		if c != len(data)*2 {
+			t.Errorf("%v log entries, want %v", c, len(data)*2)
 		}
 	})
 
