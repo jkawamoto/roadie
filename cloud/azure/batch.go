@@ -426,9 +426,10 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 						PoolLifetimeOption: toPtr(models.AutoPoolSpecificationPoolLifetimeOptionJob),
 					},
 				},
+				// For debugging, comment out the following section.
 				JobPreparationTask: &models.JobPreparationTask{
 					CommandLine: toPtr(fmt.Sprintf(
-						`sh -c "tar -zxvf %v -C ${AZ_BATCH_NODE_SHARED_DIR} --strip-components=1 && sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure init %v %v"`,
+						`sh -c "tar -zxvf %v -C ${AZ_BATCH_NODE_SHARED_DIR} --strip-components=1 && sudo -n -E ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure init %v %v"`,
 						RoadieAzureArchiveName, configFilename, name)),
 					ResourceFiles: []*models.ResourceFile{
 						&models.ResourceFile{
@@ -455,6 +456,32 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 				break
 			} else if _, exist := set[name]; exist {
 				s.Logger.Println("Created job", name)
+
+				// For debugging: uncomment the following section.
+				// s.client.Tasks.TaskAdd(
+				// 	tasks.NewTaskAddParamsWithContext(ctx).
+				// 		WithAPIVersion(BatchAPIVersion).
+				// 		WithClientRequestID(&s.Config.ClientID).
+				// 		WithJobID(name).
+				// 		WithOcpDate(s.getOcpDate()).
+				// 		WithTask(&models.TaskAddParameter{
+				// 			ID: toPtr("init"),
+				// 			CommandLine: toPtr(fmt.Sprintf(
+				// 				`sh -c "tar -zxvf %v -C ${AZ_BATCH_NODE_SHARED_DIR} --strip-components=1 && sudo -n -E ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure init %v %v"`,
+				// 				RoadieAzureArchiveName, configFilename, name)),
+				// 			ResourceFiles: []*models.ResourceFile{
+				// 				&models.ResourceFile{
+				// 					BlobSource: &execURL,
+				// 					FilePath:   toPtr(RoadieAzureArchiveName),
+				// 				},
+				// 				&models.ResourceFile{
+				// 					BlobSource: &configURL,
+				// 					FilePath:   &configFilename,
+				// 				},
+				// 			},
+				// 			RunElevated: true,
+				// 		}))
+
 				return
 			}
 
@@ -688,7 +715,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 			WithOcpDate(s.getOcpDate()).
 			WithTask(&models.TaskAddParameter{
 				ID:            &task.Name,
-				CommandLine:   toPtr(fmt.Sprintf(`sh -c "sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure exec %v %v %v"`, configFilename, startupFilename, task.Name)),
+				CommandLine:   toPtr(fmt.Sprintf(`sh -c "sudo -n -E ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure exec %v %v %v"`, configFilename, startupFilename, task.Name)),
 				ResourceFiles: resourceFiles,
 				RunElevated:   true,
 			}))
