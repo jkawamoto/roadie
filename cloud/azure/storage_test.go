@@ -27,6 +27,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -69,15 +70,21 @@ func (r *ForwardTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	return r.parent.RoundTrip(req)
 }
 
+// mockObject represents an object stored in mockStorageServer.
+type mockObject struct {
+	Body     string
+	Metadata map[string][]string
+}
+
+// mockContainer represents a container stored in mockStorageServer.
+type mockContainer map[string]mockObject
+
 // See https://docs.microsoft.com/en-us/rest/api/storageservices/
 type mockStorageServer struct {
-
 	// Items hold blob items in this mock server. This is a map of which keys
-	// represent container names and the associated value represents another map
-	// of blobs. The another blob's keys represent file names and the associated
-	// value represents the file body.
-	Items map[string]map[string]string
-
+	// represent container names and the associated value represents a container.
+	Items map[string]mockContainer
+	// server is a pointer for a httptest's server.
 	server *httptest.Server
 }
 
@@ -85,7 +92,7 @@ type mockStorageServer struct {
 func newMockStorageServer() (res *mockStorageServer) {
 
 	res = &mockStorageServer{
-		Items: make(map[string]map[string]string),
+		Items: make(map[string]mockContainer),
 	}
 	res.server = httptest.NewServer(res)
 	return
@@ -139,7 +146,7 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 				return
 			}
 			res.Header().Add("Last-Modified", time.Now().Format(time.RFC1123))
-			res.Header().Add("Content-Length", fmt.Sprint(len(data)))
+			res.Header().Add("Content-Length", fmt.Sprint(len(data.Body)))
 
 		}
 
@@ -164,7 +171,7 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 			})
 			if err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
-				res.Write([]byte(err.Error()))
+				io.WriteString(res, err.Error())
 				return
 			}
 			data = []byte(strings.Replace(strings.Replace(
@@ -177,6 +184,17 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 				-1))
 			res.Write(data)
 
+		case filename != "" && req.URL.Query().Get("comp") == "metadata":
+			// Get blob metadata.
+			data, exist := s.Items[container][filename]
+			if !exist {
+				res.WriteHeader(http.StatusNotFound)
+				return
+			}
+			for key, value := range data.Metadata {
+				res.Header().Add("X-Ms-Meta-"+key, strings.Join(value, ","))
+			}
+
 		case filename != "":
 			// Get blob.
 			data, exist := s.Items[container][filename]
@@ -184,7 +202,7 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 				res.WriteHeader(http.StatusNotFound)
 				return
 			}
-			res.Write([]byte(data))
+			io.WriteString(res, data.Body)
 
 		default:
 			res.WriteHeader(http.StatusNotImplemented)
@@ -199,25 +217,41 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 				res.WriteHeader(http.StatusConflict)
 				return
 			}
-			s.Items[container] = make(map[string]string)
+			s.Items[container] = make(mockContainer)
 			res.WriteHeader(http.StatusCreated)
 
 		case filename != "" && req.URL.Query().Get("comp") == "appendblock":
 			// Append block.
 			if data, err := ioutil.ReadAll(req.Body); err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
-				res.Write([]byte(err.Error()))
+				io.WriteString(res, err.Error())
 			} else {
-				s.Items[container][filename] += string(data)
+				obj := s.Items[container][filename]
+				obj.Body += string(data)
+				s.Items[container][filename] = obj
 				res.WriteHeader(http.StatusCreated)
 			}
+
+		case filename != "" && req.URL.Query().Get("comp") == "metadata":
+			// Set blob metadata.
+			// The format of metadata is "X-Ms-Meta-name:value" in the header.
+			obj := s.Items[container][filename]
+			for key, value := range req.Header {
+				if strings.HasPrefix(key, "X-Ms-Meta-") {
+					obj.Metadata[strings.TrimPrefix(key, "X-Ms-Meta-")] = value
+				}
+			}
+			s.Items[container][filename] = obj
+			res.WriteHeader(http.StatusOK)
 
 		case filename != "":
 			// Put blob.
 			if _, exist := s.Items[container][filename]; exist {
 				res.WriteHeader(http.StatusBadRequest)
 			} else {
-				s.Items[container][filename] = ""
+				s.Items[container][filename] = mockObject{
+					Metadata: make(map[string][]string),
+				}
 				res.WriteHeader(http.StatusCreated)
 			}
 
@@ -284,8 +318,8 @@ func TestStorageService(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Upload returns an error: %v", err)
 		}
-		if res := string(server.Items[testContainer][testFilename]); res != testData {
-			t.Errorf("uploaded file is %q, want %v", res, testData)
+		if data, exist := server.Items[testContainer][testFilename]; !exist || data.Body != testData {
+			t.Errorf("uploaded file is %q, want %v", data.Body, testData)
 		}
 	})
 
@@ -413,6 +447,70 @@ func TestStorageService(t *testing.T) {
 		}
 		if _, exist := server.Items[testContainer][testFilename]; exist {
 			t.Error("deleted file still exists")
+		}
+	})
+
+	t.Run("upload with metadata", func(t *testing.T) {
+		testContainer := "upload-metadata"
+		s := &StorageService{
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
+		}
+
+		ctx := context.Background()
+		testFilename := "filename"
+		testData := "abcdefg"
+		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), map[string]string{
+			"Content-Type": "text/yaml",
+		})
+		if err != nil {
+			t.Fatalf("Upload returns an error: %v", err)
+		}
+		if data, exist := server.Items[testContainer][testFilename]; !exist {
+			t.Error("uploaded file isn't found")
+		} else {
+			if data.Body != testData {
+				t.Errorf("body of the uploaded file is %q, want %v", data.Body, testData)
+			}
+			if len(data.Metadata) != 1 {
+				t.Errorf("%v key-values are stored in the metadata, want %v", len(data.Metadata), 1)
+			}
+			for k, v := range data.Metadata {
+				if k == "Content-Type" && v[0] != "text/yaml" {
+					t.Errorf("metadata %v is %q, want %v", k, v, "text/yaml")
+				}
+			}
+		}
+	})
+
+	t.Run("get metadata", func(t *testing.T) {
+		testContainer := "get-metadata"
+		s := &StorageService{
+			blobClient: cli.GetBlobService(),
+			Logger:     log.New(ioutil.Discard, "", log.LstdFlags),
+		}
+
+		ctx := context.Background()
+		testFilename := "filename"
+		testData := "abcdefg"
+		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), map[string]string{
+			"Content-Type": "text/yaml",
+		})
+		if err != nil {
+			t.Fatalf("UploadWithMetadate returns an error: %v", err)
+		}
+
+		metadata, err := s.GetMetadata(ctx, testContainer, testFilename)
+		if err != nil {
+			t.Fatalf("GetMetadata returns an error: %v", err)
+		}
+		if len(metadata) != 1 {
+			t.Errorf("%v key-values are stored in the metadata, want %v", len(metadata), 1)
+		}
+		for k, v := range metadata {
+			if k == "Content-Type" && v != "text/yaml" {
+				t.Errorf("metadata %v is %q, want %v", k, v, "text/yaml")
+			}
 		}
 	})
 

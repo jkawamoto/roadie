@@ -125,16 +125,31 @@ func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 
 	s.Logger.Println("Creating a blob at", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
+	return s.UploadWithMetadata(ctx, loc.Hostname(), filename, in, nil)
 
-	container := s.blobClient.GetContainerReference(loc.Hostname())
-	_, err = container.CreateIfNotExists(&storage.CreateContainerOptions{
+}
+
+// UploadWithMetadata a given stream in a given container as a file named a given file name.
+func (s *StorageService) UploadWithMetadata(ctx context.Context, container, filename string, in io.Reader, metadata map[string]string) (err error) {
+
+	// Check the target container exists.
+	containerRef := s.blobClient.GetContainerReference(container)
+	_, err = containerRef.CreateIfNotExists(&storage.CreateContainerOptions{
 		Access: storage.ContainerAccessTypeBlob,
 	})
 	if err != nil {
 		return
 	}
-	blob := container.GetBlobReference(filename)
+
+	s.Logger.Println("Creating append blob", filename)
+	blob := containerRef.GetBlobReference(filename)
+	blob.Metadata = storage.BlobMetadata(metadata)
 	err = blob.CreateBlockBlob(nil)
+	if err != nil {
+		s.Logger.Println("Cannot create append blob", filename)
+		return
+	}
+	err = blob.SetMetadata(nil)
 	if err != nil {
 		s.Logger.Println("Cannot create append blob", filename)
 		return
@@ -207,6 +222,20 @@ func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *c
 	}
 
 	s.Logger.Println("Retrieved information of file", filename)
+	return
+
+}
+
+// GetMetadata retrives metadata of a given named file.
+func (s *StorageService) GetMetadata(ctx context.Context, container, filename string) (metadata map[string]string, err error) {
+
+	s.Logger.Println("Retrieving metadata of file", filename)
+	blob := s.blobClient.GetContainerReference(container).GetBlobReference(filename)
+	err = blob.GetMetadata(nil)
+	if err != nil {
+		s.Logger.Println("Get metadata of file", filename)
+	}
+	metadata = blob.Metadata
 	return
 
 }

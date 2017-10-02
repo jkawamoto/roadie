@@ -25,7 +25,6 @@
 package azure
 
 import (
-	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -72,6 +71,8 @@ const (
 	StartupContainer = "startup"
 	// ResultContainer is the name of the container where result files will be stored.
 	ResultContainer = "result"
+	// LogContainer is the name of the container where logs will be stored.
+	LogContainer = "log"
 
 	// JobManagerURL = ""
 )
@@ -305,8 +306,11 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 			return
 		}
 		defer fp.Close()
-		err = s.storage.Upload(ctx, bin, fp)
 
+		err = s.storage.UploadWithMetadata(ctx, BinContainer, RoadieAzureArchiveName, fp, map[string]string{
+			"Content-Type": "application/tar+gzip",
+			"Version":      "snapshot",
+		})
 		// TODO: The above logic should be replaced to download the archive from
 		// GitHub directory.
 		// var res *http.Response
@@ -324,6 +328,20 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 		s.Logger.Println("Job management program is uploaded at", execURL)
 
 	}
+
+	// Upload the config file.
+	configFilename := fmt.Sprintf("%v%v-init.cfg", name, time.Now().Unix())
+	configString, err := s.Config.String()
+	if err != nil {
+		return
+	}
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), map[string]string{
+		"Content-Type": "text/yaml",
+	})
+	if err != nil {
+		return
+	}
+	configURL := s.storage.getFileURL(StartupContainer, configFilename)
 
 	s.Logger.Println("Creating job", name)
 	_, err = s.client.Jobs.JobAdd(
@@ -354,11 +372,17 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 					},
 				},
 				JobPreparationTask: &models.JobPreparationTask{
-					CommandLine: toPtr(fmt.Sprintf(`sh -c "tar -zxvf %v -C ${AZ_BATCH_NODE_SHARED_DIR} --strip-components=1 && sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure init"`, RoadieAzureArchiveName)),
+					CommandLine: toPtr(fmt.Sprintf(
+						`sh -c "tar -zxvf %v -C ${AZ_BATCH_NODE_SHARED_DIR} --strip-components=1 && sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure init %v %v"`,
+						RoadieAzureArchiveName, configFilename, name)),
 					ResourceFiles: []*models.ResourceFile{
 						&models.ResourceFile{
 							BlobSource: &execURL,
 							FilePath:   toPtr(RoadieAzureArchiveName),
+						},
+						&models.ResourceFile{
+							BlobSource: &configURL,
+							FilePath:   &configFilename,
 						},
 					},
 					RunElevated: true,
@@ -551,11 +575,9 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	now := time.Now().Unix()
 	// Create a startup script and upload it.
 	startupFilename := fmt.Sprintf("%v%v.yml", task.Name, now)
-	startupURL, err := url.Parse(script.RoadieSchemePrefix + path.Join(StartupContainer, startupFilename))
-	if err != nil {
-		return
-	}
-	err = s.storage.Upload(ctx, startupURL, bytes.NewBufferString(task.String()))
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, startupFilename, strings.NewReader(task.String()), map[string]string{
+		"Content-Type": "text/yaml",
+	})
 	if err != nil {
 		return
 	}
@@ -570,11 +592,9 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	if err != nil {
 		return
 	}
-	configURL, err := url.Parse(script.RoadieSchemePrefix + path.Join(StartupContainer, configFilename))
-	if err != nil {
-		return
-	}
-	err = s.storage.Upload(ctx, configURL, strings.NewReader(configString))
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), map[string]string{
+		"Content-Type": "text/yaml",
+	})
 	if err != nil {
 		return
 	}
@@ -593,7 +613,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 			WithOcpDate(s.getOcpDate()).
 			WithTask(&models.TaskAddParameter{
 				ID:            &task.Name,
-				CommandLine:   toPtr(fmt.Sprintf(`sh -c "sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure exec %v %v"`, configFilename, startupFilename)),
+				CommandLine:   toPtr(fmt.Sprintf(`sh -c "sudo ${AZ_BATCH_NODE_SHARED_DIR}/roadie-azure exec %v %v %v"`, configFilename, startupFilename, task.Name)),
 				ResourceFiles: resourceFiles,
 				RunElevated:   true,
 			}))
@@ -654,6 +674,7 @@ func (s *BatchService) Tasks(ctx context.Context, job string) (set TaskSet, err 
 
 // DeleteTask deletes a given named task from a given named job.
 func (s *BatchService) DeleteTask(ctx context.Context, job, task string) (err error) {
+	// TODO: Delete related files, such as script, config, from the storage.
 
 	s.Logger.Println("Deleting task", task)
 	_, err = s.client.Tasks.TaskDelete(
