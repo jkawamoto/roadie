@@ -84,8 +84,8 @@ func (m *InstanceManager) Instances(ctx context.Context, handler cloud.InstanceH
 	if err != nil {
 		return
 	}
-	for name := range jobs {
-		err = handler(name, "Running")
+	for name, info := range jobs {
+		err = handler(name, info.State)
 		if err != nil {
 			return
 		}
