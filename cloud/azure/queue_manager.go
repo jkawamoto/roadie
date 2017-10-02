@@ -198,13 +198,16 @@ func (m *QueueManager) Workers(ctx context.Context, queue string, handler cloud.
 }
 
 // DeleteQueue deletes a given named queue.
-func (m *QueueManager) DeleteQueue(ctx context.Context, queue string) error {
-	return fmt.Errorf("Not implemented")
+func (m *QueueManager) DeleteQueue(ctx context.Context, queue string) (err error) {
+	queue = queueName(queue)
+	return m.service.DeleteJob(ctx, queue)
 }
 
 // DeleteTask deletes a given named task in a given named queue.
-func (m *QueueManager) DeleteTask(ctx context.Context, queue, task string) error {
-	return fmt.Errorf("Not implemented")
+func (m *QueueManager) DeleteTask(ctx context.Context, queue, task string) (err error) {
+	queue = queueName(queue)
+	task = taskName(task)
+	return m.service.DeleteTask(ctx, queue, task)
 }
 
 // queueName returns a queue name associates with a given base name.
