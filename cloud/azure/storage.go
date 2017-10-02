@@ -118,6 +118,8 @@ func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger
 
 }
 
+// TODO: The following methods should support both roadie based URL and Azure based URL.
+
 // Upload a given stream to a given location.
 func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader) (err error) {
 
@@ -254,6 +256,14 @@ func (s *StorageService) Delete(ctx context.Context, loc *url.URL) (err error) {
 	}
 	return
 
+}
+
+// getFileURL returns an Azure storage URL of a file identified by the given
+// container name and file name.
+// Note that, this URL shouldn't use out of this package. In other packages,
+// URL must starts with `roadie://`.
+func (s *StorageService) getFileURL(container, filename string) string {
+	return s.blobClient.GetContainerReference(container).GetBlobReference(filename).GetURL()
 }
 
 // checkStorageAccount checks existence of a given account in a given subscription.

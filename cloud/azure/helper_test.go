@@ -31,6 +31,10 @@ import (
 	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
 
+func init() {
+	apiAccessDebugMode = true
+}
+
 func GetTestConfig() (cfg *AzureConfig, err error) {
 
 	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile)
@@ -52,6 +56,7 @@ func GetTestConfig() (cfg *AzureConfig, err error) {
 		if err != nil {
 			return
 		}
+		token.Save("token.json", 0644)
 	}
 	cfg.Token = *token
 	return
@@ -65,6 +70,24 @@ func TestWait(t *testing.T) {
 		t.Fatal("Returned waiting 1min function first.")
 	case <-wait(1 * time.Second):
 		t.Log("Waiting 1 second returns first.")
+	}
+
+}
+
+func TestParseRenamableURL(t *testing.T) {
+
+	var (
+		lhs string
+		rhs string
+	)
+	lhs, rhs = parseRenamableURL("http://www.example.com/somedir/somefile:newfile")
+	if lhs != "somefile" || rhs != "newfile" {
+		t.Error("Parsed names are not correct:", lhs, rhs)
+	}
+
+	lhs, rhs = parseRenamableURL("http://www.example.com/somedir/somefile")
+	if lhs != "somefile" || rhs != "somefile" {
+		t.Error("Parsed names are not correct:", lhs, rhs)
 	}
 
 }
