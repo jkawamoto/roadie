@@ -95,8 +95,12 @@ func TestLogManagerGet(t *testing.T) {
 		ctx2, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
 		err = m.Get(ctx2, name, time.Now(), func(t time.Time, line string, stderr bool) error {
-			<-time.After(4 * time.Second)
-			return nil
+			select {
+			case <-time.After(4 * time.Second):
+				return nil
+			case <-ctx2.Done():
+				return ctx.Err()
+			}
 		})
 		if err == nil {
 			t.Error("Get is canceled but no errors are returned")

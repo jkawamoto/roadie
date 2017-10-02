@@ -71,7 +71,6 @@ func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger
 	if logger == nil {
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
-
 	// Create a resource group if not exist.
 	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
 	if err != nil {
@@ -250,6 +249,13 @@ func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.F
 		Prefix: prefix,
 	})
 	if err != nil {
+		switch e := err.(type) {
+		case storage.AzureStorageServiceError:
+			if e.StatusCode == 404 {
+				s.Logger.Println("Finished retrieving blobs")
+				err = nil
+			}
+		}
 		return
 	}
 
