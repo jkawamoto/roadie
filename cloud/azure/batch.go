@@ -63,19 +63,6 @@ const (
 	// RoadieAzureArchiveName is an archive name of roarie-azure command.
 	RoadieAzureArchiveName = "roadie-azure_linux_amd64.tar.gz"
 
-	// BinContainer is the name of the container where binary programs will be stored.
-	BinContainer = "bin"
-	// SourceContainer is the name of the container where source files will be stored.
-	SourceContainer = "source"
-	// DataContainer is the name of the container where data files will be stored.
-	DataContainer = "data"
-	// StartupContainer is the name of the container where startup files will be stored.
-	StartupContainer = "startup"
-	// ResultContainer is the name of the container where result files will be stored.
-	ResultContainer = "result"
-	// LogContainer is the name of the container where logs will be stored.
-	LogContainer = "log"
-
 	// JobManagerURL = ""
 )
 

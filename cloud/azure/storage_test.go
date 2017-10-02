@@ -113,7 +113,7 @@ func (s *mockStorageServer) GetClient() (cli storage.Client, err error) {
 	if err != nil {
 		return
 	}
-	cli.HTTPClient.Transport = NewForwardTransport(URL, cli.HTTPClient.Transport)
+	cli.HTTPClient.Transport = NewForwardTransport(URL, nil)
 	return
 
 }

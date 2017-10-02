@@ -1,3 +1,24 @@
+//
+// cloud/azure/instance_manager.go
+//
+// Copyright (c) 2016-2017 Junpei Kawamoto
+//
+// This file is part of Roadie.
+//
+// Roadie is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Roadie is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 package azure
 
 import (
@@ -34,15 +55,13 @@ func NewInstanceManager(ctx context.Context, cfg *AzureConfig, logger *log.Logge
 }
 
 // CreateInstance creates an instance which has a given name.
-// Note that Azure doesn't support custome HDD size; argument disksize is,
-// hence, ignored in this method.
-func (m *InstanceManager) CreateInstance(ctx context.Context, name string, task *script.Script, disksize int64) (err error) {
+func (m *InstanceManager) CreateInstance(ctx context.Context, task *script.Script) (err error) {
 
-	err = m.service.CreateJob(ctx, name)
+	err = m.service.CreateJob(ctx, task.Name)
 	if err != nil {
 		return
 	}
-	return m.service.CreateTask(ctx, name, task)
+	return m.service.CreateTask(ctx, task.Name, task)
 
 }
 
@@ -54,16 +73,17 @@ func (m *InstanceManager) DeleteInstance(ctx context.Context, name string) error
 }
 
 // Instances returns a list of running instances
-func (m *InstanceManager) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
+func (m *InstanceManager) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
 
 	jobs, err := m.service.Jobs(ctx)
 	if err != nil {
 		return
 	}
-
-	instances = make(map[string]struct{})
 	for name := range jobs {
-		instances[name] = struct{}{}
+		err = handler(name, "Running")
+		if err != nil {
+			return
+		}
 	}
 	return
 

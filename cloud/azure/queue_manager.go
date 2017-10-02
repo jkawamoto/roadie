@@ -1,3 +1,24 @@
+//
+// cloud/azure/queue_manager.go
+//
+// Copyright (c) 2016-2017 Junpei Kawamoto
+//
+// This file is part of Roadie.
+//
+// Roadie is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Roadie is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 package azure
 
 import (
@@ -58,7 +79,7 @@ func (m *QueueManager) Tasks(ctx context.Context, queue string, handler cloud.Qu
 }
 
 // Queues retrieves existing queue names.
-func (m *QueueManager) Queues(ctx context.Context, handler cloud.QueueManagerNameHandler) (err error) {
+func (m *QueueManager) Queues(ctx context.Context, handler cloud.QueueStatusHandler) (err error) {
 
 	set, err := m.service.Jobs(ctx)
 	if err != nil {
@@ -66,7 +87,7 @@ func (m *QueueManager) Queues(ctx context.Context, handler cloud.QueueManagerNam
 	}
 
 	for name := range set {
-		err = handler(name)
+		err = handler(name, cloud.QueueStatus{})
 		if err != nil {
 			return
 		}
@@ -90,7 +111,7 @@ func (m *QueueManager) Restart(ctx context.Context, queue string) error {
 }
 
 // CreateWorkers creates worker instances working for a given named queue.
-func (m *QueueManager) CreateWorkers(ctx context.Context, queue string, diskSize int64, n int, handler cloud.QueueManagerNameHandler) (err error) {
+func (m *QueueManager) CreateWorkers(ctx context.Context, queue string, n int, handler cloud.QueueManagerNameHandler) (err error) {
 
 	jobInfo, err := m.service.GetJobInfo(ctx, queue)
 	if err != nil {
@@ -126,4 +147,14 @@ func (m *QueueManager) Workers(ctx context.Context, queue string, handler cloud.
 	}
 	return
 
+}
+
+// DeleteQueue deletes a given named queue.
+func (m *QueueManager) DeleteQueue(ctx context.Context, queue string) error {
+	return fmt.Errorf("Not implemented")
+}
+
+// DeleteTask deletes a given named task in a given named queue.
+func (m *QueueManager) DeleteTask(ctx context.Context, queue, task string) error {
+	return fmt.Errorf("Not implemented")
 }
