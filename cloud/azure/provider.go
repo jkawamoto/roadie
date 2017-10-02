@@ -23,9 +23,12 @@ package azure
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
 
 // Provider provides information of the service provider for Azure.
@@ -35,11 +38,26 @@ type Provider struct {
 }
 
 // NewProvider creates a new provider for Azure service.
-func NewProvider(cfg *AzureConfig, logger *log.Logger) *Provider {
-	return &Provider{
+func NewProvider(ctx context.Context, cfg *AzureConfig, logger *log.Logger) (provider *Provider, err error) {
+
+	if cfg.Token.AccessToken == "" || cfg.Token.Expired() {
+
+		fmt.Println("Access token is not given or expired.")
+		var token *auth.Token
+		token, err = auth.AuthorizeDeviceCode(ctx, cfg.ClientID, os.Stdout)
+		if err != nil {
+			return
+		}
+		cfg.Token = *token
+
+	}
+
+	provider = &Provider{
 		Config: cfg,
 		Logger: logger,
 	}
+	return
+
 }
 
 // InstanceManager returns an instance manager interface.

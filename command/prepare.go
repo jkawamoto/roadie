@@ -32,7 +32,6 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/azure"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 	colorable "github.com/mattn/go-colorable"

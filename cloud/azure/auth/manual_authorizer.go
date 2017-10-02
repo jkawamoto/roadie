@@ -56,6 +56,10 @@ type ManualAuthorizer struct {
 // NewManualAuthorizer creates a new manual authorizer.
 func NewManualAuthorizer(tenantID, clientID string, redirect *url.URL, state string) (a *ManualAuthorizer) {
 
+	if redirect == nil {
+		redirect = new(url.URL)
+	}
+
 	return &ManualAuthorizer{
 		AuthorizeURL: fmt.Sprintf(
 			authorizeEndpoint, tenantID, clientID, url.QueryEscape(redirect.String()),
@@ -81,7 +85,7 @@ func (a *ManualAuthorizer) RequestToken(authorizationCode string) (token *Token,
 	request.Add("client_id", a.clientID)
 	request.Add("code", authorizationCode)
 	request.Add("redirect_uri", a.redirect.String())
-	request.Add("resource", "https://management.core.windows.net/")
+	request.Add("resource", "00000002-0000-0000-c000-000000000000")
 
 	return requestToken(a.tenantID, request)
 
