@@ -35,8 +35,8 @@ type Token struct {
 	TokenType    string `json:"token_type"`
 	ExpiresIn    string `json:"expires_in"`
 	ExpiresOn    string `json:"expires_on"`
-	Resource     string
-	Scope        string
+	Resource     string `json:"resource"`
+	Scope        string `json:"scope"`
 	RefreshToken string `json:"refresh_token"`
 	IDToken      string `json:"id_token"`
 }
@@ -82,7 +82,7 @@ type TokenError struct {
 	ErrorSummary     string `json:"error"`
 	ErrorDescription string `json:"error_description"`
 	ErrorCodes       []int  `json:"error_codes"`
-	Timestamp        string
+	Timestamp        string `json:"timestamp"`
 	TraceID          string `json:"trace_id"`
 	CorrelationID    string `json:"correlation_id"`
 }
