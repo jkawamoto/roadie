@@ -48,7 +48,7 @@ func TestLogManagerGet(t *testing.T) {
 	logger := log.New(ioutil.Discard, "", log.LstdFlags)
 
 	m := LogManager{
-		service: &StorageService{
+		storage: &StorageService{
 			blobClient: cli.GetBlobService(),
 			Logger:     logger,
 		},
@@ -65,7 +65,7 @@ func TestLogManagerGet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("cannot parse a URL: %v", err)
 		}
-		err = m.service.Upload(ctx, loc, strings.NewReader(data))
+		err = m.storage.Upload(ctx, loc, strings.NewReader(data))
 		if err != nil {
 			t.Fatalf("cannot upload a file to %v: %v", loc, err)
 		}
