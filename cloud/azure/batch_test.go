@@ -59,7 +59,7 @@ func TestCreateJob(t *testing.T) {
 }
 
 func TestCreateInstanceByBatch(t *testing.T) {
-	//t.SkipNow()
+	t.SkipNow()
 
 	var err error
 	cfg, err := GetTestConfig()

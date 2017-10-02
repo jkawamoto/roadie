@@ -142,21 +142,11 @@ func AuthorizeDeviceCode(ctx context.Context, clientID string, output io.Writer)
 		case <-ctx.Done():
 			err = ctx.Err()
 			break
-		case <-wait(time.Duration(interval) * time.Second):
+		case <-time.After(time.Duration(interval) * time.Second):
 		}
 
 	}
 
 	return
 
-}
-
-// Wait a given duration.
-func wait(d time.Duration) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		time.Sleep(d)
-		close(ch)
-	}()
-	return ch
 }

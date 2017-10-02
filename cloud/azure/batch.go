@@ -462,7 +462,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -571,7 +571,7 @@ func (s *BatchService) DeleteJob(ctx context.Context, name string) (err error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -710,7 +710,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -776,7 +776,7 @@ func (s *BatchService) DeleteTask(ctx context.Context, job, task string) (err er
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

@@ -137,7 +137,7 @@ func (s *DiskService) CreateDiskFromImage(ctx context.Context, name, imageID str
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -208,7 +208,7 @@ func (s *DiskService) DeleteDisk(ctx context.Context, name string) (err error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

@@ -26,7 +26,6 @@ import (
 	"net/url"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
@@ -60,17 +59,6 @@ func GetTestConfig() (cfg *AzureConfig, err error) {
 	}
 	cfg.Token = *token
 	return
-
-}
-
-func TestWait(t *testing.T) {
-
-	select {
-	case <-wait(1 * time.Minute):
-		t.Fatal("Returned waiting 1min function first.")
-	case <-wait(1 * time.Second):
-		t.Log("Waiting 1 second returns first.")
-	}
 
 }
 

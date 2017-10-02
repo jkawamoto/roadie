@@ -126,7 +126,7 @@ func (s *NetworkService) CreatePublicIPAddress(ctx context.Context, name string)
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -196,7 +196,7 @@ func (s *NetworkService) DeletePublicIPAddress(ctx context.Context, name string)
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -266,7 +266,7 @@ func (s *NetworkService) CreateVirtualNetwork(ctx context.Context, name string) 
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -336,7 +336,7 @@ func (s *NetworkService) DeleteVirtualNetwork(ctx context.Context, name string) 
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -421,7 +421,7 @@ func (s *NetworkService) CreateNetworkInterface(ctx context.Context, name string
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -494,7 +494,7 @@ func (s *NetworkService) DeleteNetworkInterface(ctx context.Context, name string
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

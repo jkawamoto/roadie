@@ -106,7 +106,7 @@ func (s *ResourceService) CreateResourceGroup(ctx context.Context, name string) 
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -189,7 +189,7 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

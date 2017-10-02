@@ -193,7 +193,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, script
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -215,7 +215,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, script
 		case <-ctx.Done():
 			err = ctx.Err()
 			break
-		case <-wait(s.SleepTime):
+		case <-time.After(s.SleepTime):
 		}
 	}
 
@@ -260,7 +260,7 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

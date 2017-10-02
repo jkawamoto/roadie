@@ -374,7 +374,7 @@ func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -388,6 +388,7 @@ func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
 
 }
 
+// getStorageAccountInfo returns the storage account information.
 func (s *StorageService) getStorageAccountInfo(ctx context.Context) (info *models.StorageAccount, err error) {
 
 	s.Logger.Println("Retrieving information of storage account", s.Config.StorageAccount)
@@ -407,7 +408,7 @@ func (s *StorageService) getStorageAccountInfo(ctx context.Context) (info *model
 
 }
 
-// deleteStorageAccount deletes a given named storage account.
+// deleteStorageAccount deletes the storage account specified in the config.
 func (s *StorageService) deleteStorageAccount(ctx context.Context) (err error) {
 
 	s.Logger.Println("Deleting storage account", s.Config.StorageAccount)
@@ -437,7 +438,7 @@ func (s *StorageService) deleteStorageAccount(ctx context.Context) (err error) {
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 

@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 var (
@@ -45,16 +44,6 @@ func toJSON(param interface{}) string {
 		return fmt.Sprintln(param)
 	}
 	return string(buf)
-}
-
-// Wait a given duration.
-func wait(d time.Duration) <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		time.Sleep(d)
-		close(ch)
-	}()
-	return ch
 }
 
 // parseRenamableURL parses a renamable URL which consists of "normal" URL

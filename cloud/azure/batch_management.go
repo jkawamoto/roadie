@@ -133,7 +133,7 @@ func (s *BatchManagementService) CreateBatchAccount(ctx context.Context) (err er
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
@@ -236,7 +236,7 @@ func (s *BatchManagementService) DeleteAccount(ctx context.Context) (err error) 
 			case <-ctx.Done():
 				err = ctx.Err()
 				break
-			case <-wait(s.SleepTime):
+			case <-time.After(s.SleepTime):
 			}
 		}
 
