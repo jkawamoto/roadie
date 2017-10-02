@@ -212,13 +212,39 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 	case http.MethodPut:
 		switch {
 		case filename == "" && req.URL.Query().Get("restype") == "container":
-			// Create container.
-			if _, exist := s.Items[container]; exist {
-				res.WriteHeader(http.StatusConflict)
-				return
+			// Operations for container.
+
+			switch req.URL.Query().Get("comp") {
+			case "acl":
+				// Set Container ACL
+				var props storage.SignedIdentifiers
+				err := xml.NewDecoder(req.Body).Decode(&props)
+				if err != nil {
+					res.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprint(res, err)
+					return
+				}
+				if len(props.SignedIdentifiers) == 0 {
+					res.WriteHeader(http.StatusBadRequest)
+					fmt.Fprint(res, "no signed identifiers are given")
+					return
+				}
+				acl := props.SignedIdentifiers[0]
+				if acl.ID != "full-access" {
+					res.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprintf(res, "ID is %q, want %q", acl.ID, "full-access")
+					return
+				}
+
+			default:
+				// Create container.
+				if _, exist := s.Items[container]; exist {
+					res.WriteHeader(http.StatusConflict)
+					return
+				}
+				s.Items[container] = make(mockContainer)
+				res.WriteHeader(http.StatusCreated)
 			}
-			s.Items[container] = make(mockContainer)
-			res.WriteHeader(http.StatusCreated)
 
 		case filename != "" && req.URL.Query().Get("comp") == "appendblock":
 			// Append block.

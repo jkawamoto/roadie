@@ -46,6 +46,8 @@ import (
 const (
 	// StorageAPIVersion defines API version of storage service.
 	StorageAPIVersion = "2016-12-01"
+	// DefaultAccessPolicyExpiryTime defines a default expiry time.
+	DefaultAccessPolicyExpiryTime = 30 * 24 * time.Hour
 )
 
 // StorageService provides an interface for Azure's storage management service.
@@ -60,6 +62,8 @@ type StorageService struct {
 	Logger *log.Logger
 	// Sleep time
 	SleepTime time.Duration
+	// AccessPolicyExpiryTime defines the expiry time for accessing containers.
+	AccessPolicyExpiryTime time.Duration
 }
 
 // NewStorageService creates an interface of the storage service which has a
@@ -86,10 +90,11 @@ func NewStorageService(ctx context.Context, cfg *AzureConfig, logger *log.Logger
 	}
 
 	s = &StorageService{
-		armClient: manager,
-		Config:    cfg,
-		Logger:    logger,
-		SleepTime: DefaultSleepTime,
+		armClient:              manager,
+		Config:                 cfg,
+		Logger:                 logger,
+		SleepTime:              DefaultSleepTime,
+		AccessPolicyExpiryTime: DefaultAccessPolicyExpiryTime,
 	}
 
 	// Create an account if necessary.
@@ -133,11 +138,29 @@ func (s *StorageService) UploadWithMetadata(ctx context.Context, container, file
 
 	// Check the target container exists.
 	containerRef := s.blobClient.GetContainerReference(container)
-	_, err = containerRef.CreateIfNotExists(&storage.CreateContainerOptions{
+	created, err := containerRef.CreateIfNotExists(&storage.CreateContainerOptions{
 		Access: storage.ContainerAccessTypeBlob,
 	})
 	if err != nil {
 		return
+	}
+	if created {
+		err = containerRef.SetPermissions(storage.ContainerPermissions{
+			AccessType: storage.ContainerAccessTypeBlob,
+			AccessPolicies: []storage.ContainerAccessPolicy{
+				storage.ContainerAccessPolicy{
+					ID:         "full-access",
+					StartTime:  time.Now(),
+					ExpiryTime: time.Now().Add(s.AccessPolicyExpiryTime),
+					CanRead:    true,
+					CanWrite:   true,
+					CanDelete:  true,
+				},
+			},
+		}, nil)
+		if err != nil {
+			return
+		}
 	}
 
 	s.Logger.Printf("Checking the uploading file %v exists\n", filename)
