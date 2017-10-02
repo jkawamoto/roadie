@@ -61,7 +61,12 @@ func (m *InstanceManager) CreateInstance(ctx context.Context, task *script.Scrip
 	if err != nil {
 		return
 	}
-	return m.service.CreateTask(ctx, task.Name, task)
+
+	err = m.service.CreateTask(ctx, task.Name, task)
+	if err != nil {
+		m.service.DeleteJob(ctx, task.Name)
+	}
+	return
 
 }
 

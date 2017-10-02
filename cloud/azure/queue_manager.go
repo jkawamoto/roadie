@@ -58,11 +58,25 @@ func NewQueueManager(ctx context.Context, cfg *AzureConfig, logger *log.Logger) 
 // Enqueue a new task to a given named queue.
 func (m *QueueManager) Enqueue(ctx context.Context, queue string, task *script.Script) (err error) {
 
-	err = m.service.CreateJob(ctx, queue)
+	var createJob bool
+	jobSet, err := m.service.Jobs(ctx)
 	if err != nil {
 		return
+	} else if _, exist := jobSet[queue]; !exist {
+		err = m.service.CreateJob(ctx, queue)
+		if err != nil {
+			return
+		}
+		createJob = true
 	}
-	return m.service.CreateTask(ctx, queue, task)
+
+	err = m.service.CreateTask(ctx, queue, task)
+	if err != nil && createJob {
+		// If this enqueue creates a job and fails to create the new task,
+		// delete the created job.
+		m.service.DeleteJob(ctx, queue)
+	}
+	return
 
 }
 
