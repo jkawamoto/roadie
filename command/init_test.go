@@ -62,10 +62,33 @@ func TestCheckNotEmpty(t *testing.T) {
 		t.Run(fmt.Sprintf("Input=%q", c.input), func(t *testing.T) {
 			err := checkNotEmpty(c.input)
 			if (!c.err && err != nil) || (c.err && err == nil) {
-				t.Errorf("check error of %q returns %v, expected %v", c.input, err, c.err)
+				t.Errorf("checkNotEmpty(%q) returns %v, expected %v", c.input, err, c.err)
 			}
 		})
 
+	}
+
+}
+
+func TestCheckOption(t *testing.T) {
+
+	options := []string{"1", "2", "3"}
+	cases := []struct {
+		input string
+		err   bool
+	}{
+		{"1", false},
+		{"", true},
+		{"4", true},
+	}
+	f := checkOption(options...)
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("Input=%q", c.input), func(t *testing.T) {
+			err := f(c.input)
+			if (c.err && err == nil) || (!c.err && err != nil) {
+				t.Errorf("checkOption(%q) returns %v, expected %v", c.input, err, c.err)
+			}
+		})
 	}
 
 }
@@ -77,7 +100,7 @@ func TestCmdInit(t *testing.T) {
 	m := testMetadata(&output, nil)
 	testID := "test-id"
 
-	t.Run("input an ID", func(t *testing.T) {
+	t.Run("input an ID for GCP", func(t *testing.T) {
 
 		var tmp string
 		tmp, err = ioutil.TempDir("", "")
@@ -97,7 +120,7 @@ func TestCmdInit(t *testing.T) {
 		}
 		defer os.Chdir(wd)
 
-		m.Stdin = strings.NewReader(testID + "\n")
+		m.Stdin = strings.NewReader("g\n" + testID + "\n")
 		err = cmdInit(m)
 		if err != nil {
 			t.Fatalf("cmdInit returns an error: %v", err)
@@ -114,6 +137,54 @@ func TestCmdInit(t *testing.T) {
 
 		if cfg.GcpConfig.Project != testID {
 			t.Errorf("stored config has a wrong project ID %q, want %v", cfg.GcpConfig.Project, testID)
+		}
+
+	})
+
+	t.Run("input an ID for Azure", func(t *testing.T) {
+
+		var tmp string
+		tmp, err = ioutil.TempDir("", "")
+		if err != nil {
+			t.Fatalf("cannot create a temporary directory: %v", err)
+		}
+		defer os.RemoveAll(tmp)
+
+		var wd string
+		wd, err = os.Getwd()
+		if err != nil {
+			t.Fatalf("Getwd returns an error: %v", err)
+		}
+		err = os.Chdir(tmp)
+		if err != nil {
+			t.Fatalf("cannot change directory: %v", err)
+		}
+		defer os.Chdir(wd)
+
+		testSubscriptionID := "subscription"
+		m.Stdin = strings.NewReader("a\n" + testID + "\n" + testSubscriptionID + "\n")
+		err = cmdInit(m)
+		if err != nil {
+			t.Fatalf("cmdInit returns an error: %v", err)
+		}
+		if m.Config.AzureConfig.TenantID != testID {
+			t.Errorf("tennant ID is %q, want %v", m.Config.AzureConfig.TenantID, testID)
+		}
+		if m.Config.AzureConfig.SubscriptionID != testSubscriptionID {
+			t.Errorf("subscription ID is %q, want %v", m.Config.AzureConfig.SubscriptionID, testSubscriptionID)
+		}
+
+		var cfg *config.Config
+		cfg, err = readConfigFile(m.Config.FileName)
+		if err != nil {
+			t.Fatalf("readConfigFile returns an error: %v", err)
+		}
+
+		if cfg.AzureConfig.TenantID != testID {
+			t.Errorf("stored config has a wrong tennant ID %q, want %v", cfg.AzureConfig.TenantID, testID)
+		}
+		if cfg.AzureConfig.SubscriptionID != testSubscriptionID {
+			t.Errorf("stored config has a wrong tennant ID %q, want %v", cfg.AzureConfig.SubscriptionID, testSubscriptionID)
 		}
 
 	})
@@ -139,7 +210,7 @@ func TestCmdInit(t *testing.T) {
 		filename := filepath.Join(tmp, ConfigFile)
 
 		m.Config.FileName = filename
-		m.Stdin = strings.NewReader(testID + "\n")
+		m.Stdin = strings.NewReader("g\n" + testID + "\n")
 		err = cmdInit(m)
 		if err != nil {
 			t.Fatalf("cmdInit returns an error: %v", err)
