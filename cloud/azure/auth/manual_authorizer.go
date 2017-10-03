@@ -27,6 +27,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/Azure/go-autorest/autorest/adal"
 )
 
 const (
@@ -78,7 +80,7 @@ func (a *ManualAuthorizer) GetAuthorizeURL() string {
 }
 
 // RequestToken requests an authorization token.
-func (a *ManualAuthorizer) RequestToken(authorizationCode string) (token *Token, err error) {
+func (a *ManualAuthorizer) RequestToken(authorizationCode string) (token *adal.Token, err error) {
 
 	request := make(url.Values)
 	request.Add("grant_type", "authorization_code")
@@ -92,7 +94,7 @@ func (a *ManualAuthorizer) RequestToken(authorizationCode string) (token *Token,
 }
 
 // RefreshToken refreshes the authorization token.
-func (a *ManualAuthorizer) RefreshToken(token *Token) (newToken *Token, err error) {
+func (a *ManualAuthorizer) RefreshToken(token *adal.Token) (newToken *adal.Token, err error) {
 
 	request := make(url.Values)
 	request.Add("grant_type", "refresh_token")
@@ -104,7 +106,7 @@ func (a *ManualAuthorizer) RefreshToken(token *Token) (newToken *Token, err erro
 }
 
 // requestToken requests a token.
-func requestToken(tenantID string, request url.Values) (token *Token, err error) {
+func requestToken(tenantID string, request url.Values) (token *adal.Token, err error) {
 
 	res, err := http.PostForm(fmt.Sprintf(tokenEndpoint, tenantID), request)
 	if err != nil {
@@ -131,7 +133,7 @@ func requestToken(tenantID string, request url.Values) (token *Token, err error)
 		return
 	}
 
-	token = &Token{}
+	token = &adal.Token{}
 	err = json.Unmarshal(body, token)
 	return
 

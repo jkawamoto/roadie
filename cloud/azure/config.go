@@ -24,11 +24,12 @@ package azure
 import (
 	"io/ioutil"
 
-	"github.com/jkawamoto/roadie/cloud/azure/auth"
+	"github.com/Azure/go-autorest/autorest/adal"
 	yaml "gopkg.in/yaml.v2"
 )
 
 // TODO: Support async to not wait finishing each operation.
+// TODO: Resource group name must has a suffix of location name.
 
 // OSInformation defines OS information of creating instances.
 type OSInformation struct {
@@ -48,7 +49,7 @@ type Config struct {
 	StorageAccount    string `yaml:"storage_account,omitempty"`
 	BatchAccount      string `yaml:"batch_account,omitempty"`
 	OS                OSInformation
-	Token             auth.Token
+	Token             adal.Token
 }
 
 // NewConfig creates a new Config with default values.
@@ -132,7 +133,7 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 		StorageAccount    string `yaml:"storage_account,omitempty"`
 		BatchAccount      string `yaml:"batch_account,omitempty"`
 		OS                OSInformation
-		Token             auth.Token
+		Token             adal.Token
 	}
 	err = unmarshal(&aux)
 	if err != nil {

@@ -28,6 +28,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/cloud/azure/auth"
 )
@@ -44,18 +45,18 @@ func NewProvider(ctx context.Context, cfg *Config, logger *log.Logger, forceAuth
 	if cfg.Token.AccessToken == "" || forceAuth {
 
 		logger.Println("Access token is not given.")
-		var token *auth.Token
+		var token *adal.Token
 		token, err = auth.AuthorizeDeviceCode(ctx, ClientID, os.Stdout)
 		if err != nil {
 			return
 		}
 		cfg.Token = *token
 
-	} else if cfg.Token.Expired() {
+	} else if cfg.Token.IsExpired() {
 
 		logger.Println("Access token is expired; refreshing now.")
 		authorizer := auth.NewManualAuthorizer(cfg.TenantID, ClientID, nil, fmt.Sprintf("%v", time.Now().Unix()))
-		var token *auth.Token
+		var token *adal.Token
 		token, err = authorizer.RefreshToken(&cfg.Token)
 		if err != nil {
 			logger.Printf("Cannot refresh a token: %v\nObtaining a new token...", err)

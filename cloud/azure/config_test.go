@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jkawamoto/roadie/cloud/azure/auth"
+	"github.com/Azure/go-autorest/autorest/adal"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -97,7 +97,7 @@ func TestConfigWriteFile(t *testing.T) {
 	cfg.SubscriptionID = "subscription"
 	cfg.ResourceGroupName = "resource"
 	cfg.Location = "location"
-	cfg.Token = auth.Token{
+	cfg.Token = adal.Token{
 		AccessToken: "token",
 	}
 

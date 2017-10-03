@@ -30,6 +30,8 @@ import (
 	"net/url"
 )
 
+import "github.com/Azure/go-autorest/autorest/adal"
+
 // Authorizer provides methods to get an authorization code and refresh it.
 type Authorizer struct {
 	authorizer *ManualAuthorizer
@@ -86,7 +88,7 @@ func (a *Authorizer) GetAuthorizeURL() string {
 
 // WaitResponse waits the user acceseses an authorization URL and grants
 // access.
-func (a *Authorizer) WaitResponse(ctx context.Context) (*Token, error) {
+func (a *Authorizer) WaitResponse(ctx context.Context) (*adal.Token, error) {
 
 	select {
 	case <-ctx.Done():
@@ -106,7 +108,7 @@ func (a *Authorizer) WaitResponse(ctx context.Context) (*Token, error) {
 }
 
 // RefreshToken refreshes a token.
-func (a *Authorizer) RefreshToken(token *Token) (newToken *Token, err error) {
+func (a *Authorizer) RefreshToken(token *adal.Token) (newToken *adal.Token, err error) {
 	return a.authorizer.RefreshToken(token)
 }
 

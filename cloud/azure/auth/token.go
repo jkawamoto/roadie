@@ -24,56 +24,20 @@ package auth
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
-	"strconv"
-	"time"
+
+	"github.com/Azure/go-autorest/autorest/adal"
 )
 
-// Token defines token information.
-type Token struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    string `json:"expires_in"`
-	ExpiresOn    string `json:"expires_on"`
-	Resource     string `json:"resource"`
-	Scope        string `json:"scope"`
-	RefreshToken string `json:"refresh_token"`
-	IDToken      string `json:"id_token"`
-}
-
 // NewToken reads a file and returns a token in it.
-func NewToken(filename string) (token *Token, err error) {
+func NewToken(filename string) (token *adal.Token, err error) {
 
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
 	}
-
-	token = new(Token)
+	token = new(adal.Token)
 	err = json.Unmarshal(data, token)
 	return
-
-}
-
-// Save stores this token to a file.
-func (t *Token) Save(filename string, perm os.FileMode) (err error) {
-
-	data, err := json.Marshal(t)
-	if err != nil {
-		return
-	}
-	return ioutil.WriteFile(filename, data, perm)
-
-}
-
-// Expired returns true if this token is expired.
-func (t *Token) Expired() bool {
-
-	value, err := strconv.ParseInt(t.ExpiresOn, 10, 64)
-	if err != nil {
-		return true
-	}
-	return value < time.Now().Unix()
 
 }
 

@@ -22,6 +22,7 @@
 package azure
 
 import (
+	"encoding/json"
 	"log"
 	"net/url"
 	"os"
@@ -49,13 +50,21 @@ func GetTestConfig() (cfg *Config, err error) {
 	if err != nil {
 		return
 	}
-	if token.Expired() {
+	if token.IsExpired() {
 		logger.Println("Token was expired; refreshing it")
 		token, err = auth.NewManualAuthorizer(cfg.TenantID, ClientID, &url.URL{}, "0000").RefreshToken(token)
 		if err != nil {
 			return
 		}
-		token.Save("token.json", 0644)
+
+		var fp *os.File
+		fp, err = os.OpenFile("token.json", os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return
+		}
+		defer fp.Close()
+		json.NewEncoder(fp).Encode(token)
+
 	}
 	cfg.Token = *token
 	return

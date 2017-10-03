@@ -27,11 +27,11 @@ package azure
 import (
 	"context"
 
+	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/go-openapi/strfmt"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/jkawamoto/roadie/cloud"
-	"github.com/jkawamoto/roadie/cloud/azure/auth"
 	"github.com/jkawamoto/roadie/cloud/azure/subscriptions/client"
 	"github.com/jkawamoto/roadie/cloud/azure/subscriptions/client/subscriptions"
 )
@@ -42,7 +42,7 @@ const (
 )
 
 // Locations gets list of locations in a given subscription.
-func Locations(ctx context.Context, token *auth.Token, subscriptionID string) (regions []cloud.Region, err error) {
+func Locations(ctx context.Context, token *adal.Token, subscriptionID string) (regions []cloud.Region, err error) {
 
 	cli := client.NewHTTPClient(strfmt.NewFormats())
 	res, err := cli.Subscriptions.SubscriptionsListLocations(

@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest/adal"
+
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -73,7 +75,7 @@ func GetDeviceCode(ctx context.Context, clientID string) (code *DeviceCode, err 
 }
 
 // AuthorizeDeviceCode runs authentication process by a device code.
-func AuthorizeDeviceCode(ctx context.Context, clientID string, output io.Writer) (token *Token, err error) {
+func AuthorizeDeviceCode(ctx context.Context, clientID string, output io.Writer) (token *adal.Token, err error) {
 
 	code, err := GetDeviceCode(ctx, clientID)
 	if err != nil {
@@ -129,7 +131,7 @@ func AuthorizeDeviceCode(ctx context.Context, clientID string, output io.Writer)
 			}
 
 		} else {
-			token = new(Token)
+			token = new(adal.Token)
 			err = json.NewDecoder(res.Body).Decode(token)
 			res.Body.Close()
 			if err != nil {
