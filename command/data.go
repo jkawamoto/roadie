@@ -61,7 +61,7 @@ func (o *optDataPut) run() (err error) {
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, o.Stdout)
+	storage := cloud.NewStorage(service, o.Spinner.Writer)
 
 	wg, ctx := errgroup.WithContext(o.Context)
 	semaphore := make(chan struct{}, runtime.NumCPU()-1)
