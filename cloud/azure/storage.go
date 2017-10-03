@@ -30,7 +30,6 @@ import (
 	"log"
 	"net/url"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -246,7 +245,7 @@ func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *c
 	}
 
 	info = &cloud.FileInfo{
-		Name:        filepath.Base(filename),
+		Name:        path.Base(filename),
 		URL:         loc,
 		TimeCreated: time.Time(blob.Properties.LastModified),
 		Size:        blob.Properties.ContentLength,
@@ -294,9 +293,9 @@ func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.F
 	for _, v := range res.Blobs {
 
 		u := *loc
-		u.Path = path.Join(u.Path, filepath.Base(v.Name))
+		u.Path = path.Join(u.Path, path.Base(v.Name))
 		err = handler(&cloud.FileInfo{
-			Name:        filepath.Base(v.Name),
+			Name:        path.Base(v.Name),
 			URL:         &u,
 			TimeCreated: time.Time(v.Properties.LastModified),
 			Size:        v.Properties.ContentLength,

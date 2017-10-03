@@ -24,7 +24,7 @@ package azure
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -58,15 +58,15 @@ func parseRenamableURL(url string) (string, string) {
 	sp := strings.Split(url, ":")
 	switch len(sp) {
 	case 1:
-		filename := filepath.Base(sp[0])
+		filename := path.Base(sp[0])
 		return filename, filename
 
 	case 2:
-		filename := filepath.Base(sp[1])
+		filename := path.Base(sp[1])
 		return filename, filename
 
 	default:
-		return filepath.Base(sp[1]), sp[2]
+		return path.Base(sp[1]), sp[2]
 
 	}
 
