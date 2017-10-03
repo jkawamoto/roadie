@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/azure/batch/models"
 	"github.com/jkawamoto/roadie/script"
 )
 
@@ -125,13 +126,29 @@ func (m *QueueManager) Queues(ctx context.Context, handler cloud.QueueStatusHand
 	if err != nil {
 		return
 	}
-	for name := range set {
+	for name, info := range set {
 		// If name doesn't have the queue prefix, omit it.
 		if !strings.HasPrefix(name, QueuePrefix) {
 			continue
 		}
 
-		err = handler(removeQueuePrefix(name), cloud.QueueStatus{})
+		var status cloud.QueueStatus
+		if list, err2 := m.service.Tasks(ctx, name); err2 == nil {
+			for _, task := range list {
+				switch task.State {
+				case models.CloudTaskStateActive:
+					status.Waiting++
+				case models.CloudTaskStatePreparing:
+					status.Waiting++
+				case models.CloudTaskStateRunning:
+					status.Running++
+				}
+			}
+		}
+		if pool, err2 := m.service.GetPoolInfo(ctx, info.ExecutionInfo.PoolID); err2 == nil {
+			status.Worker = int(pool.CurrentDedicated)
+		}
+		err = handler(removeQueuePrefix(name), status)
 		if err != nil {
 			return
 		}

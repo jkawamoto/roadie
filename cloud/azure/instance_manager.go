@@ -23,6 +23,7 @@ package azure
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
@@ -91,7 +92,14 @@ func (m *InstanceManager) Instances(ctx context.Context, handler cloud.InstanceH
 		if strings.HasPrefix(name, QueuePrefix) {
 			continue
 		}
-		err = handler(name, info.State)
+
+		state := info.State
+		if pool, err2 := m.service.GetPoolInfo(ctx, info.ExecutionInfo.PoolID); err2 != nil {
+			state += " (0 instances)"
+		} else {
+			state += fmt.Sprintf(" (%v instances)", pool.CurrentDedicated)
+		}
+		err = handler(name, state)
 		if err != nil {
 			return
 		}
