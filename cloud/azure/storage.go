@@ -128,12 +128,13 @@ func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 
 	s.Logger.Println("Creating a blob at", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	return s.UploadWithMetadata(ctx, loc.Hostname(), filename, in, nil)
+	return s.upload(ctx, loc.Hostname(), filename, in, nil, nil)
 
 }
 
-// UploadWithMetadata a given stream in a given container as a file named a given file name.
-func (s *StorageService) UploadWithMetadata(ctx context.Context, container, filename string, in io.Reader, metadata map[string]string) (err error) {
+// upload a given stream in a given container as a file named a given file name.
+func (s *StorageService) upload(
+	ctx context.Context, container, filename string, in io.Reader, props *storage.BlobProperties, metadata storage.BlobMetadata) (err error) {
 
 	// Check the target container exists.
 	containerRef := s.blobClient.GetContainerReference(container)
@@ -171,18 +172,28 @@ func (s *StorageService) UploadWithMetadata(ctx context.Context, container, file
 		s.Logger.Println("Old file has been deleted")
 	}
 
-	s.Logger.Println("Creating append blob", filename)
+	s.Logger.Println("Creating blob", filename)
 	blob := containerRef.GetBlobReference(filename)
-	blob.Metadata = storage.BlobMetadata(metadata)
-	err = blob.CreateBlockBlob(nil)
+	err = blob.PutAppendBlob(nil)
 	if err != nil {
-		s.Logger.Println("Cannot create append blob", filename)
+		s.Logger.Println("Cannot create the blob", filename)
 		return
 	}
-	err = blob.SetMetadata(nil)
-	if err != nil {
-		s.Logger.Println("Cannot create append blob", filename)
-		return
+	if props != nil {
+		blob.Properties = *props
+		err = blob.SetProperties(nil)
+		if err != nil {
+			s.Logger.Println("Cannot set properties to blob", filename)
+			return
+		}
+	}
+	if metadata != nil {
+		blob.Metadata = metadata
+		err = blob.SetMetadata(nil)
+		if err != nil {
+			s.Logger.Println("Cannot set metadata to blob", filename)
+			return
+		}
 	}
 	s.Logger.Println("Created append blob", filename)
 

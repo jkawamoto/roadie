@@ -72,8 +72,9 @@ func (r *ForwardTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 // mockObject represents an object stored in mockStorageServer.
 type mockObject struct {
-	Body     string
-	Metadata map[string][]string
+	Body       string
+	Properties storage.BlobProperties
+	Metadata   map[string][]string
 }
 
 // mockContainer represents a container stored in mockStorageServer.
@@ -248,6 +249,11 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 
 		case filename != "" && req.URL.Query().Get("comp") == "appendblock":
 			// Append block.
+			if blobType := req.Header.Get("X-Ms-Blob-Type"); blobType != "AppendBlob" {
+				res.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintf(res, "Blob type is %q, want %v", blobType, "AppendBlob")
+				return
+			}
 			if data, err := ioutil.ReadAll(req.Body); err != nil {
 				res.WriteHeader(http.StatusInternalServerError)
 				io.WriteString(res, err.Error())
@@ -257,6 +263,13 @@ func (s *mockStorageServer) ServeHTTP(res http.ResponseWriter, req *http.Request
 				s.Items[container][filename] = obj
 				res.WriteHeader(http.StatusCreated)
 			}
+
+		case filename != "" && req.URL.Query().Get("comp") == "properties":
+			// Set blob properties.
+			obj := s.Items[container][filename]
+			obj.Properties.ContentType = req.Header.Get("X-Ms-Blob-Content-Type")
+			s.Items[container][filename] = obj
+			res.WriteHeader(http.StatusOK)
 
 		case filename != "" && req.URL.Query().Get("comp") == "metadata":
 			// Set blob metadata.
@@ -476,7 +489,7 @@ func TestStorageService(t *testing.T) {
 		}
 	})
 
-	t.Run("upload with metadata", func(t *testing.T) {
+	t.Run("upload with properties and metadata", func(t *testing.T) {
 		testContainer := "upload-metadata"
 		s := &StorageService{
 			blobClient: cli.GetBlobService(),
@@ -486,8 +499,10 @@ func TestStorageService(t *testing.T) {
 		ctx := context.Background()
 		testFilename := "filename"
 		testData := "abcdefg"
-		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), map[string]string{
-			"Content-Type": "text/yaml",
+		err = s.upload(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
+			ContentType: "text/yaml",
+		}, map[string]string{
+			"Version": "test",
 		})
 		if err != nil {
 			t.Fatalf("Upload returns an error: %v", err)
@@ -498,12 +513,15 @@ func TestStorageService(t *testing.T) {
 			if data.Body != testData {
 				t.Errorf("body of the uploaded file is %q, want %v", data.Body, testData)
 			}
+			if data.Properties.ContentType != "text/yaml" {
+				t.Errorf("content type property %q, want %v", data.Properties.ContentType, "text/yaml")
+			}
 			if len(data.Metadata) != 1 {
 				t.Errorf("%v key-values are stored in the metadata, want %v", len(data.Metadata), 1)
 			}
 			for k, v := range data.Metadata {
-				if k == "Content-Type" && v[0] != "text/yaml" {
-					t.Errorf("metadata %v is %q, want %v", k, v, "text/yaml")
+				if k == "Version" && v[0] != "test" {
+					t.Errorf("metadata %v is %q, want %v", k, v, "test")
 				}
 			}
 		}
@@ -519,8 +537,10 @@ func TestStorageService(t *testing.T) {
 		ctx := context.Background()
 		testFilename := "filename"
 		testData := "abcdefg"
-		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), map[string]string{
-			"Content-Type": "text/yaml",
+		err = s.upload(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
+			ContentType: "text/yaml",
+		}, map[string]string{
+			"Version": "test",
 		})
 		if err != nil {
 			t.Fatalf("UploadWithMetadate returns an error: %v", err)
@@ -534,8 +554,8 @@ func TestStorageService(t *testing.T) {
 			t.Errorf("%v key-values are stored in the metadata, want %v", len(metadata), 1)
 		}
 		for k, v := range metadata {
-			if k == "Content-Type" && v != "text/yaml" {
-				t.Errorf("metadata %v is %q, want %v", k, v, "text/yaml")
+			if k == "Version" && v != "test" {
+				t.Errorf("metadata %v is %q, want %v", k, v, "test")
 			}
 		}
 	})

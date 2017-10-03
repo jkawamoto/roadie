@@ -44,6 +44,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/storage"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	"github.com/jkawamoto/roadie/cloud"
@@ -362,9 +363,10 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 		}
 		defer fp.Close()
 
-		err = s.storage.UploadWithMetadata(ctx, BinContainer, RoadieAzureArchiveName, fp, map[string]string{
-			"Content-Type": "application/tar+gzip",
-			"Version":      "snapshot",
+		err = s.storage.upload(ctx, BinContainer, RoadieAzureArchiveName, fp, &storage.BlobProperties{
+			ContentType: "application/tar+gzip",
+		}, map[string]string{
+			"Version": "snapshot",
 		})
 		// TODO: The above logic should be replaced to download the archive from
 		// GitHub directory.
@@ -390,9 +392,9 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 	if err != nil {
 		return
 	}
-	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), map[string]string{
-		"Content-Type": "text/yaml",
-	})
+	err = s.storage.upload(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
+		ContentType: "text/yaml",
+	}, nil)
 	if err != nil {
 		return
 	}
@@ -677,9 +679,9 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	now := time.Now().Unix()
 	// Create a startup script and upload it.
 	startupFilename := fmt.Sprintf("%v%v.yml", task.Name, now)
-	err = s.storage.UploadWithMetadata(ctx, StartupContainer, startupFilename, strings.NewReader(task.String()), map[string]string{
-		"Content-Type": "text/yaml",
-	})
+	err = s.storage.upload(ctx, StartupContainer, startupFilename, strings.NewReader(task.String()), &storage.BlobProperties{
+		ContentType: "text/yaml",
+	}, nil)
 	if err != nil {
 		return
 	}
@@ -694,9 +696,9 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	if err != nil {
 		return
 	}
-	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), map[string]string{
-		"Content-Type": "text/yaml",
-	})
+	err = s.storage.upload(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
+		ContentType: "text/yaml",
+	}, nil)
 	if err != nil {
 		return
 	}

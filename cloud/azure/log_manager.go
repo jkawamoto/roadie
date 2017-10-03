@@ -34,7 +34,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	storage "github.com/Azure/azure-storage-go"
+	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
 )
