@@ -24,7 +24,6 @@ package azure
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -33,34 +32,137 @@ import (
 	"strings"
 	"time"
 
+	arm_storage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+	"github.com/Azure/go-autorest/autorest"
 	"github.com/jkawamoto/roadie/cloud"
-	client "github.com/jkawamoto/roadie/cloud/azure/storage/client"
-	"github.com/jkawamoto/roadie/cloud/azure/storage/client/storage_accounts"
-	"github.com/jkawamoto/roadie/cloud/azure/storage/models"
 )
 
 const (
-	// StorageAPIVersion defines API version of storage service.
-	StorageAPIVersion = "2016-12-01"
 	// DefaultAccessPolicyExpiryTime defines a default expiry time.
 	DefaultAccessPolicyExpiryTime = 30 * 24 * time.Hour
 )
+
+// storageAccountManager provides functions to manage a storage account.
+type storageAccountManager struct {
+	// Configuration
+	Config *Config
+	// Logger
+	Logger *log.Logger
+	// client for Azure's account resource manager.
+	client arm_storage.AccountsClient
+}
+
+// newStorageAccountManager creates a new account manager.
+func newStorageAccountManager(cfg *Config, logger *log.Logger) *storageAccountManager {
+
+	cli := arm_storage.NewAccountsClient(cfg.SubscriptionID)
+	cli.Authorizer = autorest.NewBearerAuthorizer(&cfg.Token)
+	return &storageAccountManager{
+		Config: cfg,
+		Logger: logger,
+		client: cli,
+	}
+
+}
+
+// createIfNotExists checks the associated storage account exists. If not, creates
+// it.
+func (s *storageAccountManager) createIfNotExists(ctx context.Context) (err error) {
+
+	s.Logger.Printf("Checking storage account %q exists", s.Config.StorageAccount)
+	accounts, err := s.client.List()
+	if err != nil {
+		return
+	}
+
+	var exist bool
+	for _, a := range *accounts.Value {
+		if *a.Name == s.Config.StorageAccount {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+		s.Logger.Printf("Storage account %q doesn't exist and creating it", s.Config.StorageAccount)
+		resCh, errCh := s.client.Create(s.Config.ResourceGroupName, s.Config.StorageAccount, arm_storage.AccountCreateParameters{
+			Sku: &arm_storage.Sku{
+				Name: arm_storage.StandardRAGRS,
+				Tier: arm_storage.Standard,
+			},
+			Kind:     arm_storage.BlobStorage,
+			Location: &s.Config.Location,
+			AccountPropertiesCreateParameters: &arm_storage.AccountPropertiesCreateParameters{
+				AccessTier: arm_storage.Hot,
+			},
+		}, ctx.Done())
+
+		select {
+		case _ = <-resCh:
+		case err = <-errCh:
+		case <-ctx.Done():
+			err = ctx.Err()
+		}
+
+	}
+	return
+
+}
+
+// getStorageAccountInfo retrieves information of the associated storage account.
+func (s *storageAccountManager) getStorageAccountInfo() (arm_storage.Account, error) {
+
+	return s.client.GetProperties(s.Config.ResourceGroupName, s.Config.StorageAccount)
+
+}
+
+// getStorageKey returns a storage access key. If the associated storage account
+// doesn't have any access keys, this function will generate it.
+func (s *storageAccountManager) getStorageKey(ctx context.Context) (key string, err error) {
+
+	s.Logger.Printf("Obtaining an access key for storage %q", s.Config.StorageAccount)
+	res, err := s.client.ListKeys(s.Config.ResourceGroupName, s.Config.StorageAccount)
+	if err != nil {
+		return
+	}
+	for len(*res.Keys) == 0 {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			return
+		default:
+		}
+
+		s.Logger.Printf("Access keys for %q don't exist and generating it", s.Config.StorageAccount)
+		res, err = s.client.RegenerateKey(s.Config.ResourceGroupName, s.Config.StorageAccount, arm_storage.AccountRegenerateKeyParameters{
+			KeyName: toPtr("key"),
+		})
+		if err != nil {
+			return
+		}
+	}
+	key = *(*res.Keys)[0].Value
+	return
+
+}
+
+// delete deletes the associated storage account.
+func (s *storageAccountManager) delete() (err error) {
+
+	s.Logger.Printf("Deleting storage account %q", s.Config.StorageAccount)
+	_, err = s.client.Delete(s.Config.ResourceGroupName, s.Config.StorageAccount)
+	return
+
+}
 
 // StorageService provides an interface for Azure's storage management service.
 type StorageService struct {
 	// Client of blob storage service
 	blobClient storage.BlobStorageClient
-	// Client of Azure resource manager
-	armClient *client.StorageManagement
 	// Configuration
 	Config *Config
 	// Logger
 	Logger *log.Logger
-	// Sleep time
-	SleepTime time.Duration
 	// AccessPolicyExpiryTime defines the expiry time for accessing containers.
 	AccessPolicyExpiryTime time.Duration
 }
@@ -80,43 +182,29 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 		return
 	}
 
-	// Create a storage account manager.
-	manager := client.NewHTTPClient(strfmt.NewFormats())
-	switch transport := manager.Transport.(type) {
-	case *httptransport.Runtime:
-		transport.DefaultAuthentication = httptransport.BearerToken(cfg.Token.AccessToken)
-		manager.StorageAccounts.SetTransport(transport)
+	// Create a storage account manager and prepare the account.
+	manager := newStorageAccountManager(cfg, logger)
+	err = manager.createIfNotExists(ctx)
+	if err != nil {
+		return
+	}
+	key, err := manager.getStorageKey(ctx)
+	if err != nil {
+		return
+	}
+
+	// Create a blob storage client.
+	cli, err := storage.NewBasicClient(cfg.StorageAccount, key)
+	if err != nil {
+		return
 	}
 
 	s = &StorageService{
-		armClient:              manager,
+		blobClient:             cli.GetBlobService(),
 		Config:                 cfg,
 		Logger:                 logger,
-		SleepTime:              DefaultSleepTime,
 		AccessPolicyExpiryTime: DefaultAccessPolicyExpiryTime,
 	}
-
-	// Create an account if necessary.
-	var exist bool
-	exist, err = s.checkStorageAccount(ctx)
-	if err != nil {
-		return
-	} else if !exist {
-		err = s.createStorageAccount(ctx)
-		if err != nil {
-			return
-		}
-	}
-
-	key, err := s.getStorageKey(ctx)
-	if err != nil {
-		return
-	}
-	cli, err := storage.NewBasicClient(s.Config.StorageAccount, key)
-	if err != nil {
-		return
-	}
-	s.blobClient = cli.GetBlobService()
 	return
 
 }
@@ -343,196 +431,10 @@ func (s *StorageService) getFileURL(container, filename string) string {
 	return s.blobClient.GetContainerReference(container).GetBlobReference(filename).GetURL()
 }
 
-// checkStorageAccount checks existence of a given account in a given subscription.
-func (s *StorageService) checkStorageAccount(ctx context.Context) (bool, error) {
+// deleteAccount deletes the associated storage account.
+func (s *StorageService) deleteAccount(ctx context.Context) (err error) {
 
-	s.Logger.Println("Checking existence of storage account", s.Config.StorageAccount)
-	list, err := s.armClient.StorageAccounts.StorageAccountsList(
-		storage_accounts.NewStorageAccountsListParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID))
-
-	if err == nil {
-		for _, v := range list.Payload.Value {
-			if v.Name == s.Config.StorageAccount {
-				s.Logger.Println("Found storage account", s.Config.StorageAccount)
-				return true, nil
-			}
-		}
-	}
-
-	s.Logger.Println("Cannot find storage account", s.Config.StorageAccount)
-	return false, err
-
-}
-
-// createStorageAccount creates a given account in a given subscription.
-func (s *StorageService) createStorageAccount(ctx context.Context) (err error) {
-
-	s.Logger.Println("Creating storage account", s.Config.StorageAccount)
-	created, creating, err := s.armClient.StorageAccounts.StorageAccountsCreate(
-		storage_accounts.NewStorageAccountsCreateParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.StorageAccount).
-			WithParameters(&models.StorageAccountCreateParameters{
-				Kind:     toPtr(models.StorageAccountKindBlobStorage),
-				Location: &s.Config.Location,
-				Sku: &models.Sku{
-					Name: toPtr(models.SkuNameStandardRAGRS),
-					Tier: models.SkuTierStandard,
-				},
-				Properties: &models.StorageAccountPropertiesCreateParameters{
-					AccessTier: models.StorageAccountPropertiesCreateParametersAccessTierHot,
-				},
-			}))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-
-	case created != nil || creating != nil:
-		var info *models.StorageAccount
-		for {
-			s.Logger.Println("Waiting for creating storage account", s.Config.StorageAccount)
-			if info, err = s.getStorageAccountInfo(ctx); err != nil {
-				break
-			} else if info.Properties.ProvisioningState == ProvisioningSucceeded {
-				s.Logger.Println("Created storage account", s.Config.StorageAccount)
-				return
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-
-	}
-
-	s.Logger.Println("Cannot create storage account", s.Config.StorageAccount, ":", err.Error())
-	return
-
-}
-
-// getStorageAccountInfo returns the storage account information.
-func (s *StorageService) getStorageAccountInfo(ctx context.Context) (info *models.StorageAccount, err error) {
-
-	s.Logger.Println("Retrieving information of storage account", s.Config.StorageAccount)
-	res, err := s.armClient.StorageAccounts.StorageAccountsGetProperties(
-		storage_accounts.NewStorageAccountsGetPropertiesParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.StorageAccount))
-	if err != nil {
-		return
-	}
-
-	s.Logger.Println("Retrieved information of storage account", s.Config.StorageAccount)
-	info = res.Payload
-	return
-
-}
-
-// deleteStorageAccount deletes the storage account specified in the config.
-func (s *StorageService) deleteStorageAccount(ctx context.Context) (err error) {
-
-	s.Logger.Println("Deleting storage account", s.Config.StorageAccount)
-	deleted, deleting, err := s.armClient.StorageAccounts.StorageAccountsDelete(
-		storage_accounts.NewStorageAccountsDeleteParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.StorageAccount))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-
-	case deleted != nil || deleting != nil:
-		var exist bool
-		for {
-			s.Logger.Println("Waiting for deleting storage account", s.Config.StorageAccount)
-			if exist, err = s.checkStorageAccount(ctx); err != nil {
-				break
-			} else if !exist {
-				s.Logger.Println("Deleted storage account", s.Config.StorageAccount)
-				return
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-
-	}
-
-	s.Logger.Println("Cannot delete storage account", s.Config.StorageAccount, ":", err.Error())
-	return
-
-}
-
-// getStorageKey returns a storage access key of a given account.
-func (s *StorageService) getStorageKey(ctx context.Context) (key string, err error) {
-
-	s.Logger.Println("Retrieving access keys for account", s.Config.StorageAccount)
-	keyList, err := s.armClient.StorageAccounts.StorageAccountsListKeys(
-		storage_accounts.NewStorageAccountsListKeysParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.StorageAccount))
-
-	if err != nil || len(keyList.Payload.Keys) == 0 {
-		keys, err := s.generateStorageKeys(ctx)
-		if err != nil {
-			s.Logger.Println("Cannot retrieve access keys")
-			return "", err
-		}
-		key = keys[0].Value
-
-	} else {
-		key = keyList.Payload.Keys[0].Value
-
-	}
-
-	s.Logger.Println("Retrieved access keys")
-	return
-
-}
-
-// generateStorageKeys generates access keys for a given account.
-func (s *StorageService) generateStorageKeys(ctx context.Context) (keys []*models.StorageAccountKey, err error) {
-
-	s.Logger.Println("Generating access keys for account", s.Config.StorageAccount)
-	res, err := s.armClient.StorageAccounts.StorageAccountsRegenerateKey(
-		storage_accounts.NewStorageAccountsRegenerateKeyParamsWithContext(ctx).
-			WithAPIVersion(StorageAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.StorageAccount))
-
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot generate access keys")
-		return
-	}
-
-	s.Logger.Println("Generated access keys")
-	keys = res.Payload.Keys
-	return
+	manager := newStorageAccountManager(s.Config, s.Logger)
+	return manager.delete()
 
 }

@@ -50,7 +50,7 @@ func TestStorageServiceWithRemoteConnection(t *testing.T) {
 		t.Fatalf("cannot create a storage service: %v", err)
 	}
 	defer func() {
-		err = s.deleteStorageAccount(ctx)
+		err = s.deleteAccount(ctx)
 		if err != nil {
 			t.Errorf("cannot delete storage account: %v", err)
 		}

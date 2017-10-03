@@ -26,9 +26,6 @@ build: storage resource compute subscriptions network disk batchmanagement batch
 go-deps:
 	go get -u github.com/go-swagger/go-swagger/cmd/swagger
 
-storage: go-deps
-	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-storage/2016-12-01/swagger/storage.json -t storage
-
 resource: go-deps
 	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-resources/resources/2016-09-01/swagger/resources.json -t resource
 

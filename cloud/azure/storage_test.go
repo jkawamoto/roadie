@@ -25,6 +25,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -38,9 +39,14 @@ import (
 	"testing"
 	"time"
 
+	arm_storage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/jkawamoto/roadie/cloud"
 	"github.com/jkawamoto/roadie/script"
+)
+
+const (
+	StorageAPIVersion = "2017-06-01"
 )
 
 // ForwardTransport is a http.RoundTripper which forwards requests to a given
@@ -562,9 +568,197 @@ func TestStorageService(t *testing.T) {
 
 }
 
-func TestStorageManagerImplementation(t *testing.T) {
+// mockStorageAccountServer is a mock providing storage account managment service.
+type mockStorageAccountServer struct {
+	subscriptionID string
+	resourceGroup  string
+	location       string
+	accounts       []arm_storage.Account
+	keys           []arm_storage.AccountKey
+}
 
-	var s cloud.StorageManager = &StorageService{}
-	_ = s
+func (m *mockStorageAccountServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+
+	paths := strings.Split(strings.TrimPrefix(req.URL.Path, "/"), "/")
+	if len(paths) < 2 {
+		res.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(res, "invalid URL: %v", req.URL)
+		return
+	}
+	if paths[1] != m.subscriptionID {
+		res.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(res, "subscription ID is %q, want %v", paths[1], m.subscriptionID)
+		return
+	}
+
+	switch req.Method {
+	case http.MethodGet:
+		if len(paths) < 8 {
+			// List accounts.
+			if m.accounts == nil {
+				m.accounts = []arm_storage.Account{}
+			}
+			json.NewEncoder(res).Encode(&arm_storage.AccountListResult{
+				Value: &m.accounts,
+			})
+			return
+		}
+
+		for _, a := range m.accounts {
+			if *a.Name == paths[7] {
+				json.NewEncoder(res).Encode(a)
+				return
+			}
+		}
+
+		res.WriteHeader(http.StatusNotFound)
+		return
+
+	case http.MethodPost:
+		if len(paths) < 9 || paths[3] != m.resourceGroup {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if m.keys == nil {
+			m.keys = []arm_storage.AccountKey{}
+		}
+		switch paths[8] {
+		case "listKeys":
+			json.NewEncoder(res).Encode(&arm_storage.AccountListKeysResult{
+				Keys: &m.keys,
+			})
+			return
+
+		case "regenerateKey":
+			var key arm_storage.AccountKey
+			json.NewDecoder(req.Body).Decode(&key)
+			key.Value = toPtr(fmt.Sprint(time.Now().Unix()))
+
+			m.keys = append(m.keys, key)
+			json.NewEncoder(res).Encode(&arm_storage.AccountListKeysResult{
+				Keys: &m.keys,
+			})
+			return
+
+		}
+
+	case http.MethodPut:
+		if len(paths) < 7 || paths[3] != m.resourceGroup {
+			res.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(res, "resource group name is invald")
+			return
+		}
+		var param arm_storage.AccountCreateParameters
+		json.NewDecoder(req.Body).Decode(&param)
+		if param.Kind != arm_storage.BlobStorage {
+			res.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(res, "kind is %q, want %v", param.Kind, arm_storage.BlobStorage)
+			return
+		}
+		if param.Sku == nil || param.Sku.Name != arm_storage.StandardRAGRS || param.Sku.Tier != arm_storage.Standard {
+			res.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(res, "sku is wrong: %v", param.Sku)
+			return
+		}
+		if param.Location == nil || *param.Location != m.location {
+			res.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(res, "location is wrong: %v", param.Location)
+			return
+		}
+		if param.AccountPropertiesCreateParameters == nil || param.AccountPropertiesCreateParameters.AccessTier != arm_storage.Hot {
+			res.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(res, "property is wrong: %v", param.AccountPropertiesCreateParameters)
+			return
+		}
+		m.accounts = append(m.accounts, arm_storage.Account{
+			Name: &paths[7],
+		})
+		res.WriteHeader(http.StatusOK)
+		return
+
+	case http.MethodDelete:
+		if len(paths) < 8 {
+			res.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		selected := -1
+		for i, a := range m.accounts {
+			if *a.Name == paths[7] {
+				selected = i
+				break
+			}
+		}
+		if selected == -1 {
+			res.WriteHeader(http.StatusNotFound)
+			return
+		}
+		m.accounts = append(m.accounts[:selected], m.accounts[selected+1:]...)
+		return
+
+	}
+	res.WriteHeader(http.StatusNotImplemented)
+
+}
+
+func TestStorageAccountManager(t *testing.T) {
+
+	var err error
+	testSubscriptionID := "00000000-0000-0000-0000-999999999999"
+	testResourceGroup := "test-group"
+	testAccount := "test-account"
+	testLocation := "somewhere"
+
+	mock := mockStorageAccountServer{
+		subscriptionID: testSubscriptionID,
+		resourceGroup:  testResourceGroup,
+		location:       testLocation,
+	}
+	server := httptest.NewServer(&mock)
+	defer server.Close()
+
+	manager := storageAccountManager{
+		client: arm_storage.NewAccountsClientWithBaseURI(server.URL, testSubscriptionID),
+		Config: &Config{
+			SubscriptionID:    testSubscriptionID,
+			ResourceGroupName: testResourceGroup,
+			StorageAccount:    testAccount,
+			Location:          testLocation,
+		},
+		Logger: log.New(ioutil.Discard, "", log.LstdFlags),
+	}
+
+	err = manager.createIfNotExists(context.Background())
+	if err != nil {
+		t.Fatalf("createIfNotExists returns an error: %v", err)
+	}
+	if len(mock.accounts) == 0 || *mock.accounts[0].Name != testAccount {
+		t.Error("created account is not found")
+	}
+
+	account, err := manager.getStorageAccountInfo()
+	if err != nil {
+		t.Fatalf("getStorageAccountInfo returns an error: %v", err)
+	}
+	if *account.Name != testAccount {
+		t.Errorf("retrieved account name is %v, want %v", *account.Name, testAccount)
+	}
+
+	key, err := manager.getStorageKey(context.Background())
+	if err != nil {
+		t.Fatalf("getStorageKey returns an error: %v", err)
+	}
+
+	key2, err := manager.getStorageKey(context.Background())
+	if err != nil {
+		t.Fatalf("getStorageKey returns an error: %v", err)
+	}
+	if key != key2 {
+		t.Errorf("getStorageKey regenerates keys even if some keys are already registered.")
+	}
+
+	err = manager.delete()
+	if err != nil {
+		t.Fatalf("delete returns an error: %v", err)
+	}
 
 }
