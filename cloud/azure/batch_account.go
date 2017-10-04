@@ -1,5 +1,5 @@
 //
-// cloud/azure/batch_management.go
+// cloud/azure/batch_account.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
