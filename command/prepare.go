@@ -115,10 +115,7 @@ func (m *Metadata) prepareProvider(forceAuth bool) (err error) {
 		}
 		m.Config.Save()
 
-	case m.Config.AzureConfig.SubscriptionID != "":
-		if m.Config.AzureConfig.TenantID == "" {
-			return fmt.Errorf("Azure's tenant ID is not given. Check config file %v", m.Config.FileName)
-		}
+	case m.Config.AzureConfig.Valid():
 		m.provider, err = azure.NewProvider(m.Context, &m.Config.AzureConfig, m.Logger, forceAuth)
 		if err != nil {
 			return

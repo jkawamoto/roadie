@@ -100,7 +100,7 @@ func TestCmdInit(t *testing.T) {
 	m := testMetadata(&output, nil)
 	testID := "test-id"
 
-	t.Run("input an ID for GCP", func(t *testing.T) {
+	t.Run("init for GCP", func(t *testing.T) {
 
 		var tmp string
 		tmp, err = ioutil.TempDir("", "")
@@ -141,7 +141,7 @@ func TestCmdInit(t *testing.T) {
 
 	})
 
-	t.Run("input an ID for Azure", func(t *testing.T) {
+	t.Run("init for Azure", func(t *testing.T) {
 
 		var tmp string
 		tmp, err = ioutil.TempDir("", "")
@@ -162,7 +162,9 @@ func TestCmdInit(t *testing.T) {
 		defer os.Chdir(wd)
 
 		testSubscriptionID := "subscription"
-		m.Stdin = strings.NewReader("a\n" + testID + "\n" + testSubscriptionID + "\n")
+		testProjectID := "myproject"
+		m.Stdin = strings.NewReader(
+			strings.Join([]string{"a", testID, testSubscriptionID, testProjectID}, "\n") + "\n")
 		err = cmdInit(m)
 		if err != nil {
 			t.Fatalf("cmdInit returns an error: %v", err)
@@ -172,6 +174,9 @@ func TestCmdInit(t *testing.T) {
 		}
 		if m.Config.AzureConfig.SubscriptionID != testSubscriptionID {
 			t.Errorf("subscription ID is %q, want %v", m.Config.AzureConfig.SubscriptionID, testSubscriptionID)
+		}
+		if m.Config.AzureConfig.ProjectID != testProjectID {
+			t.Errorf("project ID is %q, want %v", m.Config.AzureConfig.ProjectID, testProjectID)
 		}
 
 		var cfg *config.Config

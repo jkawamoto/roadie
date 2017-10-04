@@ -76,7 +76,7 @@ See "roadie config --help", for more detail.
 	}
 	switch provider {
 	case "a":
-		var tennant, subscription string
+		var tennant, subscription, project string
 		tennant, err = actor.PromptAndRetry("Enter your tennant ID", checkNotEmpty)
 		if err != nil {
 			return
@@ -90,6 +90,13 @@ See "roadie config --help", for more detail.
 		}
 		fmt.Fprintln(m.Stdout, "")
 		m.Config.AzureConfig.SubscriptionID = subscription
+
+		project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		fmt.Fprintln(m.Stdout, "")
+		m.Config.AzureConfig.ProjectID = project
 
 	case "g":
 		var project string
