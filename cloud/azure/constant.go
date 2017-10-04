@@ -45,9 +45,6 @@ const (
 	// extention.
 	ComputeServiceCustomScriptExtension = "CustomScriptForLinux"
 
-	// ProvisioningSucceeded defines succeeded provisioning status
-	ProvisioningSucceeded = "Succeeded"
-
 	// BinContainer is the name of the container where binary programs will be stored.
 	BinContainer = "bin"
 	// SourceContainer is the name of the container where source files will be stored.
