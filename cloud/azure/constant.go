@@ -29,7 +29,7 @@ const (
 	// DefaultOSOffer is the default offer of the default OS image.
 	DefaultOSOffer = "UbuntuServer"
 	// DefaultOSSkus is the default skus of the default OS image.
-	DefaultOSSkus = "16.10"
+	DefaultOSSkus = "17.04"
 	// DefaultOSVersion is the default version of the default version.
 	DefaultOSVersion = "latest"
 	// DefaultLocation is the default location.
