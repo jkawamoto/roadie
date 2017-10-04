@@ -1,5 +1,5 @@
 //
-// cloud/azure/instance.go
+// cloud/azure/instance_manager.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
@@ -24,229 +24,105 @@ package azure
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"strings"
 
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
 	"github.com/jkawamoto/roadie/cloud"
-	client "github.com/jkawamoto/roadie/cloud/azure/compute/client"
-	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_images"
-	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_sizes"
+	"github.com/jkawamoto/roadie/script"
 )
 
-const (
-	// ComputeAPIVersion defines API version of compute service.
-	ComputeAPIVersion = "2016-04-30-preview"
-)
-
-// ComputeService provides an interface for Azure's compute service.
-type ComputeService struct {
-	client *client.ComputeManagementClient
-	Config *Config
-	Logger *log.Logger
+// InstanceManager implements cloud.InstanceManager interface to run a script
+// on Azure.
+type InstanceManager struct {
+	service *BatchService
+	Config  *Config
+	Logger  *log.Logger
 }
 
-// Entry is an entry of lists.
-type Entry struct {
-	ID   string
-	Name string
-}
+// NewInstanceManager creates a new instance manager.
+func NewInstanceManager(ctx context.Context, cfg *Config, logger *log.Logger) (m *InstanceManager, err error) {
 
-// NewComputeService creates a new compute service interface assosiated with
-// a given configuration.
-func NewComputeService(ctx context.Context, cfg *Config, logger *log.Logger) (s *ComputeService, err error) {
-
-	if logger == nil {
-		logger = log.New(ioutil.Discard, "", log.LstdFlags)
+	service, err := NewBatchService(ctx, cfg, logger)
+	if err != nil {
+		return
 	}
 
-	// Create a management client.
-	cli := client.NewHTTPClient(strfmt.NewFormats())
-	s = &ComputeService{
-		client: cli,
-		Config: cfg,
-		Logger: logger,
+	m = &InstanceManager{
+		service: service,
+		Config:  cfg,
+		Logger:  logger,
+	}
+	return
+
+}
+
+// CreateInstance creates an instance which has a given name.
+func (m *InstanceManager) CreateInstance(ctx context.Context, task *script.Script) (err error) {
+
+	err = m.service.CreateJob(ctx, task.Name)
+	if err != nil {
+		return
+	}
+
+	err = m.service.CreateTask(ctx, task.Name, task)
+	if err != nil {
+		m.service.DeleteJob(ctx, task.Name)
+	}
+	return
+
+}
+
+// DeleteInstance deletes the given named instance.
+func (m *InstanceManager) DeleteInstance(ctx context.Context, name string) error {
+
+	return m.service.DeleteJob(ctx, name)
+
+}
+
+// Instances returns a list of running instances
+func (m *InstanceManager) Instances(ctx context.Context, handler cloud.InstanceHandler) (err error) {
+
+	jobs, err := m.service.Jobs(ctx)
+	if err != nil {
+		return
+	}
+
+	for name, info := range jobs {
+		// If name has the queue prefix, omit it.
+		if strings.HasPrefix(name, QueuePrefix) {
+			continue
+		}
+
+		state := info.State
+		if pool, err2 := m.service.GetPoolInfo(ctx, info.ExecutionInfo.PoolID); err2 != nil {
+			state += " (0 instances)"
+		} else {
+			state += fmt.Sprintf(" (%v instances)", pool.CurrentDedicated)
+		}
+		err = handler(name, state)
+		if err != nil {
+			return
+		}
 	}
 	return
 
 }
 
 // AvailableRegions returns a list of available regions.
-func (s *ComputeService) AvailableRegions(ctx context.Context) (regions []cloud.Region, err error) {
-	s.Logger.Println("Retrieving available regions")
-	regions, err = Locations(ctx, &s.Config.Token, s.Config.SubscriptionID)
+func (m *InstanceManager) AvailableRegions(ctx context.Context) (regions []cloud.Region, err error) {
+
+	m.Logger.Println("Retrieving available regions")
+	regions, err = Locations(ctx, &m.Config.Token, m.Config.SubscriptionID)
 	if err != nil {
-		s.Logger.Println("Cannot retrieve available regions")
+		m.Logger.Println("Cannot retrieve available regions")
 	} else {
-		s.Logger.Println("Retrieved available regions")
+		m.Logger.Println("Retrieved available regions")
 	}
 	return
+
 }
 
 // AvailableMachineTypes returns a list of available machine types.
-func (s *ComputeService) AvailableMachineTypes(ctx context.Context) (types []cloud.MachineType, err error) {
-
-	s.Logger.Println("Retrieving available machine types")
-	res, err := s.client.VirtualMachineSizes.VirtualMachineSizesList(
-		virtual_machine_sizes.NewVirtualMachineSizesListParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve available machine types:", err.Error())
-		return
-	}
-
-	types = make([]cloud.MachineType, len(res.Payload.Value))
-	for i, v := range res.Payload.Value {
-		types[i] = cloud.MachineType{
-			Name:        v.Name,
-			Description: fmt.Sprintf("%v Cores, %v MB RAM", v.NumberOfCores, v.MemoryInMB),
-		}
-	}
-	s.Logger.Println("Retrieved available machine types")
-	return
-
-}
-
-// ImagePublishers retrieves a set of image publishers.
-func (s *ComputeService) ImagePublishers(ctx context.Context) (publishers []Entry, err error) {
-
-	s.Logger.Println("Retrieving image publishers")
-	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListPublishers(
-		virtual_machine_images.NewVirtualMachineImagesListPublishersParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve image publishers:", err.Error())
-		return
-	}
-
-	publishers = make([]Entry, len(res.Payload))
-	for i, v := range res.Payload {
-		publishers[i] = Entry{
-			ID:   v.ID,
-			Name: *v.Name,
-		}
-	}
-	s.Logger.Println("Retrieved image publishers")
-	return
-
-}
-
-// ImageOffers retrieves a set of offers provided by a given publisher.
-func (s *ComputeService) ImageOffers(ctx context.Context, publisher string) (offers []Entry, err error) {
-
-	s.Logger.Println("Retrieving image offers of ", publisher)
-	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListOffers(
-		virtual_machine_images.NewVirtualMachineImagesListOffersParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location).
-			WithPublisherName(publisher), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve image offers:", err.Error())
-		return
-	}
-
-	offers = make([]Entry, len(res.Payload))
-	for i, v := range res.Payload {
-		offers[i] = Entry{
-			ID:   v.ID,
-			Name: *v.Name,
-		}
-	}
-	s.Logger.Println("Retrieved image offers")
-	return
-
-}
-
-// ImageSkus retrieves a set of skus provded by a given publisher and offer.
-func (s *ComputeService) ImageSkus(ctx context.Context, publisherName, offer string) (skus []Entry, err error) {
-
-	s.Logger.Println("Retrieving image skus of ", publisherName, ":", offer)
-	res, err := s.client.VirtualMachineImages.VirtualMachineImagesListSkus(
-		virtual_machine_images.NewVirtualMachineImagesListSkusParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location).
-			WithPublisherName(publisherName).
-			WithOffer(offer), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve image skus:", err.Error())
-		return
-	}
-
-	skus = make([]Entry, len(res.Payload))
-	for i, v := range res.Payload {
-		skus[i] = Entry{
-			ID:   v.ID,
-			Name: *v.Name,
-		}
-	}
-	s.Logger.Println("Retrieved image skus")
-	return
-
-}
-
-// ImageVersions retrieves a set of versions provided by a given publisher,
-// offer, and skus.
-func (s *ComputeService) ImageVersions(ctx context.Context, publisherName, offer, skus string) (versions []Entry, err error) {
-
-	s.Logger.Println("Retrieving image versions of ", publisherName, ":", offer, ":", skus)
-	res, err := s.client.VirtualMachineImages.VirtualMachineImagesList(
-		virtual_machine_images.NewVirtualMachineImagesListParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location).
-			WithPublisherName(publisherName).
-			WithOffer(offer).
-			WithSkus(skus), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve image versions:", err.Error())
-		return
-	}
-
-	versions = make([]Entry, len(res.Payload))
-	for i, v := range res.Payload {
-		versions[i] = Entry{
-			ID:   v.ID,
-			Name: *v.Name,
-		}
-	}
-	s.Logger.Println("REtrieved image versions")
-	return
-
-}
-
-// ImageID retrieves an image ID.
-func (s *ComputeService) ImageID(ctx context.Context, publisherName, offer, skus, version string) (id string, err error) {
-
-	s.Logger.Println("Retrieving an image ID")
-	res, err := s.client.VirtualMachineImages.VirtualMachineImagesGet(
-		virtual_machine_images.NewVirtualMachineImagesGetParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithLocation(s.Config.Location).
-			WithPublisherName(publisherName).
-			WithOffer(offer).
-			WithSkus(skus).
-			WithVersion(version), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve an image ID:", err.Error())
-		return
-	}
-
-	s.Logger.Println("Retreived the image ID")
-	return res.Payload.ID, nil
-
+func (m *InstanceManager) AvailableMachineTypes(ctx context.Context) (types []cloud.MachineType, err error) {
+	return m.service.AvailableMachineTypes(ctx)
 }

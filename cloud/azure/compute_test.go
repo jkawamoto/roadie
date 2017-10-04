@@ -1,6 +1,6 @@
 // +build remote
 //
-// cloud/azure/instance_test.go
+// cloud/azure/compute_test.go
 //
 // Copyright (c) 2016-2017 Junpei Kawamoto
 //
