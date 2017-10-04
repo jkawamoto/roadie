@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -34,9 +33,6 @@ import (
 	client "github.com/jkawamoto/roadie/cloud/azure/compute/client"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_images"
 	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machine_sizes"
-	"github.com/jkawamoto/roadie/cloud/azure/compute/client/virtual_machines"
-	"github.com/jkawamoto/roadie/cloud/azure/compute/models"
-	"github.com/jkawamoto/roadie/script"
 )
 
 const (
@@ -46,10 +42,9 @@ const (
 
 // ComputeService provides an interface for Azure's compute service.
 type ComputeService struct {
-	client    *client.ComputeManagementClient
-	Config    *Config
-	Logger    *log.Logger
-	SleepTime time.Duration
+	client *client.ComputeManagementClient
+	Config *Config
+	Logger *log.Logger
 }
 
 // Entry is an entry of lists.
@@ -66,279 +61,13 @@ func NewComputeService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 		logger = log.New(ioutil.Discard, "", log.LstdFlags)
 	}
 
-	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
-	if err != nil {
-		return
-	}
-
 	// Create a management client.
 	cli := client.NewHTTPClient(strfmt.NewFormats())
 	s = &ComputeService{
-		client:    cli,
-		Config:    cfg,
-		Logger:    logger,
-		SleepTime: DefaultSleepTime,
+		client: cli,
+		Config: cfg,
+		Logger: logger,
 	}
-	return
-
-}
-
-// CreateInstance creates an instance which has a given name.
-func (s *ComputeService) CreateInstance(ctx context.Context, name string, script *script.Script, disksize int64) (err error) {
-
-	if script.Name == "" {
-		script.Name = name
-	}
-
-	startup, err := StartupScript(s.Config, script)
-	if err != nil {
-		return
-	}
-
-	// Create dependent service interfaces.
-	networkService, err := NewNetworkService(ctx, s.Config, s.Logger)
-	if err != nil {
-		return
-	}
-	diskService, err := NewDiskService(ctx, s.Config, s.Logger)
-	if err != nil {
-		return
-	}
-
-	// Create a network service.
-	nif, err := networkService.CreateNetworkInterface(ctx, s.networkInterfaceName(name))
-	if err != nil {
-		return
-	}
-
-	osDiskName := s.osDiskName(name)
-	param := &models.VirtualMachine{
-		Resource: models.Resource{
-			Location: &s.Config.Location,
-		},
-		Properties: &models.VirtualMachineProperties{
-			HardwareProfile: &models.HardwareProfile{
-				VMSize: s.Config.MachineType,
-			},
-			StorageProfile: &models.StorageProfile{
-				ImageReference: &models.ImageReference{
-					Publisher: s.Config.OS.PublisherName,
-					Offer:     s.Config.OS.Offer,
-					Sku:       s.Config.OS.Skus,
-					Version:   s.Config.OS.Version,
-				},
-				OsDisk: &models.OSDisk{
-					Name:         osDiskName,
-					Caching:      models.CachingReadOnly,
-					CreateOption: models.CreateOptionFromImage,
-					DiskSizeGB:   int32(disksize),
-				},
-				DataDisks: []*models.DataDisk{},
-			},
-			OsProfile: &models.OSProfile{
-				ComputerName:  name,
-				AdminUsername: "roadie",
-				AdminPassword: "pass2roadie-A",
-				CustomData:    startup,
-				LinuxConfiguration: &models.LinuxConfiguration{
-					DisablePasswordAuthentication: false,
-				},
-			},
-			NetworkProfile: &models.NetworkProfile{
-				NetworkInterfaces: []*models.NetworkInterfaceReference{
-					&models.NetworkInterfaceReference{
-						SubResource: models.SubResource{
-							ID: nif.ID,
-						},
-						Properties: &models.NetworkInterfaceReferenceProperties{
-							Primary: true,
-						},
-					},
-				},
-			},
-			DiagnosticsProfile: &models.DiagnosticsProfile{
-				BootDiagnostics: &models.BootDiagnostics{
-					Enabled: false,
-				},
-			},
-		},
-	}
-
-	s.Logger.Println("Creating virtuan machine", name)
-	creating, created, err := s.client.VirtualMachines.VirtualMachinesCreateOrUpdate(
-		virtual_machines.NewVirtualMachinesCreateOrUpdateParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.AccountName).
-			WithVMName(name).
-			WithParameters(param), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-
-	case created != nil || creating != nil:
-		var info *models.VirtualMachine
-		s.Logger.Println("Waiting for creating virtual machine", name)
-		for {
-			info, err = s.GetInstanceInfo(ctx, name)
-			if err != nil {
-				break
-			} else if info.Properties.ProvisioningState == "Succeeded" {
-				break
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-
-	}
-
-	// Waiting creation of the OS disk
-	var diskSet DiskSet
-	for {
-		if diskSet, err = diskService.Disks(ctx); err != nil {
-			break
-		} else if info, exist := diskSet[osDiskName]; exist && info.Properties.ProvisioningState == "Succeeded" {
-			break
-		}
-
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			break
-		case <-time.After(s.SleepTime):
-		}
-	}
-
-	if err != nil {
-		s.Logger.Println("Cannot create virtual machine", name, ":", err.Error())
-		s.Logger.Println(toJSON(param))
-		networkService.DeleteNetworkInterface(ctx, nif.Name)
-	}
-	return
-
-}
-
-// DeleteInstance deletes the given named instance.
-func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err error) {
-
-	s.Logger.Println("Deleting virtual machine", name)
-	deleted, deleting, nocontent, err := s.client.VirtualMachines.VirtualMachinesDelete(
-		virtual_machines.NewVirtualMachinesDeleteParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.AccountName).
-			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot delete virtual machine", name)
-
-	case deleted != nil || deleting != nil:
-		var instances map[string]struct{}
-		for {
-			s.Logger.Println("Waiting for deleting virtual machine", name)
-			if instances, err = s.Instances(ctx); err != nil {
-				s.Logger.Println("Cannot delete virtual machine", name)
-				break
-			} else if _, ok := instances[name]; !ok {
-				s.Logger.Println("Deleted virtual machine", name)
-				break
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	case nocontent != nil:
-		s.Logger.Println("Deleting virtual machine doesn't exist")
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-		s.Logger.Println(err.Error())
-
-	}
-
-	networkService, e1 := NewNetworkService(ctx, s.Config, s.Logger)
-	if e1 != nil {
-		s.Logger.Println("Cannote delete a network interface associated with virtual machine", name, ":", err.Error())
-	} else {
-		e1 = networkService.DeleteNetworkInterface(ctx, s.networkInterfaceName(name))
-	}
-
-	diskService, e2 := NewDiskService(ctx, s.Config, s.Logger)
-	if e2 != nil {
-		s.Logger.Println("Cannot delete a disk associated with virtual machine", name, ":", err.Error())
-	} else {
-		e2 = diskService.DeleteDisk(ctx, s.osDiskName(name))
-	}
-
-	if err == nil {
-		if e1 != nil {
-			err = e1
-		} else {
-			err = e2
-		}
-	}
-	return
-
-}
-
-// Instances returns a list of running instances
-func (s *ComputeService) Instances(ctx context.Context) (instances map[string]struct{}, err error) {
-
-	s.Logger.Println("Retrieving instances")
-	res, err := s.client.VirtualMachines.VirtualMachinesList(
-		virtual_machines.NewVirtualMachinesListParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.AccountName), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve instances")
-		return
-	}
-
-	instances = make(map[string]struct{})
-	for _, v := range res.Payload.Value {
-		fmt.Println(v.Properties.ProvisioningState)
-		instances[v.Name] = struct{}{}
-	}
-	s.Logger.Println("Retrieved instances")
-	return
-
-}
-
-// GetInstanceInfo retrieves information of a given named instance.
-func (s *ComputeService) GetInstanceInfo(ctx context.Context, name string) (info *models.VirtualMachine, err error) {
-
-	s.Logger.Println("Retrieving information of instance", name)
-	res, err := s.client.VirtualMachines.VirtualMachinesGet(
-		virtual_machines.NewVirtualMachinesGetParamsWithContext(ctx).
-			WithAPIVersion(ComputeAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.AccountName).
-			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err != nil {
-		return
-	}
-
-	s.Logger.Println("Retrieved the instance information")
-	info = res.Payload
 	return
 
 }
@@ -520,16 +249,4 @@ func (s *ComputeService) ImageID(ctx context.Context, publisherName, offer, skus
 	s.Logger.Println("Retreived the image ID")
 	return res.Payload.ID, nil
 
-}
-
-// networkInterfaceName creates a network interface name associated with a given
-// virtual machine name.
-func (s *ComputeService) networkInterfaceName(name string) string {
-	return fmt.Sprintf("%s-network", name)
-}
-
-// osDiskName creates an OS disk name associated with a given virtual machine
-// name.
-func (s *ComputeService) osDiskName(name string) string {
-	return fmt.Sprintf("%s-os", name)
 }

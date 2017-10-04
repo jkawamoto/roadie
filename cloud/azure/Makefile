@@ -35,11 +35,5 @@ compute: go-deps
 subscriptions: go-deps
 	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-resources/subscriptions/2016-06-01/swagger/subscriptions.json -t subscriptions
 
-network: go-deps
-	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-network/2016-03-30/swagger/network.json -t network
-
-disk: go-deps
-	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-compute/2016-04-30-preview/swagger/disk.json -t disk
-
 batch: go-deps
 	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/batch/2016-07-01.3.1/swagger/BatchService.json -t batch
