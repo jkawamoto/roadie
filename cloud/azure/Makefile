@@ -41,8 +41,5 @@ network: go-deps
 disk: go-deps
 	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-compute/2016-04-30-preview/swagger/disk.json -t disk
 
-batchmanagement: go-deps
-	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-batch/2017-01-01/swagger/BatchManagement.json -t batchmanagement
-
 batch: go-deps
 	swagger generate client -f https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/batch/2016-07-01.3.1/swagger/BatchService.json -t batch

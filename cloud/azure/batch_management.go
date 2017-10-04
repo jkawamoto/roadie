@@ -24,58 +24,30 @@ package azure
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"time"
 
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
-	client "github.com/jkawamoto/roadie/cloud/azure/batchmanagement/client"
-	"github.com/jkawamoto/roadie/cloud/azure/batchmanagement/client/batch_account"
-	"github.com/jkawamoto/roadie/cloud/azure/batchmanagement/models"
+	"github.com/Azure/azure-sdk-for-go/arm/batch"
+	"github.com/Azure/go-autorest/autorest"
 )
 
-const (
-	// BatchManagementAPIVersion defines API version of batch managmenet service.
-	BatchManagementAPIVersion = "2017-01-01"
-)
-
-// BatchManagementService provides an interface for Azure's batch management
+// batchAccountManager provides an interface for Azure's batch management
 // service.
-type BatchManagementService struct {
-	client    *client.BatchManagement
+type batchAccountManager struct {
 	Config    *Config
 	Logger    *log.Logger
 	SleepTime time.Duration
+	client    batch.AccountClient
 }
 
-// BatchAccountSet is a set of batch accounts.
-type BatchAccountSet map[string]*models.BatchAccount
+// newBatchAccountManager creates a new batch account manager.
+func newBatchAccountManager(ctx context.Context, cfg *Config, logger *log.Logger) (manager *batchAccountManager, err error) {
 
-// NewBatchManagementService creates a new service for batch manager API.
-func NewBatchManagementService(ctx context.Context, cfg *Config, logger *log.Logger) (service *BatchManagementService, err error) {
+	cli := batch.NewAccountClient(cfg.SubscriptionID)
+	cli.Authorizer = autorest.NewBearerAuthorizer(&cfg.Token)
 
-	if logger == nil {
-		logger = log.New(ioutil.Discard, "", log.LstdFlags)
-	}
-
-	// Create a resource group if not exist.
-	err = CreateResourceGroupIfNotExist(ctx, cfg, logger)
-	if err != nil {
-		return
-	}
-
-	// Create a management client.
-	mcli := client.NewHTTPClient(strfmt.NewFormats())
-	switch transport := mcli.Transport.(type) {
-	case *httptransport.Runtime:
-		transport.Debug = apiAccessDebugMode
-		mcli.BatchAccount.SetTransport(transport)
-	}
-
-	service = &BatchManagementService{
-		client:    mcli,
+	manager = &batchAccountManager{
+		client:    cli,
 		Config:    cfg,
 		Logger:    logger,
 		SleepTime: DefaultSleepTime,
@@ -84,168 +56,94 @@ func NewBatchManagementService(ctx context.Context, cfg *Config, logger *log.Log
 
 }
 
-// CreateBatchAccount creates a new batch account which has a name specified in
+// create creates a new batch account which has a name specified in
 // the configuration given to construct this service.
-func (s *BatchManagementService) CreateBatchAccount(ctx context.Context) (err error) {
+func (s *batchAccountManager) create(ctx context.Context, storageID string) (err error) {
 
-	storage, err := NewStorageService(ctx, s.Config, s.Logger)
+	s.Logger.Printf("Creating batch account %q", s.Config.BatchAccount)
+	resCh, errCh := s.client.Create(s.Config.ResourceGroupName, s.Config.BatchAccount, batch.AccountCreateParameters{
+		Location: &s.Config.Location,
+		AccountCreateProperties: &batch.AccountCreateProperties{
+			AutoStorage: &batch.AutoStorageBaseProperties{
+				StorageAccountID: &storageID,
+			},
+			PoolAllocationMode: batch.BatchService,
+		},
+	}, ctx.Done())
+
+	select {
+	case <-resCh:
+	case err = <-errCh:
+	case <-ctx.Done():
+		err = ctx.Err()
+	}
+
 	if err != nil {
-		return
+		s.Logger.Printf("Failed creating a batch account: %v", err)
+	} else {
+		s.Logger.Printf("Created batch account %q", s.Config.BatchAccount)
 	}
-	storageInfo, err := storage.getStorageAccountInfo(ctx)
-	if err != nil {
-		return
-	}
-
-	s.Logger.Println("Creating batch account", s.Config.BatchAccount)
-	created, creating, err := s.client.BatchAccount.BatchAccountCreate(
-		batch_account.NewBatchAccountCreateParamsWithContext(ctx).
-			WithAPIVersion(BatchManagementAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.BatchAccount).
-			WithParameters(&models.BatchAccountCreateParameters{
-				Location: &s.Config.Location,
-				Properties: &models.BatchAccountBaseProperties{
-					AutoStorage: &models.AutoStorageBaseProperties{
-						StorageAccountID: &storageInfo.ID,
-					},
-					PoolAllocationMode: models.PoolAllocationModeBatchService,
-				},
-			}), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-
-	case created != nil || creating != nil:
-		var accounts BatchAccountSet
-		for {
-			s.Logger.Println("Waiting for creating a batch account")
-			if accounts, err = s.BatchAccounts(ctx); err != nil {
-				break
-			} else if account, exists := accounts[s.Config.BatchAccount]; exists && account.Properties.ProvisioningState == ProvisioningSucceeded {
-				s.Logger.Println("Created batch account", s.Config.BatchAccount)
-				return
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-
-	}
-
-	s.Logger.Println("Failed creating a batch account:", err.Error())
 	return
 
 }
 
-// GetKey returns the primary key of the batch account. If any key does not
+// getKey returns the primary key of the batch account. If any key does not
 // exist, this function creates new keys.
-func (s *BatchManagementService) GetKey(ctx context.Context) (key []byte, err error) {
+func (s *batchAccountManager) getKey(ctx context.Context) (key []byte, err error) {
 
 	s.Logger.Println("Retrieving access keys")
-	res, err := s.client.BatchAccount.BatchAccountGetKeys(
-		batch_account.NewBatchAccountGetKeysParamsWithContext(ctx).
-			WithAPIVersion(BatchManagementAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.BatchAccount), httptransport.BearerToken(s.Config.Token.AccessToken))
-	if err == nil {
-		s.Logger.Println("Retrieved access keys")
-		return base64.StdEncoding.DecodeString(res.Payload.Primary)
 
+	keys, err := s.client.GetKeys(s.Config.ResourceGroupName, s.Config.BatchAccount)
+	if err == nil && keys.Primary != nil {
+		s.Logger.Println("Retrieved access keys")
+		return base64.StdEncoding.DecodeString(*keys.Primary)
 	}
 
 	s.Logger.Println("Generating a new key")
-	res2, err2 := s.client.BatchAccount.BatchAccountRegenerateKey(
-		batch_account.NewBatchAccountRegenerateKeyParamsWithContext(ctx).
-			WithAPIVersion(BatchManagementAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.BatchAccount).
-			WithParameters(&models.BatchAccountRegenerateKeyParameters{
-				KeyName: toPtr("key"),
-			}), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	if err2 != nil {
-		s.Logger.Println("Cannot generate a new key")
-		return nil, err2
+	keys, err = s.client.RegenerateKey(s.Config.ResourceGroupName, s.Config.BatchAccount, batch.AccountRegenerateKeyParameters{
+		KeyName: batch.Primary,
+	})
+	if err != nil {
+		return
 	}
 
 	s.Logger.Println("Generated a new key")
-	return base64.StdEncoding.DecodeString(res2.Payload.Primary)
+	return base64.StdEncoding.DecodeString(*keys.Primary)
 
 }
 
-// BatchAccounts retrieves a set of batch accounts defined in the subscription.
-func (s *BatchManagementService) BatchAccounts(ctx context.Context) (set BatchAccountSet, err error) {
+// accounts retrieves a set of batch accounts defined in the subscription.
+func (s *batchAccountManager) accounts(ctx context.Context) (res []batch.Account, err error) {
 
 	s.Logger.Println("Retrieving batch accounts")
-	res, err := s.client.BatchAccount.BatchAccountListByResourceGroup(
-		batch_account.NewBatchAccountListByResourceGroupParamsWithContext(ctx).
-			WithAPIVersion(BatchManagementAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	set = make(BatchAccountSet)
-	for _, v := range res.Payload.Value {
-		set[v.Name] = v
+	list, err := s.client.List()
+	if err != nil {
+		return
 	}
-
+	res = *list.Value
 	s.Logger.Println("Retrieved batch accounts")
 	return
 
 }
 
-// DeleteAccount deletes the batch account of which name is given in the
+// delete deletes the batch account of which name is given in the
 // configuration.
-func (s *BatchManagementService) DeleteAccount(ctx context.Context) (err error) {
+func (s *batchAccountManager) delete(ctx context.Context) (err error) {
 
-	s.Logger.Println("Deleting batch acconut", s.Config.BatchAccount)
-	deleted, deleting, err := s.client.BatchAccount.BatchAccountDelete(
-		batch_account.NewBatchAccountDeleteParamsWithContext(ctx).
-			WithAPIVersion(BatchManagementAPIVersion).
-			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
-			WithAccountName(s.Config.BatchAccount), httptransport.BearerToken(s.Config.Token.AccessToken))
-
-	switch {
-	case err != nil:
-		err = NewAPIError(err)
-
-	case deleted != nil || deleting != nil:
-		var accounts BatchAccountSet
-		for {
-			s.Logger.Println("Waiting for deleting batch account", s.Config.BatchAccount)
-			if accounts, err = s.BatchAccounts(ctx); err != nil {
-				break
-			} else if _, exists := accounts[s.Config.BatchAccount]; !exists {
-				s.Logger.Println("Deleted batch account", s.Config.BatchAccount)
-				return
-			}
-
-			select {
-			case <-ctx.Done():
-				err = ctx.Err()
-				break
-			case <-time.After(s.SleepTime):
-			}
-		}
-
-	default:
-		err = fmt.Errorf("Unexpected case has occurred")
-
+	s.Logger.Printf("Deleting batch acconut %q", s.Config.BatchAccount)
+	resCh, errCh := s.client.Delete(s.Config.ResourceGroupName, s.Config.BatchAccount, ctx.Done())
+	select {
+	case <-resCh:
+	case err = <-errCh:
+	case <-ctx.Done():
+		err = ctx.Err()
 	}
 
-	s.Logger.Println("Failed to delete a batch account:", err.Error())
+	if err != nil {
+		s.Logger.Printf("Failed to delete batch account %q: %v", s.Config.BatchAccount, err)
+	} else {
+		s.Logger.Printf("Deleted batch account %q", s.Config.BatchAccount)
+	}
 	return
 
 }

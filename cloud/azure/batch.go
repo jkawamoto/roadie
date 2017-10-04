@@ -44,6 +44,7 @@ import (
 	"strings"
 	"time"
 
+	arm_storage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -221,20 +222,37 @@ func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (serv
 	}
 
 	// Create a management client.
-	mcli, err := NewBatchManagementService(ctx, cfg, logger)
-	var accounts BatchAccountSet
+	manager, err := newBatchAccountManager(ctx, cfg, logger)
 	if err != nil {
 		return
 	}
-	if accounts, err = mcli.BatchAccounts(ctx); err != nil {
+	accounts, err := manager.accounts(ctx)
+	if err != nil {
 		return
-	} else if _, exists := accounts[cfg.BatchAccount]; !exists {
-		err = mcli.CreateBatchAccount(ctx)
+	}
+	var exist bool
+	for _, a := range accounts {
+		if *a.Name == cfg.BatchAccount && *a.Location == cfg.Location {
+			exist = true
+			break
+		}
+	}
+	if !exist {
+
+		// Check Storage ID.
+		storage := newStorageAccountManager(cfg, logger)
+		var storageInfo arm_storage.Account
+		storageInfo, err = storage.getStorageAccountInfo()
+		if err != nil {
+			return
+		}
+		err = manager.create(ctx, *storageInfo.ID)
 		if err != nil {
 			return
 		}
 	}
-	key, err := mcli.GetKey(ctx)
+
+	key, err := manager.getKey(ctx)
 	if err != nil {
 		return
 	}
