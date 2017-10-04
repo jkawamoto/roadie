@@ -60,8 +60,8 @@ func newBatchAccountManager(ctx context.Context, cfg *Config, logger *log.Logger
 // the configuration given to construct this service.
 func (s *batchAccountManager) create(ctx context.Context, storageID string) (err error) {
 
-	s.Logger.Printf("Creating batch account %q", s.Config.BatchAccount)
-	resCh, errCh := s.client.Create(s.Config.ResourceGroupName, s.Config.BatchAccount, batch.AccountCreateParameters{
+	s.Logger.Printf("Creating batch account %q", s.Config.AccountName)
+	resCh, errCh := s.client.Create(s.Config.AccountName, s.Config.AccountName, batch.AccountCreateParameters{
 		Location: &s.Config.Location,
 		AccountCreateProperties: &batch.AccountCreateProperties{
 			AutoStorage: &batch.AutoStorageBaseProperties{
@@ -81,7 +81,7 @@ func (s *batchAccountManager) create(ctx context.Context, storageID string) (err
 	if err != nil {
 		s.Logger.Printf("Failed creating a batch account: %v", err)
 	} else {
-		s.Logger.Printf("Created batch account %q", s.Config.BatchAccount)
+		s.Logger.Printf("Created batch account %q", s.Config.AccountName)
 	}
 	return
 
@@ -93,14 +93,14 @@ func (s *batchAccountManager) getKey(ctx context.Context) (key []byte, err error
 
 	s.Logger.Println("Retrieving access keys")
 
-	keys, err := s.client.GetKeys(s.Config.ResourceGroupName, s.Config.BatchAccount)
+	keys, err := s.client.GetKeys(s.Config.AccountName, s.Config.AccountName)
 	if err == nil && keys.Primary != nil {
 		s.Logger.Println("Retrieved access keys")
 		return base64.StdEncoding.DecodeString(*keys.Primary)
 	}
 
 	s.Logger.Println("Generating a new key")
-	keys, err = s.client.RegenerateKey(s.Config.ResourceGroupName, s.Config.BatchAccount, batch.AccountRegenerateKeyParameters{
+	keys, err = s.client.RegenerateKey(s.Config.AccountName, s.Config.AccountName, batch.AccountRegenerateKeyParameters{
 		KeyName: batch.Primary,
 	})
 	if err != nil {
@@ -130,8 +130,8 @@ func (s *batchAccountManager) accounts(ctx context.Context) (res []batch.Account
 // configuration.
 func (s *batchAccountManager) delete(ctx context.Context) (err error) {
 
-	s.Logger.Printf("Deleting batch acconut %q", s.Config.BatchAccount)
-	resCh, errCh := s.client.Delete(s.Config.ResourceGroupName, s.Config.BatchAccount, ctx.Done())
+	s.Logger.Printf("Deleting batch acconut %q", s.Config.AccountName)
+	resCh, errCh := s.client.Delete(s.Config.AccountName, s.Config.AccountName, ctx.Done())
 	select {
 	case <-resCh:
 	case err = <-errCh:
@@ -140,9 +140,9 @@ func (s *batchAccountManager) delete(ctx context.Context) (err error) {
 	}
 
 	if err != nil {
-		s.Logger.Printf("Failed to delete batch account %q: %v", s.Config.BatchAccount, err)
+		s.Logger.Printf("Failed to delete batch account %q: %v", s.Config.AccountName, err)
 	} else {
-		s.Logger.Printf("Deleted batch account %q", s.Config.BatchAccount)
+		s.Logger.Printf("Deleted batch account %q", s.Config.AccountName)
 	}
 	return
 

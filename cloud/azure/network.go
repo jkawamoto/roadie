@@ -94,7 +94,7 @@ func (s *NetworkService) CreatePublicIPAddress(ctx context.Context, name string)
 		public_ip_addresses.NewPublicIPAddressesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithPublicIPAddressName(name).
 			WithParameters(&models.PublicIPAddress{
 				Resource: models.Resource{
@@ -149,7 +149,7 @@ func (s *NetworkService) PublicIPAddresses(ctx context.Context) (addresses map[s
 		public_ip_addresses.NewPublicIPAddressesListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
+			WithResourceGroupName(s.Config.AccountName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve existing public IP addresses:", err.Error())
@@ -174,7 +174,7 @@ func (s *NetworkService) DeletePublicIPAddress(ctx context.Context, name string)
 		public_ip_addresses.NewPublicIPAddressesDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithPublicIPAddressName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
@@ -224,7 +224,7 @@ func (s *NetworkService) CreateVirtualNetwork(ctx context.Context, name string) 
 		virtual_networks.NewVirtualNetworksCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithVirtualNetworkName(name).
 			WithParameters(&models.VirtualNetwork{
 				Resource: models.Resource{
@@ -290,7 +290,7 @@ func (s *NetworkService) VirtualNetworks(ctx context.Context) (networks map[stri
 		virtual_networks.NewVirtualNetworksListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
+			WithResourceGroupName(s.Config.AccountName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrive virtual networks:", err.Error())
@@ -314,7 +314,7 @@ func (s *NetworkService) DeleteVirtualNetwork(ctx context.Context, name string) 
 		virtual_networks.NewVirtualNetworksDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithVirtualNetworkName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
@@ -382,7 +382,7 @@ func (s *NetworkService) CreateNetworkInterface(ctx context.Context, name string
 		network_interfaces.NewNetworkInterfacesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithNetworkInterfaceName(name).
 			WithParameters(&models.NetworkInterface{
 				Resource: models.Resource{
@@ -445,7 +445,7 @@ func (s *NetworkService) NetworkInterfaces(ctx context.Context) (interfaces map[
 		network_interfaces.NewNetworkInterfacesListParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
+			WithResourceGroupName(s.Config.AccountName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve network interfaces:", err.Error())
@@ -470,7 +470,7 @@ func (s *NetworkService) DeleteNetworkInterface(ctx context.Context, name string
 		network_interfaces.NewNetworkInterfacesDeleteParamsWithContext(ctx).
 			WithAPIVersion(NetworkAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithNetworkInterfaceName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {

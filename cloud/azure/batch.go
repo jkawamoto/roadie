@@ -232,7 +232,7 @@ func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (serv
 	}
 	var exist bool
 	for _, a := range accounts {
-		if *a.Name == cfg.BatchAccount && *a.Location == cfg.Location {
+		if *a.Name == cfg.AccountName && *a.Location == cfg.Location {
 			exist = true
 			break
 		}
@@ -263,9 +263,9 @@ func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (serv
 	switch transport := scli.Transport.(type) {
 	case *httptransport.Runtime:
 		// Update the host to {account-name}.{region-id}.batch.azure.com
-		transport.Host = fmt.Sprintf("%v.%v.batch.azure.com", cfg.BatchAccount, cfg.Location)
+		transport.Host = fmt.Sprintf("%v.%v.batch.azure.com", cfg.AccountName, cfg.Location)
 		transport.Debug = apiAccessDebugMode
-		transport.Transport = NewAuthorizedTransporter(transport.Transport, cfg.BatchAccount, key)
+		transport.Transport = NewAuthorizedTransporter(transport.Transport, cfg.AccountName, key)
 		transport.Producers["application/json; odata=minimalmetadata"] = NewMinimalJSONProducer()
 		scli.Accounts.SetTransport(transport)
 		scli.Jobs.SetTransport(transport)

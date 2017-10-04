@@ -96,7 +96,7 @@ func (s *DiskService) CreateDiskFromImage(ctx context.Context, name, imageID str
 		disks.NewDisksCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithDiskName(name).WithDisk(&models.Disk{
 			Resource: models.Resource{
 				Location: &s.Config.Location,
@@ -159,7 +159,7 @@ func (s *DiskService) Disks(ctx context.Context) (info DiskSet, err error) {
 		disks.NewDisksListByResourceGroupParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName))
+			WithResourceGroupName(s.Config.AccountName))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve disks")
@@ -234,7 +234,7 @@ func (s *DiskService) GetDiskInfo(ctx context.Context, name string) (info *model
 		disks.NewDisksGetParamsWithContext(ctx).
 			WithAPIVersion(DiskAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithDiskName(name))
 	if err != nil {
 		return

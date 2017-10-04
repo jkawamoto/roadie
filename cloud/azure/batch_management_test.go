@@ -38,7 +38,7 @@ import (
 
 type mockBatchAcountServer struct {
 	subscriptionID string
-	resourceGroup  string
+	accountName    string
 	location       string
 	accounts       []batch.Account
 	primaryKey     string
@@ -78,9 +78,9 @@ func (m *mockBatchAcountServer) ServeHTTP(res http.ResponseWriter, req *http.Req
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if paths[3] != m.resourceGroup {
+		if paths[3] != m.accountName {
 			res.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(res, "resource group is %q, want %v", paths[3], m.resourceGroup)
+			fmt.Fprintf(res, "resource group is %q, want %v", paths[3], m.accountName)
 			return
 		}
 		switch paths[8] {
@@ -151,14 +151,13 @@ func TestBatchManagementService(t *testing.T) {
 
 	var err error
 	testSubscriptionID := "00000000-0000-0000-0000-999999999999"
-	testResourceGroup := "test-group"
 	testAccount := "test-account"
 	testLocation := "somewhere"
 	testStorage := "test-storage"
 
 	mock := mockBatchAcountServer{
 		subscriptionID: testSubscriptionID,
-		resourceGroup:  testResourceGroup,
+		accountName:    testAccount,
 		location:       testLocation,
 	}
 	server := httptest.NewServer(&mock)
@@ -168,10 +167,9 @@ func TestBatchManagementService(t *testing.T) {
 	manager := batchAccountManager{
 		client: batch.NewAccountClientWithBaseURI(server.URL, testSubscriptionID),
 		Config: &Config{
-			SubscriptionID:    testSubscriptionID,
-			ResourceGroupName: testResourceGroup,
-			BatchAccount:      testAccount,
-			Location:          testLocation,
+			SubscriptionID: testSubscriptionID,
+			AccountName:    testAccount,
+			Location:       testLocation,
 		},
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags),
 	}

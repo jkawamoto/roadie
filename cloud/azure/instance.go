@@ -170,7 +170,7 @@ func (s *ComputeService) CreateInstance(ctx context.Context, name string, script
 		virtual_machines.NewVirtualMachinesCreateOrUpdateParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithVMName(name).
 			WithParameters(param), httptransport.BearerToken(s.Config.Token.AccessToken))
 
@@ -236,7 +236,7 @@ func (s *ComputeService) DeleteInstance(ctx context.Context, name string) (err e
 		virtual_machines.NewVirtualMachinesDeleteParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 
 	switch {
@@ -306,7 +306,7 @@ func (s *ComputeService) Instances(ctx context.Context) (instances map[string]st
 		virtual_machines.NewVirtualMachinesListParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName), httptransport.BearerToken(s.Config.Token.AccessToken))
+			WithResourceGroupName(s.Config.AccountName), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		err = NewAPIError(err)
 		s.Logger.Println("Cannot retrieve instances")
@@ -331,7 +331,7 @@ func (s *ComputeService) GetInstanceInfo(ctx context.Context, name string) (info
 		virtual_machines.NewVirtualMachinesGetParamsWithContext(ctx).
 			WithAPIVersion(ComputeAPIVersion).
 			WithSubscriptionID(s.Config.SubscriptionID).
-			WithResourceGroupName(s.Config.ResourceGroupName).
+			WithResourceGroupName(s.Config.AccountName).
 			WithVMName(name), httptransport.BearerToken(s.Config.Token.AccessToken))
 	if err != nil {
 		return

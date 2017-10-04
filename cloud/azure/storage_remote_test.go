@@ -44,7 +44,7 @@ func TestStorageServiceWithRemoteConnection(t *testing.T) {
 
 	ctx := context.Background()
 	account := fmt.Sprintf("test-storage%v", time.Now().Unix())
-	cfg.StorageAccount = account
+	cfg.AccountName = account
 	s, err := NewStorageService(ctx, cfg, nil)
 	if err != nil {
 		t.Fatalf("cannot create a storage service: %v", err)

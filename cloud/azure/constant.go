@@ -32,16 +32,13 @@ const (
 	DefaultOSSkus = "16.10"
 	// DefaultOSVersion is the default version of the default version.
 	DefaultOSVersion = "latest"
-	// DefaultStorageAccount is the default storage account name.
-	DefaultStorageAccount = "roadie"
-	// DefaultBatchAccount is the default batch account name.
-	DefaultBatchAccount = "roadie"
+	// DefaultLocation is the default location.
+	DefaultLocation = "westus"
+
 	// DefaultSleepTime is the default sleeping time to wait creating or deleting
 	// objects.
 	DefaultSleepTime = 30 * time.Second
 
-	// ComputeServiceResourceGroupName defines the default resource name.
-	ComputeServiceResourceGroupName = "roadie"
 	// ComputeServiceDefaultMachineType defines the default machine type.
 	ComputeServiceDefaultMachineType = "Standard_A2"
 	// ComputeServiceCustomScriptExtension defines the name of custom script

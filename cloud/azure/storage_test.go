@@ -571,7 +571,7 @@ func TestStorageService(t *testing.T) {
 // mockStorageAccountServer is a mock providing storage account managment service.
 type mockStorageAccountServer struct {
 	subscriptionID string
-	resourceGroup  string
+	accountName    string
 	location       string
 	accounts       []arm_storage.Account
 	keys           []arm_storage.AccountKey
@@ -615,7 +615,7 @@ func (m *mockStorageAccountServer) ServeHTTP(res http.ResponseWriter, req *http.
 		return
 
 	case http.MethodPost:
-		if len(paths) < 9 || paths[3] != m.resourceGroup {
+		if len(paths) < 9 || paths[3] != m.accountName {
 			res.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -643,7 +643,7 @@ func (m *mockStorageAccountServer) ServeHTTP(res http.ResponseWriter, req *http.
 		}
 
 	case http.MethodPut:
-		if len(paths) < 7 || paths[3] != m.resourceGroup {
+		if len(paths) < 7 || paths[3] != m.accountName {
 			res.WriteHeader(http.StatusBadRequest)
 			fmt.Fprint(res, "resource group name is invald")
 			return
@@ -704,13 +704,12 @@ func TestStorageAccountManager(t *testing.T) {
 
 	var err error
 	testSubscriptionID := "00000000-0000-0000-0000-999999999999"
-	testResourceGroup := "test-group"
 	testAccount := "test-account"
 	testLocation := "somewhere"
 
 	mock := mockStorageAccountServer{
 		subscriptionID: testSubscriptionID,
-		resourceGroup:  testResourceGroup,
+		accountName:    testAccount,
 		location:       testLocation,
 	}
 	server := httptest.NewServer(&mock)
@@ -719,10 +718,9 @@ func TestStorageAccountManager(t *testing.T) {
 	manager := storageAccountManager{
 		client: arm_storage.NewAccountsClientWithBaseURI(server.URL, testSubscriptionID),
 		Config: &Config{
-			SubscriptionID:    testSubscriptionID,
-			ResourceGroupName: testResourceGroup,
-			StorageAccount:    testAccount,
-			Location:          testLocation,
+			SubscriptionID: testSubscriptionID,
+			AccountName:    testAccount,
+			Location:       testLocation,
 		},
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags),
 	}

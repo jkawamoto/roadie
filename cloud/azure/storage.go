@@ -70,7 +70,7 @@ func newStorageAccountManager(cfg *Config, logger *log.Logger) *storageAccountMa
 // it.
 func (s *storageAccountManager) createIfNotExists(ctx context.Context) (err error) {
 
-	s.Logger.Printf("Checking storage account %q exists", s.Config.StorageAccount)
+	s.Logger.Printf("Checking storage account %q exists", s.Config.AccountName)
 	accounts, err := s.client.List()
 	if err != nil {
 		return
@@ -78,14 +78,14 @@ func (s *storageAccountManager) createIfNotExists(ctx context.Context) (err erro
 
 	var exist bool
 	for _, a := range *accounts.Value {
-		if *a.Name == s.Config.StorageAccount {
+		if *a.Name == s.Config.AccountName {
 			exist = true
 			break
 		}
 	}
 	if !exist {
-		s.Logger.Printf("Storage account %q doesn't exist and creating it", s.Config.StorageAccount)
-		resCh, errCh := s.client.Create(s.Config.ResourceGroupName, s.Config.StorageAccount, arm_storage.AccountCreateParameters{
+		s.Logger.Printf("Storage account %q doesn't exist and creating it", s.Config.AccountName)
+		resCh, errCh := s.client.Create(s.Config.AccountName, s.Config.AccountName, arm_storage.AccountCreateParameters{
 			Sku: &arm_storage.Sku{
 				Name: arm_storage.StandardRAGRS,
 				Tier: arm_storage.Standard,
@@ -112,7 +112,7 @@ func (s *storageAccountManager) createIfNotExists(ctx context.Context) (err erro
 // getStorageAccountInfo retrieves information of the associated storage account.
 func (s *storageAccountManager) getStorageAccountInfo() (arm_storage.Account, error) {
 
-	return s.client.GetProperties(s.Config.ResourceGroupName, s.Config.StorageAccount)
+	return s.client.GetProperties(s.Config.AccountName, s.Config.AccountName)
 
 }
 
@@ -120,8 +120,8 @@ func (s *storageAccountManager) getStorageAccountInfo() (arm_storage.Account, er
 // doesn't have any access keys, this function will generate it.
 func (s *storageAccountManager) getStorageKey(ctx context.Context) (key string, err error) {
 
-	s.Logger.Printf("Obtaining an access key for storage %q", s.Config.StorageAccount)
-	res, err := s.client.ListKeys(s.Config.ResourceGroupName, s.Config.StorageAccount)
+	s.Logger.Printf("Obtaining an access key for storage %q", s.Config.AccountName)
+	res, err := s.client.ListKeys(s.Config.AccountName, s.Config.AccountName)
 	if err != nil {
 		return
 	}
@@ -133,8 +133,8 @@ func (s *storageAccountManager) getStorageKey(ctx context.Context) (key string, 
 		default:
 		}
 
-		s.Logger.Printf("Access keys for %q don't exist and generating it", s.Config.StorageAccount)
-		res, err = s.client.RegenerateKey(s.Config.ResourceGroupName, s.Config.StorageAccount, arm_storage.AccountRegenerateKeyParameters{
+		s.Logger.Printf("Access keys for %q don't exist and generating it", s.Config.AccountName)
+		res, err = s.client.RegenerateKey(s.Config.AccountName, s.Config.AccountName, arm_storage.AccountRegenerateKeyParameters{
 			KeyName: toPtr("key"),
 		})
 		if err != nil {
@@ -149,8 +149,8 @@ func (s *storageAccountManager) getStorageKey(ctx context.Context) (key string, 
 // delete deletes the associated storage account.
 func (s *storageAccountManager) delete() (err error) {
 
-	s.Logger.Printf("Deleting storage account %q", s.Config.StorageAccount)
-	_, err = s.client.Delete(s.Config.ResourceGroupName, s.Config.StorageAccount)
+	s.Logger.Printf("Deleting storage account %q", s.Config.AccountName)
+	_, err = s.client.Delete(s.Config.AccountName, s.Config.AccountName)
 	return
 
 }
@@ -194,7 +194,7 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 	}
 
 	// Create a blob storage client.
-	cli, err := storage.NewBasicClient(cfg.StorageAccount, key)
+	cli, err := storage.NewBasicClient(cfg.AccountName, key)
 	if err != nil {
 		return
 	}

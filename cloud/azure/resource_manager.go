@@ -23,12 +23,13 @@ func NewResourceManager(cfg *Config, logger *log.Logger) *ResourceManager {
 
 // GetProjectID returns an ID of the current project.
 func (m *ResourceManager) GetProjectID() string {
-	return m.Config.ResourceGroupName
+	return m.Config.ProjectID
 }
 
 // SetProjectID sets an ID to the current project.
 func (m *ResourceManager) SetProjectID(id string) {
-	m.Config.ResourceGroupName = id
+	m.Config.ProjectID = id
+	m.Config.updateAccountName()
 }
 
 // GetMachineType returns a machine type the current project uses by default.
@@ -58,6 +59,7 @@ func (m *ResourceManager) GetRegion() string {
 // SetRegion sets a region to the current project.
 func (m *ResourceManager) SetRegion(region string) {
 	m.Config.Location = region
+	m.Config.updateAccountName()
 }
 
 // Regions returns a set of available regions.

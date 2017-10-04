@@ -22,95 +22,73 @@
 package azure
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-	"time"
-
-	"github.com/Azure/go-autorest/autorest/adal"
 )
 
 func TestNewConfig(t *testing.T) {
 
 	cfg := NewConfig()
+	if cfg.Location != DefaultLocation {
+		t.Errorf("location is %q, want %v", cfg.Location, DefaultLocation)
+	}
 	if cfg.OS.PublisherName != DefaultOSPublisherName {
-		t.Error("Default publisher name is not correct:", cfg.OS.PublisherName)
+		t.Errorf("publisher name is %q, want %v", cfg.OS.PublisherName, DefaultOSPublisherName)
 	}
 	if cfg.OS.Offer != DefaultOSOffer {
-		t.Error("Default offer is not correct:", cfg.OS.Offer)
+		t.Errorf("offer is %q, want %v", cfg.OS.Offer, DefaultOSOffer)
 	}
 	if cfg.OS.Skus != DefaultOSSkus {
-		t.Error("Default skus is not correct:", cfg.OS.Skus)
+		t.Errorf("skus is %q, want %v", cfg.OS.Skus, DefaultOSSkus)
 	}
 	if cfg.OS.Version != DefaultOSVersion {
-		t.Error("Default version is not correct:", cfg.OS.Version)
+		t.Errorf("version is %q, want %v", cfg.OS.Version, DefaultOSVersion)
 	}
 
 }
 
-func TestNewConfigFromFile(t *testing.T) {
+func TestReadWriteConfigFile(t *testing.T) {
 
 	var err error
+	cfg := Config{
+		ProjectID: "test-project",
+	}
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("cannot create a temporary directory: %v", err)
+	}
+	defer os.RemoveAll(dir)
 
-	cfg := NewConfig()
-	cfg.ResourceGroupName = ""
-	cfg.OS.PublisherName = ""
-	cfg.OS.Offer = ""
-	cfg.OS.Skus = ""
-	cfg.OS.Version = ""
-
-	filename := filepath.Join(os.TempDir(), fmt.Sprintf("azure_config%v.yml", time.Now().Unix()))
+	filename := filepath.Join(dir, "azure_config.yml")
 	err = cfg.WriteFile(filename)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannot save a config file to %v: %v", filename, err)
 	}
 
 	res, err := NewConfigFromFile(filename)
 	if err != nil {
-		t.Error(err.Error())
+		t.Fatalf("cannote read the configu file %v: %v", filename, err)
 	}
-	if res.ResourceGroupName != ComputeServiceResourceGroupName {
-		t.Error("Default resource group name is not correct:", res.ResourceGroupName)
+	if res.Location != DefaultLocation {
+		t.Errorf("location is %q, want %v", res.Location, DefaultLocation)
 	}
 	if res.OS.PublisherName != DefaultOSPublisherName {
-		t.Error("Default publisher name is not correct:", res.OS.PublisherName)
+		t.Errorf("publisher name is %q, want %v", res.OS.PublisherName, DefaultOSPublisherName)
 	}
 	if res.OS.Offer != DefaultOSOffer {
-		t.Error("Default offer is not correct:", res.OS.Offer)
+		t.Errorf("offer is %q, want %v", res.OS.Offer, DefaultOSOffer)
 	}
 	if res.OS.Skus != DefaultOSSkus {
-		t.Error("Default skus is not correct:", res.OS.Skus)
+		t.Errorf("skus is %q, want %v", res.OS.Skus, DefaultOSSkus)
 	}
 	if res.OS.Version != DefaultOSVersion {
-		t.Error("Default version is not correct:", res.OS.Version)
+		t.Errorf("version is %q, want %v", res.OS.Version, DefaultOSVersion)
 	}
-
-}
-
-func TestConfigWriteFile(t *testing.T) {
-
-	var err error
-
-	cfg := NewConfig()
-	cfg.SubscriptionID = "subscription"
-	cfg.ResourceGroupName = "resource"
-	cfg.Location = "location"
-	cfg.Token = adal.Token{
-		AccessToken: "token",
+	if !strings.HasPrefix(res.AccountName, res.ProjectID) {
+		t.Errorf("account name dosen't have the project ID %q as the prefix: %v", res.ProjectID, res.AccountName)
 	}
-
-	filename := filepath.Join(os.TempDir(), fmt.Sprintf("azure_config%v.yml", time.Now().Unix()))
-	err = cfg.WriteFile(filename)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	t.Log(string(data))
 
 }

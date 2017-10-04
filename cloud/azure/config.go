@@ -22,6 +22,8 @@
 package azure
 
 import (
+	"fmt"
+	"hash/fnv"
 	"io/ioutil"
 
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -29,7 +31,6 @@ import (
 )
 
 // TODO: Support async to not wait finishing each operation.
-// TODO: Resource group name must has a suffix of location name.
 
 // OSInformation defines OS information of creating instances.
 type OSInformation struct {
@@ -41,25 +42,22 @@ type OSInformation struct {
 
 // Config defines configuration to access Azure's API.
 type Config struct {
-	TenantID          string `yaml:"tenant_id,omitempty"`
-	SubscriptionID    string `yaml:"subscription_id,omitempty"`
-	Location          string `yaml:"location,omitempty"`
-	ResourceGroupName string `yaml:"resource_group_name,omitempty"`
-	MachineType       string `yaml:"machine_type,omitempty"`
-	StorageAccount    string `yaml:"storage_account,omitempty"`
-	BatchAccount      string `yaml:"batch_account,omitempty"`
-	OS                OSInformation
-	Token             adal.Token
+	TenantID       string `yaml:"tenant_id,omitempty"`
+	SubscriptionID string `yaml:"subscription_id,omitempty"`
+	Location       string `yaml:"location,omitempty"`
+	ProjectID      string `yaml:"project_id,omitempty"`
+	AccountName    string `yaml:"-"`
+	MachineType    string `yaml:"machine_type,omitempty"`
+	OS             OSInformation
+	Token          adal.Token
 }
 
 // NewConfig creates a new Config with default values.
 func NewConfig() *Config {
 
 	return &Config{
-		ResourceGroupName: ComputeServiceResourceGroupName,
-		MachineType:       ComputeServiceDefaultMachineType,
-		StorageAccount:    DefaultStorageAccount,
-		BatchAccount:      DefaultBatchAccount,
+		Location:    DefaultLocation,
+		MachineType: ComputeServiceDefaultMachineType,
 		OS: OSInformation{
 			PublisherName: DefaultOSPublisherName,
 			Offer:         DefaultOSOffer,
@@ -80,21 +78,50 @@ func NewConfigFromFile(filename string) (cfg *Config, err error) {
 
 	cfg = new(Config)
 	err = yaml.Unmarshal(data, cfg)
-
-	if cfg.ResourceGroupName == "" {
-		cfg.ResourceGroupName = ComputeServiceResourceGroupName
+	if cfg.Location == "" {
+		cfg.Location = DefaultLocation
 	}
 	if cfg.MachineType == "" {
 		cfg.MachineType = ComputeServiceDefaultMachineType
 	}
-	if cfg.StorageAccount == "" {
-		cfg.StorageAccount = DefaultStorageAccount
+	if cfg.OS.PublisherName == "" {
+		cfg.OS.PublisherName = DefaultOSPublisherName
 	}
-	if cfg.BatchAccount == "" {
-		cfg.BatchAccount = DefaultBatchAccount
+	if cfg.OS.Offer == "" {
+		cfg.OS.Offer = DefaultOSOffer
+	}
+	if cfg.OS.Skus == "" {
+		cfg.OS.Skus = DefaultOSSkus
+	}
+	if cfg.OS.Version == "" {
+		cfg.OS.Version = DefaultOSVersion
 	}
 
+	cfg.updateAccountName()
 	return
+
+}
+
+// updateAccountName updates AccountName combining ProjectID and Location.
+// When those values are modified, this function must be called.
+func (cfg *Config) updateAccountName() {
+	hash := fnv.New32()
+	hash.Write([]byte(cfg.Location))
+	cfg.AccountName = fmt.Sprintf("%v%x", cfg.ProjectID, hash.Sum32())
+}
+
+// Valid returns true if this config has values in required fields; otherwise
+// return false.
+// The required fields are
+// - TenantID
+// - SubscriptionID
+// - ProjectID
+func (cfg *Config) Valid() bool {
+
+	if cfg.TenantID == "" || cfg.SubscriptionID == "" || cfg.ProjectID == "" {
+		return false
+	}
+	return true
 
 }
 
@@ -125,15 +152,14 @@ func (cfg *Config) String() (str string, err error) {
 func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) {
 
 	var aux struct {
-		TenantID          string `yaml:"tenant_id,omitempty"`
-		SubscriptionID    string `yaml:"subscription_id,omitempty"`
-		Location          string `yaml:"location,omitempty"`
-		ResourceGroupName string `yaml:"resource_group_name,omitempty"`
-		MachineType       string `yaml:"machine_type,omitempty"`
-		StorageAccount    string `yaml:"storage_account,omitempty"`
-		BatchAccount      string `yaml:"batch_account,omitempty"`
-		OS                OSInformation
-		Token             adal.Token
+		TenantID       string `yaml:"tenant_id,omitempty"`
+		SubscriptionID string `yaml:"subscription_id,omitempty"`
+		Location       string `yaml:"location,omitempty"`
+		ProjectID      string `yaml:"project_id,omitempty"`
+		AccountName    string `yaml:"-"`
+		MachineType    string `yaml:"machine_type,omitempty"`
+		OS             OSInformation
+		Token          adal.Token
 	}
 	err = unmarshal(&aux)
 	if err != nil {
@@ -141,31 +167,13 @@ func (cfg *Config) UnmarshalYAML(unmarshal func(interface{}) error) (err error) 
 	}
 	*cfg = aux
 
-	if cfg.ResourceGroupName == "" {
-		cfg.ResourceGroupName = ComputeServiceResourceGroupName
+	if cfg.Location == "" {
+		cfg.Location = DefaultLocation
 	}
 	if cfg.MachineType == "" {
 		cfg.MachineType = ComputeServiceDefaultMachineType
 	}
-	if cfg.StorageAccount == "" {
-		cfg.StorageAccount = cfg.ResourceGroupName
-	}
-	if cfg.BatchAccount == "" {
-		cfg.BatchAccount = cfg.ResourceGroupName
-	}
-
-	if cfg.OS.PublisherName == "" {
-		cfg.OS.PublisherName = DefaultOSPublisherName
-	}
-	if cfg.OS.Offer == "" {
-		cfg.OS.Offer = DefaultOSOffer
-	}
-	if cfg.OS.Skus == "" {
-		cfg.OS.Skus = DefaultOSSkus
-	}
-	if cfg.OS.Version == "" {
-		cfg.OS.Version = DefaultOSVersion
-	}
+	cfg.updateAccountName()
 
 	return
 

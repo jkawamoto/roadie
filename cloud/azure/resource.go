@@ -209,10 +209,10 @@ func (s *ResourceService) DeleteResourceGroup(ctx context.Context, name string) 
 func CreateResourceGroupIfNotExist(ctx context.Context, cfg *Config, logger *log.Logger) (err error) {
 
 	service := NewResourceService(cfg, logger)
-	if service.CheckExistence(ctx, cfg.ResourceGroupName) {
+	if service.CheckExistence(ctx, cfg.AccountName) {
 		return
 	}
 
-	return service.CreateResourceGroup(ctx, cfg.ResourceGroupName)
+	return service.CreateResourceGroup(ctx, cfg.AccountName)
 
 }
