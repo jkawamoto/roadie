@@ -242,6 +242,10 @@ func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (serv
 		// Check Storage ID.
 		storage := newStorageAccountManager(cfg, logger)
 		var storageInfo arm_storage.Account
+		err = storage.createIfNotExists(ctx)
+		if err != nil {
+			return
+		}
 		storageInfo, err = storage.getStorageAccountInfo()
 		if err != nil {
 			return
