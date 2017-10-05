@@ -216,12 +216,12 @@ func (s *StorageService) Upload(ctx context.Context, loc *url.URL, in io.Reader)
 
 	s.Logger.Println("Creating a blob at", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	return s.upload(ctx, loc.Hostname(), filename, in, nil, nil)
+	return s.UploadWithMetadata(ctx, loc.Hostname(), filename, in, nil, nil)
 
 }
 
-// upload a given stream in a given container as a file named a given file name.
-func (s *StorageService) upload(
+// UploadWithMetadata a given stream in a given container as a file named a given file name.
+func (s *StorageService) UploadWithMetadata(
 	ctx context.Context, container, filename string, in io.Reader, props *storage.BlobProperties, metadata storage.BlobMetadata) (err error) {
 
 	// Check the target container exists.

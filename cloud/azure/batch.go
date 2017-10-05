@@ -385,7 +385,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 		}
 		defer fp.Close()
 
-		err = s.storage.upload(ctx, BinContainer, RoadieAzureArchiveName, fp, &storage.BlobProperties{
+		err = s.storage.UploadWithMetadata(ctx, BinContainer, RoadieAzureArchiveName, fp, &storage.BlobProperties{
 			ContentType: "application/tar+gzip",
 		}, map[string]string{
 			"Version": "snapshot",
@@ -414,7 +414,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 	if err != nil {
 		return
 	}
-	err = s.storage.upload(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
 		ContentType: "text/yaml",
 	}, nil)
 	if err != nil {
@@ -701,7 +701,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	now := time.Now().Unix()
 	// Create a startup script and upload it.
 	startupFilename := fmt.Sprintf("%v%v.yml", task.Name, now)
-	err = s.storage.upload(ctx, StartupContainer, startupFilename, strings.NewReader(task.String()), &storage.BlobProperties{
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, startupFilename, strings.NewReader(task.String()), &storage.BlobProperties{
 		ContentType: "text/yaml",
 	}, nil)
 	if err != nil {
@@ -718,7 +718,7 @@ func (s *BatchService) CreateTask(ctx context.Context, job string, task *script.
 	if err != nil {
 		return
 	}
-	err = s.storage.upload(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
+	err = s.storage.UploadWithMetadata(ctx, StartupContainer, configFilename, strings.NewReader(configString), &storage.BlobProperties{
 		ContentType: "text/yaml",
 	}, nil)
 	if err != nil {

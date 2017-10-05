@@ -505,7 +505,7 @@ func TestStorageService(t *testing.T) {
 		ctx := context.Background()
 		testFilename := "filename"
 		testData := "abcdefg"
-		err = s.upload(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
+		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
 			ContentType: "text/yaml",
 		}, map[string]string{
 			"Version": "test",
@@ -543,7 +543,7 @@ func TestStorageService(t *testing.T) {
 		ctx := context.Background()
 		testFilename := "filename"
 		testData := "abcdefg"
-		err = s.upload(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
+		err = s.UploadWithMetadata(ctx, testContainer, testFilename, strings.NewReader(testData), &storage.BlobProperties{
 			ContentType: "text/yaml",
 		}, map[string]string{
 			"Version": "test",
