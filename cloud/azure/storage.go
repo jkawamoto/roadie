@@ -158,7 +158,7 @@ func (s *storageAccountManager) delete() (err error) {
 // StorageService provides an interface for Azure's storage management service.
 type StorageService struct {
 	// Client of blob storage service
-	blobClient storage.BlobStorageClient
+	Client storage.BlobStorageClient
 	// Configuration
 	Config *Config
 	// Logger
@@ -200,7 +200,7 @@ func NewStorageService(ctx context.Context, cfg *Config, logger *log.Logger) (s 
 	}
 
 	s = &StorageService{
-		blobClient:             cli.GetBlobService(),
+		Client:                 cli.GetBlobService(),
 		Config:                 cfg,
 		Logger:                 logger,
 		AccessPolicyExpiryTime: DefaultAccessPolicyExpiryTime,
@@ -225,7 +225,7 @@ func (s *StorageService) UploadWithMetadata(
 	ctx context.Context, container, filename string, in io.Reader, props *storage.BlobProperties, metadata storage.BlobMetadata) (err error) {
 
 	// Check the target container exists.
-	containerRef := s.blobClient.GetContainerReference(container)
+	containerRef := s.Client.GetContainerReference(container)
 	created, err := containerRef.CreateIfNotExists(&storage.CreateContainerOptions{
 		Access: storage.ContainerAccessTypeBlob,
 	})
@@ -319,7 +319,7 @@ func (s *StorageService) Download(ctx context.Context, loc *url.URL, out io.Writ
 
 	s.Logger.Println("Downloading a blob from", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	reader, err := s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Get(nil)
+	reader, err := s.Client.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Get(nil)
 	if err != nil {
 		return
 	}
@@ -336,7 +336,7 @@ func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *c
 
 	s.Logger.Println("Retrieving information of file in", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	blob := s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename)
+	blob := s.Client.GetContainerReference(loc.Hostname()).GetBlobReference(filename)
 	err = blob.GetProperties(
 		&storage.GetBlobPropertiesOptions{})
 	if err != nil {
@@ -359,7 +359,7 @@ func (s *StorageService) GetFileInfo(ctx context.Context, loc *url.URL) (info *c
 func (s *StorageService) GetMetadata(ctx context.Context, container, filename string) (metadata map[string]string, err error) {
 
 	s.Logger.Println("Retrieving metadata of file", filename)
-	blob := s.blobClient.GetContainerReference(container).GetBlobReference(filename)
+	blob := s.Client.GetContainerReference(container).GetBlobReference(filename)
 	err = blob.GetMetadata(nil)
 	if err != nil {
 		s.Logger.Println("Get metadata of file", filename)
@@ -375,7 +375,7 @@ func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.F
 
 	s.Logger.Println("Retrieving blobs matching", loc)
 	prefix := strings.TrimPrefix(loc.Path, "/")
-	res, err := s.blobClient.GetContainerReference(loc.Hostname()).ListBlobs(storage.ListBlobsParameters{
+	res, err := s.Client.GetContainerReference(loc.Hostname()).ListBlobs(storage.ListBlobsParameters{
 		Prefix: prefix,
 	})
 	if err != nil {
@@ -413,7 +413,7 @@ func (s *StorageService) Delete(ctx context.Context, loc *url.URL) (err error) {
 
 	s.Logger.Println("Deleting a blob in", loc)
 	filename := strings.TrimPrefix(loc.Path, "/")
-	err = s.blobClient.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Delete(nil)
+	err = s.Client.GetContainerReference(loc.Hostname()).GetBlobReference(filename).Delete(nil)
 	if err != nil {
 		s.Logger.Println("Cannot delete blob", filename, ":", err.Error())
 	} else {
@@ -428,7 +428,7 @@ func (s *StorageService) Delete(ctx context.Context, loc *url.URL) (err error) {
 // Note that, this URL shouldn't use out of this package. In other packages,
 // URL must starts with `roadie://`.
 func (s *StorageService) getFileURL(container, filename string) string {
-	return s.blobClient.GetContainerReference(container).GetBlobReference(filename).GetURL()
+	return s.Client.GetContainerReference(container).GetBlobReference(filename).GetURL()
 }
 
 // deleteAccount deletes the associated storage account.

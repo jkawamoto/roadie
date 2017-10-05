@@ -32,13 +32,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jkawamoto/roadie/cloud/azure/mock"
 	"github.com/jkawamoto/roadie/script"
 )
 
 func TestLogManagerGet(t *testing.T) {
 
 	var err error
-	server := newMockStorageServer()
+	server := mock.NewStorageServer()
 	defer server.Close()
 
 	cli, err := server.GetClient()
@@ -49,8 +50,8 @@ func TestLogManagerGet(t *testing.T) {
 
 	m := LogManager{
 		storage: &StorageService{
-			blobClient: cli.GetBlobService(),
-			Logger:     logger,
+			Client: cli.GetBlobService(),
+			Logger: logger,
 		},
 		Logger: logger,
 	}
