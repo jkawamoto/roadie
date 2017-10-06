@@ -181,7 +181,7 @@ func (m *QueueManager) CreateWorkers(ctx context.Context, queue string, n int, h
 	if err != nil {
 		return
 	}
-	pool := jobInfo.PoolInfo.PoolID
+	pool := jobInfo.ExecutionInfo.PoolID
 	poolInfo, err := m.service.GetPoolInfo(ctx, pool)
 	if err != nil {
 		return
@@ -198,7 +198,7 @@ func (m *QueueManager) Workers(ctx context.Context, queue string, handler cloud.
 	if err != nil {
 		return
 	}
-	pool := jobInfo.PoolInfo.PoolID
+	pool := jobInfo.ExecutionInfo.PoolID
 	nodes, err := m.service.Nodes(ctx, pool)
 	if err != nil {
 		return
