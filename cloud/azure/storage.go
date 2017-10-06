@@ -392,7 +392,7 @@ func (s *StorageService) List(ctx context.Context, loc *url.URL, handler cloud.F
 	for _, v := range res.Blobs {
 
 		u := *loc
-		u.Path = path.Join(u.Path, path.Base(v.Name))
+		u.Path = path.Join("/", v.Name)
 		err = handler(&cloud.FileInfo{
 			Name:        path.Base(v.Name),
 			URL:         &u,
