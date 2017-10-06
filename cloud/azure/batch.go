@@ -25,6 +25,7 @@
 package azure
 
 import (
+	"bufio"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -37,12 +38,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context/ctxhttp"
 
 	arm_storage "github.com/Azure/azure-sdk-for-go/arm/storage"
 	"github.com/Azure/azure-sdk-for-go/storage"
@@ -64,8 +66,13 @@ const (
 	BatchAPIVersion = "2016-07-01.3.1"
 	// RoadieAzureArchiveName is an archive name of roarie-azure command.
 	RoadieAzureArchiveName = "roadie-azure_linux_amd64.tar.gz"
+	// RoadieAzureVersion is the version of the job manager program.
+	RoadieAzureVersion = "v0.3.4"
+)
 
-	// JobManagerURL = ""
+var (
+	// RoadieAzureURL is a template of URL where the job manager program is published.
+	RoadieAzureURL = fmt.Sprintf("https://github.com/jkawamoto/roadie-azure/releases/download/%v/%v", RoadieAzureVersion, RoadieAzureArchiveName)
 )
 
 // MinimalJSONProducer is a provider which marshals message bodies as a JSON
@@ -360,46 +367,52 @@ func (s *BatchService) UpdatePoolSize(ctx context.Context, name string, size int
 // CreateJob creates a job which has a given name.
 func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 
-	// TODO:
 	// 1. Check metadata, if error returns, it means no app exists, then upload.
 	// 2. If version metadata is old or snapshot, upload new version.
 	// 3. otherwise create url and use it.
 	var execURL string
-	expired := true
-
-	bin, err := url.Parse(script.RoadieSchemePrefix + path.Join(BinContainer, RoadieAzureArchiveName))
-	if err != nil {
-		return
-	}
-	_, err = s.storage.GetFileInfo(ctx, bin)
-	if err == nil && !expired {
+	metadata, err := s.storage.GetMetadata(ctx, BinContainer, RoadieAzureArchiveName)
+	if err == nil && metadata["version"] == RoadieAzureVersion {
 		execURL = s.storage.getFileURL(BinContainer, RoadieAzureArchiveName)
 
 	} else {
 		s.Logger.Println("Job management program is not found")
 
 		var fp *os.File
-		fp, err = os.Open(filepath.Join(os.Getenv("GOPATH"), "src/github.com/jkawamoto/roadie-azure/pkg/snapshot/roadie-azure_linux_amd64.tar.gz"))
+		// From GitHub.
+		var res *http.Response
+		res, err = ctxhttp.Get(ctx, nil, RoadieAzureURL)
 		if err != nil {
 			return
 		}
+		fp, err = ioutil.TempFile("", "")
+		if err != nil {
+			return
+		}
+		defer os.Remove(fp.Name())
 		defer fp.Close()
 
-		err = s.storage.UploadWithMetadata(ctx, BinContainer, RoadieAzureArchiveName, fp, &storage.BlobProperties{
-			ContentType: "application/tar+gzip",
-		}, map[string]string{
-			"Version": "snapshot",
-		})
-		// TODO: The above logic should be replaced to download the archive from
-		// GitHub directory.
-		// var res *http.Response
-		// res, err = ctxhttp.Get(ctx, nil, JobManagerURL)
+		_, err = io.Copy(fp, bufio.NewReader(res.Body))
+		if err != nil {
+			return
+		}
+		_, err = fp.Seek(0, 0)
+		if err != nil {
+			return
+		}
+
+		// From a local snapshot.
+		// fp, err = os.Open(filepath.Join(os.Getenv("GOPATH"), "src/github.com/jkawamoto/roadie-azure/pkg/v0.3.4/roadie-azure_linux_amd64.tar.gz"))
 		// if err != nil {
 		// 	return
 		// }
-		// defer res.Body.Close()
-		// s.blobClient.GetBlobURL(group, filename)
-		// execURL, err = s.storage.Upload(ctx, BinContainer, "roadie-azure", res.Body)
+		// defer fp.Close()
+
+		err = s.storage.UploadWithMetadata(ctx, BinContainer, RoadieAzureArchiveName, bufio.NewReader(fp), &storage.BlobProperties{
+			ContentType: "application/tar+gzip",
+		}, map[string]string{
+			"version": RoadieAzureVersion,
+		})
 		if err != nil {
 			return
 		}
