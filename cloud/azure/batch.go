@@ -280,7 +280,7 @@ func NewBatchService(ctx context.Context, cfg *Config, logger *log.Logger) (serv
 		transport.Producers["application/json; odata=minimalmetadata"] = NewMinimalJSONProducer()
 		scli.Accounts.SetTransport(transport)
 		scli.Jobs.SetTransport(transport)
-
+		scli.Pools.SetTransport(transport)
 	}
 
 	// Create a storage service client.
@@ -445,7 +445,7 @@ func (s *BatchService) CreateJob(ctx context.Context, name string) (err error) {
 				ID: &name,
 				PoolInfo: &models.PoolInformation{
 					AutoPoolSpecification: &models.AutoPoolSpecification{
-						AutoPoolIDPrefix: "roadie",
+						AutoPoolIDPrefix: name,
 						KeepAlive:        false,
 						Pool: &models.PoolSpecification{
 							VMSize: &s.Config.MachineType,
