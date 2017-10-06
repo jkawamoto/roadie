@@ -67,7 +67,7 @@ const (
 	// RoadieAzureArchiveName is an archive name of roarie-azure command.
 	RoadieAzureArchiveName = "roadie-azure_linux_amd64.tar.gz"
 	// RoadieAzureVersion is the version of the job manager program.
-	RoadieAzureVersion = "v0.3.4"
+	RoadieAzureVersion = "v0.3.5"
 )
 
 var (
