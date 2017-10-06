@@ -118,6 +118,8 @@ func (s *StorageServer) GetClient() (cli storage.Client, err error) {
 	if err != nil {
 		return
 	}
+	httpClient := *cli.HTTPClient
+	cli.HTTPClient = &httpClient
 	cli.HTTPClient.Transport = NewForwardTransport(URL, nil)
 	return
 
