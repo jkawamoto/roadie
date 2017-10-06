@@ -148,28 +148,51 @@ func (m *LogManager) get(ctx context.Context, urls []*url.URL, handler cloud.Log
 }
 
 // Delete instance log.
-func (m *LogManager) Delete(ctx context.Context, instanceName string) error {
+func (m *LogManager) Delete(ctx context.Context, instanceName string) (err error) {
 
-	var errs []error
-	for _, format := range []string{"%v-init.log", "%v.log"} {
-		loc, err := url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf(format, instanceName)))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		err = ignoreNotFoundError(m.storage.Delete(ctx, loc))
-		if err != nil {
-			errs = append(errs, err)
-		}
-	}
-	err := ignoreNotFoundError(m.batch.DeleteJob(ctx, instanceName))
+	var loc *url.URL
+	// Delete a config file for initialization.
+	loc, err = url.Parse(script.RoadieSchemePrefix + StartupContainer)
 	if err != nil {
-		//errs = append(errs, err)
-		_ = err
+		return
+	}
+	err = m.storage.List(ctx, loc, func(info *cloud.FileInfo) error {
+		if strings.HasPrefix(info.Name, instanceName) && strings.HasSuffix(info.Name, "-init.cfg") {
+			return m.storage.Delete(ctx, info.URL)
+		}
+		return nil
+	})
+	if err != nil {
+		return
 	}
 
-	if len(errs) != 0 {
-		return errs[0]
+	// Delete log files.
+	loc, err = url.Parse(script.RoadieSchemePrefix + LogContainer)
+	if err != nil {
+		return
+	}
+	err = m.storage.List(ctx, loc, func(info *cloud.FileInfo) error {
+		if strings.HasPrefix(info.Name, instanceName) || strings.HasPrefix(info.Name, fmt.Sprintf("task-%v", instanceName)) {
+			return m.storage.Delete(ctx, info.URL)
+		}
+		return nil
+	})
+	if err != nil {
+		return
+	}
+
+	// Delete the job.
+	jobSet, err := m.batch.Jobs(ctx)
+	if err != nil {
+		return
+	}
+	for name := range jobSet {
+		if name == instanceName {
+			err = m.batch.DeleteJob(ctx, instanceName)
+			if err != nil {
+				return
+			}
+		}
 	}
 	return nil
 
