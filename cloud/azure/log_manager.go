@@ -192,8 +192,8 @@ func (m *LogManager) GetQueueLog(ctx context.Context, queue string, handler clou
 	}
 	urls = append(urls, loc)
 
-	for _, name := range tasks {
-		loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf("%v.log", name)))
+	for _, task := range tasks {
+		loc, err = url.Parse(script.RoadieSchemePrefix + path.Join(LogContainer, fmt.Sprintf("%v.log", task.ID)))
 		if err != nil {
 			return
 		}
