@@ -76,7 +76,7 @@ func cmdStatus(m *Metadata, all bool) (err error) {
 	}
 
 	m.Spinner.Stop()
-	fmt.Fprint(m.Stdout, table.String())
+	fmt.Fprintln(m.Stdout, table.String())
 	return
 
 }
