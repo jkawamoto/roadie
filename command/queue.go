@@ -147,7 +147,7 @@ func cmdQueueAdd(opt *optQueueAdd) (err error) {
 	}
 
 	opt.Spinner.Prefix = fmt.Sprintf("Enqueuing task %s to queue %s...", chalk.Bold.TextStyle(s.Name), chalk.Bold.TextStyle(opt.QueueName))
-	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s", s.Name, opt.QueueName)
+	opt.Spinner.FinalMSG = fmt.Sprintf("Task %s has been added to queue %s\n", s.Name, opt.QueueName)
 	opt.Spinner.Start()
 	defer opt.Spinner.Stop()
 
