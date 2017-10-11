@@ -32,6 +32,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jkawamoto/roadie/cloud"
+	"github.com/jkawamoto/roadie/cloud/azure"
 	"github.com/jkawamoto/roadie/cloud/gcp"
 	"github.com/jkawamoto/roadie/config"
 	colorable "github.com/mattn/go-colorable"
@@ -114,6 +115,13 @@ func (m *Metadata) prepareProvider(forceAuth bool) (err error) {
 		}
 		m.Config.Save()
 
+	case m.Config.AzureConfig.Valid():
+		m.provider, err = azure.NewProvider(m.Context, &m.Config.AzureConfig, m.Logger, forceAuth)
+		if err != nil {
+			return
+		}
+		m.Config.Save()
+
 	default:
 		// return ErrServiceConfiguration
 	}
@@ -174,14 +182,13 @@ func PrepareCommand(c *cli.Context) (err error) {
 		}
 		err = cfg.Load()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Cannot read the given config file:", err.Error())
-			cfg = nil
+			fmt.Fprintln(meta.Stderr, "Cannot read the given config file:", err)
 		}
 
 	} else {
 		cfg, err = config.NewConfig()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Cannot read any config files:", err.Error())
+			fmt.Fprintln(meta.Stderr, "Cannot read any config files:", err)
 			cfg = nil
 		}
 
@@ -194,7 +201,6 @@ func PrepareCommand(c *cli.Context) (err error) {
 			return
 		}
 	}
-
 	c.App.Metadata[metadataKey] = meta
 	return nil
 

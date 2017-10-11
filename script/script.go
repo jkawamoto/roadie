@@ -65,7 +65,7 @@ type Script struct {
 	// Name of this script.
 	Name string `yaml:"name,omitempty"`
 	// Image is a docker image name used to run this script.
-	Image string
+	Image string `yaml:"image,omitempty"`
 }
 
 // NewScript reads a given file and creates a new script.

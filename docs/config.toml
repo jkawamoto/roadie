@@ -4,8 +4,8 @@ title = "Roadie"
 theme = "github-project-landing-page"
 
 [params]
-  SubTitle = "A easy way to run your programs on Google Cloud Platform."
-  Description = "A easy way to run your programs on Google Cloud Platform."
+  SubTitle = "A easy way to run your program on Cloud Platform"
+  Description = "A easy way to run your program on Cloud Platform"
   AuthorName = "Junpei Kawamoto"
   AuthorURL = "https://www.jkawamoto.info/"
   GithubURL = "https://github.com/jkawamoto/roadie"
@@ -43,5 +43,5 @@ theme = "github-project-landing-page"
   header_link_hover_color="rgb(51, 51, 51)"
 
   Docs = "./documents/top/"
-  Docs_Ja = "./documents-ja/top/"
+  Docs_Ja = "./ja/top/"
   Release = "https://github.com/jkawamoto/roadie/releases"

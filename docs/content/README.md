@@ -50,6 +50,12 @@ $ roadie result get analyze-wowah "*" -o ./res
 
 Then, Roadie downloads all result files into `./res` directory.
 
+Currently, Roadie supports 
+
+- <i class="fa fa-google" aria-hidden="true"></i> [Google Cloud Platform](https://cloud.google.com/),
+- <i class="fa fa-windows" aria-hidden="true"></i> [Microsoft Azure](https://azure.microsoft.com/).
+
+
 ## Installation
 Compiled binary files for some platforms are uploaded in
 [release page](https://github.com/jkawamoto/roadie/releases).

@@ -24,7 +24,6 @@ package command
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"path"
 	"strings"
@@ -105,7 +104,7 @@ func cmdGet(m *Metadata, container string, queries []string, dir string) (err er
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, m.Stdout)
+	storage := cloud.NewStorage(service, m.Spinner.Writer)
 
 	loc, err := createURL(container, "")
 	if err != nil {
@@ -148,7 +147,7 @@ func cmdDelete(m *Metadata, container string, queries []string) (err error) {
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, ioutil.Discard)
+	storage := cloud.NewStorage(service, m.Spinner.Writer)
 
 	loc, err := createURL(container, "")
 	if err != nil {

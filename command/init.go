@@ -23,6 +23,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jkawamoto/roadie/config"
 	"github.com/ttacon/chalk"
@@ -53,14 +54,6 @@ func CmdInit(c *cli.Context) (err error) {
 // 4. Store configurations.
 func cmdInit(m *Metadata) (err error) {
 
-	fmt.Fprintf(m.Stdout, `%v
-This command will create file %q in current directory.
-Configurations can be updated with "roadie config" command.
-See "roadie config --help", for more detail.
-
-`, chalk.Green.Color("Initialize Roadie"), ConfigFile)
-
-	actor := interact.NewActor(m.Stdin, m.Stdout)
 	if m.Config == nil {
 		m.Config = new(config.Config)
 	}
@@ -68,13 +61,53 @@ See "roadie config --help", for more detail.
 		m.Config.FileName = ConfigFile
 	}
 
-	var project string
-	project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
+	fmt.Fprintf(m.Stdout, `%v
+This command will create file %q in current directory.
+Configurations can be updated with "roadie config" command.
+See "roadie config --help", for more detail.
+
+`, chalk.Green.Color("Initialize Roadie"), m.Config.FileName)
+
+	actor := interact.NewActor(m.Stdin, m.Stdout)
+
+	provider, err := actor.PromptOptionalAndRetry("Choose a cloud provider from a) Microsoft Azure, g) Google Cloud Platform", "g", checkOption("a", "g"))
 	if err != nil {
 		return
 	}
-	fmt.Fprintln(m.Stdout, "")
-	m.Config.GcpConfig.Project = project
+	switch provider {
+	case "a":
+		var tennant, subscription, project string
+		tennant, err = actor.PromptAndRetry("Enter your tennant ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		fmt.Fprintln(m.Stdout, "")
+		m.Config.AzureConfig.TenantID = tennant
+
+		subscription, err = actor.PromptAndRetry("Enter your subscription ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		fmt.Fprintln(m.Stdout, "")
+		m.Config.AzureConfig.SubscriptionID = subscription
+
+		project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		fmt.Fprintln(m.Stdout, "")
+		m.Config.AzureConfig.ProjectID = project
+
+	case "g":
+		var project string
+		project, err = actor.PromptAndRetry("Enter your project ID", checkNotEmpty)
+		if err != nil {
+			return
+		}
+		fmt.Fprintln(m.Stdout, "")
+		m.Config.GcpConfig.Project = project
+
+	}
 
 	fmt.Fprintln(m.Stdout, chalk.Green.Color("Cheking authorization..."))
 	err = m.prepareProvider(true)
@@ -95,15 +128,15 @@ func checkNotEmpty(value string) error {
 	return nil
 }
 
-// // checkOption returns InputCheck checks a given string matches at least one of
-// // given options.
-// func checkOption(options ...string) interact.InputCheck {
-// 	return func(str string) error {
-// 		for _, v := range options {
-// 			if v == str {
-// 				return nil
-// 			}
-// 		}
-// 		return fmt.Errorf("Input must be one of [%v]", strings.Join(options, ", "))
-// 	}
-// }
+// checkOption returns InputCheck checks a given string matches at least one of
+// given options.
+func checkOption(options ...string) interact.InputCheck {
+	return func(str string) error {
+		for _, v := range options {
+			if v == str {
+				return nil
+			}
+		}
+		return fmt.Errorf("Input must be one of [%v]", strings.Join(options, ", "))
+	}
+}

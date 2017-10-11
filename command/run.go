@@ -133,7 +133,7 @@ func cmdRun(opt *runOpt) (err error) {
 	if err != nil {
 		return
 	}
-	storage := cloud.NewStorage(service, opt.Stdout)
+	storage := cloud.NewStorage(service, opt.Spinner.Writer)
 
 	// Update source section.
 	err = UpdateSourceSection(opt.Metadata, s, &opt.SourceOpt, storage)

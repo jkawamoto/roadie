@@ -124,7 +124,7 @@ func cmdResultShow(m *Metadata, instance, prefix string) error {
 	if err != nil {
 		return err
 	}
-	storage := cloud.NewStorage(service, m.Stdout)
+	storage := cloud.NewStorage(service, m.Spinner.Writer)
 
 	if !strings.HasSuffix(instance, "/") {
 		instance += "/"
@@ -174,7 +174,7 @@ func cmdResultGet(m *Metadata, instance string, queries []string, dir string) (e
 		return
 	}
 
-	storage := cloud.NewStorage(service, m.Stdout)
+	storage := cloud.NewStorage(service, m.Spinner.Writer)
 	if len(queries) == 0 {
 		queries = []string{"*"}
 	}
@@ -249,7 +249,7 @@ func cmdResultDelete(m *Metadata, instance string, queries []string) (err error)
 		return
 	}
 
-	storage := cloud.NewStorage(service, m.Stdout)
+	storage := cloud.NewStorage(service, m.Spinner.Writer)
 	if len(queries) == 0 {
 		queries = []string{"*"}
 	}

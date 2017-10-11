@@ -16,7 +16,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+# along with Roadie.  If not, see <http://www.gnu.org/licenses/>.
 #
 VERSION = snapshot
 GHRFLAGS =
@@ -24,7 +24,7 @@ GHRFLAGS =
 .PHONY: asset build release get-deps test
 default: build
 
-asset:
+asset: get-deps
 	rm assets/assets.go
 	go-bindata -pkg assets -o assets/assets.go -nometadata assets/*
 

@@ -1,9 +1,15 @@
 ---
 title: Logging
+description: >-
+  This document explains how to obtain statuses of your programs and receive
+  log data.
+date: 2016-08-14
+lastmod: 2017-10-10
+slug: logging
 ---
 After running your program, it is helpful to check status of your program,
 i.e. instance, and check logs.
-roadie provides two commands:
+Roadie provides two commands:
 
 - **status** shows status of all instances and kill an instance.
 - **log** shows logs from an instance.
@@ -36,7 +42,7 @@ $ roadie log INSTANCE
 The log messages consist of logs about preprocess and post process,
 and outputs your programs write in standard err (`stderr`).
 
-roadie's execution model treats outputs written in standard output (`stdout`)
+Roadie's execution model treats outputs written in standard output (`stdout`)
 and `stderr` in different way.
 Outputs written in `stdout` are uploaded to a bucket as parts of results
 from your program.
