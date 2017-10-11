@@ -1,10 +1,23 @@
 ---
-title: Contents
+title: Roadie
+description: >-
+  Roadie helps you to run your programs on Google Cloud Platform and Microsoft Azure.
+  It sets up cloud environments, downloads data files, uploads computation results,
+  and shutdowns virtual machines.
+  You don't need to learn about cloud platforms, and can focus your code.
+date: 2016-08-14
+lastmod: 2017-10-09
+slug: top
 ---
-`roadie` is a easy way to run your programs on [Google Cloud Platform](https://cloud.google.com/).
+Roadie provides a easy way to run your programs on
+
+- <i class="fa fa-google" aria-hidden="true"></i> [Google Cloud Platform](https://cloud.google.com/),
+- <i class="fa fa-windows" aria-hidden="true"></i> [Microsoft Azure](https://azure.microsoft.com/).
+
 It helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.
 
+### Contents
 - [Installation](documents/installation)
 - [Configuration](documents/configuration)
 - [Run your program](documents/execution)
@@ -12,15 +25,16 @@ instances, and manage outputs.
 - [Data handling](documents/data)
 - [Taks queue](documents/queue)
 
+
 ### Simple example
-Suppose your are in a directory which has your source codes and `script.yml`,
-then run
+Suppose your are in a directory which has your source code and `script.yml`,
+then the following command
 
 ```shell
 $ roadie run --local . --name analyze-wowah script.yml
 ```
 
-uploads your source codes in the current directory,
+uploads your source code in the current directory,
 and run them in such a manner that `script.yml` specifies.
 
 The `script.yml` is a simple YAML file like
