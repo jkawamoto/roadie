@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Auths</title>
+  <title>ステータスとログ</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="A easy way to run your program on Cloud Platform"/>
+  <meta name="description" content="本ドキュメントでは、クラウド環境にて実行中プログラムの状態を取得する方法並びに、ログデータの 取得方法について説明します。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Auths: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="ステータスとログ: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="A easy way to run your program on Cloud Platform"/>
+  <meta property="og:description" content="本ドキュメントでは、クラウド環境にて実行中プログラムの状態を取得する方法並びに、ログデータの 取得方法について説明します。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="A easy way to run your program on Cloud Platform"/>
+    <meta name="twitter:card" content="本ドキュメントでは、クラウド環境にて実行中プログラムの状態を取得する方法並びに、ログデータの 取得方法について説明します。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -155,40 +155,91 @@ body {
 </nav>
 
     
-<section id="intro">
-	<!-- Header -->
-	<div class="intro-header">
-
-		<div class="container header-container">
-
-			<div class="row">
-				<div class="intro-image col-md-1 col-md-offset-3" style="background-image:url(img/icon.png); background-size: contain;"></div>
-				<div class="intro-message col-md-6">
-					<h1>Roadie</h1>
-					<h3>A easy way to run your program on Cloud Platform</h3>
-
-					
-					
-					
-					<iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=star&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-          <iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=fork&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-					
-					<hr class="intro-divider">
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-
 <section id="services">
-  <!-- Page Content -->
-  
-</section>
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">ステータスとログ</h2>
+          
 
+<p>実行したプログラムが問題なく動作しているか確認するためには、
+ステータスのチェックやログの確認が便利です。</p>
+
+<p>Roadie は次の二つのコマンドを提供しています。</p>
+
+<ul>
+<li><strong>status</strong> は仮想マシンステータスの確認と停止を行います。</li>
+<li><strong>log</strong> はログの表示を行います。</li>
+</ul>
+
+<h3 id="status-コマンド">status コマンド</h3>
+
+<p><code>roadie status</code> コマンドは、各プログラムの実行状況を表示します。
+もし、プログラムが終了済みで実行結果も削除されている場合、
+<code>status</code> コマンドでは非表示になります。
+計算結果の削除済みインスタンスに関する情報も取得するには <code>--all</code> フラッグを付けてください。</p>
+
+<p>なお、Google Cloud Platform では、ステータス情報は一定期間が過ぎたのち自動的に削除されます。
+この場合、<code>--all</code> フラッグを使用しても表示されなくなります。</p>
+
+<p><code>status</code> コマンドの別の機能は、インスタンスを途中で削除することです。
+<code>INSTANCE</code> というインスタンスを何らかの理由で途中削除する場合、</p>
+
+<pre><code class="language-shell">$ roadie status kill INSTANCE
+</code></pre>
+
+<p>を実行してください。</p>
+
+<p>なお、実行途中にインスタンスを削除した場合、
+計算結果はクラウドストレージに保存されないことがあります。</p>
+
+<h3 id="log-コマンド">log コマンド</h3>
+
+<p>ログコマンドは、各インスタンスのログ出力を取得します。
+<code>INSTANCE</code> というインスタンスのログを取得するには、</p>
+
+<pre><code class="language-shell">$ roadie log INSTANCE
+</code></pre>
+
+<p>を実行してください。</p>
+
+<p>ログメッセージには、事前準備、事後プロセスの進捗に加えて、
+各コマンドが標準エラー出力 <code>stderr</code> に書き出したメッセージも含まれます。</p>
+
+<p><code>roadie</code> の実行モデルでは、標準出力 <code>stdout</code> と標準エラー出力 <code>stderr</code> は
+別々の意味を持ちます。
+標準出力に書き出されたメッセージは、
+プログラムの実行結果としてクラウドストレージに保存されます。
+これらのメッセージはプログラムの実行中に外部から取得することはできませんが、
+永続的に管理されます。
+標準出力へ書き出されたメッセージを取得するには <code>roadie result</code> コマンドを使用します。</p>
+
+<p>一方、標準エラー出力に書き出されたメッセージは、永続的なクラウドストレージに保存されるとは限りません。
+その代わり、<code>log</code> コマンドを用いてインスタンスの実行中に外部から確認することができます。
+標準エラー出力への書き込みは、その都度通信を発生させるため、
+巨大なデータの書き込みは避けた方が良いでしょう。</p>
+
+<h4 id="オプション">オプション</h4>
+
+<p>ログコマンドには幾つかのオプションがあります。</p>
+
+<p><code>--no-timestamp</code> フラッグが付けられた場合、タイムスタンプが省略されます。</p>
+
+<p><code>--follow</code> フラッグが付けられた場合、<code>roadie</code> コマンドは新たなログの到着を待ち続けます。
+このフラッグを使用した場合、<code>roadie</code> コマンドは自動では終了しなくなります。
+終了させる場合には <code>control + c</code> を使用してください。</p>
+
+<p>なお、クラウドプロバイダによってはログ出力が課金対象であったり、一定時間内に取得できる
+ファイルサイズに制限がある場合があります。</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- Footer -->
 <footer>

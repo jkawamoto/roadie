@@ -1,30 +1,47 @@
 <!DOCTYPE html>
 <html>
   <head prefix="og: http://ogp.me/ns#">
-  <meta charset="utf-8"/>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-  <base href="https://jkawamoto.github.io/roadie/"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="generator" content="Hugo 0.18.1" />
-  <title>Contents: A easy way to run your programs on Google Cloud Platform.</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <base href="https://jkawamoto.github.io/roadie/">
 
+  
+  <title>Roadie</title>
+  
+
+  
   <meta name="author" content="Junpei Kawamoto"/>
   
-	<meta name="description" content="A easy way to run your programs on Google Cloud Platform."/>
-	
 
-  <meta property="og:type" content="article" />
-	<meta property="og:title" content="Contents: A easy way to run your programs on Google Cloud Platform." />
-	
-	<meta name="og:description" content="A easy way to run your programs on Google Cloud Platform." />
-	
-	<meta property="og:image" content="https://jkawamoto.github.io/roadie/img/image.png" />
-	<meta property="og:site_name"  content="Contents: A easy way to run your programs on Google Cloud Platform." />
+  
+  <meta name="description" content="Roadie helps you to run your programs on Google Cloud Platform and Microsoft Azure. It sets up cloud environments, downloads data files, uploads computation results, and shutdowns virtual machines. You don&#39;t need to learn about cloud platforms, and can focus your code."/>
+  
 
-	
-	<meta name="twitter:card" content="A easy way to run your programs on Google Cloud Platform." />
-	
-	<meta name="twitter:site" content="@junkawamoto" />
+  <meta property="og:type" content="article"/>
+  
+  <meta property="og:title" content="Roadie: A easy way to run your program on Cloud Platform"/>
+  
+
+  
+  <meta property="og:description" content="Roadie helps you to run your programs on Google Cloud Platform and Microsoft Azure. It sets up cloud environments, downloads data files, uploads computation results, and shutdowns virtual machines. You don&#39;t need to learn about cloud platforms, and can focus your code."/>
+  
+
+  
+  <meta property="og:site_name"  content="Roadie: A easy way to run your program on Cloud Platform"/>
+  
+  
+  <meta property="og:image" content="https://jkawamoto.github.io/roadie/img/banner.png"/>
+  
+
+  
+    
+    <meta name="twitter:card" content="Roadie helps you to run your programs on Google Cloud Platform and Microsoft Azure. It sets up cloud environments, downloads data files, uploads computation results, and shutdowns virtual machines. You don&#39;t need to learn about cloud platforms, and can focus your code."/>
+    
+  <meta name="twitter:site" content="@junkawamoto"/>
+  
 
   
   
@@ -39,18 +56,19 @@
   
   <link rel="icon" type="image/png" href="https://jkawamoto.github.io/roadie/img/icon_96.png" sizes="96x96"/>
   
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" type="text/css">
 
-  
-  <link href="https://jkawamoto.github.io/roadie/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Bootstrap Core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet"/>
 
-  
-  <link href="https://jkawamoto.github.io/roadie/css/landing-page.css" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link href="css/landing-page.css" rel="stylesheet"/>
 
-  
-  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css"/>
+  <!-- Custom Fonts -->
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
 
   <style>
-  .navbar {
+    .navbar {
     border-color: #e7e7e7;
 }
 
@@ -88,7 +106,6 @@ body {
 }
 
   </style>
-
 </head>
 
   <body>
@@ -124,7 +141,7 @@ body {
         <li><a class="page-scroll" href="./documents/top/">Docs</a></li>
         
         
-        <li><a class="page-scroll" href="./documents-ja/top/">ドキュメント</a></li>
+        <li><a class="page-scroll" href="./ja/top/">ドキュメント</a></li>
         
         
         <li><a class="page-scroll" href="https://github.com/jkawamoto/roadie/releases">Release</a></li>
@@ -145,12 +162,20 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Contents</h2>
+          <h2 class="section-heading">Roadie</h2>
           
 
-<p><code>roadie</code> is a easy way to run your programs on <a href="https://cloud.google.com/">Google Cloud Platform</a>.
-It helps you to upload your source codes to the cloud, create and delete
+<p>Roadie provides a easy way to run your programs on</p>
+
+<ul>
+<li><i class="fa fa-google" aria-hidden="true"></i> <a href="https://cloud.google.com/">Google Cloud Platform</a>,</li>
+<li><i class="fa fa-windows" aria-hidden="true"></i> <a href="https://azure.microsoft.com/">Microsoft Azure</a>.</li>
+</ul>
+
+<p>It helps you to upload your source codes to the cloud, create and delete
 instances, and manage outputs.</p>
+
+<h3 id="contents">Contents</h3>
 
 <ul>
 <li><a href="documents/installation">Installation</a></li>
@@ -163,13 +188,13 @@ instances, and manage outputs.</p>
 
 <h3 id="simple-example">Simple example</h3>
 
-<p>Suppose your are in a directory which has your source codes and <code>script.yml</code>,
-then run</p>
+<p>Suppose your are in a directory which has your source code and <code>script.yml</code>,
+then the following command</p>
 
 <pre><code class="language-shell">$ roadie run --local . --name analyze-wowah script.yml
 </code></pre>
 
-<p>uploads your source codes in the current directory,
+<p>uploads your source code in the current directory,
 and run them in such a manner that <code>script.yml</code> specifies.</p>
 
 <p>The <code>script.yml</code> is a simple YAML file like</p>
@@ -215,16 +240,10 @@ You can access those results by</p>
   
 <div class="container">
   <ins class="adsbygoogle"
-       style="display:inline-block;width:336px;height:280px"
+      style="display:block"
        data-ad-client="ca-pub-4734862314145555"
-       data-ad-slot="4875187824"></ins>
-  <script>
-  (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
-  <ins class="adsbygoogle"
-       style="display:inline-block;width:336px;height:280px"
-       data-ad-client="ca-pub-4734862314145555"
-       data-ad-slot="4875187824"></ins>
+       data-ad-slot="4875187824"
+       data-ad-format="auto"></ins>
   <script>
   (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
@@ -234,20 +253,34 @@ You can access those results by</p>
   <div class="container">
     <div class="row">
       <div class="col-md-3">
-        <h4>Contact information</h4>
-        <div class="addthis_inline_follow_toolbox"></div>
-      </div>
-      <div class="col-md-7">
-        <p class="copyright text-muted small">
-        Copyright &copy; Junpei Kawamoto All Rights Reserved. <br/>
-        The icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
-        Built with <a href="http://gohugo.io">Hugo</a> and the
-        <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
-        theme.
-        </p>
+        <h4>Repositories</h4>
+        <ul class="small">
+          <li><a href="https://github.com/jkawamoto/roadie">Roadie</a></li>
+          <li><a href="https://github.com/jkawamoto/roadie-gcp">Roadie-GCP</a></li>
+          <li><a href="https://github.com/jkawamoto/roadie-queue-manager">Roadie Queue Manager</a></li>
+          <li><a href="https://github.com/jkawamoto/roadie-azure">Roadie Azure</a></li>
+        </ul>
       </div>
       <div class="col-md-2">
-        <script data-gratipay-username="jkawamoto" src="//grtp.co/v1.js"></script>
+        <h4>Resources</h4>
+        <ul class="small">
+          <li><a href="documents/blogs">Blog posts</a></li>
+          <li><a href="ja/blogs/">ブログ</a></li>
+          <li><a href="info/forum/">Forum</a></li>
+        </ul>
+      </div>
+      <div class="col-md-3">
+        <h4>Contacts</h4>
+        <div class="addthis_inline_follow_toolbox"></div>
+      </div>
+      <div class="col-md-4">
+        <p class="copyright text-muted small">
+        Copyright &copy; Junpei Kawamoto All Rights Reserved.
+        Built with <a href="http://gohugo.io">Hugo</a> and the
+        <a href="https://github.com/swiftline/github-project-landing-page">Github project Page</a>
+        theme,
+        and the project icon is designed by <a href="http://www.digimadmedia.com/">Digimad Media</a>.
+        </p>
       </div>
     </div>
   </div>

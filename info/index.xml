@@ -10,6 +10,28 @@
     <atom:link href="https://jkawamoto.github.io/roadie/info/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Forum</title>
+      <link>https://jkawamoto.github.io/roadie/info/forum/</link>
+      <pubDate>Wed, 21 Dec 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://jkawamoto.github.io/roadie/info/forum/</guid>
+      <description>&lt;p&gt;&lt;img class=&#34;img-responsive center-block&#34; src=&#34;img/forum.png&#34;/&gt;&lt;/p&gt;
+
+&lt;div id=&#34;disqus_thread&#34;&gt;&lt;/div&gt;
+&lt;script&gt;
+(function() { 
+var d = document, s = d.createElement(&#39;script&#39;);
+s.src = &#39;https://roadie-cloud.disqus.com/embed.js&#39;;
+s.setAttribute(&#39;data-timestamp&#39;, +new Date());
+(d.head || d.body).appendChild(s);
+})();
+&lt;/script&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&#34;https://disqus.com/?ref_noscript&#34;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
+
+</description>
+    </item>
+    
+    <item>
       <title>Licenses</title>
       <link>https://jkawamoto.github.io/roadie/info/licenses/</link>
       <pubDate>Wed, 21 Dec 2016 00:00:00 +0000</pubDate>

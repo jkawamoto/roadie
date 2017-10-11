@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Configuration</title>
+  <title>設定について</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="This document explains configurations to use Google Cloud Platform and Microsoft Azure."/>
+  <meta name="description" content="本ドキュメントでは、Google Cloud Platform と Microsoft Azure それぞれをバックエンド として使用する場合における Roadie の設定について説明します。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Configuration: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="設定について: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="This document explains configurations to use Google Cloud Platform and Microsoft Azure."/>
+  <meta property="og:description" content="本ドキュメントでは、Google Cloud Platform と Microsoft Azure それぞれをバックエンド として使用する場合における Roadie の設定について説明します。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="This document explains configurations to use Google Cloud Platform and Microsoft Azure."/>
+    <meta name="twitter:card" content="本ドキュメントでは、Google Cloud Platform と Microsoft Azure それぞれをバックエンド として使用する場合における Roadie の設定について説明します。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -162,106 +162,111 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Configuration</h2>
+          <h2 class="section-heading">設定について</h2>
           
 
-<p>Roadie&rsquo;s configuration is stored as a YAML document; by default <code>roadie.yml</code>,
-and it is editable by any text editors.
-In addition, Roadie provides <code>roadie config</code> command to edit configurations
-interactively.</p>
+<p>Roadie の設定は <a href="https://ja.wikipedia.org/wiki/YAML">YAML</a> 形式のテキストファイルなので、
+テキストエディタ等で直接編集可能です。
+加えて、一般的な設定項目を変更する <code>roadie config</code> コマンドも提供しています。</p>
 
-<p>This document first explain <code>roadie config</code> command, and then the YAML based
-configuration file.</p>
+<p>本セクションでは、はじめに <code>roadie config</code> コマンドによる設定変更方法について紹介したのち、
+直接 YAML ファイルを編集する方法について紹介します。</p>
 
-<h3 id="config-command">config command</h3>
+<h3 id="roadie-config-コマンド">roadie config コマンド</h3>
 
-<p><code>roadie config</code> command shows current configurations and available options, and
-update them.
-It provides the following sub commands:</p>
+<p>設定の更新には、<code>roadie config</code> コマンドが使用できます。
+このコマンドは、次のサブコマンドを提供します。</p>
 
 <ul>
-<li><strong>project</strong> shows and updates project ID,</li>
-<li><strong>region</strong> shows and updates region where programs will be run,</li>
-<li><strong>machine</strong> shows and updates machine type used to run scripts,</li>
+<li>project: プロジェクト ID を表示・変更します,</li>
+<li>region: プログラムを実行するリージョン設定を表示・変更します,</li>
+<li>machine: プログラムを実行する仮想マシンの種類を表示・変更します,</li>
 </ul>
 
-<p>Every configurations are stored to <code>roadie.yml</code>
-in the current working directory by default.
-If you want to use another file, use <code>-c</code> flag with a file path.</p>
+<p>デフォルトの設定ファイルはカレントディレクトリの <code>roadie.yml</code> です。
+他の設定ファイルを使用する場合、roadie とコマンド名の間に <code>-c</code> オプションを使って指定できます。
+例えば、</p>
 
-<p>For example, the following command sets &ldquo;another&rdquo; as the project ID and
-stores it to <code>another.yml</code>:</p>
-
-<pre><code class="language-shell">$ roadie -c another.yml config project set another
+<pre><code class="language-shell">$ roadie -c another.yml config project
 </code></pre>
+
+<p>とした場合、<code>another.yml</code> を設定ファイルとして使用します。</p>
 
 <h4 id="project">project</h4>
 
-<p>To check the project ID currently set, run</p>
+<p>現在設定されているプロジェクト ID を調べるには、</p>
 
 <pre><code class="language-shell">$ roadie config project
 </code></pre>
 
-<p>and to set another project ID <code>PROJECT</code>, run</p>
+<p>を実行します。また、<code>PROJECT</code> を新しいプロジェクト ID として設定するには、</p>
 
 <pre><code class="language-shell">$ roadie config project set PROJECT
 </code></pre>
 
+<p>を実行します。</p>
+
 <h4 id="region">region</h4>
 
-<p>In most of cloud services, they have lots of servers in the world and
-those servers are grouped based on actual locations.
-Roadie needs to know which group of servers it should use to run programs.</p>
-
-<p>You can find available regions in the cloud platform you&rsquo;re using by running
-the following command:</p>
+<p>一般的に、クラウド利用料金はリージョンごとに異なっています。
+利用可能なリージョンを取得するためには、</p>
 
 <pre><code class="language-shell">$ roadie config region list
 </code></pre>
 
-<p>To find current selected region, run</p>
+<p>を実行してください。
+現在設定されているリージョンを調べるためには、</p>
 
 <pre><code class="language-shell">$ roadie config region
 </code></pre>
 
-<p>and to set another <code>REGION</code>, run</p>
+<p>を実行してください。</p>
+
+<p>最後に、リージョンをある値 <code>REGION</code> に変更するためには、</p>
 
 <pre><code class="language-shell">$ roadie config region set REGION
 </code></pre>
 
-<h3 id="machine">machine</h3>
+<p>を実行してください。</p>
 
-<p>There are some options about machine type on which your program runs.
-Each machine type has different number of virtual CPUs and RAM.
-You can find available machine types by running</p>
+<h4 id="machine">machine</h4>
+
+<p>プログラムを実行する仮想マシンのスペックにはいくつかの種類が用意されています。
+各マシンタイプには異なる仮想 CPU 数やメモリサイズが設定されています。
+利用可能な仮想マシンタイプを取得するには、</p>
 
 <pre><code class="language-shell">$ roadie config machine list
 </code></pre>
 
-<p>Available machine types might be depended to which zone you choose.
-You should set zone before checking machine types.</p>
+<p>を実行してください。</p>
 
-<p>To check current machine type, run</p>
+<p>利用可能な仮想マシンタイプはリージョンによって異なる可能性があります。
+仮想マシンタイプを設定する前に、リージョンの設定を行ってください。</p>
+
+<p>現在設定されている仮想マシンタイプを取得するには、</p>
 
 <pre><code class="language-shell">$ roadie config machine
 </code></pre>
 
-<p>and to set another <code>TYPE</code>, run</p>
+<p>を実行してください。
+また、仮想マシンタイプを <code>TYPE</code> へ変更する場合、</p>
 
 <pre><code class="language-shell">$ roadie config machine set TYPE
 </code></pre>
 
-<h3 id="configuration-file">Configuration file</h3>
+<p>を実行してください。</p>
 
-<p>Roadie&rsquo;s configuration file is a YAML document.
-The elements in the document are different based on which cloud provider,
-Google Cloud Platform or Microsoft Azure.</p>
+<h3 id="設定ファイルの直接編集">設定ファイルの直接編集</h3>
+
+<p>先に述べたの通り、Roadie の設定は YAML 形式のテキストファイルです。
+この節では、この設定ファイルがどのような要素を持つのかについて説明します。</p>
+
+<p>なお、Roadie 設定ファイルのルート要素は、どのクラウドプロバイダを利用しているのかによって異なります。</p>
 
 <h4 id="google-cloud-platform">Google Cloud Platform</h4>
 
-<p>If you choose <a href="https://cloud.google.com/">Google Cloud Platform</a>, the root
-element of the configuration file is <code>gcp</code>, and it has child elements as shown
-below:</p>
+<p><a href="https://cloud.google.com/">Google Cloud Platform</a> を利用している場合、
+ルート要素は <code>gcp</code> になり、以下の要素を持ちます。</p>
 
 <pre><code class="language-yaml">gcp:
   project: &lt;project ID&gt;
@@ -272,27 +277,29 @@ below:</p>
 </code></pre>
 
 <ul>
-<li><code>project</code>: project ID registered in <a href="https://console.cloud.google.com/project">Google Cloud Platform</a>.</li>
-<li><code>bucket</code>: bucket ID of <a href="https://cloud.google.com/storage/">Cloud Storage</a> to
-store resources. This ID also has to be unique in the world. By default, the
-same ID as the project ID is set.</li>
-<li><code>zone</code>: name of region where programs will be run. By default, one of the
-cheapest region <code>us-central1-b</code> is selected.</li>
-<li><code>machine_type</code>: machine type. By default, one of the cheapest type
-<code>n1-standard-1</code> is selected.</li>
-<li><code>disk_size</code>: disk size in GB of virtual machines hosting programs. By default,
-10 GB is selected.</li>
+<li><code>project</code>: 初期設定の節で述べたプロジェクト ID を設定します。</li>
+<li><code>bucket</code>: 実行結果を保存する <a href="https://cloud.google.com/storage/">Cloud Storage</a>
+のバケット ID を設定します。
+このバケット ID も全世界でユニークである必要があります。
+デフォルトでは、プロジェクト ID と同じ値を使用します。
+また、バケットが作成されていない場合は必要に応じて作成されます。</li>
+<li><code>zone</code>: プログラムを実行する仮想マシンを作成するリージョン（ゾーン）を指定します。
+デフォルトでは、時間あたりの費用が最も安いリージョンの一つである us-central1-b が選ばれています。</li>
+<li><code>machine_type</code>: プログラムを実行する仮想マシンの種類を指定します。
+デフォルトでは、時間あたりの費用が安い n1-standard-1 が選ばれています。</li>
+<li><code>disk_size</code>: プログラムを実行する仮想マシンのディスクサイズを GB 単位で指定します。
+デフォルト値は 10 (GB) です。</li>
 </ul>
 
 <h4 id="microsoft-azure">Microsoft Azure</h4>
 
-<p>If you choose <a href="https://azure.microsoft.com/">Microsoft Azure</a>, the root element
-of the configuration file is <code>azure</code>, and it has child elements as shown below:</p>
+<p><a href="https://azure.microsoft.com/">Microsoft Azure</a> を利用している場合、
+ルート要素は <code>azure</code> になり、以下の要素を持ちます。</p>
 
 <pre><code class="language-yaml">azure:
-  tenant_id: &lt;directory ID (tenant ID)&gt;
-  subscription_id: &lt;subscription ID&gt;
-  project_id: &lt;project ID&gt;
+  tenant_id: &lt;ディレクトリ ID (テナント ID)&gt;
+  subscription_id: &lt;サブスクリプション ID&gt;
+  project_id: &lt;プロジェクト ID&gt;
   location: westus2
   machine_type: Standard_A2
   os:
@@ -303,12 +310,16 @@ of the configuration file is <code>azure</code>, and it has child elements as sh
 </code></pre>
 
 <ul>
-<li><code>tenant_id</code>: your tenant ID.</li>
-<li><code>subscription_id</code>: your subscription ID.</li>
-<li><code>project_id</code>: project ID.</li>
-<li><code>location</code>: location where programs will be run (default: westus2).</li>
-<li><code>machine_type</code>: machine type (default: Standard_A2).</li>
-<li><code>os</code>: OS type to be used. Currently, only default values are supported.</li>
+<li><code>tenant_id</code>: 初期設定の節で述べたディレクトリ ID を設定します。</li>
+<li><code>subscription_id</code>: 初期設定の節で述べたサブスクリプション ID を設定します。</li>
+<li><code>project_id</code>: 初期設定の節で述べたプロジェクト ID を設定します。
+Roadie の実行に必要なリソースはここで指定した名称でグループ化されます。</li>
+<li><code>location</code>: プログラムの実行する仮想マシンを作成するリージョンを指定します。
+デフォルトは westus2 が選ばれています。</li>
+<li><code>machine_type</code>: プログラムを実行する仮想マシンの種類を指定します。
+デフォルトでは、時間あたりの費用が安い Standard_A2 が選ばれています。</li>
+<li><code>os</code>: プログラムの実行に利用する OS 情報を設定します。
+現在のところデフォルトで設定されている値以外はサポートしていません。</li>
 </ul>
 
         </div>

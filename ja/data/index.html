@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Data</title>
+  <title>ファイルの管理</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="This document explains how to manage user programs and data files those programs will use. It also explains how to obtain computation results from cloud services."/>
+  <meta name="description" content="本ドキュメントでは、ユーザプログラム並びにユーザプログラムが使用するデータファイルの扱い、 またクラウド環境にて作成された実行結果の取得方法について説明します。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Data: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="ファイルの管理: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="This document explains how to manage user programs and data files those programs will use. It also explains how to obtain computation results from cloud services."/>
+  <meta property="og:description" content="本ドキュメントでは、ユーザプログラム並びにユーザプログラムが使用するデータファイルの扱い、 またクラウド環境にて作成された実行結果の取得方法について説明します。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="This document explains how to manage user programs and data files those programs will use. It also explains how to obtain computation results from cloud services."/>
+    <meta name="twitter:card" content="本ドキュメントでは、ユーザプログラム並びにユーザプログラムが使用するデータファイルの扱い、 またクラウド環境にて作成された実行結果の取得方法について説明します。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -162,171 +162,182 @@ body {
         <div>
           <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-          <h2 class="section-heading">Data</h2>
+          <h2 class="section-heading">ファイルの管理</h2>
           
 
-<p>Roadie manages three kinds of data in a cloud storage:</p>
+<p>Roadie は</p>
 
 <ul>
-<li>source code,</li>
-<li>data files,</li>
-<li>outputted results.</li>
+<li>ソースコード</li>
+<li>データファイル</li>
+<li>実行結果</li>
 </ul>
 
-<p>To access those data, Roadie has commands <code>source</code>, <code>data</code>,
-and <code>result</code>, respectively.</p>
+<p>という 3種類のデータをクラウドストレージ上に保存します。
+それらのデータを管理するために、<code>source</code>, <code>data</code>, <code>result</code> の 3 つのコマンドが用意されています。</p>
 
-<h3 id="source-code">source code</h3>
+<h3 id="ソースコード">ソースコード</h3>
 
-<p>Source code uploaded by <code>roadie run</code> command with <code>--local</code> flag are stored in
-<code>roadie://source/</code>. <code>source</code> command provides methods to manage those source
-code.</p>
+<p><code>roadie run</code> コマンドに <code>--local</code> フラッグを付けて実行した場合にアップロードされたソースコードは、
+<code>roadie://source/</code> 以下に保存されます。</p>
+
+<p><code>source</code> コマンドはこのソースコードの管理を行います。</p>
 
 <h4 id="list">list</h4>
 
-<p>To find source code archives stored in <code>roadie://source/</code>, use <code>list</code> sub command.
-The following example prints all stored archives:</p>
+<p>これまでにアップロードされたソースコードアーカイブの一覧を取得するには、</p>
 
 <pre><code class="language-shell">$ roadie source list
 </code></pre>
 
+<p>を実行します。</p>
+
 <h4 id="delete">delete</h4>
 
-<p>To delete an archive file <code>FILENAME</code>, use <code>delete</code> sub command:</p>
+<p>これまでにアップロードされたソースコードアーカイブの中から <code>FILENAME</code> というファイルを削除する場合、</p>
 
 <pre><code class="language-shell">$ roadie source delete FILENAME
 </code></pre>
 
+<p>を実行します。</p>
+
 <h4 id="get">get</h4>
 
-<p><code>get</code> sub command downloads a stored archive. The following example downloads
-<code>FILENAME</code> in the current directory:</p>
+<p>これまでにアップロードされたソースコードアーカイブの中から <code>FILENAME</code> というファイルをダウンロードする場合、</p>
 
 <pre><code class="language-shell">$ roadie source get FILENAME
 </code></pre>
 
-<p>If you want to download to another directory, such as <code>~/path</code>, give a path
-with <code>-o</code> flag:</p>
+<p>デフォルトではカレントディレクトリにダウンロードされますが、別のディレクトリ例えば <code>~/path</code> に保存する場合は、</p>
 
 <pre><code class="language-shell">$ roadie source get -o ~/path FILENAME
 </code></pre>
 
+<p>と <code>-o</code> フラグを使用します。</p>
+
 <h4 id="put">put</h4>
 
-<p><code>put</code> sub command uploads your source code.
-The following example archives files in <code>~/source</code> into <code>source.tar.gz</code>, and
-uploads it:</p>
+<p><code>roadie run</code> コマンドを使わずにソースコードをアップロードすることもできます。</p>
+
+<p>例えば、<code>~/source</code> 以下にあるファイルを保存し、 <code>source.tar.gz</code> という名前で参照する場合、</p>
 
 <pre><code class="language-shell">$ roadie source put ~/source source.tar.gz
 </code></pre>
 
-<h3 id="data-files">data files</h3>
+<p>を実行します。</p>
 
-<p>Data files are stored in <code>roadie://data/</code> and referred in <code>data</code> of Roadie&rsquo;s
-script files.</p>
+<h3 id="データファイル">データファイル</h3>
+
+<p>データファイルはスクリプトファイルの <code>data</code> セクションで利用するデータファイルを保存しておく場所です。
+ファイルは、<code>roadie://data/</code> 以下に保存されます。
+データファイルを管理するコマンドとして、<code>data</code> コマンドが用意されています。</p>
 
 <h4 id="put-1">put</h4>
 
-<p><code>put</code> sub command uploads a file to a cloud storage.
-The following example uploads <code>FILENAME</code>:</p>
+<p>あるファイル <code>FILENAME</code> を <code>data</code> セクションで利用するためにアップロードする場合、</p>
 
 <pre><code class="language-shell">$ roadie data put FILENAME
 </code></pre>
 
-<p>and after uploading is succeeded, it shows the URL of the upload file.</p>
+<p>を実行してください。アップロードされたファイルの URL が表示されます。</p>
 
 <h4 id="list-1">list</h4>
 
-<p><code>list</code> sub command shows uploaded files and those URLs.</p>
+<p>これまでにアップロードしたファイルと、その URL を取得するには、</p>
 
 <pre><code class="language-shell">$ roadie data list --url
 </code></pre>
 
-<p>If <code>--url</code> flag is not give, only file names are shown.</p>
+<p>を実行してください。</p>
 
 <h4 id="delete-1">delete</h4>
 
-<p><code>delete</code> sub command deletes an uploaded file.
-The following example deletes <code>FILENAME</code>:</p>
+<p>アップロード済みのデータファイル <code>FILENAME</code> を削除するには、</p>
 
 <pre><code class="language-shell">$ roadie data delete FILENAME
 </code></pre>
 
+<p>を実行してください。</p>
+
 <h4 id="get-1">get</h4>
 
-<p><code>get</code> sub command downloads an uploaded file.
-The following example download <code>FILENAME</code> into the current directory:</p>
+<p>アップロード済みのデータファイル <code>FILENAME</code> をダウンロードする場合、</p>
 
 <pre><code class="language-shell">$ roadie data get FILENAME
 </code></pre>
 
-<p>If you want to download to another directory, such as <code>~/path</code>, give a path
-with <code>-o</code> flag:</p>
+<p>を実行してください。
+デフォルトではカレントディレクトリにダウンロードされますが、別のディレクトリ例えば <code>~/path</code> に保存する場合は、</p>
 
 <pre><code class="language-shell">$ roadie data get -o ~/path FILENAME
 </code></pre>
 
-<h3 id="result-files">Result files</h3>
+<p>と <code>-o</code> フラグを使用します。</p>
 
-<p>Messages written in the standard output <code>stdout</code> and files specified in <code>result</code>
-of Roadie&rsquo;s script file will be stored in <code>roadie://resutl/&lt;instance name&gt;/</code>.</p>
+<h3 id="実行結果">実行結果</h3>
+
+<p>クラウド上で実行したプログラムが標準出力 <code>stdout</code> に書き出したメッセージと、
+スクリプトの <code>upload</code> セクションで指定したファイルは、
+<code>roadie://result/{インスタンス名}</code> 以下に保存されます。</p>
+
+<p>これらのファイルにアクセスするために、<code>result</code> コマンドが用意されています。</p>
 
 <h4 id="list-2">list</h4>
 
-<p><code>list</code> sub command without any options shows instance names.
-The following example prints a list of instance names:</p>
+<p>実行が終了したインスタンスの一覧を取得するには、</p>
 
 <pre><code class="language-shell">$ roadie result list
 </code></pre>
 
-<p><code>list</code> sub command with an instance name shows result files uploaded from the
-specified instance.
-The following example shows result file names uploaded from <code>INSTANCE</code>:</p>
+<p>を実行してください。また、各インスタンス <code>INSTANCE</code> がアップロードした
+計算結果のファイルを調べるには、</p>
 
 <pre><code class="language-shell">$ roadie result list INSTANCE
 </code></pre>
 
+<p>を実行してください。</p>
+
 <h4 id="get-2">get</h4>
 
-<p><code>get</code> sub command takes a glob pattern and downloads result files matching the
-given pattern.
-The following example downloads all result file into the current directory
-by using a wild card pattern <code>*</code>:</p>
+<p><code>roadie result get</code> コマンドは、
+実行結果ファイルのうち与えられた Glob パタンにマッチするファイルをダウンロードします。
+ワイルドカードを用いてすべての結果を取得する場合、</p>
 
-<pre><code class="language-shell">$ roadie result get INSTANCE &quot;*&quot;
+<pre><code class="language-shell">$ roadie result get INSTANCE &quot;*&quot; -o ./res
 </code></pre>
 
-<p>If you want to download them to another directory, use <code>-o</code> flag.
-For example, the following example downloads files start with <code>stdout</code> into
-<code>~/path</code>:</p>
-
-<pre><code class="language-shell">$ roadie result get INSTANCE &quot;stdout*&quot; -o `~/path`
-</code></pre>
+<p>を実行してください。
+デフォルトではカレントディレクトリにダウンロードされますが、
+例のように <code>-o</code> フラッグによりダウンロードしたファイルの保存先を指定できます。</p>
 
 <h4 id="delete-2">delete</h4>
 
-<p><code>delete</code> sub command deletes result files matching a given glob pattern.
-For example, the following example deletes files end with <code>.png</code>:</p>
+<p><code>delete</code> コマンドは、
+実行結果ファイルのうち与えられた Glob パタンにマッチするファイルを削除します。</p>
+
+<p>例えば、次の例は拡張子が <code>png</code> であるファイルを削除します。</p>
 
 <pre><code class="language-shell">$ roadie result delete INSTANCE &quot;*.png&quot;
 </code></pre>
 
-<p>If the glob pattern is omitted, all result files <em>including log files</em> will be
-deleted.</p>
+<p>また、Glob パタンを省略した場合すべての実行結果ファイルが削除されます。
+なお、<strong>すべてのファイルを削除するとログも取得できなくなります</strong>。</p>
 
 <h4 id="show">show</h4>
 
-<p><code>show</code> sub command shows messages written in the standard output.
-The following example shows all messages in <code>INSTANCE</code>:</p>
+<p><code>show</code> コマンドは、標準出力に書き出されたメッセージを表示します。
+次の例では、<code>INSTANCE</code> において標準出力に書き出された全てのメッセージを表示します。</p>
 
 <pre><code class="language-shell">$ roadie result show INSTANCE
 </code></pre>
 
-<p>If you want to see outputted massages from <em>i</em>-th command in <code>run</code> of your
-script file, give the number <code>i</code> like</p>
+<p>特に、 スクリプトファイルの <code>run</code> セクションに書かれたコマンドのうち、
+<code>i</code> 番目のコマンドが標準出力に書き出したメッセージのみを取得したい場合は、</p>
 
 <pre><code class="language-shell">$ roadie result show INSTANCE i
 </code></pre>
+
+<p>のように番号を指定します。</p>
 
         </div>
       </div>

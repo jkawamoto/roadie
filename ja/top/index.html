@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Auths</title>
+  <title>Roadie</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="A easy way to run your program on Cloud Platform"/>
+  <meta name="description" content="Roadie は、Google Cloud Platform と Microsoft Azure であなたのプログラムを実行する手助けを行います。 Roadie を用いることで、クラウドプラットフォームの詳しい仕組みを理解するために時間を割くことなく、 簡単にプログラムを実行し計算結果を取得することができます。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Auths: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="Roadie: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="A easy way to run your program on Cloud Platform"/>
+  <meta property="og:description" content="Roadie は、Google Cloud Platform と Microsoft Azure であなたのプログラムを実行する手助けを行います。 Roadie を用いることで、クラウドプラットフォームの詳しい仕組みを理解するために時間を割くことなく、 簡単にプログラムを実行し計算結果を取得することができます。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="A easy way to run your program on Cloud Platform"/>
+    <meta name="twitter:card" content="Roadie は、Google Cloud Platform と Microsoft Azure であなたのプログラムを実行する手助けを行います。 Roadie を用いることで、クラウドプラットフォームの詳しい仕組みを理解するために時間を割くことなく、 簡単にプログラムを実行し計算結果を取得することができます。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -155,40 +155,75 @@ body {
 </nav>
 
     
-<section id="intro">
-	<!-- Header -->
-	<div class="intro-header">
-
-		<div class="container header-container">
-
-			<div class="row">
-				<div class="intro-image col-md-1 col-md-offset-3" style="background-image:url(img/icon.png); background-size: contain;"></div>
-				<div class="intro-message col-md-6">
-					<h1>Roadie</h1>
-					<h3>A easy way to run your program on Cloud Platform</h3>
-
-					
-					
-					
-					<iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=star&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-          <iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=fork&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-					
-					<hr class="intro-divider">
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-
 <section id="services">
-  <!-- Page Content -->
-  
-</section>
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">Roadie</h2>
+          
 
+<p>Roadie はクラウドプラットフォームであなたのプログラムを実行する手助けを行います。</p>
+
+<p>Roadie を用いることで、<strong>クラウドプラットフォームの詳しい仕組みを理解するために時間を割くことなく</strong>、
+簡単にプログラムを実行し計算結果を取得することができます。</p>
+
+<p>Roadie は、次のクラウドプラットフォームをサポートしています。</p>
+
+<ul>
+<li><i class="fa fa-google" aria-hidden="true"></i> <a href="https://cloud.google.com/">Google Cloud Platform</a></li>
+<li><i class="fa fa-windows" aria-hidden="true"></i> <a href="https://azure.microsoft.com/">Microsoft Azure</a></li>
+</ul>
+
+<p>Roadie では、<a href="https://ja.wikipedia.org/wiki/YAML">YAML</a> 形式のスクリプトファイルを使って、
+クラウドでプログラムを実行する手順を指定します。</p>
+
+<p>例えば、クラウドプラットフォームを使って台湾中央研究院で公開されている<a href="http://mmnet.iis.sinica.edu.tw/dl/wowah/">データファイル</a>を
+カレントディレクトリにある <code>analyze</code>というプログラム<sup><a href="ja/top#program-requirement">1</a></sup> で解析する場合、
+次のようなスクリプトファイルを用意し <code>script.yml</code> という名前で保存します。</p>
+
+<pre><code class="language-yaml">apt:
+- unrar
+data:
+- http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
+run:
+- unrar x -r wowah.rar
+- ./analyze WoWAH
+upload:
+- *.png
+</code></pre>
+
+<p>そして、次のコマンドを実行することで Roadie は必要なクラウド環境をセットアップしプログラムを実行します。</p>
+
+<pre><code class="language-shell">$ roadie run --local . script.yml
+</code></pre>
+
+<p>Roadie は解析プログラムが終了すると、計算結果を保存したのち不要となったクラウド環境を削除し <strong>クラウド使用料金を節約します</strong>。
+プログラムが終了するまでコンピュータの前で待機し手動で削除処理を行う必要はありません。</p>
+
+<h3 id="コンテンツリスト">コンテンツリスト</h3>
+
+<ul>
+<li><a href="ja/installation">インストール方法</a></li>
+<li><a href="ja/configuration">設定変更</a></li>
+<li><a href="ja/execution">プログラムの実行</a></li>
+<li><a href="ja/logging">ステータスとログ</a></li>
+<li><a href="ja/data">ファイルの管理</a></li>
+<li><a href="ja/queue">タスクキュー</a></li>
+</ul>
+
+<p><a name="program-requirement">1</a>: Roadie ではクラウドプラットフォーム上に
+<a href="https://www.ubuntu.com/">Ubuntu</a> 環境をセットアップしてプログラムを実行します。
+そのため、実行するプログラムは 64bit Linux で実行可能なバイナリかスクリプトである必要があります。
+詳細は、<a href="ja/execution">プログラムの実行</a> をご覧ください。</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- Footer -->
 <footer>

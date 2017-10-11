@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Auths</title>
+  <title>キュー</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="A easy way to run your program on Cloud Platform"/>
+  <meta name="description" content="本ドキュメントでは、Roadie におけるタスクキューの利用方法について説明します。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Auths: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="キュー: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="A easy way to run your program on Cloud Platform"/>
+  <meta property="og:description" content="本ドキュメントでは、Roadie におけるタスクキューの利用方法について説明します。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="A easy way to run your program on Cloud Platform"/>
+    <meta name="twitter:card" content="本ドキュメントでは、Roadie におけるタスクキューの利用方法について説明します。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -155,40 +155,119 @@ body {
 </nav>
 
     
-<section id="intro">
-	<!-- Header -->
-	<div class="intro-header">
-
-		<div class="container header-container">
-
-			<div class="row">
-				<div class="intro-image col-md-1 col-md-offset-3" style="background-image:url(img/icon.png); background-size: contain;"></div>
-				<div class="intro-message col-md-6">
-					<h1>Roadie</h1>
-					<h3>A easy way to run your program on Cloud Platform</h3>
-
-					
-					
-					
-					<iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=star&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-          <iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=fork&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-					
-					<hr class="intro-divider">
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-
 <section id="services">
-  <!-- Page Content -->
-  
-</section>
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
+          <div class="clearfix"></div>
+          <h2 class="section-heading">キュー</h2>
+          
 
+<p>Roadie はキューを用いたタスク処理にも対応しています。
+デフォルトでは、キューに入れられたタスクは一つのインタンスによって処理されますが、
+必要に応じてインスタンスを追加することもできます。</p>
+
+<h3 id="キューにタスクを追加する">キューにタスクを追加する</h3>
+
+<p>タスクの追加は、<code>roadie queue add</code> コマンドを使用します。
+このコマンドは、タスクを追加するキューの名前とスクリプトファイルの二つを受け取ります。
+また、<code>roadie run</code> コマンドと同じオプション引数を指定できます。</p>
+
+<p>キューを処理しているインスタンスが無い場合、新しいインスタンスが一台作成されます。</p>
+
+<h4 id="例">例</h4>
+
+<pre><code class="language-shell">$ roadie queue add --local . --name task-1 queue-1 script.yml
+</code></pre>
+
+<p>上記のコマンドでは、<code>script.yml</code> を <code>queue-1</code> に追加します。
+<code>script.yml</code> を処理するために、カレントディレクトリ以下をアップロードすることなど、
+他のオプションは通常の <code>roadie run</code> コマンドと同様です。</p>
+
+<p>このスクリプトには、<code>task-1</code> という名前を付けていますので、
+この名前を使って出力の取得が可能です。</p>
+
+<h3 id="キューの管理">キューの管理</h3>
+
+<p><code>roadie queue status</code> コマンドは現在存在しているキューの一覧を表示します。
+また、下記のコマンド</p>
+
+<pre><code class="language-shell">$ roadie queue status &lt;queue name&gt;
+</code></pre>
+
+<p>は、<code>&lt;queue name&gt;</code> キューに
+入っているタスクの名前一覧を表示します。</p>
+
+<p>キューの処理を一時停止させるには、</p>
+
+<pre><code class="language-shell">$ roadie queue stop &lt;queue name&gt;
+</code></pre>
+
+<p>を使用します。
+このコマンドは未実行のスクリプト処理を停止させますが、
+すでに実行中のスクリプトに関しては終了まで実行されます。</p>
+
+<p>一時停止したキューを再実行するためには、</p>
+
+<pre><code class="language-shell">$ roadie queue restart &lt;queue name&gt;
+</code></pre>
+
+<p>を使用します。
+このコマンドは、キューの実行のために新しいインスタンスを一台作成します。</p>
+
+<p>キューを削除する場合は、</p>
+
+<pre><code class="language-shell">$ roadie queue delete &lt;queue name&gt;
+</code></pre>
+
+<p>を使用します。
+キューを削除した場合、実行が完了していないタスクの出力は失われることがあります。</p>
+
+<h3 id="インスタンスの管理">インスタンスの管理</h3>
+
+<p>デフォルトでは、キューのタスクは一台のインスタンスで処理されます。
+複数のインスタンスで処理したい場合、インスタンスの追加を行う必要があります。</p>
+
+<pre><code class="language-shell">$ roadie queue instance add --instances N &lt;queue name&gt;
+</code></pre>
+
+<p>上記のコマンドは、
+<code>N</code> 台のインスタンスを <code>&lt;queue name&gt;</code> キューの処理のために作成します。
+<code>--instance</code> フラグを省略した場合は一台追加されます。
+このコマンドは <code>--disk-size</code> フラグもサポートしており、
+必要であれば作成されるインスタンスのディスクサイズをカスタマイズできます。</p>
+
+<p>現在、あるキューの処理のために稼働しているインスタンス数を調べる場合、</p>
+
+<pre><code class="language-shell">$ roadie queue instance list &lt;queue name&gt;
+</code></pre>
+
+<p>を実行します。</p>
+
+<h3 id="ログの取得">ログの取得</h3>
+
+<p>キューを使って管理しているタスクのログを取得する場合、
+<code>roadie queue log</code> コマンドを使ってください。</p>
+
+<pre><code class="language-shell">$ roadie queue log &lt;queue name&gt;
+</code></pre>
+
+<p>上記コマンドを実行すると、指定したキューに関連するログを全て表示します。</p>
+
+<p>個別にタスクのログを取得する場合は、</p>
+
+<pre><code class="language-shell">$ roadie queue log &lt;queue name&gt; &lt;task name&gt;
+</code></pre>
+
+<p>を実行します。</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
     <!-- Footer -->
 <footer>

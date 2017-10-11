@@ -9,7 +9,7 @@
   <base href="https://jkawamoto.github.io/roadie/">
 
   
-  <title>Roadie</title>
+  <title>インストールと初期設定</title>
   
 
   
@@ -17,16 +17,16 @@
   
 
   
-  <meta name="description" content="A easy way to run your program on Cloud Platform"/>
+  <meta name="description" content="Roadie のインストール方法と初期設定の方法について説明します。 Roadie は Google Cloud Platform と Microsoft Azure に対応しています。 それぞれのクラウドプラットフォームで必要となる設定は異なります。 この文書では、プラットフォーム別にスクリーンショット付きで必要な情報の収集方法を説明します。"/>
   
 
   <meta property="og:type" content="article"/>
   
-  <meta property="og:title" content="Roadie: A easy way to run your program on Cloud Platform"/>
+  <meta property="og:title" content="インストールと初期設定: A easy way to run your program on Cloud Platform"/>
   
 
   
-  <meta property="og:description" content="A easy way to run your program on Cloud Platform"/>
+  <meta property="og:description" content="Roadie のインストール方法と初期設定の方法について説明します。 Roadie は Google Cloud Platform と Microsoft Azure に対応しています。 それぞれのクラウドプラットフォームで必要となる設定は異なります。 この文書では、プラットフォーム別にスクリーンショット付きで必要な情報の収集方法を説明します。"/>
   
 
   
@@ -38,7 +38,7 @@
 
   
     
-    <meta name="twitter:card" content="A easy way to run your program on Cloud Platform"/>
+    <meta name="twitter:card" content="Roadie のインストール方法と初期設定の方法について説明します。 Roadie は Google Cloud Platform と Microsoft Azure に対応しています。 それぞれのクラウドプラットフォームで必要となる設定は異なります。 この文書では、プラットフォーム別にスクリーンショット付きで必要な情報の収集方法を説明します。"/>
     
   <meta name="twitter:site" content="@junkawamoto"/>
   
@@ -155,128 +155,108 @@ body {
 </nav>
 
     
-<section id="intro">
-	<!-- Header -->
-	<div class="intro-header">
-
-		<div class="container header-container">
-
-			<div class="row">
-				<div class="intro-image col-md-1 col-md-offset-3" style="background-image:url(img/icon.png); background-size: contain;"></div>
-				<div class="intro-message col-md-6">
-					<h1>Roadie</h1>
-					<h3>A easy way to run your program on Cloud Platform</h3>
-
-					
-					
-					
-					<iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=star&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-          <iframe class="github-btn"
-						src="https://ghbtns.com/github-btn.html?user=jkawamoto&amp;repo=roadie&amp;type=fork&amp;count=true&amp;size=large"
-						frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
-					
-					<hr class="intro-divider">
-				</div>
-			</div>
-		</div>
-	</div>
-</section>
-
 <section id="services">
-  <!-- Page Content -->
-  
-    
-    <div class="content-section-a">
-    
-      <div class="container">
-        <div class="row">
-          <div>
-          <hr class="section-heading-spacer"/>
+  <div class="content-section-a">
+    <div class="container">
+      <div class="row">
+        <div>
+          <hr class="section-heading-spacer">
           <div class="clearfix"></div>
-            <h2 class="section-heading">Description</h2>
-            
+          <h2 class="section-heading">インストールと初期設定</h2>
+          
 
-<p><a href="https://www.gnu.org/copyleft/gpl.html"><img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="GPLv3" /></a>
-<a href="https://travis-ci.org/jkawamoto/roadie"><img src="https://travis-ci.org/jkawamoto/roadie.svg?branch=master" alt="Build Status" /></a>
-<a href="https://app.wercker.com/project/byKey/6c499024136e7067b86bef4bd07d7f62"><img src="https://app.wercker.com/status/6c499024136e7067b86bef4bd07d7f62/s/master" alt="wercker status" title="wercker status" /></a>
-<a href="https://goreportcard.com/report/github.com/jkawamoto/roadie"><img src="https://goreportcard.com/badge/github.com/jkawamoto/roadie" alt="Go Report" /></a>
-<a href="https://github.com/jkawamoto/roadie/releases/tag/v0.3.13"><img src="https://img.shields.io/badge/release-0.3.13-brightgreen.svg" alt="Release" /></a>
-<a href="http://qiita.com/jkawamoto/items/751558536a597a33ae2a"><img src="https://img.shields.io/badge/qiita-%E6%97%A5%E6%9C%AC%E8%AA%9E-brightgreen.svg" alt="Japanese" /></a></p>
+<h3 id="インストール">インストール</h3>
 
-<p>Roadie helps you to upload your source codes to the cloud, create and delete
-instances, and manage outputs.</p>
+<p>Roadie のコンパイル済みバイナリは、GitHub の
+<a href="https://github.com/jkawamoto/roadie/releases">リリースページ</a>
+から取得できます。
+アーカイブを解凍して得られた実行ファイルをパスの通ったところへ置いてください。
+一時的に試してみる場合は、ソースコードのあるディレクトリに置くだけでも良いです。</p>
 
-<p>For example,</p>
-
-<pre><code class="language-shell">$ roadie run --local . --name analyze-wowah script.yml
-</code></pre>
-
-<p>uploads your source codes in current directory, and run them in such a manner
-that <code>script.yml</code> specifies. The <code>script.yml</code> is a simple YAML file like</p>
-
-<pre><code class="language-yaml">apt:
-  - unrar
-data:
-  - http://mmnet.iis.sinica.edu.tw/dl/wowah/wowah.rar
-run:
-  - unrar x -r wowah.rar
-  - analyze WoWAH
-</code></pre>
-
-<p>The above <code>script.yml</code> asks roadie to install apt package <code>unrar</code> and
-download a data file from such URL as the preparation. Then, it directs
-to run those two commands: unrar the downloaded file, analyze the obtained
-data files.</p>
-
-<p>Roadie uploads results of such commands to a cloud storage after they finish.
-You can access those results by</p>
-
-<pre><code class="language-shell">$ roadie result get analyze-wowah &quot;*&quot; -o ./res
-</code></pre>
-
-<p>Then, Roadie downloads all result files into <code>./res</code> directory.</p>
-
-<p>Currently, Roadie supports</p>
-
-<ul>
-<li><i class="fa fa-google" aria-hidden="true"></i> <a href="https://cloud.google.com/">Google Cloud Platform</a>,</li>
-<li><i class="fa fa-windows" aria-hidden="true"></i> <a href="https://azure.microsoft.com/">Microsoft Azure</a>.</li>
-</ul>
-
-<h2 id="installation">Installation</h2>
-
-<p>Compiled binary files for some platforms are uploaded in
-<a href="https://github.com/jkawamoto/roadie/releases">release page</a>.</p>
-
-<p>If you&rsquo;re a <a href="http://brew.sh/">Homebrew</a> or <a href="http://linuxbrew.sh/">Linuxbrew</a>
-user, you can install Roadie by the following commands:</p>
+<p><a href="http://brew.sh/">Homebrew</a> または <a href="http://linuxbrew.sh/">Linuxbrew</a> を
+お使いの場合は、下記のコマンドでもインストールできます。</p>
 
 <pre><code class="language-shell">$ brew tap jkawamoto/roadie
 $ brew install roadie
 </code></pre>
 
-<h2 id="initialization">Initialization</h2>
+<h3 id="初期設定">初期設定</h3>
 
-<p>After installing Roadie, the following initialization is required in order to
-authorize <code>roadie</code> to access cloud services.</p>
+<p>Roadie は、現在のところ次のプラットフォームをサポートしています。</p>
+
+<ul>
+<li><i class="fa fa-google" aria-hidden="true"></i> <a href="https://cloud.google.com/">Google Cloud Platform</a></li>
+<li><i class="fa fa-windows" aria-hidden="true"></i> <a href="https://azure.microsoft.com/">Microsoft Azure</a></li>
+</ul>
+
+<p>次のコマンドを実行することで、どちらのクラウドプラットフォームを利用するのかを指定し、必要な情報を登録します。</p>
 
 <pre><code class="language-shell">$ roadie init
 </code></pre>
 
-<h2 id="license">License</h2>
+<h4 id="google-cloud-platform">Google Cloud Platform</h4>
 
-<p>This software except files in <code>docker</code> folder is released under The GNU General Public License Version 3,
-see <a href="info/licenses/">LICENSES</a> for more detail.</p>
+<p>Google Cloud Platform では、プロジェクトという単位でリソースを管理しています。
+どのプロジェクトを利用してプログラムを実行するのか Roadie に設定する必要があります。</p>
 
-          </div>
+<p>利用可能なプロジェクト ID は<a href="https://console.cloud.google.com/project">クラウドコンソール</a>から調べることができます。
+なお、<strong>プロジェクト名</strong> ではなく <strong>プロジェクト ID</strong> を使うことに注意してください。</p>
+
+<p><img src="img/gcp-projects.png" style="width: 80%;" title="Google Cloud Platform プロジェクト一覧"/></p>
+
+<p><code>roadie init</code> を実行し、クラウドプラットフォームとして Google Cloud Platform (gcp) を選択すると、
+プロジェクト ID を尋ねられるので入力してください。</p>
+
+<p>プロジェクト ID を入力すると認証プロセスが始まります。
+Roadie を実行している端末にて Web ブラウザで表示された URL を開いてください。
+Google へログインし、Roadie へのアクセス許可を与えてください。</p>
+
+<p>認証に成功すると設定ファイル <code>roadie.yml</code> が作成されます。
+その他の設定については<a href="ja/configuration">設定について</a> のページをご覧ください。</p>
+
+<h4 id="microsoft-azure">Microsoft Azure</h4>
+
+<p>Microsoft Azure では、ユーザアカウントは一つの Active Directory に所属しています。
+また、一つの Active Directory には複数のサブスクリプションつまり課金体系が登録されます。
+したがって、初期設定では Roadie を利用するユーザの Active Directory の ID (テナント ID) と
+サブスクリプション ID の二つの情報が必要になります。</p>
+
+<p>テナント ID の取得には、まずポータルサイトから Azure Active Directory を選びます。</p>
+
+<p><img src="img/active-directory.png" style="width: 80%;" title="Azure Active Directory"/></p>
+
+<p>表示される Active Direcotry に関する情報の中からプロパティを選ぶと、
+ディレクトリ ID という名称でテナント ID が表示されています。</p>
+
+<p><img src="img/tenant-id.png" style="width: 80%;" title="テナント ID"/></p>
+
+<p>サブスクリプション ID の取得は、同じくポータルサイトから課金を選びます。</p>
+
+<p><img src="img/subscription.png" style="width: 80%;" title="課金"/></p>
+
+<p>表示される課金情報の中にサブスクリプション ID の一覧があります。</p>
+
+<p><img src="img/subscription2.png" style="width: 80%;" title="サブスクリプション ID"/></p>
+
+<p><code>roadie init</code> を実行し、クラウドプラットフォームとして Microsoft Azure (azure) を選択すると、
+テナント ID とサブスクリプション ID を尋ねられるので入力してください。</p>
+
+<p>また、Roadie ではリソースを管理するためにプロジェクト ID という識別子を使用しますので入力して下さい。
+プロジェクト ID は小文字英数字で全世界でユニークである必要がありますが、
+この条件を満たす限り任意の文字列で構いません。</p>
+
+<p>入力し終わると認証プロセスが始まります。
+Web ブラウザで表示された URL を開き同じく表示されたコードを入力してください。
+Microsoft へログインし、Roadie へのアクセス許可を与えてください。</p>
+
+<p>認証に成功すると設定ファイル <code>roadie.yml</code> が作成されます。
+その他の設定については<a href="ja/configuration">設定について</a> のページをご覧ください。</p>
+
         </div>
       </div>
     </div>
-  
+  </div>
 </section>
-
 
     <!-- Footer -->
 <footer>
