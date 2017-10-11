@@ -798,7 +798,8 @@ func (s *BatchService) Tasks(ctx context.Context, job string) (set TaskSet, err 
 
 	if err != nil {
 		err = NewAPIError(err)
-		s.Logger.Println("Cannot retrieve tasks:", err.Error())
+		s.Logger.Println("Cannot retrieve tasks:", err)
+		return
 	}
 
 	set = make(TaskSet)
