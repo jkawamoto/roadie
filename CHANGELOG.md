@@ -1,3 +1,8 @@
+## 0.4.0 (2017-10-10)
+### Update
+- Support [Microsoft Azure](https://azure.microsoft.com/).
+
+
 ## 0.3.13 (2017-09-23)
 ### Fixed
 - `config` command's help was broken according to the update of cli package.
