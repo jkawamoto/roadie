@@ -29,7 +29,6 @@ asset: get-deps
 	go-bindata -pkg assets -o assets/assets.go -nometadata assets/*
 
 build: asset
-	make -C cloud/azure
 	goxc -os="darwin linux windows" -d=pkg -pv=$(VERSION)
 
 release:

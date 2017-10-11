@@ -8,8 +8,8 @@
 
 [![Logo](https://jkawamoto.github.io/roadie/img/banner.png)](https://jkawamoto.github.io/roadie/)
 
-A easy way to run your programs on
-[Google Cloud Platform](https://cloud.google.com/).
+A easy way to run your programs on [Google Cloud Platform](https://cloud.google.com/) and [Microsoft Azure](https://azure.microsoft.com/).
+
 See [documents](https://jkawamoto.github.io/roadie/) for more information.
 
 ## Description
